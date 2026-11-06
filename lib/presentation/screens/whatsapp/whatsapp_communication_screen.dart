@@ -367,6 +367,168 @@ class _WhatsAppCommunicationScreenState
     await WhatsAppHistoryReportGenerator.generateAndPrintReport(broadcasts: _broadcastHistory);
   }
 
+  void _showBotStatusDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: const [
+            Icon(Icons.hub_rounded, color: _kWaGreen),
+            SizedBox(width: 8),
+            Text('व्हॉट्सॲप बॉट स्थिती', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFBBF7D0)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: _kWaGreen,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'बॉट सक्रिय (Bot Connected & Active)',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: _kWaDark),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'सर्व्हर एंडपॉईंट: nagarsevak-managment-1.onrender.com',
+              style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'प्रभाग १२ अधिकृत व्हॉट्सॲप व्यवसाय खात्याशी थेट संलग्नित आहे. संदेश स्वयंचलितरीत्या बॉट रांगेत जमा होऊन पाठवले जातात.',
+              style: TextStyle(fontSize: 11.5, color: Color(0xFF475569)),
+            ),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _kWaDark,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('ठीक आहे'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showHelpTutorialDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: const [
+            Icon(Icons.help_outline_rounded, color: _kWaDark),
+            SizedBox(width: 8),
+            Text('व्हॉट्सॲप संवाद मार्गदर्शन', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildTutorialStep(
+                step: '१',
+                title: 'बॉट स्थिती तपासा',
+                desc: 'वरील "बॉट कनेक्टेड" हिरवा दिवा सक्रिय असल्याचे सुनिश्चित करा. बॉट सक्रिय असल्यासच बल्क मेसेज वितरित होतात.',
+              ),
+              _buildTutorialStep(
+                step: '२',
+                title: 'फिल्टर व मतदार शोध',
+                desc: 'नाव, परिसर, घर क्र., वय, लिंग किंवा जातीनुसार विशिष्ट मतदार शोधा व निवडा.',
+              ),
+              _buildTutorialStep(
+                step: '३',
+                title: 'त्वरित टेम्प्लेट्स किंवा संदेश',
+                desc: 'पाणीपुरवठा, शासकीय योजना किंवा उत्सवांचे तयार टेम्प्लेट्स एका टॅपवर निवडा किंवा स्वतः टाईप करा.',
+              ),
+              _buildTutorialStep(
+                step: '४',
+                title: '१-टॅप वैयक्तिक व्हॉट्सॲप',
+                desc: 'प्रत्येक मतदाराच्या कार्डवरील हिरव्या व्हॉट्सॲप आयकॉनवर टॅप करून थेट अधिकृत व्हॉट्सॲप ॲपमध्ये १-ऑन-१ चॅट करा.',
+              ),
+              _buildTutorialStep(
+                step: '५',
+                title: 'इतिहास व अधिकृत अहवाल',
+                desc: 'पाठवलेल्या सर्व मोहिमांची डिलिव्हरी संख्या तपासा व महानगरपालिकेसाठी लँडस्केप A4 पीडीएफ अहवाल डाउनलोड करा.',
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _kWaGreen,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('समजले', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTutorialStep({required String step, required String title, required String desc}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 22,
+            height: 22,
+            decoration: const BoxDecoration(color: _kWaLight, shape: BoxShape.circle),
+            alignment: Alignment.center,
+            child: Text(
+              step,
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _kWaDark),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                const SizedBox(height: 2),
+                Text(desc, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ─────────────────────────────────────────────────────────────
   // Build
   // ─────────────────────────────────────────────────────────────
@@ -408,44 +570,54 @@ class _WhatsAppCommunicationScreenState
           ],
         ),
         actions: [
-          // Bot status pill
+          // Help button matching web's tutorial-wa-help
+          IconButton(
+            tooltip: 'मदत व माहिती (Help)',
+            icon: const Icon(Icons.help_outline_rounded, color: _kWaDark, size: 20),
+            onPressed: _showHelpTutorialDialog,
+          ),
+          // Bot status pill (clickable)
           AnimatedBuilder(
             animation: _pulseAnim,
             builder: (context, child) {
               final isConn = _botStatus == 'connected';
-              return Container(
-                margin: const EdgeInsets.only(right: 10),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                decoration: BoxDecoration(
-                  color: isConn ? const Color(0xFFF0FDF4) : const Color(0xFFFEF2F2),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: isConn ? const Color(0xFFBBF7D0) : const Color(0xFFFECACA),
+              return InkWell(
+                onTap: _showBotStatusDialog,
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  margin: const EdgeInsets.only(right: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: isConn ? const Color(0xFFF0FDF4) : const Color(0xFFFEF2F2),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isConn ? const Color(0xFFBBF7D0) : const Color(0xFFFECACA),
+                    ),
                   ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 7,
-                      height: 7,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: isConn
-                            ? _kWaGreen.withOpacity(_pulseAnim.value)
-                            : const Color(0xFFEF4444),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isConn
+                              ? _kWaGreen.withOpacity(_pulseAnim.value)
+                              : const Color(0xFFEF4444),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 5),
-                    Text(
-                      isConn ? 'बॉट कनेक्टेड' : 'बॉट निष्क्रिय',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: isConn ? _kWaDark : const Color(0xFFB91C1C),
+                      const SizedBox(width: 5),
+                      Text(
+                        isConn ? 'बॉट सक्रिय' : 'बॉट निष्क्रिय',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: isConn ? _kWaDark : const Color(0xFFB91C1C),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               );
             },
