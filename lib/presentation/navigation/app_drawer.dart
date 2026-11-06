@@ -30,6 +30,11 @@ import '../screens/voter_forms/voter_forms_screen.dart';
 import '../screens/karyakarta_work/karyakarta_work_management_screen.dart';
 import '../screens/sms/sms_communication_screen.dart';
 import '../screens/whatsapp/whatsapp_communication_screen.dart';
+import '../screens/whatsapp/whatsapp_calling_screen.dart';
+import '../screens/voice/voice_call_screen.dart';
+import '../screens/voice/ai_voice_call_screen.dart';
+import '../screens/voice/conference_room_screen.dart';
+import '../screens/analysis_strategy/analysis_strategy_screen.dart';
 import '../screens/more/module_detail_screen.dart';
 
 class NagarsevakAppDrawer extends ConsumerStatefulWidget {
@@ -380,6 +385,29 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
       return;
     }
 
+    // Analysis Strategy (विश्लेषण आणि धोरण)
+    if (lower.contains('analysis strategy') ||
+        lower.contains('strategy') ||
+        lower.contains('धोरण') ||
+        lower.contains('विश्लेषण')) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const AnalysisStrategyScreen()),
+      );
+      return;
+    }
+
+    // WhatsApp Calling
+    if (lower.contains('whatsapp calling') ||
+        lower.contains('whatsapp call') ||
+        lower.contains('व्हॉट्सॲप कॉल')) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const WhatsAppCallingScreen()),
+      );
+      return;
+    }
+
     // WhatsApp Message (व्हॉट्सॲप संदेश)
     if (lower.contains('whatsapp message') ||
         lower.contains('व्हॉट्सॲप') ||
@@ -388,6 +416,41 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const WhatsAppCommunicationScreen()),
+      );
+      return;
+    }
+
+    // Conference Room
+    if (lower.contains('conference room') ||
+        lower.contains('conference') ||
+        lower.contains('कॉन्फरन्स') ||
+        lower == 'conference room') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const ConferenceRoomScreen()),
+      );
+      return;
+    }
+
+    // AI Voice Call
+    if (lower.contains('ai voice') ||
+        lower.contains('एआय व्हॉईस') ||
+        lower == 'ai voice call') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const AiVoiceCallScreen()),
+      );
+      return;
+    }
+
+    // Voice Call (व्हॉईस कॉल)
+    if (lower == 'voice call' ||
+        lower.contains('voice call') ||
+        lower.contains('व्हॉईस कॉल') ||
+        (lower.contains('voice') && !lower.contains('ai'))) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const VoiceCallScreen()),
       );
       return;
     }
@@ -1074,6 +1137,18 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
                       icon: Icons.chat_bubble_outline_rounded,
                       description: 'Direct WhatsApp communication with society chairmen and active constituents.',
                       highlights: ['Meta Cloud API Verified', 'Rich Media & PDF Attachments', 'Automated Replies'],
+                    ),
+                  ),
+                  _DrawerSubItem(
+                    icon: Icons.phone_forwarded_rounded,
+                    title: 'WhatsApp Call',
+                    onTap: () => _navigateToModule(
+                      title: 'WhatsApp Call',
+                      subtitle: 'Direct WhatsApp internet voice calls to ward constituents',
+                      category: 'Public Communication',
+                      icon: Icons.phone_forwarded_rounded,
+                      description: 'Initiate 1-tap WhatsApp voice calls to verified voters across Prabhag 12.',
+                      highlights: ['Instant WhatsApp Dialer', 'Direct 1-on-1 Internet Calls', 'Call Activity Logs & PDF'],
                     ),
                   ),
                   _DrawerSubItem(

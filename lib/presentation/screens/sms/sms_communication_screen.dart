@@ -176,6 +176,7 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
           backgroundColor: Color(0xFFDC2626),
         ),
       );
+      
       return;
     }
 

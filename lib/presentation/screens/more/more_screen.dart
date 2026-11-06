@@ -32,6 +32,11 @@ import '../voter_forms/voter_forms_screen.dart';
 import '../karyakarta_work/karyakarta_work_management_screen.dart';
 import '../sms/sms_communication_screen.dart';
 import '../whatsapp/whatsapp_communication_screen.dart';
+import '../whatsapp/whatsapp_calling_screen.dart';
+import '../voice/voice_call_screen.dart';
+import '../voice/ai_voice_call_screen.dart';
+import '../voice/conference_room_screen.dart';
+import '../analysis_strategy/analysis_strategy_screen.dart';
 import '../../navigation/app_drawer.dart';
 import 'module_detail_screen.dart';
 
@@ -459,6 +464,71 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
         'Bulk Broadcast & PDF Report',
       ],
     ),
+    _MoreModuleItem(
+      title: 'WhatsApp Calling',
+      subtitle: 'Direct WhatsApp internet audio calls to ward voters',
+      category: 'Public Communication',
+      icon: Icons.phone_in_talk_rounded,
+      description:
+          'Initiate direct WhatsApp calls to constituents. Search and filter voters, place calls via WhatsApp app, and track comprehensive call logs.',
+      highlights: [
+        '1-Tap WhatsApp Call Launcher',
+        'Filter by Name & Location',
+        'Call Activity History & Logs',
+      ],
+    ),
+    _MoreModuleItem(
+      title: 'Voice Call',
+      subtitle: 'Direct one-tap phone calls & voice outreach logs to ward voters',
+      category: 'Public Communication',
+      icon: Icons.phone_in_talk_rounded,
+      description:
+          'Connect directly with Prabhag 12 voters via phone call. Search by name or area, place direct calls with automatic logging, and track call history.',
+      highlights: [
+        'Direct 1-Tap Dialer Call',
+        'Search & Filter by Name / Address',
+        'Call History & Activity Logs',
+      ],
+    ),
+    _MoreModuleItem(
+      title: 'AI Voice Call',
+      subtitle: 'Automated AI voice broadcasts in Marathi, Hindi & English',
+      category: 'Public Communication',
+      icon: Icons.record_voice_over_rounded,
+      description:
+          'Broadcast personalized spoken audio messages using Marathi & English text-to-speech AI. Multi-select voters, compose announcements, and track call response logs.',
+      highlights: [
+        'Multi-lingual Text-to-Speech (mr-IN, hi-IN, en-IN)',
+        'Batch Voice Broadcasts',
+        'Call Reach & Delivery History',
+      ],
+    ),
+    _MoreModuleItem(
+      title: 'Conference Room',
+      subtitle: 'Virtual video conference meetings with ward constituents & society heads',
+      category: 'Public Communication',
+      icon: Icons.video_call_rounded,
+      description:
+          'Host and schedule live virtual video meetings with ward societies and citizens. Generate meet links, invite voters directly, and join video conferences seamlessly.',
+      highlights: [
+        'Instant & Scheduled Jitsi Video Links',
+        'Direct Voter Invite Dispatch',
+        'Upcoming & Past Conference Archives',
+      ],
+    ),
+    _MoreModuleItem(
+      title: 'Analysis Strategy',
+      subtitle: 'Area political intelligence, demographic data & AI speech briefing',
+      category: 'Political',
+      icon: Icons.insights_rounded,
+      description:
+          'Deep area-by-area intelligence aggregating voter demographics, grievance resolution status, past election vote margins, and AI-powered field speech drafting.',
+      highlights: [
+        'Area-wise Voter Demographics & Caste Split',
+        'Complaints Resolution Intelligence',
+        'AI Field Visit Briefing Generator',
+      ],
+    ),
   ];
 
   @override
@@ -757,12 +827,64 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
       return;
     }
 
+    if (item.title.toLowerCase().contains('whatsapp call') ||
+        item.title.toLowerCase().contains('व्हॉट्सॲप कॉल') ||
+        item.title.toLowerCase() == 'whatsapp calling') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const WhatsAppCallingScreen()),
+      );
+      return;
+    }
+
     if (item.title.toLowerCase().contains('whatsapp message') ||
         item.title.toLowerCase().contains('व्हॉट्सॲप') ||
         item.title.toLowerCase() == 'whatsapp message') {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const WhatsAppCommunicationScreen()),
+      );
+      return;
+    }
+
+    if (item.title.toLowerCase().contains('analysis strategy') ||
+        item.title.toLowerCase().contains('strategy') ||
+        item.title.toLowerCase().contains('धोरण') ||
+        item.title.toLowerCase().contains('विश्लेषण')) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const AnalysisStrategyScreen()),
+      );
+      return;
+    }
+
+    if (item.title.toLowerCase().contains('conference') ||
+        item.title.toLowerCase().contains('कॉन्फरन्स') ||
+        item.title.toLowerCase() == 'conference room') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const ConferenceRoomScreen()),
+      );
+      return;
+    }
+
+    if (item.title.toLowerCase().contains('ai voice') ||
+        item.title.toLowerCase().contains('एआय व्हॉईस') ||
+        item.title.toLowerCase() == 'ai voice call') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const AiVoiceCallScreen()),
+      );
+      return;
+    }
+
+    if (item.title.toLowerCase().contains('voice call') ||
+        item.title.toLowerCase().contains('व्हॉईस कॉल') ||
+        item.title.toLowerCase().contains('voice') ||
+        item.title.toLowerCase() == 'voice call') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const VoiceCallScreen()),
       );
       return;
     }
