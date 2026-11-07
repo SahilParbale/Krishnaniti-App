@@ -55,7 +55,7 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$label कॉपी केला: $text'),
+        content: Text('Copied $label: $text'),
         backgroundColor: const Color(0xFF0284C7),
         duration: const Duration(seconds: 2),
       ),
@@ -102,7 +102,7 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        'सोसायटी माहिती संपादन (Edit Society)',
+                        'Edit Society Details',
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                       ),
                       IconButton(
@@ -117,7 +117,7 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
                   TextField(
                     controller: nameMrCtrl,
                     decoration: InputDecoration(
-                      labelText: 'सोसायटीचे नाव (मराठी) *',
+                      labelText: 'Society Name *',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                       filled: true,
                       fillColor: const Color(0xFFF8FAFC),
@@ -142,7 +142,7 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
                         child: TextField(
                           controller: chairmanNameCtrl,
                           decoration: InputDecoration(
-                            labelText: 'चेअरमन नाव',
+                            labelText: 'Chairman Name',
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                             filled: true,
                             fillColor: const Color(0xFFF8FAFC),
@@ -155,7 +155,7 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
                           controller: chairmanPhoneCtrl,
                           keyboardType: TextInputType.phone,
                           decoration: InputDecoration(
-                            labelText: 'चेअरमन मोबाईल',
+                            labelText: 'Chairman Mobile',
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                             filled: true,
                             fillColor: const Color(0xFFF8FAFC),
@@ -172,7 +172,7 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
                         child: TextField(
                           controller: secretaryNameCtrl,
                           decoration: InputDecoration(
-                            labelText: 'सेक्रेटरी नाव',
+                            labelText: 'Secretary Name',
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                             filled: true,
                             fillColor: const Color(0xFFF8FAFC),
@@ -185,7 +185,7 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
                           controller: secretaryPhoneCtrl,
                           keyboardType: TextInputType.phone,
                           decoration: InputDecoration(
-                            labelText: 'सेक्रेटरी मोबाईल',
+                            labelText: 'Secretary Mobile',
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                             filled: true,
                             fillColor: const Color(0xFFF8FAFC),
@@ -203,7 +203,7 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
                           controller: votersCtrl,
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
-                            labelText: 'एकूण मतदार संख्या',
+                            labelText: 'Total Voters Count',
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                             filled: true,
                             fillColor: const Color(0xFFF8FAFC),
@@ -216,7 +216,7 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
                           controller: favVotersCtrl,
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
-                            labelText: 'फेवर मतदार संख्या',
+                            labelText: 'Favourable Voters Count',
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                             filled: true,
                             fillColor: const Color(0xFFF8FAFC),
@@ -230,7 +230,7 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
                   TextField(
                     controller: areaCtrl,
                     decoration: InputDecoration(
-                      labelText: 'परिसर / गल्ली / प्रभाग',
+                      labelText: 'Area / Lane / Ward',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                       filled: true,
                       fillColor: const Color(0xFFF8FAFC),
@@ -241,7 +241,7 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
                   TextField(
                     controller: addressCtrl,
                     decoration: InputDecoration(
-                      labelText: 'पूर्ण पत्ता (Address)',
+                      labelText: 'Full Address',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                       filled: true,
                       fillColor: const Color(0xFFF8FAFC),
@@ -253,7 +253,7 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
                     controller: notesCtrl,
                     maxLines: 3,
                     decoration: InputDecoration(
-                      labelText: 'महत्वाच्या समस्या / मागण्या / टिप्पण्या',
+                      labelText: 'Key Issues / Demands / Notes',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                       filled: true,
                       fillColor: const Color(0xFFF8FAFC),
@@ -264,14 +264,14 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
                   DropdownButtonFormField<String>(
                     initialValue: status,
                     decoration: InputDecoration(
-                      labelText: 'स्थिती (Status)',
+                      labelText: 'Status',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                       filled: true,
                       fillColor: const Color(0xFFF8FAFC),
                     ),
                     items: const [
-                      DropdownMenuItem(value: 'Active', child: Text('Active (सक्रिय)')),
-                      DropdownMenuItem(value: 'Inactive', child: Text('Inactive (निष्क्रिय)')),
+                      DropdownMenuItem(value: 'Active', child: Text('Active')),
+                      DropdownMenuItem(value: 'Inactive', child: Text('Inactive')),
                     ],
                     onChanged: (val) {
                       if (val != null) setModalState(() => status = val);
@@ -286,7 +286,7 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
                         final name = nameMrCtrl.text.trim().isNotEmpty ? nameMrCtrl.text.trim() : nameEnCtrl.text.trim();
                         if (name.isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('कृपया सोसायटीचे नाव प्रविष्ट करा.')),
+                            const SnackBar(content: Text('Please enter society name.')),
                           );
                           return;
                         }
@@ -296,7 +296,7 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
 
                         if (favCount > vCount) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('फेवर मतदार संख्या एकूण मतदार संख्येपेक्षा जास्त असू शकत नाही!')),
+                            const SnackBar(content: Text('Favourable voters cannot exceed total voters!')),
                           );
                           return;
                         }
@@ -329,7 +329,7 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
 
                         messenger.showSnackBar(
                           const SnackBar(
-                            content: Text('सोसायटी माहिती यशस्वीरित्या अद्ययावत केली!'),
+                            content: Text('Society details updated successfully!'),
                             backgroundColor: Color(0xFF16A34A),
                           ),
                         );
@@ -340,7 +340,7 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                      child: const Text('बदल जतन करा (Save Changes)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                      child: const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                     ),
                   ),
                 ],
@@ -356,12 +356,12 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('सोसायटी हटवा (Delete Society)'),
-        content: Text('तुम्हाला नक्की ${_society.displayName(true)} ही सोसायटी हटवायची आहे का?'),
+        title: const Text('Delete Society'),
+        content: Text('Are you sure you want to delete ${_society.displayName(true)}?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('रद्द करा'),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -371,11 +371,11 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
               if (!mounted) return;
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('सोसायटी यशस्वीरित्या हटवली.')),
+                const SnackBar(content: Text('Society deleted successfully.')),
               );
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-            child: const Text('हटवा'),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -399,12 +399,12 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
-            tooltip: 'संपादन करा',
+            tooltip: 'Edit',
             onPressed: _openEditModal,
           ),
           IconButton(
             icon: const Icon(Icons.delete_outline),
-            tooltip: 'हटवा',
+            tooltip: 'Delete',
             onPressed: _confirmDelete,
           ),
         ],
@@ -472,7 +472,7 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
                                 const SizedBox(width: 4),
                                 Expanded(
                                   child: Text(
-                                    _society.area.isNotEmpty ? _society.area : 'प्रभाग क्र. १२',
+                                    _society.area.isNotEmpty ? _society.area : 'Ward 12',
                                     style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
                                   ),
                                 ),
@@ -491,7 +491,7 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
                           ),
                         ),
                         child: Text(
-                          _society.status == 'Active' ? 'सक्रिय' : 'निष्क्रिय',
+                          _society.status == 'Active' ? 'Active' : 'Inactive',
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
@@ -530,7 +530,7 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
                           Icon(Icons.how_to_vote_outlined, color: Color(0xFF0284C7), size: 20),
                           SizedBox(width: 8),
                           Text(
-                            'मतदार पाठिंबा व विश्लेषण (Support Meter)',
+                            'Voter Support Meter',
                             style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                           ),
                         ],
@@ -547,7 +547,7 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
                             const Icon(Icons.trending_up, size: 14, color: Color(0xFF059669)),
                             const SizedBox(width: 4),
                             Text(
-                              '$supportPct% पाठिंबा',
+                              '$supportPct% Support',
                               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF059669)),
                             ),
                           ],
@@ -574,7 +574,7 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
                     children: [
                       Expanded(
                         child: _buildMetricBlock(
-                          title: 'एकूण मतदार',
+                          title: 'Total Voters',
                           count: _society.voterCount.toString(),
                           icon: Icons.groups_outlined,
                           color: const Color(0xFF0284C7),
@@ -584,7 +584,7 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
                       const SizedBox(width: 10),
                       Expanded(
                         child: _buildMetricBlock(
-                          title: 'फेवर मतदार',
+                          title: 'Favourable Voters',
                           count: _society.favourableVoterCount.toString(),
                           icon: Icons.check_circle_outline,
                           color: const Color(0xFF16A34A),
@@ -594,7 +594,7 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
                       const SizedBox(width: 10),
                       Expanded(
                         child: _buildMetricBlock(
-                          title: 'इतर / तटस्थ',
+                          title: 'Other / Neutral',
                           count: _society.otherVotersCount.toString(),
                           icon: Icons.pending_outlined,
                           color: const Color(0xFFD97706),
@@ -629,7 +629,7 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
                       Icon(Icons.badge_outlined, color: Color(0xFF0284C7), size: 20),
                       SizedBox(width: 8),
                       Text(
-                        'सोसायटी पदाधिकारी संपर्क (Executives)',
+                        'Society Executive Contacts',
                         style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                       ),
                     ],
@@ -638,8 +638,8 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
 
                   // Chairman Box
                   _buildExecutiveCard(
-                    role: 'चेअरमन (Chairman)',
-                    name: _society.chairmanName.isNotEmpty ? _society.chairmanName : 'नोंद नाही',
+                    role: 'Chairman',
+                    name: _society.chairmanName.isNotEmpty ? _society.chairmanName : 'Not Registered',
                     phone: _society.chairmanMobile,
                     roleColor: const Color(0xFF4F46E5),
                     roleBg: const Color(0xFFEEF2FF),
@@ -649,8 +649,8 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
 
                   // Secretary Box
                   _buildExecutiveCard(
-                    role: 'सेक्रेटरी (Secretary)',
-                    name: _society.secretaryName.isNotEmpty ? _society.secretaryName : 'नोंद नाही',
+                    role: 'Secretary',
+                    name: _society.secretaryName.isNotEmpty ? _society.secretaryName : 'Not Registered',
                     phone: _society.secretaryMobile,
                     roleColor: const Color(0xFF0284C7),
                     roleBg: const Color(0xFFF0F9FF),
@@ -682,7 +682,7 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
                         Icon(Icons.map_outlined, color: Color(0xFF0284C7), size: 20),
                         SizedBox(width: 8),
                         Text(
-                          'पत्ता व ठिकाण (Address & Area)',
+                          'Address & Location',
                           style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                         ),
                       ],
@@ -710,7 +710,7 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
                           const Icon(Icons.near_me_outlined, size: 16, color: Color(0xFF64748B)),
                           const SizedBox(width: 8),
                           Text(
-                            'परिसर: ${_society.area}',
+                            'Area: ${_society.area}',
                             style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
                           ),
                         ],
@@ -741,7 +741,7 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
                       Icon(Icons.report_problem_outlined, color: Color(0xFFB45309), size: 20),
                       SizedBox(width: 8),
                       Text(
-                        'महत्वाच्या समस्या / मागण्या / टिप्पण्या',
+                        'Key Issues / Demands / Notes',
                         style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF92400E)),
                       ),
                     ],
@@ -750,7 +750,7 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
                   Text(
                     _society.notes.isNotEmpty
                         ? _society.notes
-                        : 'सध्या कोणतीही प्रलंबित समस्या नोंदवलेली नाही.',
+                        : 'No pending issues recorded currently.',
                     style: const TextStyle(
                       fontSize: 13,
                       color: Color(0xFF78350F),
@@ -853,7 +853,7 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
                   child: OutlinedButton.icon(
                     onPressed: () => _makePhoneCall(phone),
                     icon: const Icon(Icons.phone, size: 14),
-                    label: const Text('कॉल करा', style: TextStyle(fontSize: 12)),
+                    label: const Text('Call', style: TextStyle(fontSize: 12)),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF0284C7),
                       side: const BorderSide(color: Color(0xFFBAE6FD)),
@@ -866,7 +866,7 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
                   child: OutlinedButton.icon(
                     onPressed: () => _openWhatsApp(phone),
                     icon: const Icon(Icons.chat_bubble_outline, size: 14),
-                    label: const Text('व्हॉट्सअ‍ॅप', style: TextStyle(fontSize: 12)),
+                    label: const Text('WhatsApp', style: TextStyle(fontSize: 12)),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF16A34A),
                       side: const BorderSide(color: Color(0xFFBBF7D0)),
@@ -878,7 +878,7 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
                 IconButton(
                   onPressed: () => _copyToClipboard(phone, role),
                   icon: const Icon(Icons.copy, size: 16, color: Color(0xFF64748B)),
-                  tooltip: 'नंबर कॉपी करा',
+                  tooltip: 'Copy Number',
                 ),
               ],
             ),

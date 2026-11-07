@@ -25,7 +25,7 @@ class SadasyaProfileScreen extends StatelessWidget {
 
   Future<void> _openWhatsApp(String number) async {
     final clean = number.replaceAll(RegExp(r'[^\d]'), '');
-    final uri = Uri.parse('https://wa.me/$clean?text=नमस्कार ${member.displayName} जी,');
+    final uri = Uri.parse('https://wa.me/$clean?text=Hello ${member.displayName},');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
@@ -45,18 +45,18 @@ class SadasyaProfileScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'सदस्य तपशील (Member Profile)',
+          'Member Profile',
           style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined, color: Colors.white),
-            tooltip: 'माहिती संपादित करा',
+            tooltip: 'Edit Details',
             onPressed: onEdit,
           ),
           IconButton(
             icon: const Icon(Icons.delete_outline_rounded, color: Colors.white),
-            tooltip: 'सदस्य काढा',
+            tooltip: 'Remove Member',
             onPressed: () => _confirmDelete(context),
           ),
         ],
@@ -130,7 +130,7 @@ class SadasyaProfileScreen extends StatelessWidget {
                                     ),
                                   ),
                                   child: Text(
-                                    member.isVoter ? 'नोंदणीकृत मतदार' : 'पक्ष सदस्य',
+                                    member.isVoter ? 'Registered Voter' : 'Party Member',
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.bold,
@@ -175,7 +175,7 @@ class SadasyaProfileScreen extends StatelessWidget {
                           onPressed: () => _makeCall(member.mobile),
                           icon: const Icon(Icons.call_rounded, size: 18, color: Colors.white),
                           label: const Text(
-                            'कॉल करा',
+                            'Call',
                             style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
                           ),
                           style: ElevatedButton.styleFrom(
@@ -191,7 +191,7 @@ class SadasyaProfileScreen extends StatelessWidget {
                           onPressed: () => _openWhatsApp(member.mobile),
                           icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18, color: Colors.white),
                           label: const Text(
-                            'व्हॉट्सॲप',
+                            'WhatsApp',
                             style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
                           ),
                           style: ElevatedButton.styleFrom(
@@ -221,21 +221,21 @@ class SadasyaProfileScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'वैयक्तिक व संपर्क माहिती',
+                    'Personal & Contact Information',
                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                   ),
                   const SizedBox(height: 12),
                   const Divider(height: 1),
                   const SizedBox(height: 12),
 
-                  _buildInfoRow(Icons.phone_iphone_rounded, 'मोबाईल क्रमांक', member.mobile),
-                  _buildInfoRow(Icons.cake_outlined, 'वय व लिंग', '${member.age > 0 ? "${member.age} वर्षे" : "-"} • ${member.displayGender}'),
+                  _buildInfoRow(Icons.phone_iphone_rounded, 'Mobile Number', member.mobile),
+                  _buildInfoRow(Icons.cake_outlined, 'Age & Gender', '${member.age > 0 ? "${member.age} Yrs" : "-"} • ${member.displayGender}'),
                   if (member.voterId != null && member.voterId!.isNotEmpty)
-                    _buildInfoRow(Icons.badge_outlined, 'मतदार ओळखपत्र (EPIC No)', member.voterId!),
-                  _buildInfoRow(Icons.location_on_outlined, 'प्रभाग व परिसर', '${member.ward ?? "प्रभाग १२"} • ${member.area ?? "शनिवार पेठ"}'),
-                  _buildInfoRow(Icons.home_outlined, 'निवासस्थान पत्ता', member.displayAddress),
-                  _buildInfoRow(Icons.calendar_today_outlined, 'नोंदणी दिनांक', dateFormatted),
-                  _buildInfoRow(Icons.verified_outlined, 'स्थिती', member.status == 'Active' ? 'सक्रिय (Active)' : 'निष्क्रिय (Inactive)'),
+                    _buildInfoRow(Icons.badge_outlined, 'EPIC / Voter ID', member.voterId!),
+                  _buildInfoRow(Icons.location_on_outlined, 'Ward & Area', '${member.ward ?? "Ward 12"} • ${member.area ?? "Shaniwar Peth"}'),
+                  _buildInfoRow(Icons.home_outlined, 'Residential Address', member.displayAddress),
+                  _buildInfoRow(Icons.calendar_today_outlined, 'Registration Date', dateFormatted),
+                  _buildInfoRow(Icons.verified_outlined, 'Status', member.status == 'Active' ? 'Active' : 'Inactive'),
                 ],
               ),
             ),
@@ -257,7 +257,7 @@ class SadasyaProfileScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        'सोपवलेली प्रभागातील कामे व जबाबदाऱ्या',
+                        'Assigned Ward Tasks & Responsibilities',
                         style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                       ),
                       Container(
@@ -268,7 +268,7 @@ class SadasyaProfileScreen extends StatelessWidget {
                           border: Border.all(color: const Color(0xFFBBF7D0)),
                         ),
                         child: const Text(
-                          '२ कामे सक्रिय',
+                          '2 Active Tasks',
                           style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
                         ),
                       ),
@@ -277,17 +277,17 @@ class SadasyaProfileScreen extends StatelessWidget {
                   const SizedBox(height: 14),
 
                   _buildTaskTile(
-                    title: 'मतदार यादी पडताळणी मोहीम - शनिवार पेठ',
-                    date: '१० फेब्रुवारी २०२५',
-                    status: 'पूर्ण झाले',
+                    title: 'Voter List Verification Campaign - Shaniwar Peth',
+                    date: '10 Feb 2025',
+                    status: 'Completed',
                     statusColor: const Color(0xFF16A34A),
                     statusBg: const Color(0xFFDCFCE7),
                   ),
                   const SizedBox(height: 8),
                   _buildTaskTile(
-                    title: 'आरोग्य तपासणी शिबिर स्वयंसेवक नियोजन',
-                    date: '१८ फेब्रुवारी २०२५',
-                    status: 'प्रगतीपथावर',
+                    title: 'Health Camp Volunteer Planning',
+                    date: '18 Feb 2025',
+                    status: 'In Progress',
                     statusColor: const Color(0xFFD97706),
                     statusBg: const Color(0xFFFEF3C7),
                   ),
@@ -383,12 +383,12 @@ class SadasyaProfileScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('सदस्य काढण्याची खात्री करा', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        content: Text('आपण खरोखरच "${member.displayName}" यांना सदस्य यादीतून काढू इच्छिता?'),
+        title: const Text('Confirm Remove Member', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        content: Text('Are you sure you want to remove "${member.displayName}" from the members list?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('रद्द करा'),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () {
@@ -396,7 +396,7 @@ class SadasyaProfileScreen extends StatelessWidget {
               onDelete();
             },
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
-            child: const Text('काढून टाका', style: TextStyle(color: Colors.white)),
+            child: const Text('Remove', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),

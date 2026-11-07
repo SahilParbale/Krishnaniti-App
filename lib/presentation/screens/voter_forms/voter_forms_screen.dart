@@ -6,6 +6,7 @@ import '../../../data/models/voter_application_model.dart';
 import '../../../data/models/voter_model.dart';
 import '../../../data/repositories/voter_applications_repository.dart';
 import 'voter_forms_report_generator.dart';
+import '../../navigation/app_drawer.dart';
 
 class VoterFormsScreen extends ConsumerStatefulWidget {
   const VoterFormsScreen({super.key});
@@ -129,7 +130,7 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        appToEdit == null ? 'नवीन अर्ज नोंदवा (Log Application)' : 'अर्ज संपादन (Edit Application)',
+                        appToEdit == null ? 'Log Application' : 'Edit Application',
                         style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                       ),
                       IconButton(
@@ -146,8 +147,8 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
                     TextField(
                       controller: voterSearchCtrl,
                       decoration: InputDecoration(
-                        labelText: 'मतदार यादीतून नाव शोधा (पर्यायी)',
-                        hintText: 'नाव किंवा ओळखपत्र क्र. टाईप करा...',
+                        labelText: 'Search Name from Voter Roll (Optional)',
+                        hintText: 'Type name or EPIC number...',
                         prefixIcon: const Icon(Icons.search, size: 20),
                         suffixIcon: isSearchingVoter
                             ? const Padding(
@@ -191,7 +192,7 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
                             return ListTile(
                               dense: true,
                               title: Text(v.displayName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              subtitle: Text('EPIC: ${v.epicNo} · केंद्र: ${v.booth}', style: const TextStyle(fontSize: 11)),
+                              subtitle: Text('EPIC: ${v.epicNo} · Booth: ${v.booth}', style: const TextStyle(fontSize: 11)),
                               trailing: const Icon(Icons.check_circle_outline, color: Color(0xFF0284C7), size: 18),
                               onTap: () {
                                 setModalState(() {
@@ -214,7 +215,7 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
                   TextField(
                     controller: nameCtrl,
                     decoration: InputDecoration(
-                      labelText: 'अर्जदाराचे नाव (Applicant Name) *',
+                      labelText: 'Applicant Name *',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                       filled: true,
                       fillColor: const Color(0xFFF8FAFC),
@@ -227,8 +228,8 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
                     controller: mobileCtrl,
                     keyboardType: TextInputType.phone,
                     decoration: InputDecoration(
-                      labelText: 'मोबाईल नंबर (Mobile Number)',
-                      hintText: 'उदा. 9822014589',
+                      labelText: 'Mobile Number',
+                      hintText: 'e.g. 9822014589',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                       filled: true,
                       fillColor: const Color(0xFFF8FAFC),
@@ -240,16 +241,16 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
                   DropdownButtonFormField<String>(
                     initialValue: formType,
                     decoration: InputDecoration(
-                      labelText: 'अर्जाचा प्रकार (Form Type) *',
+                      labelText: 'Form Type *',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                       filled: true,
                       fillColor: const Color(0xFFF8FAFC),
                     ),
                     items: const [
-                      DropdownMenuItem(value: 'Form 6', child: Text('फॉर्म ६ - नवीन मतदार नोंदणी (New Registration)')),
-                      DropdownMenuItem(value: 'Form 7', child: Text('फॉर्म ७ - नाव वगळणे (Deletion of Name)')),
-                      DropdownMenuItem(value: 'Form 8', child: Text('फॉर्म ८ - तपशील दुरुस्ती (Update Details)')),
-                      DropdownMenuItem(value: 'Search', child: Text('मतदार यादीत शोध (Roll Search Help)')),
+                      DropdownMenuItem(value: 'Form 6', child: Text('Form 6 - New Registration')),
+                      DropdownMenuItem(value: 'Form 7', child: Text('Form 7 - Deletion of Name')),
+                      DropdownMenuItem(value: 'Form 8', child: Text('Form 8 - Update Details')),
+                      DropdownMenuItem(value: 'Search', child: Text('Roll Search Help')),
                     ],
                     onChanged: (val) {
                       if (val != null) setModalState(() => formType = val);
@@ -261,16 +262,16 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
                   DropdownButtonFormField<String>(
                     initialValue: status,
                     decoration: InputDecoration(
-                      labelText: 'सद्यस्थिती (Status) *',
+                      labelText: 'Status *',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                       filled: true,
                       fillColor: const Color(0xFFF8FAFC),
                     ),
                     items: const [
-                      DropdownMenuItem(value: 'Submitted', child: Text('Submitted (दाखल केला)')),
-                      DropdownMenuItem(value: 'Pending', child: Text('Pending (प्रलंबित)')),
-                      DropdownMenuItem(value: 'Approved', child: Text('Approved (मंजूर)')),
-                      DropdownMenuItem(value: 'Rejected', child: Text('Rejected (नाकारला)')),
+                      DropdownMenuItem(value: 'Submitted', child: Text('Submitted')),
+                      DropdownMenuItem(value: 'Pending', child: Text('Pending')),
+                      DropdownMenuItem(value: 'Approved', child: Text('Approved')),
+                      DropdownMenuItem(value: 'Rejected', child: Text('Rejected')),
                     ],
                     onChanged: (val) {
                       if (val != null) setModalState(() => status = val);
@@ -283,8 +284,8 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
                     controller: notesCtrl,
                     maxLines: 3,
                     decoration: InputDecoration(
-                      labelText: 'नोंदी / शेरा / कागदपत्रे तपशील (Notes)',
-                      hintText: 'उदा. आधार कार्ड जोडले, जन्मदिनांक दुरुस्ती, नवीन पीव्हीसी ओळखपत्र मागणी.',
+                      labelText: 'Notes / Remarks / Documents Attached',
+                      hintText: 'e.g. Aadhaar card attached, DOB correction, PVC card request.',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                       filled: true,
                       fillColor: const Color(0xFFF8FAFC),
@@ -300,7 +301,7 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
                         final name = nameCtrl.text.trim();
                         if (name.isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('कृपया अर्जदाराचे नाव प्रविष्ट करा.')),
+                            const SnackBar(content: Text('Please enter applicant name.')),
                           );
                           return;
                         }
@@ -332,7 +333,7 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
 
                         messenger.showSnackBar(
                           SnackBar(
-                            content: Text(appToEdit == null ? 'अर्ज यशस्वीरीत्या नोंदवला गेला!' : 'अर्ज माहिती अद्ययावत केली!'),
+                            content: Text(appToEdit == null ? 'Application logged successfully!' : 'Application details updated!'),
                             backgroundColor: const Color(0xFF16A34A),
                           ),
                         );
@@ -344,7 +345,7 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                       child: Text(
-                        appToEdit == null ? 'अर्ज नोंदवा (Save Application)' : 'बदल जतन करा (Save Changes)',
+                        appToEdit == null ? 'Save Application' : 'Save Changes',
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                       ),
                     ),
@@ -362,12 +363,12 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('अर्ज हटवा (Delete Application)'),
-        content: Text('तुम्हाला नक्की ${app.applicantName} यांचा ${app.formTypeMarathi} अर्ज हटवायचा आहे का?'),
+        title: const Text('Delete Application'),
+        content: Text('Are you sure you want to delete ${app.formType} application for ${app.applicantName}?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('रद्द करा'),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -378,11 +379,11 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
               if (!mounted) return;
               _loadApplications();
               messenger.showSnackBar(
-                const SnackBar(content: Text('अर्ज यशस्वीरित्या हटवला.')),
+                const SnackBar(content: Text('Application deleted successfully.')),
               );
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-            child: const Text('हटवा'),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -393,63 +394,101 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
+      drawer: const NagarsevakAppDrawer(),
       appBar: AppBar(
-        title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'मतदार नोंदणी अर्ज',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-            ),
-            Text(
-              'मतदार सेवांसाठी अधिकृत निवडणूक आयोग (ECI) अर्ज व ट्रॅकिंग',
-              style: TextStyle(fontSize: 11, color: Colors.white70),
-            ),
-          ],
-        ),
         backgroundColor: const Color(0xFF0284C7),
         foregroundColor: Colors.white,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+            tooltip: 'Open Menu Drawer',
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
+        ),
+        titleSpacing: 0,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Text(
+              'Voter Forms (6, 7, 8)',
+              style: TextStyle(
+                fontSize: 17.5,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: -0.2,
+              ),
+            ),
+            Text(
+              'Voter registration, deletion and correction forms',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFFE0F2FE),
+              ),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.picture_as_pdf_outlined),
-            tooltip: 'पीडीएफ अहवाल (Download PDF)',
+            tooltip: 'Download PDF Report',
             onPressed: () => VoterFormsReportGenerator.generateAndPrintReport(applications: _applications),
           ),
           IconButton(
             icon: const Icon(Icons.refresh),
-            tooltip: 'रिफ्रेश करा',
+            tooltip: 'Refresh',
             onPressed: _loadApplications,
           ),
         ],
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: Colors.white,
-          indicatorWeight: 3,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-          tabs: const [
-            Tab(text: 'मतदार अर्ज व माहिती (ECI Forms)', icon: Icon(Icons.description_outlined, size: 18)),
-            Tab(text: 'अर्जांचा इतिहास (Applications)', icon: Icon(Icons.history_edu_outlined, size: 18)),
-          ],
-        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openAddEditModal(),
         backgroundColor: const Color(0xFF0284C7),
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
-        label: const Text('नवीन अर्ज नोंदवा', style: TextStyle(fontWeight: FontWeight.bold)),
+        label: const Text('Log Application', style: TextStyle(fontWeight: FontWeight.bold)),
       ),
-      body: TabBarView(
-        controller: _tabController,
+      body: Column(
         children: [
-          // Tab 1: Official ECI Forms & Guide
-          _buildOfficialFormsTab(),
-
-          // Tab 2: Applications History & Tracking
-          _buildApplicationsHistoryTab(),
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            alignment: Alignment.centerLeft,
+            child: Container(
+              height: 40,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                indicator: BoxDecoration(
+                  color: const Color(0xFF0284C7),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                labelColor: Colors.white,
+                unselectedLabelColor: const Color(0xFF64748B),
+                labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                dividerColor: Colors.transparent,
+                tabs: const [
+                  Tab(text: 'ECI Forms & Guides', icon: Icon(Icons.description_outlined, size: 18)),
+                  Tab(text: 'Application History', icon: Icon(Icons.history_edu_outlined, size: 18)),
+                ],
+              ),
+            ),
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildOfficialFormsTab(),
+                _buildApplicationsHistoryTab(),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -491,12 +530,12 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'निवडणूक आयोग हेल्पलाईन: १९५०',
+                        'Election Commission Helpline: 1950',
                         style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
                       ),
                       SizedBox(height: 2),
                       Text(
-                        'मतदार नोंदणी व यादीतील नावाबाबत मदतीसाठी टोल-फ्री संपर्क',
+                        'Toll-free helpline for voter registration & roll assistance',
                         style: TextStyle(fontSize: 11, color: Colors.white70),
                       ),
                     ],
@@ -510,7 +549,7 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                  child: const Text('कॉल करा', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  child: const Text('Call', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                 ),
               ],
             ),
@@ -519,12 +558,12 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
           const SizedBox(height: 18),
 
           const Text(
-            'अधिकृत निवडणूक आयोग (ECI) अर्ज',
+            'Official Election Commission (ECI) Forms',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
           ),
           const SizedBox(height: 4),
           const Text(
-            'नागरिकांसाठी नवीन नोंदणी, दुरुस्ती व स्थलांतर सेवांचे अधिकृत फॉर्म्स',
+            'Official forms for new registration, corrections, and constituency transfer',
             style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
           ),
 
@@ -532,77 +571,77 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
 
           // 4 ECI Form Service Cards
           _buildEciFormCard(
-            title: 'मतदार यादीत शोधा (Search in Electoral Roll)',
-            description: 'आपले मतदान केंद्र शोधण्यासाठी अधिकृत मतदार यादीत आपले नाव व भाग क्रमांक शोधा.',
-            requiredDocs: 'वैयक्तिक तपशील, EPIC ओळखपत्र क्रमांक किंवा मोबाईल नंबर',
+            title: 'Search in Electoral Roll',
+            description: 'Search your name and part number in the official voter roll to locate your polling booth.',
+            requiredDocs: 'Personal details, EPIC number, or registered mobile number',
             requirements: [
-              'वैयक्तिक तपशीलांद्वारे शोधा (नाव, वय, लिंग, जिल्हा)',
-              'EPIC ओळखपत्र क्रमांकाद्वारे थेट शोध',
-              'नोंदणीकृत मोबाईल क्रमांकाद्वारे शोध',
+              'Search by personal details (Name, Age, Gender, District)',
+              'Direct search by EPIC number',
+              'Search by registered mobile number',
             ],
             icon: Icons.search_rounded,
             color: const Color(0xFFD97706),
             bgColor: const Color(0xFFFFFBEB),
             borderColor: const Color(0xFFFDE68A),
-            buttonText: 'अधिकृत यादीत शोधा',
+            buttonText: 'Search Official Roll',
             url: 'https://electoralsearch.eci.gov.in',
           ),
 
           const SizedBox(height: 14),
 
           _buildEciFormCard(
-            title: 'नवीन मतदार नोंदणी (फॉर्म ६)',
-            description: 'प्रथमच मतदार होणाऱ्यांसाठी (वय १८ वर्षे पूर्ण) किंवा दुसऱ्या मतदारसंघातून स्थलांतरित झालेल्यांसाठी.',
-            requiredDocs: 'पासपोर्ट आकाराचा फोटो, वयाचा पुरावा, निवासाचा पुरावा',
+            title: 'New Voter Registration (Form 6)',
+            description: 'For first-time voters (completed 18 years of age) or citizens shifted from other constituencies.',
+            requiredDocs: 'Passport size photo, age proof, residence proof',
             requirements: [
-              'पासपोर्ट आकाराचा रंगीत फोटो',
-              'ओळख पुरावा (आधार कार्ड / पॅन कार्ड / ड्रायव्हिंग लायसन्स)',
-              'निवासाचा पुरावा (लाईट बिल / बँक पासबुक / रेशन कार्ड)',
-              'वयाचा पुरावा (जन्म दाखला / १०वी बोर्ड प्रमाणपत्र)',
+              'Recent passport size color photograph',
+              'Identity proof (Aadhaar Card / PAN Card / Driving License)',
+              'Residence proof (Electricity bill / Bank passbook / Ration card)',
+              'Age proof (Birth certificate / 10th marksheet)',
             ],
             icon: Icons.person_add_alt_1_rounded,
             color: const Color(0xFF0284C7),
             bgColor: const Color(0xFFF0F9FF),
             borderColor: const Color(0xFFBAE6FD),
-            buttonText: 'फॉर्म ६ ऑनलाईन भरा',
+            buttonText: 'Fill Form 6 Online',
             url: 'https://voters.eci.gov.in/form6',
           ),
 
           const SizedBox(height: 14),
 
           _buildEciFormCard(
-            title: 'मतदार यादीतून नाव वगळणे (फॉर्म ७)',
-            description: 'मतदार यादीत नाव समाविष्ट करण्यास हरकत घेण्यासाठी किंवा मयत / स्थलांतरित व्यक्तीचे नाव वगळण्यासाठी.',
-            requiredDocs: 'संबंधित मतदाराचा EPIC क्रमांक, वगळण्याचे कारण व पुरावा',
+            title: 'Deletion of Name from Roll (Form 7)',
+            description: 'For objecting to an entry or deleting names of deceased / permanently shifted electors.',
+            requiredDocs: 'EPIC number of elector, reason and supporting document',
             requirements: [
-              'संबंधित मतदाराचा EPIC क्रमांक व यादीतील तपशील',
-              'वगळण्याचे कारण (स्थलांतरित / मयत / दुहेरी नोंदणी)',
-              'मयत व्यक्तीच्या बाबतीत महानगरपालिका मृत्यू दाखला',
+              'EPIC number and roll part details of the elector',
+              'Reason for deletion (Shifted / Deceased / Duplicate entry)',
+              'Municipal death certificate in case of deceased elector',
             ],
             icon: Icons.person_remove_alt_1_rounded,
             color: const Color(0xFFDC2626),
             bgColor: const Color(0xFFFEF2F2),
             borderColor: const Color(0xFFFECACA),
-            buttonText: 'फॉर्म ७ ऑनलाईन भरा',
+            buttonText: 'Fill Form 7 Online',
             url: 'https://voters.eci.gov.in/form7',
           ),
 
           const SizedBox(height: 14),
 
           _buildEciFormCard(
-            title: 'मतदार तपशील अद्ययावत करणे (फॉर्म ८)',
-            description: 'मतदार ओळखपत्रातील नाव, पत्ता, जन्मतारीख दुरुस्ती, किंवा नवीन स्मार्ट पीव्हीसी कार्ड मागणी.',
-            requiredDocs: 'विद्यमान EPIC क्रमांक, दुरुस्तीसाठी संबंधित अधिकृत पुरावा',
+            title: 'Update Voter Details (Form 8)',
+            description: 'For corrections in name, address, DOB, or ordering a replacement Smart PVC voter card.',
+            requiredDocs: 'Existing EPIC number, supporting proof for correction',
             requirements: [
-              'विद्यमान ओळखपत्र क्रमांक (EPIC Number)',
-              'दुरुस्तीचा पुरावा (नाव/पत्ता/जन्मतारीख बदल दस्तऐवज)',
-              'नवीन पत्त्याचा पुरावा (मतदारसंघांतर्गत स्थलांतरासाठी)',
+              'Existing EPIC number',
+              'Proof of correction (Name/Address/DOB change documents)',
+              'New address proof (for shifting within constituency)',
             ],
             icon: Icons.how_to_reg_rounded,
             color: const Color(0xFF059669),
             bgColor: const Color(0xFFECFDF5),
             borderColor: const Color(0xFFA7F3D0),
-            buttonText: 'फॉर्म ८ ऑनलाईन भरा',
+            buttonText: 'Fill Form 8 Online',
             url: 'https://voters.eci.gov.in/form8',
           ),
 
@@ -693,7 +732,7 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'आवश्यक कागदपत्रे: $requiredDocs',
+                          'Required Documents: $requiredDocs',
                           style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
                         ),
                       ),
@@ -767,11 +806,11 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'नोंदवलेले अर्ज: ${_applications.length}',
+                'Logged Applications: ${_applications.length}',
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF475569)),
               ),
               Text(
-                'मंजूर प्रमाण: ${_stats['total'] > 0 ? ((_stats['approved'] / _stats['total']) * 100).round() : 0}%',
+                'Approval Rate: ${_stats['total'] > 0 ? ((_stats['approved'] / _stats['total']) * 100).round() : 0}%',
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF16A34A)),
               ),
             ],
@@ -821,10 +860,10 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
           crossAxisSpacing: 10,
           childAspectRatio: isWide ? 1.7 : 1.45,
           children: [
-            _buildStatCard('एकूण अर्ज', total.toString(), Icons.assignment_outlined, const Color(0xFF4F46E5), const Color(0xFFEEF2FF)),
-            _buildStatCard('मंजूर अर्ज', approved.toString(), Icons.check_circle_outlined, const Color(0xFF10B981), const Color(0xFFECFDF5)),
-            _buildStatCard('प्रलंबित अर्ज', pending.toString(), Icons.hourglass_top_outlined, const Color(0xFFD97706), const Color(0xFFFFFBEB)),
-            _buildStatCard('दाखल अर्ज', submitted.toString(), Icons.send_outlined, const Color(0xFF0284C7), const Color(0xFFF0F9FF)),
+            _buildStatCard('Total Applications', total.toString(), Icons.assignment_outlined, const Color(0xFF4F46E5), const Color(0xFFEEF2FF)),
+            _buildStatCard('Approved', approved.toString(), Icons.check_circle_outlined, const Color(0xFF10B981), const Color(0xFFECFDF5)),
+            _buildStatCard('Pending', pending.toString(), Icons.hourglass_top_outlined, const Color(0xFFD97706), const Color(0xFFFFFBEB)),
+            _buildStatCard('Submitted', submitted.toString(), Icons.send_outlined, const Color(0xFF0284C7), const Color(0xFFF0F9FF)),
           ],
         );
       },
@@ -891,7 +930,7 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
             controller: _searchController,
             onChanged: (val) => _loadApplications(),
             decoration: InputDecoration(
-              hintText: 'अर्जदाराचे नाव, मोबाईल किंवा नोंद शोधा...',
+              hintText: 'Search applicant name, mobile or notes...',
               hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
               prefixIcon: const Icon(Icons.search, size: 20, color: Color(0xFF64748B)),
               suffixIcon: _searchController.text.isNotEmpty
@@ -936,11 +975,11 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
                       isExpanded: true,
                       style: const TextStyle(fontSize: 12, color: Color(0xFF1E293B), fontWeight: FontWeight.w600),
                       items: const [
-                        DropdownMenuItem(value: 'All', child: Text('सर्व स्थिती (All Status)')),
-                        DropdownMenuItem(value: 'Submitted', child: Text('दाखल केला (Submitted)')),
-                        DropdownMenuItem(value: 'Pending', child: Text('प्रलंबित (Pending)')),
-                        DropdownMenuItem(value: 'Approved', child: Text('मंजूर (Approved)')),
-                        DropdownMenuItem(value: 'Rejected', child: Text('नाकारला (Rejected)')),
+                        DropdownMenuItem(value: 'All', child: Text('All Status')),
+                        DropdownMenuItem(value: 'Submitted', child: Text('Submitted')),
+                        DropdownMenuItem(value: 'Pending', child: Text('Pending')),
+                        DropdownMenuItem(value: 'Approved', child: Text('Approved')),
+                        DropdownMenuItem(value: 'Rejected', child: Text('Rejected')),
                       ],
                       onChanged: (val) {
                         if (val != null) {
@@ -969,11 +1008,11 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
                       isExpanded: true,
                       style: const TextStyle(fontSize: 12, color: Color(0xFF1E293B), fontWeight: FontWeight.w600),
                       items: const [
-                        DropdownMenuItem(value: 'All', child: Text('सर्व अर्ज प्रकार (All Forms)')),
-                        DropdownMenuItem(value: 'Form 6', child: Text('फॉर्म ६ (नवीन नोंद)')),
-                        DropdownMenuItem(value: 'Form 7', child: Text('फॉर्म ७ (नाव वगळणे)')),
-                        DropdownMenuItem(value: 'Form 8', child: Text('फॉर्म ८ (दुरुस्ती)')),
-                        DropdownMenuItem(value: 'Search', child: Text('यादीत शोध (Search)')),
+                        DropdownMenuItem(value: 'All', child: Text('All Forms')),
+                        DropdownMenuItem(value: 'Form 6', child: Text('Form 6 (New)')),
+                        DropdownMenuItem(value: 'Form 7', child: Text('Form 7 (Deletion)')),
+                        DropdownMenuItem(value: 'Form 8', child: Text('Form 8 (Update)')),
+                        DropdownMenuItem(value: 'Search', child: Text('Roll Search')),
                       ],
                       onChanged: (val) {
                         if (val != null) {
@@ -1053,7 +1092,7 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
                     icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF64748B)),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
-                    tooltip: 'संपादन',
+                    tooltip: 'Edit',
                     onPressed: () => _openAddEditModal(app),
                   ),
                   const SizedBox(width: 8),
@@ -1061,7 +1100,7 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
                     icon: const Icon(Icons.delete_outline, size: 18, color: Color(0xFFEF4444)),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
-                    tooltip: 'हटवा',
+                    tooltip: 'Delete',
                     onPressed: () => _confirmDeleteApplication(app),
                   ),
                 ],
@@ -1120,7 +1159,7 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
                   child: OutlinedButton.icon(
                     onPressed: () => _makePhoneCall(app.applicantMobile!),
                     icon: const Icon(Icons.phone, size: 13),
-                    label: const Text('कॉल करा', style: TextStyle(fontSize: 11)),
+                    label: const Text('Call', style: TextStyle(fontSize: 11)),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF0284C7),
                       side: const BorderSide(color: Color(0xFFBAE6FD)),
@@ -1133,7 +1172,7 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
                   child: OutlinedButton.icon(
                     onPressed: () => _openWhatsApp(app.applicantMobile!),
                     icon: const Icon(Icons.chat_bubble_outline, size: 13),
-                    label: const Text('व्हॉट्सअ‍ॅप', style: TextStyle(fontSize: 11)),
+                    label: const Text('WhatsApp', style: TextStyle(fontSize: 11)),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF16A34A),
                       side: const BorderSide(color: Color(0xFFBBF7D0)),
@@ -1163,19 +1202,19 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
           const Icon(Icons.history_edu_rounded, size: 48, color: Color(0xFF94A3B8)),
           const SizedBox(height: 12),
           const Text(
-            'कोणताही अर्ज सापडला नाही.',
+            'No applications found.',
             style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
           ),
           const SizedBox(height: 6),
           const Text(
-            'शोध निकष बदला किंवा नवीन अर्ज नोंदवा.',
+            'Change search filters or log a new application.',
             style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
           ),
           const SizedBox(height: 16),
           ElevatedButton.icon(
             onPressed: () => _openAddEditModal(),
             icon: const Icon(Icons.add, size: 18),
-            label: const Text('नवीन अर्ज नोंदवा'),
+            label: const Text('Log Application'),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF0284C7),
               foregroundColor: Colors.white,

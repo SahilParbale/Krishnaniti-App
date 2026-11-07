@@ -82,8 +82,8 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
 
   void _messageOnWhatsApp(TeamMemberModel member) async {
     final msg = Uri.encodeComponent(
-      'सस्नेह नमस्कार ${member.displayName},\n'
-      'प्रभाग क्र. १२ नगरसेवक कार्यालयामार्फत संपर्क करत आहोत.',
+      'Greetings ${member.displayName},\n'
+      'Contacting you from Ward 12 Corporator Office.',
     );
     final url = Uri.parse('https://wa.me/91${member.mobile}?text=$msg');
     try {
@@ -133,11 +133,11 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'माझा कार्यसंघ (My Team) मार्गदर्शक',
+                        'My Team Guide',
                         style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        'कार्यालयीन कर्मचारी व काम वाटप व्यवस्था',
+                        'Staff and Task Allocation System',
                         style: TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                     ],
@@ -148,26 +148,26 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
             const SizedBox(height: 18),
             _buildHelpPoint(
               icon: Icons.business_rounded,
-              title: '१. कार्यालयीन टीम (Office Team)',
-              desc: 'कार्यालय प्रशासक, जनसंपर्क अधिकारी, वाहन चालक, शिपाई व मदतनीस.',
+              title: '1. Office Team',
+              desc: 'Office admin, PR officer, driver, peon, and assistants.',
             ),
             const SizedBox(height: 12),
             _buildHelpPoint(
               icon: Icons.flag_rounded,
-              title: '२. पक्ष व संघटना कार्यकर्ते (Party Workers)',
-              desc: 'युवक आघाडी, महिला आघाडी, सोशल मीडिया सेल व ज्येष्ठ नागरिक सेल पदाधिकारी.',
+              title: '2. Party & Organization Cadre',
+              desc: 'Youth wing, women wing, social media cell, and senior citizens cell functionaries.',
             ),
             const SizedBox(height: 12),
             _buildHelpPoint(
               icon: Icons.handshake_rounded,
-              title: '३. शासकीय व सहकार (Cooperative & Municipal)',
-              desc: 'मनपा ड्रेनेज, पाणीपुरवठा, महावितरण वीज कर्मचारी व सोसायटी चेअरमन प्रतिनिधी.',
+              title: '3. Municipal & Cooperative Staff',
+              desc: 'Municipal drainage, water supply, electricity utility staff, and society chairman representatives.',
             ),
             const SizedBox(height: 12),
             _buildHelpPoint(
               icon: Icons.auto_fix_high_rounded,
-              title: '४. ऑटो-असाईन कीवर्ड नियम (Auto Assignment)',
-              desc: 'नागरिकांच्या तक्रारीतील विषयानुसार (उदा. पाणी, लाईट, कचरा) संबंधित कर्मचाऱ्याकडे तक्रार आपोआप वर्ग होते.',
+              title: '4. Auto Assignment Rules',
+              desc: 'Citizen complaints automatically route to the relevant staff based on topic keywords (water, light, waste, etc.).',
             ),
             const SizedBox(height: 20),
             SizedBox(
@@ -179,7 +179,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 13),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('समजले', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                child: const Text('Got it', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -213,11 +213,11 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     final nameMrCtrl = TextEditingController();
     final mobileCtrl = TextEditingController();
     final roleCtrl = TextEditingController();
-    final areaCtrl = TextEditingController(text: 'शनिवार पेठ');
+    final areaCtrl = TextEditingController(text: 'Shaniwar Peth');
     final keywordsCtrl = TextEditingController();
     final societyCtrl = TextEditingController();
     String category = 'Office';
-    String wing = 'युवक आघाडी';
+    String wing = 'Youth Wing';
 
     final wings = ref.read(teamRepoProvider).getPartyWings();
 
@@ -262,19 +262,19 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                           child: const Icon(Icons.person_add_rounded, color: Color(0xFF0284C7), size: 20),
                         ),
                         const SizedBox(width: 10),
-                        const Text('नवीन टीम सदस्य जोडा (Add Member)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        const Text('Add New Team Member', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                       ],
                     ),
                     const SizedBox(height: 16),
 
                     // Category Toggle Segment
-                    const Text('श्रेणी (Category)*', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                    const Text('Category*', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        {'key': 'Office', 'label': 'ऑफिस टीम'},
-                        {'key': 'Party', 'label': 'पक्ष कार्यकर्ते'},
-                        {'key': 'Cooperative', 'label': 'शासकीय/सहकार'},
+                        {'key': 'Office', 'label': 'Office Team'},
+                        {'key': 'Party', 'label': 'Party Cadre'},
+                        {'key': 'Cooperative', 'label': 'Municipal / Coop'},
                       ].map((c) {
                         final isSel = category == c['key'];
                         return Expanded(
@@ -298,12 +298,12 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                     const SizedBox(height: 12),
 
                     // Name (Marathi)
-                    const Text('पूर्ण नाव (मराठी)*', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                    const Text('Full Name*', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 5),
                     TextField(
                       controller: nameMrCtrl,
                       decoration: InputDecoration(
-                        hintText: 'उदा. रमेश बाळासाहेब कदम',
+                        hintText: 'e.g. Ramesh B. Kadam',
                         hintStyle: TextStyle(fontSize: 12.5, color: Colors.grey.shade400),
                         isDense: true,
                         filled: true,
@@ -314,7 +314,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                     const SizedBox(height: 10),
 
                     // Name (English)
-                    const Text('पूर्ण नाव (English)', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                    const Text('Full Name (English)', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 5),
                     TextField(
                       controller: nameCtrl,
@@ -336,7 +336,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('मोबाईल नंबर*', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                              const Text('Mobile Number*', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
                               const SizedBox(height: 5),
                               TextField(
                                 controller: mobileCtrl,
@@ -359,12 +359,12 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('पद / भूमिका*', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                              const Text('Role / Designation*', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
                               const SizedBox(height: 5),
                               TextField(
                                 controller: roleCtrl,
                                 decoration: InputDecoration(
-                                  hintText: category == 'Office' ? 'कार्यालय प्रशासक' : (category == 'Party' ? 'प्रभाग अध्यक्ष' : 'प्लंबर / वीज कामगार'),
+                                  hintText: category == 'Office' ? 'Office Admin' : (category == 'Party' ? 'Ward President' : 'Plumber / Electrician'),
                                   hintStyle: TextStyle(fontSize: 12.5, color: Colors.grey.shade400),
                                   isDense: true,
                                   filled: true,
@@ -381,7 +381,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
 
                     // Conditional: Wing for Party or Society for Cooperative
                     if (category == 'Party') ...[
-                      const Text('पक्ष आघाडी / कक्ष (Wing)', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                      const Text('Party Wing / Cell', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 5),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -403,12 +403,12 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                       ),
                       const SizedBox(height: 10),
                     ] else if (category == 'Cooperative') ...[
-                      const Text('सोसायटी किंवा शासकीय कार्यालय नाव', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                      const Text('Society or Govt Office Name', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 5),
                       TextField(
                         controller: societyCtrl,
                         decoration: InputDecoration(
-                          hintText: 'उदा. शनिवार पेठ फेडरेशन किंवा मनपा ड्रेनेज शाखा',
+                          hintText: 'e.g. Shaniwar Peth Federation or Municipal Drainage Dept',
                           hintStyle: TextStyle(fontSize: 12.5, color: Colors.grey.shade400),
                           isDense: true,
                           filled: true,
@@ -426,12 +426,12 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('कार्यक्षेत्र (Area)', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                              const Text('Work Area', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
                               const SizedBox(height: 5),
                               TextField(
                                 controller: areaCtrl,
                                 decoration: InputDecoration(
-                                  hintText: 'उदा. शनिवार पेठ',
+                                  hintText: 'e.g. Shaniwar Peth',
                                   hintStyle: TextStyle(fontSize: 12.5, color: Colors.grey.shade400),
                                   isDense: true,
                                   filled: true,
@@ -447,12 +447,12 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('ऑटो-कीवर्ड (अल्पविरामाने)', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                              const Text('Auto Keywords (comma separated)', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
                               const SizedBox(height: 5),
                               TextField(
                                 controller: keywordsCtrl,
                                 decoration: InputDecoration(
-                                  hintText: 'उदा. पाणी, ड्रेनेज, लाईट',
+                                  hintText: 'e.g. water, drainage, electricity',
                                   hintStyle: TextStyle(fontSize: 12.5, color: Colors.grey.shade400),
                                   isDense: true,
                                   filled: true,
@@ -484,7 +484,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                             mobile: mobileCtrl.text.trim(),
                             role: roleCtrl.text.trim().isNotEmpty ? roleCtrl.text.trim() : 'Staff',
                             category: category,
-                            area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : 'प्रभाग १२',
+                            area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : 'Ward 12',
                             partyWing: category == 'Party' ? wing : null,
                             societyName: category == 'Cooperative' ? societyCtrl.text.trim() : null,
                             keywords: kw,
@@ -498,7 +498,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                           _loadTeam();
 
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('नवीन सदस्य यशस्वीरीत्या जोडला गेला!'), backgroundColor: Color(0xFF16A34A)),
+                            const SnackBar(content: Text('New member added successfully!'), backgroundColor: Color(0xFF16A34A)),
                           );
                         },
                         style: ElevatedButton.styleFrom(
@@ -506,7 +506,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
-                        child: const Text('सदस्य जतन करा (Save Member)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        child: const Text('Save Member', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                       ),
                     ),
                   ],
@@ -534,41 +534,55 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF0284C7),
         elevation: 0,
-        titleSpacing: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-          onPressed: () => Navigator.maybePop(context),
+        scrolledUnderElevation: 0,
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+            tooltip: 'Open Menu Drawer',
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
         ),
+        titleSpacing: 0,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: const [
             Text(
-              'माझा कार्यसंघ (My Team)',
-              style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
+              'My Team & Staff',
+              style: TextStyle(
+                fontSize: 17.5,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: -0.2,
+              ),
             ),
             Text(
-              'कार्यालयीन कर्मचारी, कार्यकर्ते व काम वाटप व्यवस्था',
-              style: TextStyle(color: Colors.white70, fontSize: 11),
+              'Office executive staff, ward personal assistants and coordinators',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFFE0F2FE),
+              ),
             ),
           ],
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.picture_as_pdf_rounded, color: Colors.white),
-            tooltip: 'टीम अहवाल डाउनलोड करा',
+            tooltip: 'Download Team Report',
             onPressed: () => TeamReportGenerator.generateAndPrintReport(
               staffList: filtered,
-              activeCategory: _selectedCategory == 'All' ? 'सर्व टीम' : _selectedCategory,
+              activeCategory: _selectedCategory == 'All' ? 'All Team' : _selectedCategory,
             ),
           ),
           IconButton(
             icon: const Icon(Icons.help_outline_rounded, color: Colors.white),
-            tooltip: 'मदत व माहिती',
+            tooltip: 'Help Guide',
             onPressed: _showHelpGuide,
           ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-            tooltip: 'रिफ्रेश',
+            tooltip: 'Refresh',
             onPressed: _loadTeam,
           ),
         ],
@@ -608,7 +622,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: const Color(0xFF0284C7),
         icon: const Icon(Icons.person_add_rounded, color: Colors.white),
-        label: const Text('नवीन सदस्य', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        label: const Text('New Member', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         onPressed: _showAddMemberModal,
       ),
     );
@@ -619,9 +633,9 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
       children: [
         Expanded(
           child: _buildKpiCard(
-            title: 'एकूण सदस्य',
+            title: 'Total Members',
             value: '$total',
-            subtitle: 'माझा कार्यसंघ',
+            subtitle: 'My Team',
             icon: Icons.groups_rounded,
             color: const Color(0xFF0284C7),
             bg: const Color(0xFFE0F2FE),
@@ -630,9 +644,9 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
         const SizedBox(width: 8),
         Expanded(
           child: _buildKpiCard(
-            title: 'ऑफिस टीम',
+            title: 'Office Team',
             value: '$office',
-            subtitle: 'कार्यालयीन कर्मचारी',
+            subtitle: 'Office Staff',
             icon: Icons.business_rounded,
             color: const Color(0xFF0284C7),
             bg: const Color(0xFFE0F2FE),
@@ -641,9 +655,9 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
         const SizedBox(width: 8),
         Expanded(
           child: _buildKpiCard(
-            title: 'पक्ष कार्यकर्ते',
+            title: 'Party Cadre',
             value: '$party',
-            subtitle: 'आघाड्या व कक्ष',
+            subtitle: 'Wings & Cells',
             icon: Icons.flag_rounded,
             color: const Color(0xFFD97706),
             bg: const Color(0xFFFEF3C7),
@@ -652,9 +666,9 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
         const SizedBox(width: 8),
         Expanded(
           child: _buildKpiCard(
-            title: 'शासकीय/सहकार',
+            title: 'Municipal / Coop',
             value: '$coop',
-            subtitle: 'मनपा व संस्था',
+            subtitle: 'Municipal & Orgs',
             icon: Icons.handshake_rounded,
             color: const Color(0xFF7C3AED),
             bg: const Color(0xFFEDE9FE),
@@ -723,7 +737,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
         controller: _searchCtrl,
         onChanged: (_) => setState(() {}),
         decoration: InputDecoration(
-          hintText: 'नाव, पद, आघाडी, परिसर किंवा कीवर्ड शोधा...',
+          hintText: 'Search name, role, wing, area, or keyword...',
           hintStyle: TextStyle(fontSize: 12.5, color: Colors.grey.shade400),
           prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF0284C7), size: 20),
           suffixIcon: _searchCtrl.text.isNotEmpty
@@ -745,10 +759,10 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
 
   Widget _buildCategoryTabsBar(int resultCount) {
     final categories = [
-      {'key': 'All', 'label': 'सर्व टीम'},
-      {'key': 'Office', 'label': 'कार्यालयीन (Office)'},
-      {'key': 'Party', 'label': 'पक्ष कार्यकर्ते (Party)'},
-      {'key': 'Cooperative', 'label': 'शासकीय/सहकार'},
+      {'key': 'All', 'label': 'All Team'},
+      {'key': 'Office', 'label': 'Office Team'},
+      {'key': 'Party', 'label': 'Party Cadre'},
+      {'key': 'Cooperative', 'label': 'Municipal / Coop'},
     ];
 
     return Row(
@@ -795,7 +809,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
             children: [
               IconButton(
                 icon: Icon(Icons.grid_view_rounded, size: 17, color: _viewMode == 'cards' ? const Color(0xFF0284C7) : Colors.grey),
-                tooltip: 'कार्ड दृश्य',
+                tooltip: 'Card View',
                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 padding: EdgeInsets.zero,
                 onPressed: () => setState(() => _viewMode = 'cards'),
@@ -803,7 +817,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
               Container(width: 1, height: 18, color: Colors.grey.shade200),
               IconButton(
                 icon: Icon(Icons.table_rows_rounded, size: 17, color: _viewMode == 'table' ? const Color(0xFF0284C7) : Colors.grey),
-                tooltip: 'तक्ता दृश्य',
+                tooltip: 'Table View',
                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 padding: EdgeInsets.zero,
                 onPressed: () => setState(() => _viewMode = 'table'),
@@ -954,7 +968,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                 children: [
                   Icon(Icons.location_on_outlined, size: 13, color: Colors.grey.shade500),
                   const SizedBox(width: 4),
-                  Text(member.area ?? 'प्रभाग १२', style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600)),
+                  Text(member.area ?? 'Ward 12', style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600)),
                   const SizedBox(width: 8),
                   Text('•', style: TextStyle(color: Colors.grey.shade400)),
                   const SizedBox(width: 8),
@@ -996,7 +1010,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                 children: [
                   OutlinedButton.icon(
                     icon: const Icon(Icons.assignment_add, size: 14, color: Color(0xFF0284C7)),
-                    label: const Text('काम सोपवा', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
+                    label: const Text('Assign Task', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       side: const BorderSide(color: Color(0xFFBAE6FD)),
@@ -1012,7 +1026,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                   const SizedBox(width: 6),
                   ElevatedButton.icon(
                     icon: const Icon(Icons.send_rounded, size: 13, color: Colors.white),
-                    label: const Text('व्हॉट्सॲप', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
+                    label: const Text('WhatsApp', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF25D366),
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -1024,7 +1038,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                   const SizedBox(width: 6),
                   IconButton(
                     icon: const Icon(Icons.phone, size: 18, color: Color(0xFF0284C7)),
-                    tooltip: 'कॉल करा',
+                    tooltip: 'Call',
                     onPressed: () => _callMember(member.mobile),
                   ),
                 ],
@@ -1051,13 +1065,13 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
             headingRowColor: WidgetStateProperty.all(const Color(0xFFF1F5F9)),
             columns: const [
               DataColumn(label: Text('#', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('नाव', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('भूमिका / पद', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('श्रेणी', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('आघाडी / संस्था', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('कार्यक्षेत्र', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('मोबाईल', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('कृती', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Name', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Role / Designation', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Category', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Wing / Organization', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Work Area', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Mobile', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Action', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
             ],
             rows: list.asMap().entries.map((entry) {
               final idx = entry.key;
@@ -1110,7 +1124,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                     ),
                   ),
                   DataCell(Text(sub, style: const TextStyle(fontSize: 11))),
-                  DataCell(Text(m.area ?? 'प्रभाग १२', style: const TextStyle(fontSize: 11))),
+                  DataCell(Text(m.area ?? 'Ward 12', style: const TextStyle(fontSize: 11))),
                   DataCell(Text('+91 ${m.mobile}', style: const TextStyle(fontSize: 11))),
                   DataCell(
                     Row(
@@ -1149,19 +1163,19 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
           Icon(Icons.groups_outlined, size: 54, color: Colors.grey.shade300),
           const SizedBox(height: 12),
           const Text(
-            'कोणताही सदस्य आढळला नाही',
+            'No team members found',
             style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
           ),
           const SizedBox(height: 6),
           Text(
-            'शोध शब्द तपासून पहा किंवा नवीन सदस्य जोडा.',
+            'Check your search terms or add a new team member.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 12.5, color: Colors.grey.shade500),
           ),
           const SizedBox(height: 14),
           ElevatedButton.icon(
             icon: const Icon(Icons.add, size: 16, color: Colors.white),
-            label: const Text('नवीन सदस्य जोडा', style: TextStyle(color: Colors.white)),
+            label: const Text('Add New Member', style: TextStyle(color: Colors.white)),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF0284C7),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

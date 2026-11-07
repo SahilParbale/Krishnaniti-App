@@ -85,7 +85,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
   void _copyToClipboard(String text) {
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('मोबाईल क्रमांक कॉपी केला!'), duration: Duration(seconds: 2)),
+      const SnackBar(content: Text('Mobile number copied!'), duration: Duration(seconds: 2)),
     );
   }
 
@@ -182,7 +182,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                     const Icon(Icons.apartment_rounded, color: Color(0xFF0284C7), size: 24),
                     const SizedBox(width: 10),
                     Text(
-                      orgToEdit == null ? 'नवीन मंडळ / संस्था नोंदवा' : 'माहिती संपादित करा',
+                      orgToEdit == null ? 'Register New Organization / Mandal' : 'Edit Organization Details',
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                     ),
                   ],
@@ -193,8 +193,8 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                 TextField(
                   controller: nameMrCtrl,
                   decoration: InputDecoration(
-                    labelText: 'संस्थेचे नाव (मराठी) *',
-                    hintText: 'उदा. बाल गणेश तरुण मंडळ',
+                    labelText: 'Organization Name *',
+                    hintText: 'e.g. Bal Ganesh Tarun Mandal',
                     filled: true,
                     fillColor: const Color(0xFFF8FAFC),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -206,7 +206,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                 TextField(
                   controller: nameEnCtrl,
                   decoration: InputDecoration(
-                    labelText: 'संस्थेचे नाव (English)',
+                    labelText: 'Alternate Name (English)',
                     hintText: 'Bal Ganesh Tarun Mandal',
                     filled: true,
                     fillColor: const Color(0xFFF8FAFC),
@@ -219,17 +219,17 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                 DropdownButtonFormField<String>(
                   initialValue: type,
                   decoration: InputDecoration(
-                    labelText: 'संस्थेचा प्रकार *',
+                    labelText: 'Organization Type *',
                     filled: true,
                     fillColor: const Color(0xFFF8FAFC),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                   items: const [
-                    DropdownMenuItem(value: 'ganpati_mandal', child: Text('गणपती मंडळ')),
-                    DropdownMenuItem(value: 'navratri_mandal', child: Text('नवरात्रौत्सव मंडळ')),
-                    DropdownMenuItem(value: 'sports_cricket', child: Text('क्रीडा व क्रिकेट क्लब')),
-                    DropdownMenuItem(value: 'ngo', child: Text('एन.जी.ओ / सामाजिक संस्था')),
-                    DropdownMenuItem(value: 'other', child: Text('इतर संस्था व मंडळ')),
+                    DropdownMenuItem(value: 'ganpati_mandal', child: Text('Ganesh Mandal')),
+                    DropdownMenuItem(value: 'navratri_mandal', child: Text('Navratri Mandal')),
+                    DropdownMenuItem(value: 'sports_cricket', child: Text('Sports & Cricket Club')),
+                    DropdownMenuItem(value: 'ngo', child: Text('NGO / Trust')),
+                    DropdownMenuItem(value: 'other', child: Text('Other Mandals')),
                   ],
                   onChanged: (val) {
                     if (val != null) setModalState(() => type = val);
@@ -245,8 +245,8 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                       child: TextField(
                         controller: presNameCtrl,
                         decoration: InputDecoration(
-                          labelText: 'अध्यक्ष नाव *',
-                          hintText: 'उदा. गणेश जाधव',
+                          labelText: 'President Name *',
+                          hintText: 'e.g. Ganesh Jadhav',
                           filled: true,
                           fillColor: const Color(0xFFF8FAFC),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -260,7 +260,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                         controller: presPhoneCtrl,
                         keyboardType: TextInputType.phone,
                         decoration: InputDecoration(
-                          labelText: 'मोबाईल *',
+                          labelText: 'Mobile *',
                           hintText: '98221xxxxx',
                           filled: true,
                           fillColor: const Color(0xFFF8FAFC),
@@ -280,7 +280,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                         controller: membersCtrl,
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
-                          labelText: 'सदस्य संख्या',
+                          labelText: 'Total Members',
                           hintText: '50',
                           filled: true,
                           fillColor: const Color(0xFFF8FAFC),
@@ -294,7 +294,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                         controller: estCtrl,
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
-                          labelText: 'स्थापना वर्ष',
+                          labelText: 'Established Year',
                           hintText: '2015',
                           filled: true,
                           fillColor: const Color(0xFFF8FAFC),
@@ -310,8 +310,8 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                 TextField(
                   controller: areaCtrl,
                   decoration: InputDecoration(
-                    labelText: 'परिसर / कार्यक्षेत्र *',
-                    hintText: 'उदा. सेक्टर ३, मुख्य चौक',
+                    labelText: 'Area / Vicinity *',
+                    hintText: 'e.g. Sector 3, Main Chowk',
                     filled: true,
                     fillColor: const Color(0xFFF8FAFC),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -324,8 +324,8 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                   controller: supportCtrl,
                   maxLines: 2,
                   decoration: InputDecoration(
-                    labelText: 'नगरसेवक मदत / प्रायोजकत्व इतिहास',
-                    hintText: 'उदा. मंडप उभारणी, ध्वनीक्षेपक परवाना व चषक प्रायोजकत्व...',
+                    labelText: 'Corporator Support & Sponsorship History',
+                    hintText: 'e.g. Stage setup, sound permissions, trophy sponsorship...',
                     filled: true,
                     fillColor: const Color(0xFFF5F3FF),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -338,8 +338,8 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                   controller: descCtrl,
                   maxLines: 2,
                   decoration: InputDecoration(
-                    labelText: 'संस्थेचा थोडक्यात परिचय व उद्दिष्टे',
-                    hintText: 'सामाजिक उपक्रम आणि प्रभागातील सहभागाविषयी माहिती...',
+                    labelText: 'About Organization & Objectives',
+                    hintText: 'Social initiatives, community outreach & contributions...',
                     filled: true,
                     fillColor: const Color(0xFFF8FAFC),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -351,14 +351,14 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                 DropdownButtonFormField<String>(
                   initialValue: status,
                   decoration: InputDecoration(
-                    labelText: 'स्थिती (Status)',
+                    labelText: 'Status',
                     filled: true,
                     fillColor: const Color(0xFFF8FAFC),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                   items: const [
-                    DropdownMenuItem(value: 'Active', child: Text('Active (सक्रिय)')),
-                    DropdownMenuItem(value: 'Inactive', child: Text('Inactive (निष्क्रिय)')),
+                    DropdownMenuItem(value: 'Active', child: Text('Active')),
+                    DropdownMenuItem(value: 'Inactive', child: Text('Inactive')),
                   ],
                   onChanged: (val) {
                     if (val != null) setModalState(() => status = val);
@@ -374,7 +374,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                       final name = nameMrCtrl.text.trim().isNotEmpty ? nameMrCtrl.text.trim() : nameEnCtrl.text.trim();
                       if (name.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('कृपया संस्थेचे नाव प्रविष्ट करा.')),
+                          const SnackBar(content: Text('Please enter organization name.')),
                         );
                         return;
                       }
@@ -412,7 +412,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
 
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(orgToEdit == null ? 'नवीन मंडळ यशस्वीरीत्या नोंदवले गेले!' : 'माहिती अद्ययावत केली!'),
+                          content: Text(orgToEdit == null ? 'Organization registered successfully!' : 'Details updated!'),
                           backgroundColor: const Color(0xFF16A34A),
                         ),
                       );
@@ -424,7 +424,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                     child: Text(
-                      orgToEdit == null ? 'मंडळ जोडा' : 'बदल जतन करा',
+                      orgToEdit == null ? 'Add Organization' : 'Save Changes',
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                     ),
                   ),
@@ -444,12 +444,12 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('मंडळ / संस्था हटवायची?'),
-        content: Text('आपण नक्की "${org.displayName}" चे रेकॉर्ड हटवू इच्छिता? ही कृती पूर्ववत केली जाऊ शकत नाही.'),
+        title: const Text('Delete Organization?'),
+        content: Text('Are you sure you want to delete record for "${org.displayName}"? This action cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('रद्द करा'),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -459,12 +459,12 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
               _loadOrganizations();
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('रेकॉर्ड यशस्वीरित्या हटवला गेला!'), backgroundColor: Color(0xFFDC2626)),
+                  const SnackBar(content: Text('Record deleted successfully!'), backgroundColor: Color(0xFFDC2626)),
                 );
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626), foregroundColor: Colors.white),
-            child: const Text('हटवा'),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -477,26 +477,45 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
       backgroundColor: const Color(0xFFF8FAFC),
       drawer: const NagarsevakAppDrawer(),
       appBar: AppBar(
-        title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'एन.जी.ओ. व मंडळ माहिती',
-              style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w800, color: Colors.white),
-            ),
-            Text(
-              'NGOs, Clubs & Mandals Registry',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFFE0F2FE)),
-            ),
-          ],
-        ),
         backgroundColor: const Color(0xFF0284C7),
         foregroundColor: Colors.white,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+            tooltip: 'Open Menu Drawer',
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
+        ),
+        titleSpacing: 0,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Text(
+              'Social Organizations & Mandals',
+              style: TextStyle(
+                fontSize: 17.5,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: -0.2,
+              ),
+            ),
+            Text(
+              'Youth mandals, festival committees and registered NGOs',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFFE0F2FE),
+              ),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.picture_as_pdf_outlined, color: Colors.white),
-            tooltip: 'पीडीएफ अहवाल तयार करा',
+            tooltip: 'Download PDF Report',
             onPressed: () {
               SocialOrgReportGenerator.generateAndPrintReport(
                 organizations: _organizations,
@@ -505,7 +524,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
           ),
           IconButton(
             icon: const Icon(Icons.add_circle_outline_rounded, color: Colors.white),
-            tooltip: 'नवीन मंडळ जोडा',
+            tooltip: 'Add New Organization',
             onPressed: () => _showOrgForm(),
           ),
         ],
@@ -525,7 +544,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                 children: [
                   Expanded(
                     child: _buildKpiCard(
-                      title: 'एकूण नोंदणीकृत',
+                      title: 'Total Registered',
                       value: _stats['total']?.toString() ?? '0',
                       icon: Icons.layers_rounded,
                       color: const Color(0xFF0284C7),
@@ -535,7 +554,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildKpiCard(
-                      title: 'एनजीओ',
+                      title: 'NGOs',
                       value: _stats['ngos']?.toString() ?? '0',
                       icon: Icons.apartment_rounded,
                       color: const Color(0xFF4338CA),
@@ -545,7 +564,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildKpiCard(
-                      title: 'क्रीडा क्लब',
+                      title: 'Sports Clubs',
                       value: _stats['sports']?.toString() ?? '0',
                       icon: Icons.sports_cricket_rounded,
                       color: const Color(0xFF059669),
@@ -555,7 +574,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildKpiCard(
-                      title: 'उत्सव मंडळे',
+                      title: 'Festival Mandals',
                       value: _stats['mandals']?.toString() ?? '0',
                       icon: Icons.auto_awesome_rounded,
                       color: const Color(0xFFD97706),
@@ -583,7 +602,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                         controller: _searchController,
                         onChanged: (_) => _loadOrganizations(),
                         decoration: InputDecoration(
-                          hintText: 'नाव, अध्यक्ष किंवा परिसर याद्वारे शोधा...',
+                          hintText: 'Search by name, president, or area...',
                           hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
                           prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Color(0xFF0284C7)),
                           suffixIcon: _searchController.text.isNotEmpty
@@ -616,12 +635,12 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                         IconButton(
                           icon: Icon(Icons.grid_view_rounded, size: 20, color: _viewMode == 0 ? const Color(0xFF0284C7) : const Color(0xFF94A3B8)),
                           onPressed: () => setState(() => _viewMode = 0),
-                          tooltip: 'कार्ड व्ह्यू',
+                          tooltip: 'Card View',
                         ),
                         IconButton(
                           icon: Icon(Icons.table_rows_rounded, size: 20, color: _viewMode == 1 ? const Color(0xFF0284C7) : const Color(0xFF94A3B8)),
                           onPressed: () => setState(() => _viewMode = 1),
-                          tooltip: 'तक्ता व्ह्यू',
+                          tooltip: 'Table View',
                         ),
                       ],
                     ),
@@ -638,27 +657,27 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    _buildFilterChip('सर्व प्रकार (${_stats['total']})', 'all', _selectedType, (val) {
+                    _buildFilterChip('All Types (${_stats['total']})', 'all', _selectedType, (val) {
                       setState(() => _selectedType = val);
                       _loadOrganizations();
                     }),
                     const SizedBox(width: 6),
-                    _buildFilterChip('गणेश मंडळ', 'ganpati_mandal', _selectedType, (val) {
+                    _buildFilterChip('Ganesh Mandals', 'ganpati_mandal', _selectedType, (val) {
                       setState(() => _selectedType = val);
                       _loadOrganizations();
                     }),
                     const SizedBox(width: 6),
-                    _buildFilterChip('नवरात्रौत्सव', 'navratri_mandal', _selectedType, (val) {
+                    _buildFilterChip('Navratri Mandals', 'navratri_mandal', _selectedType, (val) {
                       setState(() => _selectedType = val);
                       _loadOrganizations();
                     }),
                     const SizedBox(width: 6),
-                    _buildFilterChip('क्रीडा व क्रिकेट', 'sports_cricket', _selectedType, (val) {
+                    _buildFilterChip('Sports Clubs', 'sports_cricket', _selectedType, (val) {
                       setState(() => _selectedType = val);
                       _loadOrganizations();
                     }),
                     const SizedBox(width: 6),
-                    _buildFilterChip('एन.जी.ओ / सामाजिक', 'ngo', _selectedType, (val) {
+                    _buildFilterChip('NGOs & Trusts', 'ngo', _selectedType, (val) {
                       setState(() => _selectedType = val);
                       _loadOrganizations();
                     }),
@@ -692,19 +711,19 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                       const Icon(Icons.apartment_outlined, size: 48, color: Color(0xFF94A3B8)),
                       const SizedBox(height: 12),
                       const Text(
-                        'कोणतेही मंडळ किंवा संस्था आढळली नाही.',
+                        'No organizations or mandals found.',
                         style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                       ),
                       const SizedBox(height: 4),
                       const Text(
-                        'नवीन नोंदणी करण्यासाठी वरील "+ नवीन जोडा" बटण वापरा.',
+                        'Use the "+ Add Organization" button above to register.',
                         style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                       ),
                       const SizedBox(height: 16),
                       ElevatedButton.icon(
                         onPressed: () => _showOrgForm(),
                         icon: const Icon(Icons.add, size: 16),
-                        label: const Text('मंडळ नोंदवा'),
+                        label: const Text('Register Organization'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF0284C7),
                           foregroundColor: Colors.white,
@@ -875,7 +894,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                               ),
                             ),
                             child: Text(
-                              org.status == 'Active' ? 'सक्रिय' : 'निष्क्रिय',
+                              org.status == 'Active' ? 'Active' : 'Inactive',
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
@@ -890,7 +909,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
-                              '${org.membersCount} सदस्य',
+                              '${org.membersCount} Members',
                               style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
                             ),
                           ),
@@ -902,7 +921,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
-                                'स्थापना: ${org.establishedYear}',
+                                'Est: ${org.establishedYear}',
                                 style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
                               ),
                             ),
@@ -929,7 +948,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                         children: [
                           Icon(Icons.edit_outlined, size: 16, color: Color(0xFF0284C7)),
                           SizedBox(width: 8),
-                          Text('संपादित करा'),
+                          Text('Edit'),
                         ],
                       ),
                     ),
@@ -939,7 +958,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                         children: [
                           Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFDC2626)),
                           SizedBox(width: 8),
-                          Text('हटवा', style: TextStyle(color: Color(0xFFDC2626))),
+                          Text('Delete', style: TextStyle(color: Color(0xFFDC2626))),
                         ],
                       ),
                     ),
@@ -980,7 +999,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                         children: [
                           Icon(Icons.phone, size: 12, color: Color(0xFF0284C7)),
                           SizedBox(width: 4),
-                          Text('कॉल', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
+                          Text('Call', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
                         ],
                       ),
                     ),
@@ -1073,7 +1092,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                           const Icon(Icons.event_note_rounded, size: 14, color: Color(0xFF0284C7)),
                           const SizedBox(width: 6),
                           Text(
-                            'प्रमुख उपक्रम / उत्सव (${org.eventsConducted.length})',
+                            'Key Events / Festivals (${org.eventsConducted.length})',
                             style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                           ),
                         ],
@@ -1139,7 +1158,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'सविस्तर प्रोफाइल पहा',
+                    'View Detailed Profile',
                     style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                   ),
                   Icon(Icons.chevron_right_rounded, size: 16, color: Color(0xFF0284C7)),
@@ -1170,17 +1189,17 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
             headingRowColor: WidgetStateProperty.all(const Color(0xFFF1F5F9)),
             columns: const [
               DataColumn(label: Text('#', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('संस्थेचे नाव', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('प्रकार', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('अध्यक्ष', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('मोबाईल', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('कार्यक्षेत्र / परिसर', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('सदस्य', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('स्थापना', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('मदत इतिहास', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('उपक्रम', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('स्थिती', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('कृती', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Organization Name', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Type', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('President', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Mobile', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Area / Vicinity', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Members', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Established', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Support History', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Activities', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Action', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
             ],
             rows: List.generate(_organizations.length, (index) {
               final o = _organizations[index];
@@ -1217,7 +1236,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                   DataCell(Text(o.eventsConducted.length.toString(), style: const TextStyle(fontSize: 11))),
                   DataCell(
                     Text(
-                      o.status == 'Active' ? 'सक्रिय' : 'निष्क्रिय',
+                      o.status == 'Active' ? 'Active' : 'Inactive',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,

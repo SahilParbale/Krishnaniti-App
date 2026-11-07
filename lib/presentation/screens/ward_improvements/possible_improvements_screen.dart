@@ -410,25 +410,19 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
           scrolledUnderElevation: 0,
           leading: Builder(
             builder: (ctx) => IconButton(
-              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 24),
-              tooltip: 'Back',
-              onPressed: () {
-                if (Navigator.canPop(context)) {
-                  Navigator.pop(context);
-                } else {
-                  Scaffold.of(ctx).openDrawer();
-                }
-              },
+              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+              tooltip: 'Open Menu Drawer',
+              onPressed: () => Scaffold.of(ctx).openDrawer(),
             ),
           ),
           titleSpacing: 0,
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
-            children: [
+            children: const [
               Text(
-                isMr ? 'संभाव्य सुधारणा (Possible Improvements)' : 'Possible Improvements',
-                style: const TextStyle(
+                'Possible Improvements',
+                style: TextStyle(
                   fontSize: 17.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
@@ -436,11 +430,11 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                 ),
               ),
               Text(
-                isMr ? 'भविष्यातील विकास कामे सुचवा आणि ट्रॅक करा' : 'Propose and track future development works',
+                'Propose and track future development works',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w400,
-                  color: Colors.white.withValues(alpha: 0.85),
+                  color: Color(0xFFE0F2FE),
                 ),
               ),
             ],

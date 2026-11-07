@@ -295,25 +295,19 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
           scrolledUnderElevation: 0,
           leading: Builder(
             builder: (ctx) => IconButton(
-              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 24),
-              tooltip: 'Back',
-              onPressed: () {
-                if (Navigator.canPop(context)) {
-                  Navigator.pop(context);
-                } else {
-                  Scaffold.of(ctx).openDrawer();
-                }
-              },
+              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+              tooltip: 'Open Menu Drawer',
+              onPressed: () => Scaffold.of(ctx).openDrawer(),
             ),
           ),
           titleSpacing: 0,
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
-            children: [
+            children: const [
               Text(
-                isMr ? 'प्रभाग नकाशा (Ward Map)' : 'Ward Map',
-                style: const TextStyle(
+                'Ward Map',
+                style: TextStyle(
                   fontSize: 17.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
@@ -321,11 +315,11 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
                 ),
               ),
               Text(
-                isMr ? 'भौगोलिक सीमा, मतदान केंद्र व विकासकामे' : 'Geographic boundaries, booths & civil works',
+                'Geographic boundaries, booths & civil works',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w400,
-                  color: Colors.white.withValues(alpha: 0.85),
+                  color: Color(0xFFE0F2FE),
                 ),
               ),
             ],

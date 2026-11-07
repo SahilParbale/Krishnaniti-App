@@ -99,7 +99,7 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
   void _callVoter(String? mobile) async {
     if (mobile == null || mobile.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('या मतदाराचा मोबाईल नंबर उपलब्ध नाही')),
+        const SnackBar(content: Text('Mobile number not available for this voter')),
       );
       return;
     }
@@ -112,16 +112,16 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
   void _shareSlipOnWhatsApp(VoterModel voter) async {
     final mobile = voter.mobile != null ? voter.mobile!.replaceAll(RegExp(r'\D'), '') : '';
     final msg = Uri.encodeComponent(
-      'सस्नेह नमस्कार ${voter.displayName},\n\n'
-      'आपली प्रभाग क्र. १२ ची अधिकृत मतदार स्लिप खालीलप्रमाणे आहे:\n\n'
-      '*मतदार नाव:* ${voter.displayName}\n'
-      '*EPIC क्र.:* ${voter.epicNo}\n'
-      '*यादी भाग क्र. / बूथ:* ${voter.booth}\n'
-      '*मतदार यादीतील अ. क्र.:* #${voter.serialNo ?? "-"}\n'
-      '*मतदान केंद्र:* ${voter.displayPollingStation}\n'
-      '*पत्ता:* ${voter.address}\n\n'
-      'कृपया मतदानाच्या दिवशी सोबत ओळखपत्र (EPIC किंवा आधार कार्ड) बाळगावे.\n\n'
-      '- कार्यालय, प्रभाग १२ नगरसेवक',
+      'Greetings ${voter.displayName},\n\n'
+      'Your official Ward 12 voter slip details:\n\n'
+      '*Voter Name:* ${voter.displayName}\n'
+      '*EPIC No:* ${voter.epicNo}\n'
+      '*Booth / Part No:* ${voter.booth}\n'
+      '*Serial No in Roll:* #${voter.serialNo ?? "-"}\n'
+      '*Polling Station:* ${voter.displayPollingStation}\n'
+      '*Address:* ${voter.address}\n\n'
+      'Please carry an identity card (EPIC or Aadhaar Card) on voting day.\n\n'
+      '- Office of Corporator, Ward 12',
     );
 
     Uri url;
@@ -178,11 +178,11 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'मतदार शोध व व्यवस्थापन (Voter Search)',
+                        'Voter Search & Management',
                         style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        'प्रभाग १२ ची डिजिटल मतदार यादी कार्यपद्धती',
+                        'Ward 12 Digital Electoral Roll System',
                         style: TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                     ],
@@ -193,30 +193,30 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
             const SizedBox(height: 18),
             _buildHelpPoint(
               icon: Icons.search_rounded,
-              title: 'बहुपर्यायी शोध (Instant Multi-search)',
+              title: 'Instant Multi-Search',
               desc:
-                  'नाव (मराठी किंवा इंग्रजी), EPIC क्रमांक, पत्ता, मोबाईल किंवा अनुक्रमांक टाकून क्षणात मतदार शोधा.',
+                  'Search instantly by name, EPIC number, address, mobile, or roll serial number.',
             ),
             const SizedBox(height: 12),
             _buildHelpPoint(
               icon: Icons.badge_outlined,
-              title: 'मतदार माहिती स्लिप (Official Voter Slip)',
+              title: 'Official Voter Slip',
               desc:
-                  'कोणत्याही मतदाराची अधिकृत स्लिप १-टॅपमध्ये व्हॉट्सॲपवर पाठवा किंवा थेट पीडीएफ प्रिंट करा.',
+                  'Send official slip via WhatsApp in 1-tap or print PDF directly.',
             ),
             const SizedBox(height: 12),
             _buildHelpPoint(
               icon: Icons.family_restroom_rounded,
-              title: 'कुटुंबनिहाय गट (Family Grouping)',
+              title: 'Family Grouping',
               desc:
-                  'घर क्रमांकानुसार एकाच घरातील सर्व मतदारांची एकत्र यादी व कुटुंब प्रमुखासह नातेसंबंध पहा.',
+                  'Group all voters by house number and view household relationships.',
             ),
             const SizedBox(height: 12),
             _buildHelpPoint(
               icon: Icons.how_to_vote_outlined,
-              title: 'राजकीय कल नोंदणी (Political Favour Tagging)',
+              title: 'Political Stance Tagging',
               desc:
-                  'मतदाराचा अनुकूल, तटस्थ, प्रतिकूल किंवा अनिश्चित असा राजकीय कल नोंदवून प्रभाग रणनीती ठरवा.',
+                  'Tag voter stance as Favourable, Neutral, Against, or Undecided for ward strategy.',
             ),
             const SizedBox(height: 20),
             SizedBox(
@@ -228,7 +228,7 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 13),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('समजले', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                child: const Text('Got it', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -277,7 +277,7 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('तपशीलवार फिल्टर (Filters)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    const Text('Filters', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     TextButton(
                       onPressed: () {
                         setState(() {
@@ -290,7 +290,7 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                         Navigator.pop(ctx);
                         _loadVoters();
                       },
-                      child: const Text('रीसेट करा'),
+                      child: const Text('Reset'),
                     ),
                   ],
                 ),
@@ -298,14 +298,14 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                 const SizedBox(height: 8),
 
                 // Gender
-                const Text('लिंग (Gender)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                const Text('Gender', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 6),
                 Wrap(
                   spacing: 6,
                   children: [
-                    {'key': 'All', 'label': 'सर्व'},
-                    {'key': 'M', 'label': 'पुरुष'},
-                    {'key': 'F', 'label': 'महिला'},
+                    {'key': 'All', 'label': 'All'},
+                    {'key': 'M', 'label': 'Male'},
+                    {'key': 'F', 'label': 'Female'},
                   ].map((g) {
                     final sel = _selectedGender == g['key'];
                     return ChoiceChip(
@@ -324,16 +324,16 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                 const SizedBox(height: 14),
 
                 // Age Brackets
-                const Text('वयोगट (Age Range)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                const Text('Age Range', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 6),
                 Wrap(
                   spacing: 6,
                   children: [
-                    {'key': 'All', 'label': 'सर्व'},
-                    {'key': '18-25', 'label': '१८-२५ (युवा)'},
-                    {'key': '26-40', 'label': '२६-४०'},
-                    {'key': '41-60', 'label': '४१-६०'},
-                    {'key': '60+', 'label': '६०+ (ज्येष्ठ)'},
+                    {'key': 'All', 'label': 'All'},
+                    {'key': '18-25', 'label': '18-25 (Youth)'},
+                    {'key': '26-40', 'label': '26-40'},
+                    {'key': '41-60', 'label': '41-60'},
+                    {'key': '60+', 'label': '60+ (Senior)'},
                   ].map((a) {
                     final sel = _selectedAgeRange == a['key'];
                     return ChoiceChip(
@@ -354,7 +354,7 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                 // Friends only toggle
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('केवळ माझे आप्तस्वकीय व मित्र (Friends & Relatives)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                  title: const Text('Only Friends & Relatives', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                   value: _friendsOnly,
                   activeColor: const Color(0xFF0284C7),
                   onChanged: (val) {
@@ -376,7 +376,7 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
-                    child: const Text('फिल्टर लागू करा', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    child: const Text('Apply Filters', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
@@ -402,42 +402,56 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF0284C7),
         elevation: 0,
-        titleSpacing: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-          onPressed: () => Navigator.maybePop(context),
+        scrolledUnderElevation: 0,
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+            tooltip: 'Open Menu Drawer',
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
         ),
+        titleSpacing: 0,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: const [
             Text(
-              'मतदार शोध (Voter Search)',
-              style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
+              'Voter Search',
+              style: TextStyle(
+                fontSize: 17.5,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: -0.2,
+              ),
             ),
             Text(
-              'प्रभाग १२ मतदार यादी व राजकीय कल',
-              style: TextStyle(color: Colors.white70, fontSize: 11),
+              'Ward 12 voter directory, booth & family lookup',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFFE0F2FE),
+              ),
             ),
           ],
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.picture_as_pdf_rounded, color: Colors.white),
-            tooltip: 'मतदार यादी अहवाल डाउनलोड करा',
+            tooltip: 'Download Electoral Roll Report',
             onPressed: () => VoterSlipGenerator.downloadVotersListReport(
               voters: filtered,
               totalCount: totalRoll,
-              currentFilterSummary: _selectedBooth != 'All' ? 'बूथ: $_selectedBooth' : null,
+              currentFilterSummary: _selectedBooth != 'All' ? 'Booth: $_selectedBooth' : null,
             ),
           ),
           IconButton(
             icon: const Icon(Icons.help_outline_rounded, color: Colors.white),
-            tooltip: 'मदत व माहिती',
+            tooltip: 'Help Guide',
             onPressed: _showHelpGuide,
           ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-            tooltip: 'रिफ्रेश',
+            tooltip: 'Refresh',
             onPressed: _loadVoters,
           ),
         ],
@@ -488,9 +502,9 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
       children: [
         Expanded(
           child: _buildKpiCard(
-            title: 'एकूण मतदार',
+            title: 'Total Voters',
             value: NumberFormat('#,##,###').format(total),
-            subtitle: 'प्रभाग १२ यादी',
+            subtitle: 'Ward 12 Roll',
             icon: Icons.how_to_reg_rounded,
             color: const Color(0xFF0284C7),
             bg: const Color(0xFFE0F2FE),
@@ -499,9 +513,9 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
         const SizedBox(width: 8),
         Expanded(
           child: _buildKpiCard(
-            title: 'अनुकूल मतदार',
+            title: 'Favourable Voters',
             value: '$fav',
-            subtitle: 'पक्षास अनुकूल कल',
+            subtitle: 'Aligned with Party',
             icon: Icons.thumb_up_alt_rounded,
             color: const Color(0xFF16A34A),
             bg: const Color(0xFFDCFCE7),
@@ -510,9 +524,9 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
         const SizedBox(width: 8),
         Expanded(
           child: _buildKpiCard(
-            title: 'तटस्थ / अनिश्चित',
+            title: 'Neutral / Undecided',
             value: '$neutral',
-            subtitle: 'संपर्क आवश्यक',
+            subtitle: 'Follow-up Required',
             icon: Icons.change_circle_outlined,
             color: const Color(0xFFD97706),
             bg: const Color(0xFFFEF3C7),
@@ -521,9 +535,9 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
         const SizedBox(width: 8),
         Expanded(
           child: _buildKpiCard(
-            title: 'मतदान केंद्र',
+            title: 'Polling Stations',
             value: '$booths',
-            subtitle: 'एकूण बूथ्स',
+            subtitle: 'Total Booths',
             icon: Icons.location_city_rounded,
             color: const Color(0xFF7C3AED),
             bg: const Color(0xFFEDE9FE),
@@ -595,7 +609,7 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
               controller: _searchCtrl,
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
-                hintText: 'नाव, EPIC, पत्ता, मोबाईल किंवा अ. क्र. शोधा...',
+                hintText: 'Search name, EPIC, address, mobile or serial no...',
                 hintStyle: TextStyle(fontSize: 12.5, color: Colors.grey.shade400),
                 prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF0284C7), size: 20),
                 suffixIcon: _searchCtrl.text.isNotEmpty
@@ -617,14 +631,14 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
 
           // Booth Filter Popup
           PopupMenuButton<String>(
-            tooltip: 'बूथ निवडा',
+            tooltip: 'Select Booth',
             initialValue: _selectedBooth,
             onSelected: (val) {
               setState(() => _selectedBooth = val);
               _loadVoters();
             },
             itemBuilder: (ctx) => [
-              const PopupMenuItem(value: 'All', child: Text('सर्व बूथ (All Booths)')),
+              const PopupMenuItem(value: 'All', child: Text('All Booths')),
               ..._boothsList.map((b) => PopupMenuItem(value: b, child: Text(b))),
             ],
             child: Padding(
@@ -638,7 +652,7 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    _selectedBooth == 'All' ? 'सर्व बूथ' : _selectedBooth.split('/').first,
+                    _selectedBooth == 'All' ? 'All Booths' : _selectedBooth.split('/').first,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: _selectedBooth != 'All' ? FontWeight.bold : FontWeight.normal,
@@ -660,7 +674,7 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                   ? const Color(0xFF0284C7)
                   : Colors.grey.shade600,
             ),
-            tooltip: 'अधिक फिल्टर्स',
+            tooltip: 'More Filters',
             onPressed: _showFilterSheet,
           ),
         ],
@@ -670,11 +684,11 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
 
   Widget _buildStanceFilterChips() {
     final chips = [
-      {'key': 'All', 'label': 'सर्व मतदार'},
-      {'key': 'Favourable', 'label': 'अनुकूल', 'color': const Color(0xFF16A34A)},
-      {'key': 'Neutral', 'label': 'तटस्थ', 'color': const Color(0xFF0284C7)},
-      {'key': 'Against', 'label': 'प्रतिकूल', 'color': const Color(0xFFDC2626)},
-      {'key': 'Swing', 'label': 'अनिश्चित', 'color': const Color(0xFFD97706)},
+      {'key': 'All', 'label': 'All Voters'},
+      {'key': 'Favourable', 'label': 'Favourable', 'color': const Color(0xFF16A34A)},
+      {'key': 'Neutral', 'label': 'Neutral', 'color': const Color(0xFF0284C7)},
+      {'key': 'Against', 'label': 'Against', 'color': const Color(0xFFDC2626)},
+      {'key': 'Swing', 'label': 'Undecided', 'color': const Color(0xFFD97706)},
     ];
 
     return SingleChildScrollView(
@@ -714,7 +728,7 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          '$resultCount मतदार आढळले',
+          '$resultCount voters found',
           style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.grey.shade700),
         ),
         Container(
@@ -728,7 +742,7 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
             children: [
               IconButton(
                 icon: Icon(Icons.grid_view_rounded, size: 17, color: _viewMode == 'cards' ? const Color(0xFF0284C7) : Colors.grey),
-                tooltip: 'कार्ड दृश्य',
+                tooltip: 'Card View',
                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 padding: EdgeInsets.zero,
                 onPressed: () => setState(() => _viewMode = 'cards'),
@@ -736,7 +750,7 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
               Container(width: 1, height: 18, color: Colors.grey.shade200),
               IconButton(
                 icon: Icon(Icons.family_restroom_rounded, size: 17, color: _viewMode == 'family' ? const Color(0xFF0284C7) : Colors.grey),
-                tooltip: 'कुटुंबनिहाय गट',
+                tooltip: 'Family Group View',
                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 padding: EdgeInsets.zero,
                 onPressed: () => setState(() => _viewMode = 'family'),
@@ -744,7 +758,7 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
               Container(width: 1, height: 18, color: Colors.grey.shade200),
               IconButton(
                 icon: Icon(Icons.table_rows_rounded, size: 17, color: _viewMode == 'table' ? const Color(0xFF0284C7) : Colors.grey),
-                tooltip: 'तक्ता दृश्य',
+                tooltip: 'Table View',
                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 padding: EdgeInsets.zero,
                 onPressed: () => setState(() => _viewMode = 'table'),
@@ -914,14 +928,14 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                   Icon(Icons.how_to_vote_outlined, size: 14, color: Colors.grey.shade500),
                   const SizedBox(width: 4),
                   Text(
-                    'बूथ: ${voter.booth}',
+                    'Booth: ${voter.booth}',
                     style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
                   ),
                   const SizedBox(width: 8),
                   Text('•', style: TextStyle(color: Colors.grey.shade400)),
                   const SizedBox(width: 8),
                   Text(
-                    'वय: ${voter.age} वर्षे (${voter.genderLabelMarathi})',
+                    'Age: ${voter.age} Yrs (${voter.gender})',
                     style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                   ),
                 ],
@@ -937,7 +951,7 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                 children: [
                   OutlinedButton.icon(
                     icon: const Icon(Icons.print, size: 14, color: Color(0xFF0284C7)),
-                    label: const Text('स्लिप', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
+                    label: const Text('Slip', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       side: const BorderSide(color: Color(0xFFBAE6FD)),
@@ -948,7 +962,7 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                   const SizedBox(width: 6),
                   ElevatedButton.icon(
                     icon: const Icon(Icons.send_rounded, size: 13, color: Colors.white),
-                    label: const Text('व्हॉट्सॲप', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
+                    label: const Text('WhatsApp', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF25D366),
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -961,7 +975,7 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                     const SizedBox(width: 6),
                     IconButton(
                       icon: const Icon(Icons.phone, size: 18, color: Color(0xFF0284C7)),
-                      tooltip: 'कॉल करा',
+                      tooltip: 'Call',
                       onPressed: () => _callVoter(voter.mobile),
                     ),
                   ],
@@ -980,7 +994,7 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
     return families.entries.map((entry) {
       final members = entry.value;
       final first = members.first;
-      final houseNo = first.houseNo ?? 'नोंद नाही';
+      final houseNo = first.houseNo ?? 'N/A';
       final booth = first.booth;
 
       return Container(
@@ -1023,7 +1037,7 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'घर क्र. #$houseNo • $booth',
+                          'House No. #$houseNo • $booth',
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
                         ),
                         Text(
@@ -1042,7 +1056,7 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
-                      '${members.length} मतदार',
+                      '${members.length} Voters',
                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                     ),
                   ),
@@ -1085,7 +1099,7 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                             children: [
                               Text(m.displayName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
                               Text(
-                                'वय: ${m.age} • ${m.genderLabelMarathi} • EPIC: ${m.epicNo} ${m.serialNo != null ? "• #${m.serialNo}" : ""}',
+                                'Age: ${m.age} • ${m.gender} • EPIC: ${m.epicNo} ${m.serialNo != null ? "• #${m.serialNo}" : ""}',
                                 style: TextStyle(fontSize: 10.5, color: Colors.grey.shade600),
                               ),
                             ],
@@ -1139,13 +1153,13 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
             headingRowColor: MaterialStateProperty.all(const Color(0xFFF1F5F9)),
             columns: const [
               DataColumn(label: Text('#', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('नाव (Name)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('EPIC क्र.', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('वय/लिंग', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('पत्ता', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('बूथ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('राजकीय कल', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('कृती', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Name', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('EPIC No.', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Age/Gender', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Address', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Booth', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Political Stance', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Action', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
             ],
             rows: list.asMap().entries.map((entry) {
               final idx = entry.key;
@@ -1197,12 +1211,12 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                       children: [
                         IconButton(
                           icon: const Icon(Icons.print, size: 16, color: Color(0xFF0284C7)),
-                          tooltip: 'स्लिप',
+                          tooltip: 'Slip',
                           onPressed: () => VoterSlipGenerator.printVoterSlip(v),
                         ),
                         IconButton(
                           icon: const Icon(Icons.send_rounded, size: 15, color: Color(0xFF25D366)),
-                          tooltip: 'व्हॉट्सॲप',
+                          tooltip: 'WhatsApp',
                           onPressed: () => _shareSlipOnWhatsApp(v),
                         ),
                       ],
@@ -1230,12 +1244,12 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
           Icon(Icons.person_search_outlined, size: 54, color: Colors.grey.shade300),
           const SizedBox(height: 12),
           const Text(
-            'मतदार आढळले नाहीत',
+            'No voters found',
             style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
           ),
           const SizedBox(height: 6),
           Text(
-            'कृपया नाव, EPIC क्रमांक किंवा पत्त्याची स्पेलिंग तपासून पुन्हा शोधा.',
+            'Please check the spelling of name, EPIC number or address and search again.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 12.5, color: Colors.grey.shade500),
           ),
@@ -1252,7 +1266,7 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
               });
               _loadVoters();
             },
-            child: const Text('सर्व मतदार दाखवा'),
+            child: const Text('Show All Voters'),
           ),
         ],
       ),

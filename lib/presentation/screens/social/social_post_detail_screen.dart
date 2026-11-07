@@ -81,7 +81,7 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
             children: [
               Icon(Icons.edit_note_rounded, color: const Color(0xFF0284C7)),
               const SizedBox(width: 8),
-              const Text('Update Metrics / कामगिरी', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const Text('Update Metrics', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ],
           ),
           content: SingleChildScrollView(
@@ -92,7 +92,7 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                   controller: reachCtrl,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
-                    labelText: 'Total Reach / एकूण पोहोच',
+                    labelText: 'Total Reach',
                     border: OutlineInputBorder(),
                     contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   ),
@@ -102,7 +102,7 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                   controller: likesCtrl,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
-                    labelText: 'Likes / लाईक्स',
+                    labelText: 'Likes',
                     border: OutlineInputBorder(),
                     contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   ),
@@ -112,7 +112,7 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                   controller: commentsCtrl,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
-                    labelText: 'Comments / टिप्पण्या',
+                    labelText: 'Comments',
                     border: OutlineInputBorder(),
                     contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   ),
@@ -122,7 +122,7 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                   controller: sharesCtrl,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
-                    labelText: 'Shares / शेअर्स',
+                    labelText: 'Shares',
                     border: OutlineInputBorder(),
                     contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   ),
@@ -133,7 +133,7 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel / रद्द करा', style: TextStyle(color: Colors.grey)),
+              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -161,7 +161,7 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                   const SnackBar(content: Text('Post metrics updated successfully!')),
                 );
               },
-              child: const Text('Save / जतन करा'),
+              child: const Text('Save'),
             ),
           ],
         );
@@ -369,7 +369,7 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                                           borderRadius: BorderRadius.circular(20),
                                         ),
                                         child: Text(
-                                          'मराठी',
+                                          'English',
                                           style: TextStyle(
                                             color: _showMarathi ? Colors.white : const Color(0xFF64748B),
                                             fontSize: 11,
@@ -449,7 +449,7 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
 
               // KPI Stats Grid
               const Text(
-                'Performance Metrics / कामगिरी आकडेवारी',
+                'Performance Metrics',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
@@ -463,7 +463,7 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                   Expanded(
                     child: _buildMetricTile(
                       label: 'Total Reach',
-                      marathi: 'एकूण पोहोच',
+                      marathi: 'Total Reach',
                       value: _currentPost.reach.toLocaleString(),
                       icon: Icons.remove_red_eye_outlined,
                       color: const Color(0xFF0284C7),
@@ -474,7 +474,7 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                   Expanded(
                     child: _buildMetricTile(
                       label: 'Likes',
-                      marathi: 'लाईक्स',
+                      marathi: 'Likes',
                       value: _currentPost.likes.toLocaleString(),
                       icon: Icons.thumb_up_alt_outlined,
                       color: const Color(0xFFE11D48),
@@ -489,7 +489,7 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                   Expanded(
                     child: _buildMetricTile(
                       label: 'Comments',
-                      marathi: 'टिप्पण्या',
+                      marathi: 'Comments',
                       value: _currentPost.comments.toString(),
                       icon: Icons.chat_bubble_outline_rounded,
                       color: const Color(0xFF9333EA),
@@ -500,7 +500,7 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                   Expanded(
                     child: _buildMetricTile(
                       label: 'Shares',
-                      marathi: 'शेअर्स',
+                      marathi: 'Shares',
                       value: _currentPost.shares.toString(),
                       icon: Icons.share_outlined,
                       color: const Color(0xFF16A34A),
@@ -537,7 +537,7 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
-                          'Engagement Rate (सहभाग दर)',
+                          'Engagement Rate',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 13,

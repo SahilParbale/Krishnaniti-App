@@ -446,25 +446,19 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
           scrolledUnderElevation: 0,
           leading: Builder(
             builder: (ctx) => IconButton(
-              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 24),
-              tooltip: 'Back',
-              onPressed: () {
-                if (Navigator.canPop(context)) {
-                  Navigator.pop(context);
-                } else {
-                  Scaffold.of(ctx).openDrawer();
-                }
-              },
+              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+              tooltip: 'Open Menu Drawer',
+              onPressed: () => Scaffold.of(ctx).openDrawer(),
             ),
           ),
           titleSpacing: 0,
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
-            children: [
+            children: const [
               Text(
-                isMr ? 'केलेली कामे (Work History)' : 'Work History',
-                style: const TextStyle(
+                'Ward Development Works',
+                style: TextStyle(
                   fontSize: 17.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
@@ -472,11 +466,11 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                 ),
               ),
               Text(
-                isMr ? 'विकासकामे, तक्रार निवारण व लोककल्याण' : 'Development works, grievances & welfare',
+                'Development works, grievances & welfare',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w400,
-                  color: Colors.white.withValues(alpha: 0.85),
+                  color: Color(0xFFE0F2FE),
                 ),
               ),
             ],

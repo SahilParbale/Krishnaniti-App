@@ -1,41 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../screens/ward_map/ward_map_screen.dart';
-import '../screens/schemes/government_schemes_screen.dart';
-import '../screens/diary/diary_screen.dart';
-import '../screens/visitors/visitors_screen.dart';
-import '../screens/ward_problems/ward_problems_screen.dart';
-import '../screens/works/work_history_screen.dart';
-import '../screens/ward_improvements/possible_improvements_screen.dart';
-import '../screens/ward_provisions/ward_provisions_screen.dart';
-import '../screens/gb_register/gb_register_screen.dart';
-import '../screens/ward_budget/ward_budget_screen.dart';
-import '../screens/government_office/government_office_screen.dart';
-import '../screens/social/social_analytics_screen.dart';
-import '../screens/newspaper/newspaper_clippings_screen.dart';
-import '../screens/media_tracking/media_tracking_screen.dart';
-import '../screens/content_studio/ai_content_studio_screen.dart';
-import '../screens/events/events_screen.dart';
-import '../screens/gallery/gallery_screen.dart';
-import '../screens/results/result_analysis_screen.dart';
-import '../screens/sadasya/sadasya_screen.dart';
-import '../screens/surveys/surveys_screen.dart';
-import '../screens/voters/voters_screen.dart';
-import '../screens/team/team_screen.dart';
-import '../screens/opposition/opposition_screen.dart';
-import '../screens/social_organizations/social_organizations_screen.dart';
-import '../screens/housing_societies/housing_societies_screen.dart';
-import '../screens/duplicate_voters/duplicate_voters_screen.dart';
-import '../screens/voter_forms/voter_forms_screen.dart';
-import '../screens/karyakarta_work/karyakarta_work_management_screen.dart';
-import '../screens/sms/sms_communication_screen.dart';
-import '../screens/whatsapp/whatsapp_communication_screen.dart';
-import '../screens/whatsapp/whatsapp_calling_screen.dart';
-import '../screens/voice/voice_call_screen.dart';
-import '../screens/voice/ai_voice_call_screen.dart';
-import '../screens/voice/conference_room_screen.dart';
-import '../screens/analysis_strategy/analysis_strategy_screen.dart';
-import '../screens/more/module_detail_screen.dart';
+import '../providers/navigation_provider.dart';
 
 class NagarsevakAppDrawer extends ConsumerStatefulWidget {
   final int currentTabIndex;
@@ -84,431 +49,28 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
     required String description,
     required List<String> highlights,
   }) {
-    Navigator.pop(context); // Close drawer first
+    // Automatically collapse/close the sidebar drawer immediately so the target page is visible
+    Navigator.of(context).pop();
 
-    final lower = title.toLowerCase();
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
 
-    // 1. Complaints
-    if (lower.contains('complaint') || lower.contains('request')) {
+    final key = resolveScreenKey(title) ?? resolveScreenKey(category) ?? resolveScreenKey(subtitle);
+    if (key != null) {
+      ref.read(activeScreenProvider.notifier).setScreen(key);
+      if (key == 'dashboard') ref.read(mainTabIndexProvider.notifier).setTab(0);
+      if (key == 'complaints') ref.read(mainTabIndexProvider.notifier).setTab(1);
+      if (key == 'letters') ref.read(mainTabIndexProvider.notifier).setTab(2);
+      if (key == 'profile_settings') ref.read(mainTabIndexProvider.notifier).setTab(3);
       if (widget.onTabChange != null) {
-        widget.onTabChange!(1);
-        return;
+        if (key == 'dashboard') widget.onTabChange!(0);
+        if (key == 'complaints') widget.onTabChange!(1);
+        if (key == 'letters') widget.onTabChange!(2);
+        if (key == 'profile_settings') widget.onTabChange!(3);
       }
-    }
-
-    // 2. Letters
-    if (lower == 'letters' || lower.contains('correspondence')) {
-      if (widget.onTabChange != null) {
-        widget.onTabChange!(2);
-        return;
-      }
-    }
-
-    // 3. Ward Map
-    if (lower.contains('ward map')) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const WardMapScreen()),
-      );
       return;
     }
-
-    // Ward Problems
-    if (lower.contains('ward problem') || lower.contains('ward_problem')) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const WardProblemsScreen()),
-      );
-      return;
-    }
-
-    // Work History
-    if (lower.contains('work history')) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const WorkHistoryScreen()),
-      );
-      return;
-    }
-
-    // Possible Improvements
-    if (lower.contains('improvement')) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const PossibleImprovementsScreen()),
-      );
-      return;
-    }
-
-    // Ward Wise Provision
-    if (lower.contains('provision')) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const WardProvisionsScreen()),
-      );
-      return;
-    }
-
-    // Ward Budget
-    if (lower.contains('budget') || lower.contains('अंदाजपत्रक')) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const WardBudgetScreen()),
-      );
-      return;
-    }
-
-    // Government Office (शासकीय कार्यालये)
-    if (lower.contains('government office') ||
-        lower.contains('gov_office') ||
-        lower.contains('कार्यालय') ||
-        lower == 'government office') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const GovernmentOfficeScreen()),
-      );
-      return;
-    }
-
-    // Social Media Analytics (सोशल मीडिया विश्लेषण)
-    if (lower.contains('social analytics') ||
-        lower == 'social' ||
-        lower.contains('social media') ||
-        lower.contains('सोशल मीडिया')) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const SocialAnalyticsScreen()),
-      );
-      return;
-    }
-
-    // Newspaper Clipping (वृत्तपत्र कात्रणे)
-    if (lower.contains('newspaper') ||
-        lower.contains('clipping') ||
-        lower.contains('वृत्तपत्र')) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const NewspaperClippingsScreen()),
-      );
-      return;
-    }
-
-    // Media Tracking (माध्यम मागोवा)
-    if (lower.contains('media tracking') ||
-        (lower.contains('tracking') && !lower.contains('visitor')) ||
-        lower.contains('माध्यम मागोवा') ||
-        lower == 'media tracking') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const MediaTrackingScreen()),
-      );
-      return;
-    }
-
-    // AI Content Studio (AI कंटेंट स्टुडिओ)
-    if (lower.contains('ai content') ||
-        lower.contains('content studio') ||
-        lower.contains('कंटेंट स्टुडिओ') ||
-        lower == 'content studio' ||
-        lower == 'ai content studio') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const AiContentStudioScreen()),
-      );
-      return;
-    }
-
-    // Events & Invites (कार्यक्रम आणि आमंत्रणे)
-    if (lower.contains('event') ||
-        lower.contains('invite') ||
-        lower.contains('कार्यक्रम') ||
-        lower.contains('आमंत्रण')) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const EventsScreen()),
-      );
-      return;
-    }
-
-    // Gallery & Media (गॅलरी आणि फोटो)
-    if (lower.contains('gallery') ||
-        lower.contains('गॅलरी') ||
-        lower.contains('फोटो') ||
-        lower == 'media gallery') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const GalleryScreen()),
-      );
-      return;
-    }
-
-    // Result Analysis (निवडणूक निकाल विश्लेषण)
-    if (lower.contains('result') ||
-        lower.contains('election') ||
-        lower.contains('निकाल') ||
-        lower == 'result analysis') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const ResultAnalysisScreen()),
-      );
-      return;
-    }
-
-    // Sadasya (Party Members / सदस्य नोंदणी)
-    if (lower.contains('sadasya') ||
-        lower.contains('सदस्य') ||
-        lower.contains('party member') ||
-        lower == 'sadasya (members)') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const SadasyaScreen()),
-      );
-      return;
-    }
-
-    // Sample Surveys (नमुना सर्वेक्षण / जनमत चाचण्या)
-    if (lower.contains('survey') ||
-        lower.contains('सर्वेक्षण') ||
-        lower.contains('चाचण्या') ||
-        lower == 'sample surveys') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const SurveysScreen()),
-      );
-      return;
-    }
-
-    // Voter Search (मतदार शोध)
-    if (lower.contains('voter search') ||
-        lower.contains('मतदार शोध') ||
-        lower == 'voter search' ||
-        lower == 'voters') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const VotersScreen()),
-      );
-      return;
-    }
-
-    // My Team / Staff (माझा कार्यसंघ / कर्मचारी)
-    if (lower.contains('team') ||
-        lower.contains('staff') ||
-        lower.contains('कार्यसंघ') ||
-        lower.contains('कर्मचारी') ||
-        lower == 'my team') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const TeamScreen()),
-      );
-      return;
-    }
-
-    // Opposition Information (विरोधी पक्षाची माहिती)
-    if (lower.contains('opposition') ||
-        lower.contains('विरोध') ||
-        lower.contains('विरोधी') ||
-        lower == 'opposition information') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const OppositionScreen()),
-      );
-      return;
-    }
-
-    // NGO & Mandals Info (एन.जी.ओ., क्रीडा व सार्वजनिक मंडळ माहिती)
-    if (lower.contains('mandal') ||
-        lower.contains('ngo') ||
-        lower.contains('मंडळ') ||
-        lower.contains('संस्था') ||
-        lower == 'ngo & mandals info') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const SocialOrganizationsScreen()),
-      );
-      return;
-    }
-
-    // Housing Societies (सोसायटी, अध्यक्ष-सचिव व मतदार माहिती)
-    if (lower.contains('societ') ||
-        lower.contains('सोसायटी') ||
-        lower == 'housing societies') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const HousingSocietiesScreen()),
-      );
-      return;
-    }
-
-    // Duplicate Voters (ड्युप्लिकेट मतदार शोध)
-    if (lower.contains('duplicate') ||
-        lower.contains('ड्युप्लिकेट') ||
-        lower == 'duplicate voters') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const DuplicateVotersScreen()),
-      );
-      return;
-    }
-
-    // Voter Forms (मतदार नोंदणी अर्ज - Form 6, Form 7, Form 8)
-    if (lower.contains('form') ||
-        lower.contains('अर्ज') ||
-        lower == 'voter forms') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const VoterFormsScreen()),
-      );
-      return;
-    }
-
-    // Karyakarta Work Management (कार्यकर्ता काम व्यवस्थापन)
-    if (lower.contains('karyakarta work') ||
-        lower.contains('कार्यकर्ता काम') ||
-        lower == 'karyakarta work management') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const KaryakartaWorkManagementScreen()),
-      );
-      return;
-    }
-
-    // Send SMS (एसएमएस पाठवा)
-    if (lower.contains('send sms') ||
-        lower.contains('sms पाठवा') ||
-        lower.contains('एसएमएस') ||
-        lower == 'send sms' ||
-        lower == 'sms') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const SmsCommunicationScreen()),
-      );
-      return;
-    }
-
-    // Analysis Strategy (विश्लेषण आणि धोरण)
-    if (lower.contains('analysis strategy') ||
-        lower.contains('strategy') ||
-        lower.contains('धोरण') ||
-        lower.contains('विश्लेषण')) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const AnalysisStrategyScreen()),
-      );
-      return;
-    }
-
-    // WhatsApp Calling
-    if (lower.contains('whatsapp calling') ||
-        lower.contains('whatsapp call') ||
-        lower.contains('व्हॉट्सॲप कॉल')) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const WhatsAppCallingScreen()),
-      );
-      return;
-    }
-
-    // WhatsApp Message (व्हॉट्सॲप संदेश)
-    if (lower.contains('whatsapp message') ||
-        lower.contains('व्हॉट्सॲप') ||
-        lower.contains('whatsapp') ||
-        lower == 'whatsapp') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const WhatsAppCommunicationScreen()),
-      );
-      return;
-    }
-
-    // Conference Room
-    if (lower.contains('conference room') ||
-        lower.contains('conference') ||
-        lower.contains('कॉन्फरन्स') ||
-        lower == 'conference room') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const ConferenceRoomScreen()),
-      );
-      return;
-    }
-
-    // AI Voice Call
-    if (lower.contains('ai voice') ||
-        lower.contains('एआय व्हॉईस') ||
-        lower == 'ai voice call') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const AiVoiceCallScreen()),
-      );
-      return;
-    }
-
-    // Voice Call (व्हॉईस कॉल)
-    if (lower == 'voice call' ||
-        lower.contains('voice call') ||
-        lower.contains('व्हॉईस कॉल') ||
-        (lower.contains('voice') && !lower.contains('ai'))) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const VoiceCallScreen()),
-      );
-      return;
-    }
-
-    // 4. Government Schemes
-    if (lower.contains('scheme') || lower.contains('govt schemes')) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => GovernmentSchemesScreen(
-            onTabChange: widget.onTabChange,
-          ),
-        ),
-      );
-      return;
-    }
-
-    // GB Register (General Body & Committee Motions)
-    if (lower == 'gb register' || lower.contains('gb register') || lower.contains('gb नोंदवही') || lower.contains('महासभा')) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const GbRegisterScreen()),
-      );
-      return;
-    }
-
-    // Diary (Daily Personal Tasks, Schedule & Field Visits)
-    if (lower == 'diary' || (lower.contains('diary') && !lower.contains('gb'))) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const DiaryScreen()),
-      );
-      return;
-    }
-
-    // 6. Visitor Log
-    if (lower.contains('visitor')) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const VisitorsScreen()),
-      );
-      return;
-    }
-
-    // Default: Dedicated Full-Screen Module Detail Screen
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ModuleDetailScreen(
-          title: title,
-          subtitle: subtitle,
-          category: category,
-          icon: icon,
-          description: description,
-          highlights: highlights,
-        ),
-      ),
-    );
   }
 
   @override
@@ -645,11 +207,14 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
                 _DrawerSingleItem(
                   icon: Icons.dashboard_rounded,
                   title: 'Dashboard',
-                  isSelected: widget.currentTabIndex == 0,
-                  onTap: () {
-                    Navigator.pop(context);
-                    if (widget.onTabChange != null) widget.onTabChange!(0);
-                  },
+                  onTap: () => _navigateToModule(
+                    title: 'Dashboard',
+                    subtitle: 'Overview, analytics & ward summary',
+                    category: 'Overview',
+                    icon: Icons.dashboard_rounded,
+                    description: 'Prabhag 12 general summary and civic metrics.',
+                    highlights: const [],
+                  ),
                 ),
 
                 const Divider(height: 6, thickness: 0.8, color: Color(0xFFF1F5F9)),
@@ -667,7 +232,6 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
                   _DrawerSubItem(
                     icon: Icons.assignment_outlined,
                     title: 'Requests & Complaints',
-                    isSelected: widget.currentTabIndex == 1,
                     onTap: () => _navigateToModule(
                       title: 'Requests & Complaints',
                       subtitle: 'Civic grievances, issue tracking and status updates',
@@ -680,7 +244,6 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
                   _DrawerSubItem(
                     icon: Icons.description_outlined,
                     title: 'Letters',
-                    isSelected: widget.currentTabIndex == 2,
                     onTap: () => _navigateToModule(
                       title: 'Letters',
                       subtitle: 'Inward and outward official municipal correspondence',
@@ -909,15 +472,14 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
                   _DrawerSubItem(
                     icon: Icons.auto_awesome_rounded,
                     title: 'AI Content Studio',
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const AiContentStudioScreen(),
-                        ),
-                      );
-                    },
+                    onTap: () => _navigateToModule(
+                      title: 'AI Content Studio',
+                      subtitle: 'AI Marathi speechwriter, press releases and festive banners',
+                      category: 'Media & Promotion',
+                      icon: Icons.auto_awesome_rounded,
+                      description: 'AI-assisted speech generator, social media captions, and press release drafts.',
+                      highlights: ['Marathi Speechwriter', 'Festival Greetings', 'Press Release Drafts'],
+                    ),
                   ),
                 ],
 
@@ -936,24 +498,26 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
                   _DrawerSubItem(
                     icon: Icons.event_outlined,
                     title: 'Events & Invites',
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const EventsScreen()),
-                      );
-                    },
+                    onTap: () => _navigateToModule(
+                      title: 'Events & Invites',
+                      subtitle: 'Public programs, festival pandal visits and invitations',
+                      category: 'Programs and activities',
+                      icon: Icons.event_outlined,
+                      description: 'Calendar of ward events, guest invitations, and inauguration ceremonies.',
+                      highlights: ['Ward Programs', 'Guest Invites', 'Protocol Directory'],
+                    ),
                   ),
                   _DrawerSubItem(
                     icon: Icons.photo_library_outlined,
                     title: 'Gallery & Media',
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const GalleryScreen()),
-                      );
-                    },
+                    onTap: () => _navigateToModule(
+                      title: 'Gallery & Media',
+                      subtitle: 'Official photo archive, development work images and press albums',
+                      category: 'Programs and activities',
+                      icon: Icons.photo_library_outlined,
+                      description: 'Visual evidence repository of development works and festival celebrations.',
+                      highlights: ['Project Photos', 'Press Albums', 'High-Res Downloads'],
+                    ),
                   ),
                 ],
 
@@ -1187,18 +751,6 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
                       highlights: ['Instant 50+ Line Bridge', 'No Internet Required on Phone', 'Live Call Recording'],
                     ),
                   ),
-                  _DrawerSubItem(
-                    icon: Icons.phone_forwarded_outlined,
-                    title: 'WhatsApp Call',
-                    onTap: () => _navigateToModule(
-                      title: 'WhatsApp Call',
-                      subtitle: 'High-definition digital WhatsApp calling desk',
-                      category: 'Public Communication',
-                      icon: Icons.phone_forwarded_outlined,
-                      description: 'Direct citizen helpline integration via official WhatsApp Business API.',
-                      highlights: ['Citizen Direct Call Line', 'Call Logged with Ticket ID', 'Recorded for Transparency'],
-                    ),
-                  ),
                 ],
 
                 const Divider(height: 6, thickness: 0.8, color: Color(0xFFF1F5F9)),
@@ -1216,6 +768,24 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
                     icon: Icons.timeline_rounded,
                     description: 'Predictive analytics, caste and demographic distribution, and developmental priority scoring.',
                     highlights: ['Demographic Breakdown', 'Priority Development Heatmap', 'Tenure Milestone Goals'],
+                  ),
+                ),
+
+                const Divider(height: 6, thickness: 0.8, color: Color(0xFFF1F5F9)),
+
+                // ==========================================
+                // 10) PROFILE SETTINGS (Settings) - Standalone Item
+                // ==========================================
+                _DrawerSingleItem(
+                  icon: Icons.settings_rounded,
+                  title: 'Profile Settings',
+                  onTap: () => _navigateToModule(
+                    title: 'Profile Settings',
+                    subtitle: 'Nagarsevak profile, branding, bot & SMS gateway configuration',
+                    category: 'System Settings',
+                    icon: Icons.settings_rounded,
+                    description: 'Configure official Nagarsevak identity, party branding, WhatsApp & SMS integrations, and security audit logs.',
+                    highlights: ['Profile Branding & Photo', 'WhatsApp Bot & SMS Gateway', 'Audit & Security Logs'],
                   ),
                 ),
 
@@ -1285,28 +855,33 @@ class _DrawerGroupHeader extends StatelessWidget {
 }
 
 /// Sub Item inside a Collapsible Group (clean title & icon, compact size)
-class _DrawerSubItem extends StatelessWidget {
+class _DrawerSubItem extends ConsumerWidget {
   final IconData icon;
   final String title;
-  final bool isSelected;
+  final bool? isSelected;
   final VoidCallback onTap;
 
   const _DrawerSubItem({
+    super.key,
     required this.icon,
     required this.title,
-    this.isSelected = false,
+    this.isSelected,
     required this.onTap,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final active = isSelected ?? (ref.watch(activeScreenProvider) == resolveScreenKey(title));
     return Container(
       margin: const EdgeInsets.only(left: 18, right: 8, top: 1, bottom: 1),
       decoration: BoxDecoration(
-        color: isSelected ? const Color(0xFFF0F9FF) : Colors.transparent,
+        color: active ? const Color(0xFFF0F9FF) : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
-        border: const Border(
-          left: BorderSide(color: Color(0xFFCBD5E1), width: 1.5),
+        border: Border(
+          left: BorderSide(
+            color: active ? const Color(0xFF0284C7) : const Color(0xFFCBD5E1),
+            width: active ? 2.5 : 1.5,
+          ),
         ),
       ),
       child: Material(
@@ -1321,7 +896,7 @@ class _DrawerSubItem extends StatelessWidget {
                 Icon(
                   icon,
                   size: 16,
-                  color: isSelected ? const Color(0xFF0284C7) : const Color(0xFF64748B),
+                  color: active ? const Color(0xFF0284C7) : const Color(0xFF64748B),
                 ),
                 const SizedBox(width: 9),
                 Expanded(
@@ -1329,17 +904,17 @@ class _DrawerSubItem extends StatelessWidget {
                     title,
                     style: TextStyle(
                       fontSize: 12.5,
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                      color: isSelected ? const Color(0xFF0284C7) : const Color(0xFF334155),
+                      fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                      color: active ? const Color(0xFF0284C7) : const Color(0xFF334155),
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const Icon(
+                Icon(
                   Icons.arrow_forward_ios_rounded,
                   size: 9.5,
-                  color: Color(0xFFCBD5E1),
+                  color: active ? const Color(0xFF0284C7) : const Color(0xFFCBD5E1),
                 ),
               ],
             ),
@@ -1351,25 +926,27 @@ class _DrawerSubItem extends StatelessWidget {
 }
 
 /// Standalone Item (clean title & icon, compact size)
-class _DrawerSingleItem extends StatelessWidget {
+class _DrawerSingleItem extends ConsumerWidget {
   final IconData icon;
   final String title;
-  final bool isSelected;
+  final bool? isSelected;
   final VoidCallback onTap;
 
   const _DrawerSingleItem({
+    super.key,
     required this.icon,
     required this.title,
-    this.isSelected = false,
+    this.isSelected,
     required this.onTap,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final active = isSelected ?? (ref.watch(activeScreenProvider) == resolveScreenKey(title));
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
       decoration: BoxDecoration(
-        color: isSelected ? const Color(0xFFF0F9FF) : Colors.transparent,
+        color: active ? const Color(0xFFF0F9FF) : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Material(
@@ -1384,7 +961,7 @@ class _DrawerSingleItem extends StatelessWidget {
                 Icon(
                   icon,
                   size: 18,
-                  color: isSelected ? const Color(0xFF0284C7) : const Color(0xFF475569),
+                  color: active ? const Color(0xFF0284C7) : const Color(0xFF475569),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -1392,15 +969,15 @@ class _DrawerSingleItem extends StatelessWidget {
                     title,
                     style: TextStyle(
                       fontSize: 13,
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                      color: isSelected ? const Color(0xFF0284C7) : const Color(0xFF1E293B),
+                      fontWeight: active ? FontWeight.w700 : FontWeight.w600,
+                      color: active ? const Color(0xFF0284C7) : const Color(0xFF1E293B),
                     ),
                   ),
                 ),
-                const Icon(
+                Icon(
                   Icons.arrow_forward_ios_rounded,
                   size: 10,
-                  color: Color(0xFFCBD5E1),
+                  color: active ? const Color(0xFF0284C7) : const Color(0xFFCBD5E1),
                 ),
               ],
             ),

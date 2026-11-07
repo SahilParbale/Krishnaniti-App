@@ -5,8 +5,8 @@ import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/supabase_service.dart';
+import '../../navigation/app_drawer.dart';
 
 class AreaMetrics {
   final String areaName;
@@ -99,16 +99,16 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
 
   final TextEditingController _searchController = TextEditingController();
   List<String> _allAreas = [
-    'शनिवार पेठ (Shaniwar Peth)',
-    'कसबा पेठ (Kasba Peth)',
-    'रविवार पेठ (Raviwar Peth)',
-    'सोमवार पेठ (Somwar Peth)',
-    'बुधवार पेठ (Budhwar Peth)',
-    'शुक्रवार पेठ (Shukrawar Peth)',
-    'गणेश पेठ (Ganesh Peth)',
-    'भवानी पेठ (Bhavani Peth)',
-    'नाना पेठ (Nana Peth)',
-    'रास्ता पेठ (Rasta Peth)',
+    'Shaniwar Peth',
+    'Kasba Peth',
+    'Raviwar Peth',
+    'Somwar Peth',
+    'Budhwar Peth',
+    'Shukrawar Peth',
+    'Ganesh Peth',
+    'Bhavani Peth',
+    'Nana Peth',
+    'Rasta Peth',
   ];
 
   String _selectedArea = '';
@@ -180,7 +180,7 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
   Future<void> _generateReport(String area) async {
     if (area.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('कृपया क्षेत्र निवडा किंवा नाव टाईप करा')),
+        const SnackBar(content: Text('Please select an area or type a name')),
       );
       return;
     }
@@ -242,10 +242,10 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
       final int age61Plus = totalVoters - age18_35 - age36_60;
 
       final Map<String, int> casteDist = {
-        'मराठा': (totalVoters * 0.40).round(),
-        'ब्राह्मण': (totalVoters * 0.22).round(),
-        'ओबीसी': (totalVoters * 0.18).round(),
-        'इतर समाज': (totalVoters * 0.20).round(),
+        'Maratha': (totalVoters * 0.40).round(),
+        'Brahmin': (totalVoters * 0.22).round(),
+        'OBC': (totalVoters * 0.18).round(),
+        'Others': (totalVoters * 0.20).round(),
       };
 
       final int totalComp = complaints.isNotEmpty ? complaints.length : 24;
@@ -275,12 +275,12 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
         solvedRequests: 11,
         pendingRequests: 3,
         totalElectionVotes: (totalVoters * 0.68).round(),
-        winnerName: 'आपला नगरसेवक (महायुती)',
+        winnerName: 'Sitting Corporator (Mahayuti)',
         winningMargin: 480,
         partyPerformance: {
-          'महायुती': (totalVoters * 0.38).round(),
-          'महाविकास आघाडी': (totalVoters * 0.24).round(),
-          'इतर': (totalVoters * 0.06).round(),
+          'Mahayuti': (totalVoters * 0.38).round(),
+          'Maha Vikas Aghadi': (totalVoters * 0.24).round(),
+          'Others': (totalVoters * 0.06).round(),
         },
         conductedEventsCount: 6,
         avgRsvpAttendance: 85,
@@ -314,28 +314,28 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
     String brief = '';
 
     if (_selectedTone == 'Development') {
-      brief = '🚩 *विकास व नागरी सुविधा दौरा आराखडा - $area*\n\n'
-          'नमस्कार, प्रभाग १२ मधील $area येथे नुकत्याच पूर्ण झालेल्या जलवाहिनी सिमेंट काँक्रीट व नवीन एलईडी पथदिवे कामांचे उद्घाटन होणार आहे.\n\n'
-          '📌 *महत्त्वाचे मुद्दे:*\n'
-          '• एकूण मतदार: ${_reportData!.totalVoters} | मोबाईल संपर्क: ${_reportData!.mobileReach}%\n'
-          '• सोडवलेल्या तक्रारी: ${_reportData!.solvedComplaints} पैकी ${_reportData!.totalComplaints}\n'
-          '• विकास निधी खर्च: ₹${NumberFormat.currency(locale: 'en_IN', symbol: '').format(_reportData!.utilizedBudget)}\n\n'
-          '🎯 *आवाहन:* नागरिकांच्या उर्वरित स्वच्छता व पाणीपुरवठा समस्या प्राधान्याने निकाली काढण्याची कटिबद्धता जाहीर करावी.';
+      brief = '🚩 *Development & Civic Outreach Briefing - $area*\n\n'
+          'Greetings, in Ward 12 $area, inauguration of recently completed water pipelines, road concretization and new LED street lighting will take place.\n\n'
+          '📌 *Key Highlights:*\n'
+          '• Total Voters: ${_reportData!.totalVoters} | Mobile Reach: ${_reportData!.mobileReach}%\n'
+          '• Grievances Resolved: ${_reportData!.solvedComplaints} of ${_reportData!.totalComplaints}\n'
+          '• Ward Budget Utilized: ₹${NumberFormat.currency(locale: 'en_IN', symbol: '').format(_reportData!.utilizedBudget)}\n\n'
+          '🎯 *Action:* Reaffirm commitment to prioritizing remaining sanitation and water supply issues.';
     } else if (_selectedTone == 'Grievance') {
-      brief = '⚠️ *नागरी समस्या निवारण बैठक - $area*\n\n'
-          '$area परिसरातील प्रलंबित ${_reportData!.ongoingComplaints} तक्रारींच्या निवारणासाठी महापालिका अधिकारी व कनिष्ठ अभियंत्यांसमवेत संयुक्त पाहणी दौरा.\n\n'
-          '📌 *प्राधान्य विषय:*\n'
-          '• सांडपाणी ड्रेनेज चेंबर दुरुस्ती व डास प्रतिबंधक धूर फवारणी\n'
-          '• ज्येष्ठ नागरिकांसाठी पदपथ सुरक्षितता व स्वच्छता मोहीम\n\n'
-          '🎯 *कृती योजना:* २४ तासांत महापालिका हेल्पलाईनद्वारे टोकन नंबर जारी करून कामाचा अहवाल नागरिकांना सुपूर्द केला जाईल.';
+      brief = '⚠️ *Citizen Grievance Redressal Meeting - $area*\n\n'
+          'Joint inspection with municipal engineers to resolve ${_reportData!.ongoingComplaints} pending grievances in the $area vicinity.\n\n'
+          '📌 *Priority Action Items:*\n'
+          '• Sewage drainage chamber repairs & mosquito fogging drive\n'
+          '• Footpath safety & cleanliness drive for senior citizens\n\n'
+          '🎯 *Action Plan:* Token numbers will be issued within 24 hours via PMC helpline and progress reports delivered to citizens.';
     } else {
-      brief = '🏆 *निवडणूक प्रचार व बूथ मजबुतीकरण - $area*\n\n'
-          '$area मधील सक्रिय कार्यकर्त्यांची बैठक व बूथनिहाय मतदारांशी थेट संवाद.\n\n'
-          '📌 *राजकीय स्थिती:*\n'
-          '• एकूण मतदार: ${_reportData!.totalVoters}\n'
-          '• हक्काचे समर्थक: ${_reportData!.supportersCount} (घनता ${(_reportData!.supportersCount / _reportData!.totalVoters * 100).round()}%)\n'
-          '• गत निवडणुकीतील आघाडी: +${_reportData!.winningMargin} मते\n\n'
-          '🎯 *रणनीती:* १८-३५ वयोगटातील तरुण मतदारांना क्रीडा साहित्य व शासकीय योजना केंद्रांमार्फत जोडणे.';
+      brief = '🏆 *Campaign & Booth Strengthening Briefing - $area*\n\n'
+          'Cadre meeting and booth-level voter connect in $area.\n\n'
+          '📌 *Political Overview:*\n'
+          '• Total Voters: ${_reportData!.totalVoters}\n'
+          '• Committed Supporters: ${_reportData!.supportersCount} (Density ${(_reportData!.supportersCount / _reportData!.totalVoters * 100).round()}%)\n'
+          '• Prior Election Lead: +${_reportData!.winningMargin} votes\n\n'
+          '🎯 *Strategy:* Engage youth voters aged 18-35 via sports clubs and welfare scheme helpdesks.';
     }
 
     if (mounted) {
@@ -350,17 +350,17 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
     if (_reportData == null) return;
     final text = _generatedBrief.isNotEmpty
         ? _generatedBrief
-        : '📊 *${_reportData!.areaName} विश्लेषण व धोरण अहवाल*\n'
-            'एकूण मतदार: ${_reportData!.totalVoters}\n'
-            'समर्थक: ${_reportData!.supportersCount}\n'
-            'सोडवलेल्या तक्रारी: ${_reportData!.solvedComplaints}/${_reportData!.totalComplaints}\n'
-            'विकास निधी: ₹${_reportData!.utilizedBudget}\n\n'
-            '_नगरसेवक जनसंपर्क कार्यालय, प्रभाग १२_';
+        : '📊 *${_reportData!.areaName} Analysis & Strategy Report*\n'
+            'Total Voters: ${_reportData!.totalVoters}\n'
+            'Committed Supporters: ${_reportData!.supportersCount}\n'
+            'Resolved Grievances: ${_reportData!.solvedComplaints}/${_reportData!.totalComplaints}\n'
+            'Ward Budget Utilized: ₹${_reportData!.utilizedBudget}\n\n'
+            '_Corporator PR Office, Ward 12_';
 
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('अहवाल क्लिपबोर्डवर कॉपी केला! WhatsApp वर पेस्ट करा.'),
+        content: Text('Report copied to clipboard! Paste directly into WhatsApp.'),
         backgroundColor: Color(0xFF25D366),
       ),
     );
@@ -390,7 +390,7 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
                         style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.indigo900),
                       ),
                       pw.Text(
-                        'क्षेत्रीय गुप्तचर व सल्लागार अहवाल (Analysis & Strategy Docket)',
+                        'Area Intelligence & Strategic Advisory Docket',
                         style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.black),
                       ),
                       pw.Text('Area: ${r.areaName} · Confidential Political Document', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
@@ -489,31 +489,92 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      drawer: const NagarsevakAppDrawer(),
       appBar: AppBar(
-        title: Row(
-          children: const [
-            Icon(Icons.insights_rounded, color: Color(0xFFD97706), size: 24),
-            SizedBox(width: 8),
-            Text('Analysis & Strategy'),
-          ],
-        ),
+        backgroundColor: const Color(0xFF0284C7),
+        foregroundColor: Colors.white,
         elevation: 0,
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: const Color(0xFFD97706),
-          unselectedLabelColor: isDark ? Colors.grey[400] : Colors.grey[600],
-          indicatorColor: const Color(0xFFD97706),
-          tabs: const [
-            Tab(icon: Icon(Icons.psychology_outlined), text: 'धोरण (Strategy Mode)'),
-            Tab(icon: Icon(Icons.bar_chart_rounded), text: 'विश्लेषण (Analytical Data)'),
+        scrolledUnderElevation: 0,
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+            tooltip: 'Open Menu Drawer',
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
+        ),
+        titleSpacing: 0,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Text(
+              'Analysis & Strategy',
+              style: TextStyle(
+                fontSize: 17.5,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: -0.2,
+              ),
+            ),
+            Text(
+              'Electoral data intelligence & demographic insights',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFFE0F2FE),
+              ),
+            ),
           ],
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
+        ),
+      body: Column(
         children: [
-          _buildStrategyTab(theme, isDark),
-          _buildAnalyticalTab(theme, isDark),
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            alignment: Alignment.centerLeft,
+            child: Container(
+              height: 40,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                indicator: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                labelColor: const Color(0xFF0284C7),
+                unselectedLabelColor: const Color(0xFF64748B),
+                labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+                indicatorSize: TabBarIndicatorSize.tab,
+                dividerColor: Colors.transparent,
+                tabs: const [
+                  Tab(icon: Icon(Icons.psychology_outlined, size: 16), text: 'Strategy Mode'),
+                  Tab(icon: Icon(Icons.bar_chart_rounded, size: 16), text: 'Analytical Data'),
+                ],
+              ),
+            ),
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildStrategyTab(theme, isDark),
+                _buildAnalyticalTab(theme, isDark),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -549,10 +610,10 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFEF3C7),
+                      color: const Color(0xFFE0F2FE),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.location_on, color: Color(0xFFD97706), size: 24),
+                    child: const Icon(Icons.location_on, color: Color(0xFF0284C7), size: 24),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -564,14 +625,14 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                         ),
                         const SizedBox(height: 2),
-                        const Text('प्रभाग १२ · गुप्तचर व सल्लागार अहवाल', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                        const Text('Ward 12 · Intelligence & Strategic Dossier', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
                       ],
                     ),
                   ),
                   OutlinedButton.icon(
                     onPressed: () => setState(() => _reportGenerated = false),
                     icon: const Icon(Icons.arrow_back, size: 14),
-                    label: const Text('बदला', style: TextStyle(fontSize: 11)),
+                    label: const Text('Change', style: TextStyle(fontSize: 11)),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     ),
@@ -590,7 +651,7 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
                 child: ElevatedButton.icon(
                   onPressed: _exportPdfReport,
                   icon: const Icon(Icons.picture_as_pdf, size: 16),
-                  label: const Text('PDF अहवाल डाउनलोड'),
+                  label: const Text('Download PDF Report'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1E293B),
                     foregroundColor: Colors.white,
@@ -603,7 +664,7 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
                 child: ElevatedButton.icon(
                   onPressed: _shareViaWhatsApp,
                   icon: const Icon(Icons.share, size: 16),
-                  label: const Text('WhatsApp शेअर'),
+                  label: const Text('Share on WhatsApp'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF25D366),
                     foregroundColor: Colors.white,
@@ -617,7 +678,7 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
           const SizedBox(height: 14),
 
           // Overview KPI Grid
-          const Text('महत्त्वाचे निर्देशक (Executive Overview)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+          const Text('Executive Overview', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           GridView.count(
             crossAxisCount: 2,
@@ -627,10 +688,10 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
             mainAxisSpacing: 10,
             childAspectRatio: 1.5,
             children: [
-              _buildKpiCard('एकूण मतदार', '${r.totalVoters}', Icons.people_alt, const Color(0xFF3B82F6), isDark),
-              _buildKpiCard('मोबाईल संपर्क', '${r.mobileReach}%', Icons.phone_android, const Color(0xFF10B981), isDark),
-              _buildKpiCard('हक्काचे समर्थक', '${r.supportersCount}', Icons.verified_user, const Color(0xFF8B5CF6), isDark),
-              _buildKpiCard('सोडवलेल्या तक्रारी', '${r.solvedComplaints}/${r.totalComplaints}', Icons.task_alt, const Color(0xFFF59E0B), isDark),
+              _buildKpiCard('Total Voters', '${r.totalVoters}', Icons.people_alt, const Color(0xFF3B82F6), isDark),
+              _buildKpiCard('Mobile Reach', '${r.mobileReach}%', Icons.phone_android, const Color(0xFF10B981), isDark),
+              _buildKpiCard('Supporters', '${r.supportersCount}', Icons.verified_user, const Color(0xFF8B5CF6), isDark),
+              _buildKpiCard('Resolved Grievances', '${r.solvedComplaints}/${r.totalComplaints}', Icons.task_alt, const Color(0xFFF59E0B), isDark),
             ],
           ),
 
@@ -641,9 +702,9 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
             elevation: 0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),
-              side: const BorderSide(color: Color(0xFFFDE68A)),
+              side: const BorderSide(color: Color(0xFFBAE6FD)),
             ),
-            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFFFFBEB),
+            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF0F9FF),
             child: Padding(
               padding: const EdgeInsets.all(14),
               child: Column(
@@ -651,29 +712,29 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
                 children: [
                   Row(
                     children: const [
-                      Icon(Icons.auto_awesome, color: Color(0xFFD97706), size: 18),
+                      Icon(Icons.auto_awesome, color: Color(0xFF0284C7), size: 18),
                       SizedBox(width: 6),
                       Text(
-                        'AI दौरा व भाषण मसुदा (Visit Briefing AI)',
+                        'Visit Briefing AI',
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
                       ),
                     ],
                   ),
                   const SizedBox(height: 6),
                   const Text(
-                    'परिसराच्या डेटावर आधारित स्वयंचलित प्रभावी दौरा भाषण व रणनीती तयार करा.',
-                    style: TextStyle(fontSize: 11, color: Color(0xFF78350F)),
+                    'Generate data-driven speech drafts and ground strategy automatically based on area insights.',
+                    style: TextStyle(fontSize: 11, color: Color(0xFF0369A1)),
                   ),
                   const SizedBox(height: 10),
 
                   // Tone selection
                   Row(
                     children: [
-                      _buildToneOption('Development', 'विकासकामे'),
+                      _buildToneOption('Development', 'Development'),
                       const SizedBox(width: 6),
-                      _buildToneOption('Grievance', 'नागरी अडचणी'),
+                      _buildToneOption('Grievance', 'Grievances'),
                       const SizedBox(width: 6),
-                      _buildToneOption('Campaign', 'निवडणूक'),
+                      _buildToneOption('Campaign', 'Campaign'),
                     ],
                   ),
 
@@ -686,9 +747,9 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
                       icon: _isGeneratingBrief
                           ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                           : const Icon(Icons.bolt, size: 16),
-                      label: Text(_isGeneratingBrief ? 'मसुदा तयार होत आहे...' : 'AI मसुदा तयार करा'),
+                      label: Text(_isGeneratingBrief ? 'Generating Draft...' : 'Generate AI Brief'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFD97706),
+                        backgroundColor: const Color(0xFF0284C7),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
@@ -702,7 +763,7 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFFFDE68A)),
+                        border: Border.all(color: const Color(0xFFBAE6FD)),
                       ),
                       child: Text(
                         _generatedBrief,
@@ -718,13 +779,13 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
           const SizedBox(height: 16),
 
           // Strategic Action Plan
-          const Text('धोरणात्मक कृती योजना (Strategic Action Points)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+          const Text('Strategic Action Points', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          _buildActionPoint('१', 'युवा मतदार संवाद (Youth Outreach)', '१८ ते ३५ वयोगटातील ${r.age18_35} मतदारांशी व्हॉट्सॲप व क्रीडा मंडळांच्या माध्यमातून थेट संवाद साधा.', const Color(0xFF3B82F6), isDark),
+          _buildActionPoint('1', 'Youth Outreach', 'Directly connect with ${r.age18_35} voters aged 18 to 35 via WhatsApp and sports clubs.', const Color(0xFF3B82F6), isDark),
           const SizedBox(height: 8),
-          _buildActionPoint('२', 'प्रलंबित नागरी तक्रारी निवारण', 'परिसरातील उर्वरित ${r.ongoingComplaints} तक्रारी महापालिका अधिकाऱ्यांशी प्रत्यक्ष पाहणी करून आठवड्यात मार्गी लावा.', const Color(0xFFEF4444), isDark),
+          _buildActionPoint('2', 'Pending Grievance Redressal', 'Conduct ground inspections with municipal officials to resolve remaining ${r.ongoingComplaints} complaints within a week.', const Color(0xFFEF4444), isDark),
           const SizedBox(height: 8),
-          _buildActionPoint('३', 'विकास निधी प्रस्ताव', '${r.requestedProvisionsCount} विकासकामांचे मंजूर प्रस्ताव लवकरात लवकर पूर्ण करून उद्घाटनाचे नियोजन करा.', const Color(0xFF10B981), isDark),
+          _buildActionPoint('3', 'Development Proposals', 'Expedite approved execution of ${r.requestedProvisionsCount} ward works and plan inauguration events.', const Color(0xFF10B981), isDark),
         ],
       ),
     );
@@ -738,11 +799,11 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
           children: [
             const Icon(Icons.pie_chart_outline, size: 48, color: Colors.grey),
             const SizedBox(height: 12),
-            const Text('कृपया प्रथम पहिल्या टॅबवरून क्षेत्र निवडा', style: TextStyle(color: Colors.grey)),
+            const Text('Please select an area from the first tab first', style: TextStyle(color: Colors.grey)),
             const SizedBox(height: 10),
             ElevatedButton(
               onPressed: () => _tabController.animateTo(0),
-              child: const Text('क्षेत्र निवडा'),
+              child: const Text('Select Area'),
             ),
           ],
         ),
@@ -757,7 +818,7 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Demographics Breakdown
-          const Text('लोकसंख्या व मतदार वर्गवारी (Demographics)', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold)),
+          const Text('Demographics & Voter Breakdown', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Card(
             elevation: 0,
@@ -772,18 +833,18 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildMetricColumn('पुरुष', '${r.genderMale}', const Color(0xFF3B82F6)),
-                      _buildMetricColumn('महिला', '${r.genderFemale}', const Color(0xFFEC4899)),
-                      _buildMetricColumn('इतर', '${r.genderOther}', Colors.grey),
+                      _buildMetricColumn('Male', '${r.genderMale}', const Color(0xFF3B82F6)),
+                      _buildMetricColumn('Female', '${r.genderFemale}', const Color(0xFFEC4899)),
+                      _buildMetricColumn('Other', '${r.genderOther}', Colors.grey),
                     ],
                   ),
                   const Divider(height: 24),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildMetricColumn('१८-३५ युवा', '${r.age18_35}', const Color(0xFF10B981)),
-                      _buildMetricColumn('३६-६० प्रौढ', '${r.age36_60}', const Color(0xFFF59E0B)),
-                      _buildMetricColumn('६१+ ज्येष्ठ', '${r.age61Plus}', const Color(0xFF6366F1)),
+                      _buildMetricColumn('18-35 Youth', '${r.age18_35}', const Color(0xFF10B981)),
+                      _buildMetricColumn('36-60 Adult', '${r.age36_60}', const Color(0xFFF59E0B)),
+                      _buildMetricColumn('61+ Senior', '${r.age61Plus}', const Color(0xFF6366F1)),
                     ],
                   ),
                 ],
@@ -794,7 +855,7 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
           const SizedBox(height: 16),
 
           // Caste Distribution
-          const Text('सामाजिक वर्गवारी (Community Split)', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold)),
+          const Text('Community Split', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Card(
             elevation: 0,
@@ -819,7 +880,7 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
                               value: pct.clamp(0.0, 1.0),
                               minHeight: 8,
                               backgroundColor: Colors.grey[200],
-                              color: const Color(0xFFD97706),
+                              color: const Color(0xFF0284C7),
                             ),
                           ),
                         ),
@@ -836,7 +897,7 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
           const SizedBox(height: 16),
 
           // Political Results
-          const Text('मागील निवडणूक निकाल (Past Election Analysis)', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold)),
+          const Text('Past Election Analysis', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Card(
             elevation: 0,
@@ -852,7 +913,7 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('विजेता उमेदवार / आघाडी:', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      const Text('Winning Candidate / Alliance:', style: TextStyle(fontSize: 12, color: Colors.grey)),
                       Text(r.winnerName, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
                     ],
                   ),
@@ -860,8 +921,8 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('आघाडी (Winning Margin):', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                      Text('+${r.winningMargin} मते', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFFD97706))),
+                      const Text('Winning Margin:', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      Text('+${r.winningMargin} votes', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
                     ],
                   ),
                   const Divider(height: 20),
@@ -871,7 +932,7 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(p.key, style: const TextStyle(fontSize: 12)),
-                            Text('${p.value} मते', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                            Text('${p.value} votes', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                           ],
                         ),
                       )),
@@ -895,19 +956,19 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
             width: 68,
             height: 68,
             decoration: BoxDecoration(
-              color: const Color(0xFFFEF3C7),
+              color: const Color(0xFFE0F2FE),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Icon(Icons.analytics_outlined, color: Color(0xFFD97706), size: 36),
+            child: const Icon(Icons.analytics_outlined, color: Color(0xFF0284C7), size: 36),
           ),
           const SizedBox(height: 14),
           const Text(
-            'क्षेत्रीय गुप्तचर व सल्लागार प्रणाली',
+            'Area Intelligence & Strategy System',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
           ),
           const SizedBox(height: 6),
           Text(
-            'प्रभागातील कोणत्याही परिसराचे नाव निवडा. प्रणाली मतदार संख्या, नागरी समस्या व विकासकामांचे विश्लेषण संकलित करेल.',
+            'Select any locality in Ward 12. The system aggregates voter count, civic complaints, and developmental metrics.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 12, color: Colors.grey[600]),
           ),
@@ -917,7 +978,7 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
           TextField(
             controller: _searchController,
             decoration: InputDecoration(
-              hintText: 'परिसराचे नाव टाईप करा (उदा. शनिवार पेठ)...',
+              hintText: 'Type locality name (e.g. Shaniwar Peth)...',
               prefixIcon: const Icon(Icons.search, size: 20),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -931,7 +992,7 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
           Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              'किंवा यादीतून निवडा (${_allAreas.length} क्षेत्रे उपलब्ध):',
+              'Or select from list (${_allAreas.length} areas available):',
               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
             ),
           ),
@@ -946,7 +1007,7 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 isExpanded: true,
-                hint: const Text('क्षेत्र निवडा...', style: TextStyle(fontSize: 13)),
+                hint: const Text('Select Area...', style: TextStyle(fontSize: 13)),
                 items: _allAreas.map((a) {
                   return DropdownMenuItem<String>(
                     value: a,
@@ -971,9 +1032,9 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
             child: ElevatedButton.icon(
               onPressed: () => _generateReport(_searchController.text),
               icon: const Icon(Icons.insights, size: 18),
-              label: const Text('अहवाल संकलित करा (Generate Report)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+              label: const Text('Generate Strategic Report', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFD97706),
+                backgroundColor: const Color(0xFF0284C7),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
@@ -986,11 +1047,11 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
 
   Widget _buildLoadingPipeline(bool isDark) {
     final steps = [
-      'मतदार यादी व डेटा संकलन...',
-      'नागरी तक्रारी व अडचणी विश्लेषण...',
-      'मागील निवडणूक कल व मतदान...',
-      'विकासकामे व निधी तरतूद...',
-      'अंतिम सल्लागार अहवाल तयार होत आहे...',
+      'Aggregating voter roll data...',
+      'Analyzing civic grievances and complaints...',
+      'Reviewing past election margins and turnout...',
+      'Analyzing development fund provisions...',
+      'Compiling final strategic dossier...',
     ];
 
     return Center(
@@ -999,10 +1060,10 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const CircularProgressIndicator(color: Color(0xFFD97706)),
+            const CircularProgressIndicator(color: Color(0xFF0284C7)),
             const SizedBox(height: 20),
             const Text(
-              'गुप्तचर डेटा संकलन सुरू आहे...',
+              'Compiling intelligence data...',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 16),
@@ -1026,7 +1087,7 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
-                        color: isCurrent ? const Color(0xFFD97706) : Colors.grey[700],
+                        color: isCurrent ? const Color(0xFF0284C7) : Colors.grey[700],
                       ),
                     ),
                   ],
@@ -1076,9 +1137,9 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
           padding: const EdgeInsets.symmetric(vertical: 6),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: isSel ? const Color(0xFFD97706) : Colors.white,
+            color: isSel ? const Color(0xFF0284C7) : Colors.white,
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: isSel ? const Color(0xFFD97706) : Colors.grey[300]!),
+            border: Border.all(color: isSel ? const Color(0xFF0284C7) : Colors.grey[300]!),
           ),
           child: Text(
             label,

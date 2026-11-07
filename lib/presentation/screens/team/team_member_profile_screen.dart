@@ -48,8 +48,8 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
 
   Future<void> _messageOnWhatsApp() async {
     final msg = Uri.encodeComponent(
-      'सस्नेह नमस्कार ${_member.displayName},\n'
-      'प्रभाग क्र. १२ नगरसेवक कार्यालयामार्फत संपर्क करत आहोत.',
+      'Greetings ${_member.displayName},\n'
+      'Contacting you from Ward 12 Corporator Office.',
     );
     final url = Uri.parse('https://wa.me/91${_member.mobile}?text=$msg');
     try {
@@ -66,7 +66,7 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(newStatus == 'Completed' ? 'काम पूर्ण म्हणून नोंदवले गेले!' : 'कामाची स्थिती बदलली'),
+          content: Text(newStatus == 'Completed' ? 'Task marked as completed!' : 'Task status updated'),
           duration: const Duration(seconds: 1),
           backgroundColor: const Color(0xFF0284C7),
         ),
@@ -126,8 +126,8 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('नवीन काम सोपवा (Assign Task)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                              Text('${_member.displayName} यांच्याकडे काम वाटप', style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600)),
+                              const Text('Assign New Task', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              Text('Assign task to ${_member.displayName}', style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600)),
                             ],
                           ),
                         ),
@@ -136,12 +136,12 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
                     const SizedBox(height: 16),
 
                     // Task Title
-                    const Text('कामाचे शीर्षक (Task Title)*', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                    const Text('Task Title*', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 5),
                     TextField(
                       controller: titleCtrl,
                       decoration: InputDecoration(
-                        hintText: 'उदा. शनिवार पेठ ड्रेनेज पाहणी',
+                        hintText: 'e.g. Shaniwar Peth drainage inspection',
                         hintStyle: TextStyle(fontSize: 12.5, color: Colors.grey.shade400),
                         isDense: true,
                         filled: true,
@@ -152,13 +152,13 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
                     const SizedBox(height: 12),
 
                     // Description
-                    const Text('सविस्तर तपशील (Description)', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                    const Text('Description', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 5),
                     TextField(
                       controller: descCtrl,
                       maxLines: 2,
                       decoration: InputDecoration(
-                        hintText: 'कामाचे स्वरूप, नागरिकांची अडचण किंवा सूचना...',
+                        hintText: 'Work details, citizen grievance or instructions...',
                         hintStyle: TextStyle(fontSize: 12.5, color: Colors.grey.shade400),
                         isDense: true,
                         filled: true,
@@ -175,7 +175,7 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('प्राधान्य (Priority)', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                              const Text('Priority', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
                               const SizedBox(height: 5),
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -189,9 +189,9 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
                                     value: priority,
                                     isExpanded: true,
                                     items: const [
-                                      DropdownMenuItem(value: 'Low', child: Text('सामान्य (Low)', style: TextStyle(fontSize: 12))),
-                                      DropdownMenuItem(value: 'Medium', child: Text('मध्यम (Medium)', style: TextStyle(fontSize: 12))),
-                                      DropdownMenuItem(value: 'High', child: Text('तात्काळ (High)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.redAccent))),
+                                      DropdownMenuItem(value: 'Low', child: Text('Low', style: TextStyle(fontSize: 12))),
+                                      DropdownMenuItem(value: 'Medium', child: Text('Medium', style: TextStyle(fontSize: 12))),
+                                      DropdownMenuItem(value: 'High', child: Text('High', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.redAccent))),
                                     ],
                                     onChanged: (val) {
                                       if (val != null) setModalState(() => priority = val);
@@ -207,7 +207,7 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('मुदत (Due Date)', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                              const Text('Due Date', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
                               const SizedBox(height: 5),
                               InkWell(
                                 onTap: () async {
@@ -246,12 +246,12 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
                     const SizedBox(height: 12),
 
                     // Location
-                    const Text('ठिकाण / परिसर (Location)', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                    const Text('Location / Area', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 5),
                     TextField(
                       controller: locCtrl,
                       decoration: InputDecoration(
-                        hintText: 'उदा. शनिवार पेठ, गल्ली क्र. २',
+                        hintText: 'e.g. Shaniwar Peth, Lane 2',
                         hintStyle: TextStyle(fontSize: 12.5, color: Colors.grey.shade400),
                         isDense: true,
                         filled: true,
@@ -286,7 +286,7 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
                           _loadTasks();
 
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('काम यशस्वीरित्या सोपवले गेले!'), backgroundColor: Color(0xFF16A34A)),
+                            const SnackBar(content: Text('Task assigned successfully!'), backgroundColor: Color(0xFF16A34A)),
                           );
                         },
                         style: ElevatedButton.styleFrom(
@@ -294,7 +294,7 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
-                        child: const Text('काम सोपवा (Assign)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        child: const Text('Assign Task', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                       ),
                     ),
                   ],
@@ -349,12 +349,12 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
         actions: [
           IconButton(
             icon: const Icon(Icons.phone, color: Colors.white),
-            tooltip: 'कॉल करा',
+            tooltip: 'Call',
             onPressed: _callMember,
           ),
           IconButton(
             icon: const Icon(Icons.send_rounded, color: Colors.white),
-            tooltip: 'व्हॉट्सॲप मेसेज',
+            tooltip: 'WhatsApp Message',
             onPressed: _messageOnWhatsApp,
           ),
         ],
@@ -382,7 +382,7 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: const Color(0xFF0284C7),
         icon: const Icon(Icons.add_task_rounded, color: Colors.white),
-        label: const Text('काम सोपवा', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        label: const Text('Assign Task', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         onPressed: _showAssignTaskModal,
       ),
     );
@@ -478,13 +478,13 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
 
           // Detail Points Grid
           if (_member.partyWing != null && _member.partyWing!.isNotEmpty)
-            _buildInfoRow(Icons.flag_rounded, 'पक्ष आघाडी / संघटना', '${_member.partyWing!} ${_member.pad != null ? "(${_member.pad})" : ""}'),
+            _buildInfoRow(Icons.flag_rounded, 'Party Wing / Organization', '${_member.partyWing!} ${_member.pad != null ? "(${_member.pad})" : ""}'),
           if (_member.societyName != null && _member.societyName!.isNotEmpty)
-            _buildInfoRow(Icons.apartment_rounded, 'संस्था / विभाग', _member.societyName!),
-          _buildInfoRow(Icons.location_on_outlined, 'कार्यक्षेत्र (Area)', _member.area ?? 'प्रभाग १२ सर्व परिसर'),
-          _buildInfoRow(Icons.phone_iphone_rounded, 'मोबाईल नंबर', '+91 ${_member.mobile}'),
+            _buildInfoRow(Icons.apartment_rounded, 'Organization / Department', _member.societyName!),
+          _buildInfoRow(Icons.location_on_outlined, 'Work Area', _member.area ?? 'Ward 12 Entire Area'),
+          _buildInfoRow(Icons.phone_iphone_rounded, 'Mobile Number', '+91 ${_member.mobile}'),
           if (_member.email != null && _member.email!.isNotEmpty)
-            _buildInfoRow(Icons.email_outlined, 'ईमेल', _member.email!),
+            _buildInfoRow(Icons.email_outlined, 'Email', _member.email!),
         ],
       ),
     );
@@ -516,7 +516,7 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
         Expanded(
           child: ElevatedButton.icon(
             icon: const Icon(Icons.phone, size: 16, color: Colors.white),
-            label: const Text('कॉल करा', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+            label: const Text('Call', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF0284C7),
               padding: const EdgeInsets.symmetric(vertical: 11),
@@ -529,7 +529,7 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
         Expanded(
           child: ElevatedButton.icon(
             icon: const Icon(Icons.send_rounded, size: 15, color: Colors.white),
-            label: const Text('व्हॉट्सॲप', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+            label: const Text('WhatsApp', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF25D366),
               padding: const EdgeInsets.symmetric(vertical: 11),
@@ -558,19 +558,19 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
               Icon(Icons.auto_fix_high_rounded, size: 17, color: Color(0xFF0284C7)),
               SizedBox(width: 6),
               Text(
-                'ऑटो-असाईन कीवर्ड (Auto-Assign Rules)',
+                'Auto-Assign Rules',
                 style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold),
               ),
             ],
           ),
           const SizedBox(height: 4),
           Text(
-            'नागरिकांच्या तक्रारीत खालील शब्द आढळल्यास हे काम आपोआप यांच्याकडे वर्ग होते:',
+            'When citizen complaints contain these keywords, tasks are routed here automatically:',
             style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
           ),
           const SizedBox(height: 10),
           if (_member.keywords.isEmpty)
-            Text('कोणतेही विशिष्ट कीवर्ड जोडलेले नाहीत (सर्वसाधारण कामे).', style: TextStyle(fontSize: 12, color: Colors.grey.shade500))
+            Text('No specific keywords assigned (General tasks).', style: TextStyle(fontSize: 12, color: Colors.grey.shade500))
           else
             Wrap(
               spacing: 6,
@@ -614,7 +614,7 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
                   Icon(Icons.task_alt_rounded, size: 18, color: Color(0xFF0284C7)),
                   SizedBox(width: 6),
                   Text(
-                    'सोपवलेली कामे (Assigned Tasks)',
+                    'Assigned Tasks',
                     style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold),
                   ),
                 ],
@@ -624,13 +624,13 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(6)),
-                    child: Text('$completed पूर्ण', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
+                    child: Text('$completed Completed', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
                   ),
                   const SizedBox(width: 4),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(color: const Color(0xFFFEF3C7), borderRadius: BorderRadius.circular(6)),
-                    child: Text('$pending चालू', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFD97706))),
+                    child: Text('$pending In Progress', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFD97706))),
                   ),
                 ],
               ),
@@ -648,7 +648,7 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
                   children: [
                     Icon(Icons.assignment_turned_in_outlined, size: 36, color: Colors.grey.shade300),
                     const SizedBox(height: 6),
-                    Text('अद्याप कोणतेही काम सोपवलेले नाही.', style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                    Text('No tasks assigned yet.', style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
                   ],
                 ),
               ),

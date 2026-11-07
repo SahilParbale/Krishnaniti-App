@@ -172,7 +172,7 @@ class AiContentReportGenerator {
                             ),
                             pw.SizedBox(height: 2),
                             pw.Text(
-                              'Corporator (नगरसेवक) • Ward 12',
+                              'Corporator (Nagarsevak) • Ward 12',
                               style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700),
                             ),
                             pw.Text(
@@ -374,7 +374,7 @@ class AiContentReportGenerator {
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
             pw.Text(
-              'कार्यालय: नगरसेवक अमित चौगुले',
+              'Office: Nagarsevak Amit Chougale',
               style: pw.TextStyle(
                 fontSize: 16,
                 fontWeight: pw.FontWeight.bold,
@@ -383,7 +383,7 @@ class AiContentReportGenerator {
             ),
             pw.SizedBox(height: 2),
             pw.Text(
-              'प्रभाग क्र. १२ (कसबा-विश्रामबाग वाडा) • पुणे महानगरपालिका',
+              'Ward No. 12 (Kasba-Vishrambaug Wada) • Pune Municipal Corporation',
               style: const pw.TextStyle(
                 fontSize: 10,
                 color: PdfColors.grey700,
@@ -391,7 +391,7 @@ class AiContentReportGenerator {
             ),
             pw.SizedBox(height: 2),
             pw.Text(
-              'जनसंपर्क कार्यालय: १००२, शनिवार पेठ, पुणे - ४११ ०३० | दूरध्वनी: ०२०-२५५०१२३४',
+              'Public Relations Office: 1002, Shaniwar Peth, Pune - 411 030 | Phone: 020-25501234',
               style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
             ),
           ],

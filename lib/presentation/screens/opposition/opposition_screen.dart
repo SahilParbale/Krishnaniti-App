@@ -129,8 +129,8 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
     bool isCandidate = memberToEdit?.isCandidate ?? false;
     String party = memberToEdit?.party ?? 'INC';
     String candidacyStatus = memberToEdit?.candidacyStatus ?? 'Declared';
-    final constCtrl = TextEditingController(text: memberToEdit?.constituency ?? 'प्रभाग क्र. १२ (पुणे मनपा)');
-    final oppCtrl = TextEditingController(text: memberToEdit?.opposingCandidate ?? 'विद्यमान नगरसेवक');
+    final constCtrl = TextEditingController(text: memberToEdit?.constituency ?? 'Ward 12 (Pune PMC)');
+    final oppCtrl = TextEditingController(text: memberToEdit?.opposingCandidate ?? 'Sitting Corporator');
     String? selectedCandidateId = memberToEdit?.candidateId;
 
     final repo = ref.read(oppositionRepoProvider);
@@ -173,7 +173,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                     const Icon(Icons.group_add_rounded, color: Color(0xFF0284C7), size: 24),
                     const SizedBox(width: 10),
                     Text(
-                      memberToEdit == null ? 'नवीन विरोधी सदस्य जोडा' : 'विरोधी माहिती संपादित करा',
+                      memberToEdit == null ? 'Add New Opposition Member' : 'Edit Opposition Member',
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                     ),
                   ],
@@ -200,7 +200,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                               borderRadius: BorderRadius.circular(8),
                               boxShadow: !isCandidate ? [const BoxShadow(color: Colors.black12, blurRadius: 2)] : null,
                             ),
-                            child: const Text('विरोधी कार्यकर्ता', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                            child: const Text('Opposition Cadre', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                           ),
                         ),
                       ),
@@ -215,7 +215,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                               borderRadius: BorderRadius.circular(8),
                               boxShadow: isCandidate ? [const BoxShadow(color: Colors.black12, blurRadius: 2)] : null,
                             ),
-                            child: const Text('विरोधी उमेदवार', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                            child: const Text('Opposition Candidate', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                           ),
                         ),
                       ),
@@ -228,8 +228,8 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                 TextField(
                   controller: nameCtrl,
                   decoration: InputDecoration(
-                    labelText: 'पूर्ण नाव *',
-                    hintText: 'उदा. Adv. रमेश शिंदे',
+                    labelText: 'Full Name *',
+                    hintText: 'e.g. Adv. Ramesh Shinde',
                     filled: true,
                     fillColor: const Color(0xFFF8FAFC),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -245,18 +245,18 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                       child: DropdownButtonFormField<String>(
                         value: party,
                         decoration: InputDecoration(
-                          labelText: 'पक्ष *',
+                          labelText: 'Party *',
                           filled: true,
                           fillColor: const Color(0xFFF8FAFC),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                         items: const [
-                          DropdownMenuItem(value: 'INC', child: Text('काँग्रेस (INC)')),
-                          DropdownMenuItem(value: 'NCP', child: Text('राष्ट्रवादी (NCP)')),
-                          DropdownMenuItem(value: 'UBT', child: Text('शिवसेना (UBT)')),
-                          DropdownMenuItem(value: 'MNS', child: Text('मनसे (MNS)')),
-                          DropdownMenuItem(value: 'BJP', child: Text('भाजप (BJP)')),
-                          DropdownMenuItem(value: 'Independent', child: Text('अपक्ष (Ind)')),
+                          DropdownMenuItem(value: 'INC', child: Text('Congress (INC)')),
+                          DropdownMenuItem(value: 'NCP', child: Text('NCP')),
+                          DropdownMenuItem(value: 'UBT', child: Text('Shiv Sena (UBT)')),
+                          DropdownMenuItem(value: 'MNS', child: Text('MNS')),
+                          DropdownMenuItem(value: 'BJP', child: Text('BJP')),
+                          DropdownMenuItem(value: 'Independent', child: Text('Independent (Ind)')),
                         ],
                         onChanged: (val) {
                           if (val != null) setModalState(() => party = val);
@@ -270,7 +270,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                         controller: phoneCtrl,
                         keyboardType: TextInputType.phone,
                         decoration: InputDecoration(
-                          labelText: 'मोबाईल क्रमांक',
+                          labelText: 'Mobile Number',
                           hintText: '98220xxxxx',
                           filled: true,
                           fillColor: const Color(0xFFF8FAFC),
@@ -286,8 +286,8 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                 TextField(
                   controller: roleCtrl,
                   decoration: InputDecoration(
-                    labelText: 'पद / भूमिका',
-                    hintText: 'उदा. माजी नगरसेवक, विभाग अध्यक्ष, शाखा सचिव',
+                    labelText: 'Role / Designation',
+                    hintText: 'e.g. Ex-Corporator, Ward President, Branch Secretary',
                     filled: true,
                     fillColor: const Color(0xFFF8FAFC),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -299,8 +299,8 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                 TextField(
                   controller: areaCtrl,
                   decoration: InputDecoration(
-                    labelText: 'मुख्य कार्यक्षेत्र / परिसर',
-                    hintText: 'उदा. टिळक चौक, सेक्टर ३, विठ्ठल नगर',
+                    labelText: 'Primary Work Area / Vicinity',
+                    hintText: 'e.g. Tilak Chowk, Sector 3, Vitthal Nagar',
                     filled: true,
                     fillColor: const Color(0xFFF8FAFC),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -313,7 +313,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                   TextField(
                     controller: constCtrl,
                     decoration: InputDecoration(
-                      labelText: 'उमेदवारी मतदारसंघ / प्रभाग',
+                      labelText: 'Constituency / Ward',
                       filled: true,
                       fillColor: const Color(0xFFF0F9FF),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -326,7 +326,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                         child: TextField(
                           controller: oppCtrl,
                           decoration: InputDecoration(
-                            labelText: 'प्रतिस्पर्धी उमेदवार',
+                            labelText: 'Opposing Candidate',
                             filled: true,
                             fillColor: const Color(0xFFF0F9FF),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -338,17 +338,17 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                         child: DropdownButtonFormField<String>(
                           value: candidacyStatus,
                           decoration: InputDecoration(
-                            labelText: 'उमेदवारी स्थिती',
+                            labelText: 'Candidacy Status',
                             filled: true,
                             fillColor: const Color(0xFFF0F9FF),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                           ),
                           items: const [
-                            DropdownMenuItem(value: 'Declared', child: Text('घोषित')),
-                            DropdownMenuItem(value: 'Contesting', child: Text('लढत असलेले')),
-                            DropdownMenuItem(value: 'Withdrawn', child: Text('मागे घेतलेले')),
-                            DropdownMenuItem(value: 'Won', child: Text('विजयी')),
-                            DropdownMenuItem(value: 'Lost', child: Text('पराजित')),
+                            DropdownMenuItem(value: 'Declared', child: Text('Declared')),
+                            DropdownMenuItem(value: 'Contesting', child: Text('Contesting')),
+                            DropdownMenuItem(value: 'Withdrawn', child: Text('Withdrawn')),
+                            DropdownMenuItem(value: 'Won', child: Text('Won')),
+                            DropdownMenuItem(value: 'Lost', child: Text('Lost')),
                           ],
                           onChanged: (val) {
                             if (val != null) setModalState(() => candidacyStatus = val);
@@ -364,13 +364,13 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                     DropdownButtonFormField<String>(
                       value: selectedCandidateId,
                       decoration: InputDecoration(
-                        labelText: 'उमेदवाराशी जोडा (ऐच्छिक)',
+                        labelText: 'Link to Candidate (Optional)',
                         filled: true,
                         fillColor: const Color(0xFFF8FAFC),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                       items: [
-                        const DropdownMenuItem(value: null, child: Text('कोणत्याही उमेदवाराशी संलग्न नाही')),
+                        const DropdownMenuItem(value: null, child: Text('Not linked to any candidate')),
                         ...candidatesList.map((c) => DropdownMenuItem(value: c.id, child: Text('${c.name} (${c.party})'))),
                       ],
                       onChanged: (val) => setModalState(() => selectedCandidateId = val),
@@ -383,8 +383,8 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                 TextField(
                   controller: strongholdsCtrl,
                   decoration: InputDecoration(
-                    labelText: 'बालेकिल्ले / अत्यंत सक्रिय क्षेत्रे (स्वल्पविरामाने वेगळे करा)',
-                    hintText: 'उदा. टिळक चौक, शांती नगर, बूथ क्र. ४-६',
+                    labelText: 'Strongholds / Active Areas (comma separated)',
+                    hintText: 'e.g. Tilak Chowk, Shanti Nagar, Booth 4-6',
                     filled: true,
                     fillColor: const Color(0xFFF8FAFC),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -397,8 +397,8 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                   controller: notesCtrl,
                   maxLines: 2,
                   decoration: InputDecoration(
-                    labelText: 'तपशील आणि अंतर्गत व्यूहरचना (Notes)',
-                    hintText: 'स्थानिक प्रभाव, जनसंपर्क आणि राजकीय निरीक्षणांची नोंद...',
+                    labelText: 'Notes & Strategy',
+                    hintText: 'Local influence, outreach, and political observations...',
                     filled: true,
                     fillColor: const Color(0xFFF8FAFC),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -413,7 +413,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                     onPressed: () async {
                       if (nameCtrl.text.trim().isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('कृपया विरोधी सदस्याचे पूर्ण नाव प्रविष्ट करा.')),
+                          const SnackBar(content: Text('Please enter opposition member name.')),
                         );
                         return;
                       }
@@ -455,7 +455,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
 
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(memberToEdit == null ? 'विरोधी सदस्य यशस्वीरीत्या जोडला गेला!' : 'माहिती अद्ययावत केली!'),
+                          content: Text(memberToEdit == null ? 'Opposition member added successfully!' : 'Details updated!'),
                           backgroundColor: const Color(0xFF16A34A),
                         ),
                       );
@@ -467,7 +467,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                     child: Text(
-                      memberToEdit == null ? 'सदस्य जोडा' : 'बदल जतन करा',
+                      memberToEdit == null ? 'Add Member' : 'Save Changes',
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                     ),
                   ),
@@ -487,12 +487,12 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('विरोधी रेकॉर्ड हटवायचा?'),
-        content: Text('आपण नक्की "${member.name}" चा रेकॉर्ड हटवू इच्छिता? ही कृती पूर्ववत केली जाऊ शकत नाही.'),
+        title: const Text('Delete Opposition Record?'),
+        content: Text('Are you sure you want to delete record for "${member.name}"? This action cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('रद्द करा'),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -502,12 +502,12 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
               _loadOppositionData();
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('रेकॉर्ड यशस्वीरित्या हटवला गेला!'), backgroundColor: Color(0xFFDC2626)),
+                  const SnackBar(content: Text('Record deleted successfully!'), backgroundColor: Color(0xFFDC2626)),
                 );
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626), foregroundColor: Colors.white),
-            child: const Text('हटवा'),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -522,26 +522,45 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
       backgroundColor: const Color(0xFFF8FAFC),
       drawer: const NagarsevakAppDrawer(),
       appBar: AppBar(
-        title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'विरोधी पक्षाची माहिती',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Colors.white),
-            ),
-            Text(
-              'Opposition Candidates, Workers & Intel',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFFE0F2FE)),
-            ),
-          ],
-        ),
         backgroundColor: const Color(0xFF0284C7),
         foregroundColor: Colors.white,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+            tooltip: 'Open Menu Drawer',
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
+        ),
+        titleSpacing: 0,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Text(
+              'Opposition Candidates',
+              style: TextStyle(
+                fontSize: 17.5,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: -0.2,
+              ),
+            ),
+            Text(
+              'Opposition candidate profiles, past records and public claims',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFFE0F2FE),
+              ),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.picture_as_pdf_outlined, color: Colors.white),
-            tooltip: 'पीडीएफ अहवाल तयार करा',
+            tooltip: 'Download PDF Report',
             onPressed: () {
               OppositionReportGenerator.generateAndPrintReport(
                 members: _members,
@@ -551,7 +570,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.add_circle_outline_rounded, color: Colors.white),
-            tooltip: 'नवीन सदस्य जोडा',
+            tooltip: 'Add New Member',
             onPressed: () => _showMemberForm(),
           ),
         ],
@@ -571,7 +590,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                 children: [
                   Expanded(
                     child: _buildKpiCard(
-                      title: 'एकूण नोंदी',
+                      title: 'Total Records',
                       value: _stats['total']?.toString() ?? '0',
                       icon: Icons.groups_rounded,
                       color: const Color(0xFF0284C7),
@@ -581,7 +600,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildKpiCard(
-                      title: 'उमेदवार',
+                      title: 'Candidates',
                       value: _stats['candidates']?.toString() ?? '0',
                       icon: Icons.how_to_vote_rounded,
                       color: const Color(0xFF4338CA),
@@ -591,7 +610,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildKpiCard(
-                      title: 'कार्यकर्ते',
+                      title: 'Cadre',
                       value: _stats['workers']?.toString() ?? '0',
                       icon: Icons.person_search_rounded,
                       color: const Color(0xFFD97706),
@@ -601,7 +620,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildKpiCard(
-                      title: 'वाद / किस्से',
+                      title: 'Controversies',
                       value: _stats['controversies']?.toString() ?? '0',
                       icon: Icons.warning_amber_rounded,
                       color: const Color(0xFFDC2626),
@@ -629,7 +648,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                         controller: _searchController,
                         onChanged: (_) => _loadOppositionData(),
                         decoration: InputDecoration(
-                          hintText: 'नाव, पद, बालेकिल्ले किंवा कीवर्ड शोधा...',
+                          hintText: 'Search name, role, strongholds or keywords...',
                           hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
                           prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Color(0xFF0284C7)),
                           suffixIcon: _searchController.text.isNotEmpty
@@ -662,12 +681,12 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                         IconButton(
                           icon: Icon(Icons.grid_view_rounded, size: 20, color: _viewMode == 0 ? const Color(0xFF0284C7) : const Color(0xFF94A3B8)),
                           onPressed: () => setState(() => _viewMode = 0),
-                          tooltip: 'कार्ड व्ह्यू',
+                          tooltip: 'Card View',
                         ),
                         IconButton(
                           icon: Icon(Icons.table_rows_rounded, size: 20, color: _viewMode == 1 ? const Color(0xFF0284C7) : const Color(0xFF94A3B8)),
                           onPressed: () => setState(() => _viewMode = 1),
-                          tooltip: 'तक्ता व्ह्यू',
+                          tooltip: 'Table View',
                         ),
                       ],
                     ),
@@ -684,17 +703,17 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    _buildFilterChip('सर्व (${_stats['total']})', 'all', _selectedType, (val) {
+                    _buildFilterChip('All (${_stats['total']})', 'all', _selectedType, (val) {
                       setState(() => _selectedType = val);
                       _loadOppositionData();
                     }),
                     const SizedBox(width: 6),
-                    _buildFilterChip('उमेदवार (${_stats['candidates']})', 'candidate', _selectedType, (val) {
+                    _buildFilterChip('Candidates (${_stats['candidates']})', 'candidate', _selectedType, (val) {
                       setState(() => _selectedType = val);
                       _loadOppositionData();
                     }),
                     const SizedBox(width: 6),
-                    _buildFilterChip('कार्यकर्ते (${_stats['workers']})', 'worker', _selectedType, (val) {
+                    _buildFilterChip('Cadre (${_stats['workers']})', 'worker', _selectedType, (val) {
                       setState(() => _selectedType = val);
                       _loadOppositionData();
                     }),
@@ -703,19 +722,19 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                     // Party Filters
                     Container(height: 18, width: 1, color: const Color(0xFFCBD5E1)),
                     const SizedBox(width: 14),
-                    _buildPartyFilterChip('सर्व पक्ष', 'all'),
+                    _buildPartyFilterChip('All Parties', 'all'),
                     const SizedBox(width: 6),
-                    _buildPartyFilterChip('काँग्रेस', 'INC'),
+                    _buildPartyFilterChip('Congress', 'INC'),
                     const SizedBox(width: 6),
-                    _buildPartyFilterChip('राष्ट्रवादी', 'NCP'),
+                    _buildPartyFilterChip('NCP', 'NCP'),
                     const SizedBox(width: 6),
-                    _buildPartyFilterChip('शिवसेना (UBT)', 'UBT'),
+                    _buildPartyFilterChip('Shiv Sena (UBT)', 'UBT'),
                     const SizedBox(width: 6),
-                    _buildPartyFilterChip('मनसे', 'MNS'),
+                    _buildPartyFilterChip('MNS', 'MNS'),
                     const SizedBox(width: 6),
-                    _buildPartyFilterChip('भाजप', 'BJP'),
+                    _buildPartyFilterChip('BJP', 'BJP'),
                     const SizedBox(width: 6),
-                    _buildPartyFilterChip('अपक्ष', 'Independent'),
+                    _buildPartyFilterChip('Independent', 'Independent'),
                   ],
                 ),
               ),
@@ -746,19 +765,19 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                       const Icon(Icons.person_off_outlined, size: 48, color: Color(0xFF94A3B8)),
                       const SizedBox(height: 12),
                       const Text(
-                        'कोणतेही विरोधी सदस्य आढळले नाहीत.',
+                        'No opposition members found.',
                         style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                       ),
                       const SizedBox(height: 4),
                       const Text(
-                        'नवीन रेकॉर्ड तयार करण्यासाठी वरचे "+ नवीन जोडा" बटण वापरा.',
+                        'Use the "+ Add Member" button above to create a record.',
                         style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                       ),
                       const SizedBox(height: 16),
                       ElevatedButton.icon(
                         onPressed: () => _showMemberForm(),
                         icon: const Icon(Icons.add, size: 16),
-                        label: const Text('विरोधी सदस्य जोडा'),
+                        label: const Text('Add Opposition Member'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF0284C7),
                           foregroundColor: Colors.white,
@@ -953,7 +972,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        member.role ?? (member.isCandidate ? 'उमेदवार' : 'कार्यकर्ता'),
+                        member.role ?? (member.isCandidate ? 'Candidate' : 'Cadre'),
                         style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                       ),
                       const SizedBox(height: 6),
@@ -1029,7 +1048,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                         children: [
                           Icon(Icons.edit_outlined, size: 16, color: Color(0xFF0284C7)),
                           SizedBox(width: 8),
-                          Text('संपादित करा'),
+                          Text('Edit'),
                         ],
                       ),
                     ),
@@ -1039,7 +1058,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                         children: [
                           Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFDC2626)),
                           SizedBox(width: 8),
-                          Text('हटवा', style: TextStyle(color: Color(0xFFDC2626))),
+                          Text('Delete', style: TextStyle(color: Color(0xFFDC2626))),
                         ],
                       ),
                     ),
@@ -1142,7 +1161,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                             const Icon(Icons.warning_amber_rounded, size: 12, color: Color(0xFFDC2626)),
                             const SizedBox(width: 4),
                             Text(
-                              '${member.negativeStories.length} वाद',
+                              '${member.negativeStories.length} Controversies',
                               style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFDC2626)),
                             ),
                           ],
@@ -1152,7 +1171,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                     ],
                     if (member.activities.isNotEmpty)
                       Text(
-                        '${member.activities.length} उपक्रम',
+                        '${member.activities.length} Activities',
                         style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
                       ),
                   ],
@@ -1160,7 +1179,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                 const Row(
                   children: [
                     Text(
-                      'सविस्तर प्रोफाइल',
+                      'Detailed Profile',
                       style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                     ),
                     Icon(Icons.chevron_right_rounded, size: 16, color: Color(0xFF0284C7)),
@@ -1192,15 +1211,15 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
             headingRowColor: WidgetStateProperty.all(const Color(0xFFF1F5F9)),
             columns: const [
               DataColumn(label: Text('#', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('नाव', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('पक्ष', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('प्रकार', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('भूमिका / पद', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('कार्यक्षेत्र', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('बालेकिल्ले', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('स्थिती / उमेदवार', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('वाद', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('कृती', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Name', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Party', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Type', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Role / Designation', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Work Area', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Strongholds', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Status / Candidate', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Issues', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Action', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
             ],
             rows: List.generate(_members.length, (index) {
               final m = _members[index];

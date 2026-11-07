@@ -48,7 +48,7 @@ class VoterFormsReportGenerator {
                       ),
                       pw.SizedBox(height: 2),
                       pw.Text(
-                        'मतदार नोंदणी व दुरुस्ती अर्ज अहवाल (ECI Voter Forms Register)',
+                        'ECI Voter Registration & Correction Forms Register',
                         style: pw.TextStyle(
                           fontSize: 15,
                           fontWeight: pw.FontWeight.bold,
@@ -73,7 +73,7 @@ class VoterFormsReportGenerator {
                           border: pw.Border.all(color: PdfColors.blue300, width: 0.5),
                         ),
                         child: pw.Text(
-                          'ECI HELPDESK / मतदार साहाय्यता कक्ष',
+                          'ECI HELPDESK / VOTER ASSISTANCE DESK',
                           style: pw.TextStyle(
                             fontSize: 7.5,
                             fontWeight: pw.FontWeight.bold,
@@ -83,7 +83,7 @@ class VoterFormsReportGenerator {
                       ),
                       pw.SizedBox(height: 4),
                       pw.Text(
-                        'दिनांक: $formattedDate',
+                        'Date: $formattedDate',
                         style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700),
                       ),
                       pw.Text(
@@ -101,13 +101,13 @@ class VoterFormsReportGenerator {
             // Summary KPI Row
             pw.Row(
               children: [
-                _buildPdfKpiCard('Total Applications (एकूण अर्ज)', total.toString(), PdfColors.indigo50, PdfColors.indigo900),
+                _buildPdfKpiCard('Total Applications', total.toString(), PdfColors.indigo50, PdfColors.indigo900),
                 pw.SizedBox(width: 8),
-                _buildPdfKpiCard('Approved (मंजूर अर्ज)', approved.toString(), PdfColors.green50, PdfColors.green900),
+                _buildPdfKpiCard('Approved', approved.toString(), PdfColors.green50, PdfColors.green900),
                 pw.SizedBox(width: 8),
-                _buildPdfKpiCard('Pending (प्रलंबित अर्ज)', pending.toString(), PdfColors.amber50, PdfColors.amber900),
+                _buildPdfKpiCard('Pending', pending.toString(), PdfColors.amber50, PdfColors.amber900),
                 pw.SizedBox(width: 8),
-                _buildPdfKpiCard('Submitted (दाखल अर्ज)', submitted.toString(), PdfColors.blue50, PdfColors.blue900),
+                _buildPdfKpiCard('Submitted', submitted.toString(), PdfColors.blue50, PdfColors.blue900),
               ],
             ),
 
@@ -117,12 +117,12 @@ class VoterFormsReportGenerator {
             pw.TableHelper.fromTextArray(
               headers: [
                 '#',
-                'Applicant Name (अर्जदाराचे नाव)',
+                'Applicant Name',
                 'Mobile',
-                'Form Type (अर्जाचा प्रकार)',
-                'Status (स्थिती)',
-                'Date (तारीख)',
-                'Notes & Purpose (नोंद व तपशील)',
+                'Form Type',
+                'Status',
+                'Date',
+                'Notes & Purpose',
               ],
               data: List.generate(applications.length, (index) {
                 final app = applications[index];
@@ -168,7 +168,7 @@ class VoterFormsReportGenerator {
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
                 pw.Text(
-                  'टीप: हा अहवाल नागरिकांच्या मतदार ओळखपत्र अर्ज व ईसीआय सेवा ट्रॅकिंगसाठी तयार केलेला आहे.',
+                  'Note: This report is compiled for tracking citizen voter ID applications and ECI services.',
                   style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey600),
                 ),
                 pw.Text(

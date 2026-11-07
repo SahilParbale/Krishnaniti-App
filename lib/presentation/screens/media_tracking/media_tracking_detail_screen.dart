@@ -69,7 +69,7 @@ class _MediaTrackingDetailScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-              'Successfully exported to Newspaper Clippings (वृत्तपत्र कात्रणात जतन केले)!'),
+              'Successfully exported to Newspaper Clippings!'),
           backgroundColor: Color(0xFF16A34A),
         ),
       );
@@ -305,7 +305,7 @@ class _MediaTrackingDetailScreenState
                                               BorderRadius.circular(20),
                                         ),
                                         child: Text(
-                                          'मराठी',
+                                          'Regional',
                                           style: TextStyle(
                                             color: _showMarathi
                                                 ? Colors.white
@@ -474,7 +474,7 @@ class _MediaTrackingDetailScreenState
                         elevation: 0,
                       ),
                       icon: const Icon(Icons.language_rounded, size: 18),
-                      label: const Text('View Full News / बातमी पहा',
+                      label: const Text('View Full News',
                           style: TextStyle(fontWeight: FontWeight.bold)),
                       onPressed: _openArticleUrl,
                     ),
@@ -506,7 +506,7 @@ class _MediaTrackingDetailScreenState
                             size: 18),
                     label: Text(
                       _article.isSavedToClipping
-                          ? 'Saved / जतन केले'
+                          ? 'Saved'
                           : 'Save to Clipping',
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),

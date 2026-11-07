@@ -113,22 +113,22 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
           children: const [
             Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
             SizedBox(width: 8),
-            Text('सर्वेक्षण हटवा?'),
+            Text('Delete Survey?'),
           ],
         ),
         content: Text(
-          'आपण खात्रीपूर्वक "${survey.title}" हे सर्वेक्षण हटवू इच्छिता? ही कृती पूर्ववत केली जाऊ शकत नाही.',
+          'Are you sure you want to delete "${survey.title}"? This action cannot be undone.',
           style: const TextStyle(fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('रद्द करा'),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-            child: const Text('हटवा', style: TextStyle(color: Colors.white)),
+            child: const Text('Delete', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -141,7 +141,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
       _loadSurveys();
       messenger.showSnackBar(
         const SnackBar(
-          content: Text('सर्वेक्षण यशस्वीरीत्या हटवले गेले'),
+          content: Text('Survey deleted successfully'),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -190,11 +190,11 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'नमुना सर्वेक्षण (Sample Surveys) मार्गदर्शन',
+                        'Sample Surveys Guide',
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        'शास्त्रीय जनमत चाचण्या कार्यपद्धती',
+                        'Scientific Opinion Polling Methodology',
                         style: TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                     ],
@@ -205,23 +205,23 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
             const SizedBox(height: 18),
             _buildHelpPoint(
               icon: Icons.pie_chart_rounded,
-              title: '१% नमुना आकार लक्ष्य (1% Sample Target)',
+              title: '1% Sample Size Target',
               desc:
-                  'एकूण ४२,५६० मतदारांपैकी किमान १% म्हणजेच ४२६ नागरिकांचा प्रातिनिधिक अभिप्राय घेतल्यास ९५% अचूकतेचा लोकमत निष्कर्ष प्राप्त होतो.',
+                  'Surveying a representative sample of 1% (426 citizens) out of 42,560 voters gives 95% statistical confidence in public opinion.',
             ),
             const SizedBox(height: 12),
             _buildHelpPoint(
               icon: Icons.share_rounded,
-              title: 'व्हॉट्सॲप मॅजिक लिंक (Direct WhatsApp Distribution)',
+              title: 'Direct WhatsApp Distribution',
               desc:
-                  'नागरिकांना वैयक्तिक व्हॉट्सॲप लिंक पाठवून नागरिक थेट २ मिनिटांत मोबाईलवर प्रश्नावली भरू शकतात.',
+                  'Send personalized WhatsApp magic links to citizens so they can fill out the questionnaire in 2 minutes.',
             ),
             const SizedBox(height: 12),
             _buildHelpPoint(
               icon: Icons.bar_chart_rounded,
-              title: 'रिअल-टाइम विश्लेषण (Live Analytics & Graphs)',
+              title: 'Live Analytics & Graphs',
               desc:
-                  'प्रत्येक प्रश्नाचे होय/नाही, बहुपर्यायी व स्टार रेटिंगचे आकडेवारीनुसार त्वरित विश्लेषण व पीडीएफ अहवाल डाउनलोड करा.',
+                  'Instant statistical breakdown of Yes/No, MCQ and star ratings with downloadable PDF reports.',
             ),
             const SizedBox(height: 20),
             SizedBox(
@@ -233,7 +233,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 13),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('समजले', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                child: const Text('Got it', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -286,33 +286,47 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF0284C7),
         elevation: 0,
-        titleSpacing: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-          onPressed: () => Navigator.maybePop(context),
+        scrolledUnderElevation: 0,
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+            tooltip: 'Open Menu Drawer',
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
         ),
+        titleSpacing: 0,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: const [
             Text(
-              'जनमत चाचण्या (नमुना सर्वेक्षण)',
-              style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
+              'Sample Surveys',
+              style: TextStyle(
+                fontSize: 17.5,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: -0.2,
+              ),
             ),
             Text(
-              'नागरिक अभिप्राय व लोकमत विश्लेषण केंद्र',
-              style: TextStyle(color: Colors.white70, fontSize: 11),
+              'Opinion polls, field surveys and voter sentiment data',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFFE0F2FE),
+              ),
             ),
           ],
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.help_outline_rounded, color: Colors.white),
-            tooltip: 'मदत व माहिती',
+            tooltip: 'Help Guide',
             onPressed: _showHelpGuide,
           ),
           IconButton(
             icon: const Icon(Icons.picture_as_pdf_rounded, color: Colors.white),
-            tooltip: 'पीडीएफ अहवाल डाउनलोड करा',
+            tooltip: 'Download PDF Report',
             onPressed: () => SurveyReportGenerator.generateAndPrintReport(
               surveys: filtered,
               responseCounts: _surveyResponseCounts,
@@ -321,7 +335,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-            tooltip: 'रिफ्रेश',
+            tooltip: 'Refresh',
             onPressed: _loadSurveys,
           ),
         ],
@@ -364,7 +378,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
         backgroundColor: const Color(0xFF0284C7),
         icon: const Icon(Icons.add_rounded, color: Colors.white),
         label: const Text(
-          'नवीन सर्वेक्षण',
+          'New Survey',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
         ),
         onPressed: () async {
@@ -383,9 +397,9 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
       children: [
         Expanded(
           child: _buildKpiCard(
-            title: 'एकूण मतदार',
+            title: 'Total Voters',
             value: NumberFormat('#,##,###').format(_totalVoters),
-            subtitle: 'प्रभाग १२ मतदार यादी',
+            subtitle: 'Ward 12 Voter Roll',
             icon: Icons.people_alt_rounded,
             iconBg: const Color(0xFFE0F2FE),
             iconColor: const Color(0xFF0284C7),
@@ -394,9 +408,9 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
         const SizedBox(width: 8),
         Expanded(
           child: _buildKpiCard(
-            title: 'नमुना लक्ष्य (१%)',
+            title: 'Sample Target (1%)',
             value: NumberFormat('#,##,###').format(_sampleSizeTarget),
-            subtitle: 'मानक नमुना आकार',
+            subtitle: 'Standard Sample Size',
             icon: Icons.pie_chart_rounded,
             iconBg: const Color(0xFFDCFCE7),
             iconColor: const Color(0xFF16A34A),
@@ -405,9 +419,9 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
         const SizedBox(width: 8),
         Expanded(
           child: _buildKpiCard(
-            title: 'सक्रिय चाचण्या',
+            title: 'Active Polls',
             value: '$activeCount',
-            subtitle: 'एकूण प्रतिसाद: $_totalResponsesAcrossAll',
+            subtitle: 'Total Responses: $_totalResponsesAcrossAll',
             icon: Icons.assignment_rounded,
             iconBg: const Color(0xFFFEF3C7),
             iconColor: const Color(0xFFD97706),
@@ -505,7 +519,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
               controller: _searchCtrl,
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
-                hintText: 'सर्वेक्षण, विषय किंवा परिसर शोधा...',
+                hintText: 'Search survey, topic, or area...',
                 hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade400),
                 prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF0284C7), size: 20),
                 suffixIcon: _searchCtrl.text.isNotEmpty
@@ -531,13 +545,13 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
           ),
           // Area Dropdown
           PopupMenuButton<String>(
-            tooltip: 'परिसर फिल्टर',
+            tooltip: 'Area Filter',
             initialValue: _selectedArea,
             onSelected: (val) => setState(() => _selectedArea = val),
             itemBuilder: (ctx) => [
               const PopupMenuItem(
                 value: 'All',
-                child: Text('सर्व परिसर (All Areas)'),
+                child: Text('All Areas'),
               ),
               ..._areaCounts.keys.map(
                 (area) => PopupMenuItem(
@@ -573,7 +587,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    _selectedArea == 'All' ? 'सर्व परिसर' : _selectedArea,
+                    _selectedArea == 'All' ? 'All Areas' : _selectedArea,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: _selectedArea != 'All' ? FontWeight.bold : FontWeight.normal,
@@ -592,10 +606,10 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
 
   Widget _buildStatusTabsRow(int resultCount) {
     final tabs = [
-      {'label': 'सर्व', 'key': 'All'},
-      {'label': 'सक्रिय (Active)', 'key': 'Active'},
-      {'label': 'मसुदा (Draft)', 'key': 'Draft'},
-      {'label': 'पूर्ण (Closed)', 'key': 'Closed'},
+      {'label': 'All', 'key': 'All'},
+      {'label': 'Active', 'key': 'Active'},
+      {'label': 'Draft', 'key': 'Draft'},
+      {'label': 'Closed', 'key': 'Closed'},
     ];
 
     return Row(
@@ -645,7 +659,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                   size: 18,
                   color: _displayMode == 'cards' ? const Color(0xFF0284C7) : Colors.grey,
                 ),
-                tooltip: 'कार्ड दृश्य',
+                tooltip: 'Card View',
                 constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
                 padding: EdgeInsets.zero,
                 onPressed: () => setState(() => _displayMode = 'cards'),
@@ -657,7 +671,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                   size: 18,
                   color: _displayMode == 'table' ? const Color(0xFF0284C7) : Colors.grey,
                 ),
-                tooltip: 'तक्ता दृश्य',
+                tooltip: 'Table View',
                 constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
                 padding: EdgeInsets.zero,
                 onPressed: () => setState(() => _displayMode = 'table'),
@@ -683,18 +697,18 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
       case 'active':
         statusColor = const Color(0xFF16A34A);
         statusBg = const Color(0xFFDCFCE7);
-        statusMarathi = 'सक्रिय';
+        statusMarathi = 'Active';
         break;
       case 'draft':
         statusColor = const Color(0xFFD97706);
         statusBg = const Color(0xFFFEF3C7);
-        statusMarathi = 'मसुदा';
+        statusMarathi = 'Draft';
         break;
       case 'closed':
       default:
         statusColor = const Color(0xFFDC2626);
         statusBg = const Color(0xFFFEE2E2);
-        statusMarathi = 'पूर्ण';
+        statusMarathi = 'Closed';
         break;
     }
 
@@ -790,7 +804,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
-                              '${survey.questions.length} प्रश्न',
+                              '${survey.questions.length} Questions',
                               style: TextStyle(
                                 fontSize: 10.5,
                                 fontWeight: FontWeight.w500,
@@ -836,7 +850,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                         children: [
                           Icon(Icons.edit_outlined, size: 18, color: Color(0xFF0284C7)),
                           SizedBox(width: 8),
-                          Text('संपादित करा (Edit)'),
+                          Text('Edit Survey'),
                         ],
                       ),
                     ),
@@ -846,7 +860,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                         children: [
                           Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
                           SizedBox(width: 8),
-                          Text('हटवा (Delete)', style: TextStyle(color: Colors.redAccent)),
+                          Text('Delete', style: TextStyle(color: Colors.redAccent)),
                         ],
                       ),
                     ),
@@ -895,7 +909,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                           const Icon(Icons.group_outlined, size: 15, color: Color(0xFF0284C7)),
                           const SizedBox(width: 6),
                           Text(
-                            'नमुना प्रतिसाद (Sample Progress)',
+                            'Sample Progress',
                             style: TextStyle(
                               fontSize: 11.5,
                               fontWeight: FontWeight.w600,
@@ -929,7 +943,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'लक्ष्य: १% ($target मतदार)',
+                        'Target: 1% ($target voters)',
                         style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
                       ),
                       Row(
@@ -962,7 +976,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                   child: OutlinedButton.icon(
                     icon: const Icon(Icons.bar_chart_rounded, size: 17, color: Color(0xFF0284C7)),
                     label: const Text(
-                      'विश्लेषण व निकाल',
+                      'Analysis & Results',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
@@ -991,7 +1005,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                 ElevatedButton.icon(
                   icon: const Icon(Icons.send_rounded, size: 15, color: Colors.white),
                   label: const Text(
-                    'व्हॉट्सॲप शेअर',
+                    'WhatsApp Share',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
@@ -1028,12 +1042,12 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
           child: DataTable(
             headingRowColor: MaterialStateProperty.all(const Color(0xFFF1F5F9)),
             columns: const [
-              DataColumn(label: Text('शीर्षक व परिसर', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('स्थिती', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('प्रश्न', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('प्रतिसाद / लक्ष्य', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('दिनांक', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('कृती', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Title & Area', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Questions', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Responses / Target', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Date', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text('Action', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
             ],
             rows: list.map((s) {
               final resp = _surveyResponseCounts[s.id] ?? 0;
@@ -1097,7 +1111,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                       children: [
                         IconButton(
                           icon: const Icon(Icons.bar_chart_rounded, size: 18, color: Color(0xFF0284C7)),
-                          tooltip: 'विश्लेषण',
+                          tooltip: 'Analysis',
                           onPressed: () {
                             Navigator.push(
                               context,
@@ -1109,12 +1123,12 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                         ),
                         IconButton(
                           icon: const Icon(Icons.send_rounded, size: 16, color: Color(0xFF25D366)),
-                          tooltip: 'व्हॉट्सॲप शेअर',
+                          tooltip: 'WhatsApp Share',
                           onPressed: () => _openWhatsAppShareModal(s),
                         ),
                         IconButton(
                           icon: const Icon(Icons.edit_outlined, size: 16, color: Colors.grey),
-                          tooltip: 'संपादित करा',
+                          tooltip: 'Edit',
                           onPressed: () {
                             Navigator.push(
                               context,
@@ -1151,12 +1165,12 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
           Icon(Icons.assignment_outlined, size: 54, color: Colors.grey.shade300),
           const SizedBox(height: 12),
           const Text(
-            'कोणतेही सर्वेक्षण आढळले नाही',
+            'No surveys found',
             style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
           ),
           const SizedBox(height: 6),
           Text(
-            'नवीन सर्वेक्षण तयार करून नागरिकांचे मत जाणून घ्या.',
+            'Create a new survey to gather citizen feedback.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 12.5, color: Colors.grey.shade500),
           ),
@@ -1170,7 +1184,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
               if (res == true) _loadSurveys();
             },
             icon: const Icon(Icons.add, size: 18, color: Colors.white),
-            label: const Text('पहिले सर्वेक्षण तयार करा', style: TextStyle(color: Colors.white)),
+            label: const Text('Create First Survey', style: TextStyle(color: Colors.white)),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF0284C7),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -1241,66 +1255,66 @@ class _WhatsAppShareModalState extends State<_WhatsAppShareModal> {
     return [
       VoterModel(
         id: 'v1',
-        nameMarathi: 'राजेश दत्तात्रय जोशी',
+        nameMarathi: 'Rajesh Dattatray Joshi',
         nameEnglish: 'Rajesh Dattatraya Joshi',
         epicNo: 'MH/12/042/102941',
-        booth: '२८/शनिवार पेठ',
-        address: 'सदाशिव सदन, शनिवार पेठ',
+        booth: '28/Shaniwar Peth',
+        address: 'Sadashiv Sadan, Shaniwar Peth',
         age: 48,
         gender: 'M',
         mobile: '9822014589',
       ),
       VoterModel(
         id: 'v2',
-        nameMarathi: 'सुवर्णा मंगेश कुलकर्णी',
+        nameMarathi: 'Suvarna Mangesh Kulkarni',
         nameEnglish: 'Suvarna Mangesh Kulkarni',
         epicNo: 'MH/12/042/102942',
-        booth: '२८/शनिवार पेठ',
-        address: '१०२, आनंद अपार्टमेंट, कसबा पेठ',
+        booth: '28/Shaniwar Peth',
+        address: '102, Anand Apt, Kasba Peth',
         age: 42,
         gender: 'F',
         mobile: '9850123490',
       ),
       VoterModel(
         id: 'v3',
-        nameMarathi: 'सचिन विठ्ठलराव देशपांडे',
+        nameMarathi: 'Sachin Vitthalrao Deshpande',
         nameEnglish: 'Sachin Vitthalrao Deshpande',
         epicNo: 'MH/12/042/103115',
-        booth: '२९/रविवार पेठ',
-        address: 'घर क्र. ४१५, रविवार पेठ',
+        booth: '29/Raviwar Peth',
+        address: 'House No. 415, Raviwar Peth',
         age: 39,
         gender: 'M',
         mobile: '9422033481',
       ),
       VoterModel(
         id: 'v4',
-        nameMarathi: 'अनिता चंद्रशेखर बापट',
+        nameMarathi: 'Anita Chandrashekhar Bapat',
         nameEnglish: 'Anita Chandrashekhar Bapat',
         epicNo: 'MH/12/042/104210',
-        booth: '३०/सोमवार पेठ',
-        address: 'बापट वाडा, सोमवार पेठ',
+        booth: '30/Somwar Peth',
+        address: 'Bapat Wada, Somwar Peth',
         age: 52,
         gender: 'F',
         mobile: '9890456123',
       ),
       VoterModel(
         id: 'v5',
-        nameMarathi: 'महेश प्रभाकर फडके',
+        nameMarathi: 'Mahesh Prabhakar Phadke',
         nameEnglish: 'Mahesh Prabhakar Phadke',
         epicNo: 'MH/12/042/105118',
-        booth: '३१/मंगळवार पेठ',
-        address: 'फडके गल्ली, मंगळवार पेठ',
+        booth: '31/Mangalwar Peth',
+        address: 'Phadke Galli, Mangalwar Peth',
         age: 35,
         gender: 'M',
         mobile: '9764512980',
       ),
       VoterModel(
         id: 'v6',
-        nameMarathi: 'दीपाली गजानन मोरे',
+        nameMarathi: 'Deepali Gajanan More',
         nameEnglish: 'Deepali Gajanan More',
         epicNo: 'MH/12/042/106720',
-        booth: '२८/शनिवार पेठ',
-        address: 'शनिवार वाड्यासमोर, शनिवार पेठ',
+        booth: '28/Shaniwar Peth',
+        address: 'Opp. Shaniwar Wada, Shaniwar Peth',
         age: 29,
         gender: 'F',
         mobile: '9823412567',
@@ -1341,11 +1355,11 @@ class _WhatsAppShareModalState extends State<_WhatsAppShareModal> {
       final mobile = voter.mobile!.replaceAll(RegExp(r'\D'), '');
       final magicLink = 'https://nagarsevak.app/s/${widget.survey.id}?v=${voter.id}';
       final msg = Uri.encodeComponent(
-        'सस्नेह नमस्कार ${voter.displayName},\n\n'
-        'प्रभाग क्र. १२ मधील विकासाबाबत आपले मत जाणून घेण्यासाठी आम्ही हे जनमत सर्वेक्षण आयोजित केले आहे:\n\n'
-        '*विषय:* ${widget.survey.title}\n\n'
-        'कृपया खालील लिंकवर क्लिक करून आपले २ मिनिटांचे बहुमूल्य मत नोंदवावे:\n$magicLink\n\n'
-        '- कार्यालय, प्रभाग १२ नगरसेवक',
+        'Greetings ${voter.displayName},\n\n'
+        'We are conducting this public opinion survey to understand your thoughts on the development of Ward 12:\n\n'
+        '*Topic:* ${widget.survey.title}\n\n'
+        'Please click the link below to record your valuable 2-minute feedback:\n$magicLink\n\n'
+        '- Office of Corporator, Ward 12',
       );
 
       final url = Uri.parse('https://wa.me/91$mobile?text=$msg');
@@ -1363,7 +1377,7 @@ class _WhatsAppShareModalState extends State<_WhatsAppShareModal> {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${selected.length} मतदारांना व्हॉट्सॲप सर्वेक्षण लिंक पाठवली गेली!'),
+          content: Text('WhatsApp survey link sent to ${selected.length} voters!'),
           backgroundColor: const Color(0xFF25D366),
         ),
       );
@@ -1415,7 +1429,7 @@ class _WhatsAppShareModalState extends State<_WhatsAppShareModal> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'व्हॉट्सॲपवर सर्वेक्षण पाठवा',
+                        'Send Survey via WhatsApp',
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                       Text(
@@ -1444,7 +1458,7 @@ class _WhatsAppShareModalState extends State<_WhatsAppShareModal> {
               controller: _searchCtrl,
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
-                hintText: 'नाव किंवा मोबाईल नंबरने शोधा...',
+                hintText: 'Search by name or mobile number...',
                 hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade400),
                 prefixIcon: const Icon(Icons.search, size: 20, color: Color(0xFF25D366)),
                 isDense: true,
@@ -1480,7 +1494,7 @@ class _WhatsAppShareModalState extends State<_WhatsAppShareModal> {
                       onChanged: (_) => _toggleSelectAll(),
                     ),
                     Text(
-                      'सर्व निवडा (${filtered.length} मतदार)',
+                      'Select All (${filtered.length} voters)',
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                     ),
                     const Spacer(),
@@ -1491,7 +1505,7 @@ class _WhatsAppShareModalState extends State<_WhatsAppShareModal> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        '${_selectedVoterIds.length} निवडले',
+                        '${_selectedVoterIds.length} Selected',
                         style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
@@ -1514,7 +1528,7 @@ class _WhatsAppShareModalState extends State<_WhatsAppShareModal> {
                 : filtered.isEmpty
                     ? Center(
                         child: Text(
-                          'मोबाईल नंबर असलेले मतदार आढळले नाहीत.',
+                          'No voters with mobile numbers found.',
                           style: TextStyle(color: Colors.grey.shade500),
                         ),
                       )
@@ -1616,7 +1630,7 @@ class _WhatsAppShareModalState extends State<_WhatsAppShareModal> {
               children: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('रद्द करा', style: TextStyle(color: Colors.grey)),
+                  child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
                 ),
                 const Spacer(),
                 ElevatedButton.icon(
@@ -1630,8 +1644,8 @@ class _WhatsAppShareModalState extends State<_WhatsAppShareModal> {
                       : const Icon(Icons.send_rounded, size: 16, color: Colors.white),
                   label: Text(
                     _isSending
-                        ? 'पाठवत आहे...'
-                        : '${_selectedVoterIds.length} मतदारांना लिंक पाठवा',
+                        ? 'Sending...'
+                        : 'Send link to ${_selectedVoterIds.length} voters',
                     style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                   style: ElevatedButton.styleFrom(

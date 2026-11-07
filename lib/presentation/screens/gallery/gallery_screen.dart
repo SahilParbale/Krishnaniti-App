@@ -67,7 +67,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
   void _showAddPhotoDialog() {
     final titleCtrl = TextEditingController();
     final descCtrl = TextEditingController();
-    final locCtrl = TextEditingController(text: 'शनिवार पेठ, पुणे');
+    final locCtrl = TextEditingController(text: 'Shaniwar Peth, Pune');
     final urlCtrl = TextEditingController(
       text: 'https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=800&q=80',
     );
@@ -124,7 +124,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                       const SizedBox(width: 12),
                       const Expanded(
                         child: Text(
-                          'नवीन फोटो जोडा (Add to Gallery)',
+                          'Add New Photo',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -141,12 +141,12 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                   const Divider(height: 20, color: Color(0xFFE2E8F0)),
 
                   // Title
-                  const Text('शीर्षक (Title)*', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                  const Text('Title*', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 6),
                   TextField(
                     controller: titleCtrl,
                     decoration: InputDecoration(
-                      hintText: 'उदा. गणपती विसर्जन सोहळा २०२४',
+                      hintText: 'e.g., Ward Development Inspection 2024',
                       hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                       filled: true,
                       fillColor: const Color(0xFFF8FAFC),
@@ -164,7 +164,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('श्रेणी (Category)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                            const Text('Category', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                             const SizedBox(height: 6),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -203,7 +203,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('तारीख (Date)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                            const Text('Date', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                             const SizedBox(height: 6),
                             InkWell(
                               onTap: () async {
@@ -245,7 +245,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                   const SizedBox(height: 12),
 
                   // Image URL
-                  const Text('फोटो URL (Image Link)*', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  const Text('Image URL*', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 6),
                   TextField(
                     controller: urlCtrl,
@@ -262,12 +262,12 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                   const SizedBox(height: 12),
 
                   // Location
-                  const Text('स्थान (Location)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  const Text('Location', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 6),
                   TextField(
                     controller: locCtrl,
                     decoration: InputDecoration(
-                      hintText: 'उदा. शनिवार पेठ, पुणे',
+                      hintText: 'e.g., Shaniwar Peth, Pune',
                       hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                       filled: true,
                       fillColor: const Color(0xFFF8FAFC),
@@ -279,13 +279,13 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                   const SizedBox(height: 12),
 
                   // Description
-                  const Text('वर्णन (Description)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  const Text('Description', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 6),
                   TextField(
                     controller: descCtrl,
                     maxLines: 3,
                     decoration: InputDecoration(
-                      hintText: 'या फोटोबद्दल किंवा कार्यक्रमाबद्दल थोडक्यात माहिती...',
+                      hintText: 'Brief details about this photo or event...',
                       hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
                       filled: true,
                       fillColor: const Color(0xFFF8FAFC),
@@ -313,13 +313,13 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                               : 'https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=800&q=80',
                           description: descCtrl.text.trim().isNotEmpty
                               ? descCtrl.text.trim()
-                              : 'प्रभाग १२ मधील जनहिताचा विकास कार्यक्रम.',
+                              : 'Ward 12 public development program.',
                           descriptionMr: descCtrl.text.trim().isNotEmpty
                               ? descCtrl.text.trim()
-                              : 'प्रभाग १२ मधील जनहिताचा विकास कार्यक्रम.',
+                              : 'Ward 12 public development program.',
                           date: selectedDate,
-                          location: locCtrl.text.trim().isNotEmpty ? locCtrl.text.trim() : 'प्रभाग १२, पुणे',
-                          tags: ['प्रभाग विकास', selectedCat.titleMr],
+                          location: locCtrl.text.trim().isNotEmpty ? locCtrl.text.trim() : 'Ward 12, Pune',
+                          tags: ['Ward Development', selectedCat.titleEn],
                           isFavorite: false,
                           viewsCount: 1,
                           createdAt: DateTime.now(),
@@ -334,7 +334,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                           _loadGallery();
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('फोटो गॅलरीत यशस्वीरित्या जोडला गेला!'),
+                              content: Text('Photo added to gallery successfully!'),
                               backgroundColor: Color(0xFF16A34A),
                             ),
                           );
@@ -346,7 +346,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         elevation: 0,
                       ),
-                      child: const Text('गॅलरीत जोडा (Add to Gallery)', style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text('Add to Gallery', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],
@@ -378,67 +378,34 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
         appBar: AppBar(
           backgroundColor: const Color(0xFF0284C7),
           elevation: 0,
+          scrolledUnderElevation: 0,
           leading: Builder(
             builder: (ctx) => IconButton(
-              icon: const Icon(Icons.menu_rounded, color: Colors.white),
+              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+              tooltip: 'Open Menu Drawer',
               onPressed: () => Scaffold.of(ctx).openDrawer(),
             ),
           ),
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.18),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.photo_library_rounded,
+          titleSpacing: 0,
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              Text(
+                'Media Gallery',
+                style: TextStyle(
+                  fontSize: 17.5,
+                  fontWeight: FontWeight.w800,
                   color: Colors.white,
-                  size: 18,
+                  letterSpacing: -0.2,
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'मीडिया गॅलरी',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    Text(
-                      'फोटो आणि व्हिडिओ संग्रह',
-                      style: TextStyle(
-                        fontSize: 10.5,
-                        color: Colors.white.withOpacity(0.85),
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
-                    width: 0.8,
-                  ),
-                ),
-                child: Text(
-                  'फोटो: $totalCount',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w600,
-                  ),
+              Text(
+                'Field photos, inauguration pictures and press archives',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFFE0F2FE),
                 ),
               ),
             ],
@@ -449,7 +416,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                 _viewMode == 'grid' ? Icons.view_list_rounded : Icons.grid_view_rounded,
                 color: Colors.white,
               ),
-              tooltip: _viewMode == 'grid' ? 'यादी दृश्य (List)' : 'ग्रीड दृश्य (Grid)',
+              tooltip: _viewMode == 'grid' ? 'List View' : 'Grid View',
               onPressed: () {
                 setState(() {
                   _viewMode = _viewMode == 'grid' ? 'list' : 'grid';
@@ -458,12 +425,12 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
             ),
             IconButton(
               icon: const Icon(Icons.picture_as_pdf_rounded, color: Colors.white),
-              tooltip: 'अधिकृत PDF कॅटलॉग',
+              tooltip: 'Official PDF Catalog',
               onPressed: () => GalleryReportGenerator.generateAndPrintReport(items: filtered),
             ),
             IconButton(
               icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-              tooltip: 'रिफ्रेश करा',
+              tooltip: 'Refresh',
               onPressed: _loadGallery,
             ),
           ],
@@ -506,7 +473,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
           foregroundColor: Colors.white,
           icon: const Icon(Icons.add_photo_alternate_rounded),
           label: const Text(
-            'फोटो जोडा (Add Photo)',
+            'Add Photo',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
@@ -517,13 +484,13 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
   Widget _buildKpiSummaryRow(int total, int events, int works, int awards, int campaigns) {
     return Row(
       children: [
-        _buildKpiCard('एकूण फोटो', '$total', const Color(0xFF0284C7), Icons.photo_library_rounded),
+        _buildKpiCard('Total Photos', '$total', const Color(0xFF0284C7), Icons.photo_library_rounded),
         const SizedBox(width: 8),
-        _buildKpiCard('कार्यक्रम', '$events', const Color(0xFF8B5CF6), Icons.celebration_rounded),
+        _buildKpiCard('Events', '$events', const Color(0xFF8B5CF6), Icons.celebration_rounded),
         const SizedBox(width: 8),
-        _buildKpiCard('विकासकामे', '$works', const Color(0xFF0284C7), Icons.engineering_rounded),
+        _buildKpiCard('Development Works', '$works', const Color(0xFF0284C7), Icons.engineering_rounded),
         const SizedBox(width: 8),
-        _buildKpiCard('पुरस्कार', '$awards', const Color(0xFFD97706), Icons.emoji_events_rounded),
+        _buildKpiCard('Awards', '$awards', const Color(0xFFD97706), Icons.emoji_events_rounded),
       ],
     );
   }
@@ -592,7 +559,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
           TextField(
             controller: _searchCtrl,
             decoration: InputDecoration(
-              hintText: 'गॅलरी किंवा फोटो शोधा... (Search gallery)',
+              hintText: 'Search gallery or photos...',
               hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
               prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Color(0xFF64748B)),
               suffixIcon: _searchCtrl.text.isNotEmpty
@@ -617,15 +584,15 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _buildCategoryFilterChip('सर्व (${_allGalleryItems.length})', 'all'),
+                _buildCategoryFilterChip('All (${_allGalleryItems.length})', 'all'),
                 const SizedBox(width: 6),
-                _buildCategoryFilterChip('कामे व समारंभ', 'Event'),
+                _buildCategoryFilterChip('Events & Functions', 'Event'),
                 const SizedBox(width: 6),
-                _buildCategoryFilterChip('विकासकामे', 'Work'),
+                _buildCategoryFilterChip('Development Works', 'Work'),
                 const SizedBox(width: 6),
-                _buildCategoryFilterChip('पुरस्कार', 'Award'),
+                _buildCategoryFilterChip('Awards', 'Award'),
                 const SizedBox(width: 6),
-                _buildCategoryFilterChip('मोहिमा', 'Campaign'),
+                _buildCategoryFilterChip('Campaigns', 'Campaign'),
               ],
             ),
           ),
@@ -667,7 +634,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
             Icon(Icons.photo_library_outlined, size: 48, color: Colors.grey.shade400),
             const SizedBox(height: 10),
             const Text(
-              'कोणतेही छायाचित्र आढळले नाही.',
+              'No photos found.',
               style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
             ),
           ],
@@ -835,7 +802,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                           style: const TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8)),
                         ),
                         Text(
-                          '${item.viewsCount} पाहिले',
+                          '${item.viewsCount} views',
                           style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                         ),
                       ],
@@ -855,7 +822,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
   // ==========================================
   Widget _buildListView(List<GalleryItemModel> items) {
     if (items.isEmpty) {
-      return const Center(child: Text('कोणतेही छायाचित्र उपलब्ध नाही.'));
+      return const Center(child: Text('No photos available.'));
     }
 
     return ListView.separated(
@@ -973,7 +940,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                             ),
                           ),
                           Text(
-                            '${item.viewsCount} पाहिले',
+                            '${item.viewsCount} views',
                             style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                           ),
                         ],

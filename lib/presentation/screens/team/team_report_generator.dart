@@ -41,7 +41,7 @@ class TeamReportGenerator {
                         ),
                       ),
                       pw.Text(
-                        'MY TEAM & STAFF DIRECTORY REPORT (माझा कार्यसंघ व कर्मचारी अहवाल)',
+                        'MY TEAM & STAFF DIRECTORY REPORT',
                         style: pw.TextStyle(
                           fontSize: 10,
                           fontWeight: pw.FontWeight.bold,
@@ -101,11 +101,11 @@ class TeamReportGenerator {
               child: pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
                 children: [
-                  _buildKpiItem('एकूण सदस्य (Total Team)', '${staffList.length}'),
-                  _buildKpiItem('कार्यालयीन टीम (Office Team)', '$officeCount'),
-                  _buildKpiItem('पक्ष कार्यकर्ते (Party Workers)', '$partyCount'),
-                  _buildKpiItem('शासकीय व सहकार (Cooperative)', '$coopCount'),
-                  _buildKpiItem('निवडलेली श्रेणी (Active Filter)', activeCategory),
+                  _buildKpiItem('Total Team', '${staffList.length}'),
+                  _buildKpiItem('Office Team', '$officeCount'),
+                  _buildKpiItem('Party Cadre', '$partyCount'),
+                  _buildKpiItem('Municipal & Coop', '$coopCount'),
+                  _buildKpiItem('Active Filter', activeCategory),
                 ],
               ),
             ),
@@ -128,13 +128,13 @@ class TeamReportGenerator {
                   decoration: const pw.BoxDecoration(color: PdfColors.blue800),
                   children: [
                     _buildHeaderCell('#'),
-                    _buildHeaderCell('कर्मचारी / कार्यकर्ता नाव'),
-                    _buildHeaderCell('पद / भूमिका (Role)'),
-                    _buildHeaderCell('श्रेणी (Category)'),
-                    _buildHeaderCell('आघाडी / संस्था'),
-                    _buildHeaderCell('कार्यक्षेत्र (Area)'),
-                    _buildHeaderCell('मोबाईल नंबर'),
-                    _buildHeaderCell('ऑटो-असाईन कीवर्ड'),
+                    _buildHeaderCell('Staff / Cadre Name'),
+                    _buildHeaderCell('Role / Designation'),
+                    _buildHeaderCell('Category'),
+                    _buildHeaderCell('Wing / Organization'),
+                    _buildHeaderCell('Work Area'),
+                    _buildHeaderCell('Mobile Number'),
+                    _buildHeaderCell('Auto-Assign Keywords'),
                   ],
                 ),
                 ...staffList.asMap().entries.map((entry) {
@@ -160,9 +160,9 @@ class TeamReportGenerator {
                               ? PdfColors.blue800
                               : (s.category == 'Party' ? PdfColors.orange800 : PdfColors.purple800)),
                       _buildCell(subInfo),
-                      _buildCell(s.area ?? 'प्रभाग १२'),
+                      _buildCell(s.area ?? 'Ward 12'),
                       _buildCell('+91 ${s.mobile}'),
-                      _buildCell(s.keywords.isNotEmpty ? s.keywords.join(', ') : 'सर्व कामे'),
+                      _buildCell(s.keywords.isNotEmpty ? s.keywords.join(', ') : 'All Tasks'),
                     ],
                   );
                 }),

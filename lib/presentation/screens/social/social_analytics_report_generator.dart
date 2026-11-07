@@ -113,13 +113,13 @@ class SocialAnalyticsReportGenerator {
             // KPI Summary Row
             pw.Row(
               children: [
-                _buildKpiCard('Total Reach (एकूण पोहोच)', summary.totalReach.toLocaleString(), 'Impressions Across Platforms', PdfColors.blue700, PdfColors.blue50),
+                _buildKpiCard('Total Reach', summary.totalReach.toLocaleString(), 'Impressions Across Platforms', PdfColors.blue700, PdfColors.blue50),
                 pw.SizedBox(width: 8),
-                _buildKpiCard('Total Likes (लाईक्स)', summary.totalLikes.toLocaleString(), 'Constituent Appreciations', PdfColors.pink700, PdfColors.pink50),
+                _buildKpiCard('Total Likes', summary.totalLikes.toLocaleString(), 'Constituent Appreciations', PdfColors.pink700, PdfColors.pink50),
                 pw.SizedBox(width: 8),
-                _buildKpiCard('Comments (टिप्पण्या)', summary.totalComments.toLocaleString(), 'Citizen Feedback & Inquiries', PdfColors.purple700, PdfColors.purple50),
+                _buildKpiCard('Comments', summary.totalComments.toLocaleString(), 'Citizen Feedback & Inquiries', PdfColors.purple700, PdfColors.purple50),
                 pw.SizedBox(width: 8),
-                _buildKpiCard('Shares (शेअर्स)', summary.totalShares.toLocaleString(), 'Public Information Amplification', PdfColors.green700, PdfColors.green50),
+                _buildKpiCard('Shares', summary.totalShares.toLocaleString(), 'Public Information Amplification', PdfColors.green700, PdfColors.green50),
               ],
             ),
             pw.SizedBox(height: 12),
@@ -224,7 +224,7 @@ class SocialAnalyticsReportGenerator {
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
                   pw.Text(
-                    'CONSTITUENCY ENGAGEMENT • TODAY\'S CONSTITUENT BIRTHDAY WISHES LOG (आजचे वाढदिवस)',
+                    'CONSTITUENCY ENGAGEMENT • TODAY\'S CONSTITUENT BIRTHDAY WISHES LOG',
                     style: pw.TextStyle(
                       fontSize: 9,
                       fontWeight: pw.FontWeight.bold,

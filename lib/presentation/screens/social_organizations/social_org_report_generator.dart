@@ -57,7 +57,7 @@ class SocialOrgReportGenerator {
                       ),
                       pw.SizedBox(height: 2),
                       pw.Text(
-                        'एन.जी.ओ., क्रीडा क्लब व सार्वजनिक उत्सव मंडळ माहिती व संपर्क यादी',
+                        'NGOs, Sports Clubs & Festival Mandals Directory & Contacts',
                         style: const pw.TextStyle(
                           fontSize: 10,
                           color: PdfColors.grey700,
@@ -76,7 +76,7 @@ class SocialOrgReportGenerator {
                           border: pw.Border.all(color: PdfColors.blue200),
                         ),
                         child: pw.Text(
-                          'OFFICIAL DIRECTORY / प्रभाग नोंदवही',
+                          'OFFICIAL DIRECTORY / WARD REGISTER',
                           style: pw.TextStyle(
                             fontSize: 9,
                             fontWeight: pw.FontWeight.bold,
@@ -102,11 +102,11 @@ class SocialOrgReportGenerator {
               children: [
                 _buildPdfKpiCard('Total Registered', total.toString(), PdfColors.blue50, PdfColors.blue900),
                 pw.SizedBox(width: 8),
-                _buildPdfKpiCard('NGOs / सामाजिक संस्था', ngos.toString(), PdfColors.indigo50, PdfColors.indigo900),
+                _buildPdfKpiCard('NGOs & Trusts', ngos.toString(), PdfColors.indigo50, PdfColors.indigo900),
                 pw.SizedBox(width: 8),
                 _buildPdfKpiCard('Sports & Cricket Clubs', sports.toString(), PdfColors.green50, PdfColors.green900),
                 pw.SizedBox(width: 8),
-                _buildPdfKpiCard('Festival Mandals (उत्सव मंडळे)', mandals.toString(), PdfColors.amber50, PdfColors.amber900),
+                _buildPdfKpiCard('Festival Mandals', mandals.toString(), PdfColors.amber50, PdfColors.amber900),
               ],
             ),
 
@@ -116,14 +116,14 @@ class SocialOrgReportGenerator {
             pw.TableHelper.fromTextArray(
               headers: [
                 '#',
-                'Organization Name (संस्थेचे नाव)',
+                'Organization Name',
                 'Type',
-                'President (अध्यक्ष)',
+                'President',
                 'Mobile',
-                'Area (परिसर)',
+                'Area',
                 'Members',
                 'Est.',
-                'Support Received (नगरसेवक मदत)',
+                'Support Received',
                 'Events',
                 'Status',
               ],
@@ -179,7 +179,7 @@ class SocialOrgReportGenerator {
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
                 pw.Text(
-                  'टीप: हा अहवाल प्रभाग क्र. १२ मधील सामाजिक, क्रीडा आणि धार्मिक संस्थांच्या समन्वयासाठी तयार केलेला आहे.',
+                  'Note: This report is prepared for coordinating social, cultural, and sports organizations in Ward 12.',
                   style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey600),
                 ),
                 pw.Text(

@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../data/models/voter_model.dart';
 import '../../../data/models/whatsapp_broadcast_model.dart';
 import '../../../data/repositories/sms_repository.dart';
+import '../../navigation/app_drawer.dart';
 
-const _kAiPurple = Color(0xFF7C3AED);
-const _kAiPurpleLight = Color(0xFFF3E8FF);
-const _kAiPurpleBorder = Color(0xFFDDD6FE);
+const _kAiPurple = Color(0xFF0284C7);
+const _kAiPurpleLight = Color(0xFFE0F2FE);
+const _kAiPurpleBorder = Color(0xFFBAE6FD);
 
 class AiVoiceCallScreen extends ConsumerStatefulWidget {
   const AiVoiceCallScreen({super.key});
@@ -44,8 +44,8 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
   final List<WhatsAppBroadcastModel> _seedLogs = [
     WhatsAppBroadcastModel(
       id: 'ai-001',
-      title: 'AI Voice Broadcast - पाणीपुरवठा व रस्ता दुरुस्ती अभिप्राय',
-      message: 'नमस्कार, प्रभाग १२ मधील विकासकामे व पाणीपुरवठ्याबाबत नागरिकांचा अभिप्राय नोंदवून घेण्यासाठी स्वयंचलित AI कॉल.',
+      title: 'AI Voice Broadcast - Water Supply & Road Repair Feedback',
+      message: 'Automated AI voice broadcast to record citizen feedback on development works and water supply in Ward 12.',
       sentAt: DateTime.now().subtract(const Duration(hours: 4)),
       channel: 'ai_call',
       recipients: 450,
@@ -57,8 +57,8 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
     ),
     WhatsAppBroadcastModel(
       id: 'ai-002',
-      title: 'AI Voice Broadcast - लाडकी बहीण योजना शिबिर माहिती',
-      message: 'लाडकी बहीण योजनेच्या विशेष नोंदणी शिबिराबाबत नागरिकांना प्रत्यक्ष मराठी व्हॉइस कॉलद्वारे थेट माहिती देण्यात आली.',
+      title: 'AI Voice Broadcast - Ladki Bahin Scheme Camp Info',
+      message: 'Direct voice broadcast informing citizens about special registration camps for the Ladki Bahin Scheme.',
       sentAt: DateTime.now().subtract(const Duration(days: 2)),
       channel: 'ai_call',
       recipients: 1200,
@@ -81,7 +81,7 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
     });
 
     _speechMessageController.text =
-        'नमस्कार, मी प्रभाग १२ नगरसेवक कार्यालयातून बोलत आहे. आपल्या परिसरातील पाणीपुरवठा व रस्ते दुरुस्तीच्या कामाबाबत आपला अभिप्राय जाणून घेण्यासाठी हा कॉल करण्यात आला आहे.';
+        'Hello, this is a call from Ward 12 Corporator Office. We are calling to gather your feedback on water supply and road maintenance in your area.';
 
     _loadVoters();
     _loadHistory();
@@ -259,31 +259,92 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      drawer: const NagarsevakAppDrawer(),
       appBar: AppBar(
-        title: Row(
-          children: const [
-            Icon(Icons.record_voice_over_rounded, color: _kAiPurple, size: 22),
-            SizedBox(width: 8),
-            Text('AI Voice Call'),
-          ],
-        ),
+        backgroundColor: const Color(0xFF0284C7),
+        foregroundColor: Colors.white,
         elevation: 0,
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: _kAiPurple,
-          unselectedLabelColor: isDark ? Colors.grey[400] : Colors.grey[600],
-          indicatorColor: _kAiPurple,
-          tabs: const [
-            Tab(icon: Icon(Icons.record_voice_over), text: 'AI Call Broadcast'),
-            Tab(icon: Icon(Icons.history), text: 'Call History'),
+        scrolledUnderElevation: 0,
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+            tooltip: 'Open Menu Drawer',
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
+        ),
+        titleSpacing: 0,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Text(
+              'AI Voice Call',
+              style: TextStyle(
+                fontSize: 17.5,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: -0.2,
+              ),
+            ),
+            Text(
+              'Interactive AI voice agent for citizen feedback',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFFE0F2FE),
+              ),
+            ),
           ],
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
+        ),
+      body: Column(
         children: [
-          _buildAiCallTab(theme, isDark),
-          _buildHistoryTab(theme, isDark),
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            alignment: Alignment.centerLeft,
+            child: Container(
+              height: 40,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                indicator: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                labelColor: const Color(0xFF0284C7),
+                unselectedLabelColor: const Color(0xFF64748B),
+                labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+                indicatorSize: TabBarIndicatorSize.tab,
+                dividerColor: Colors.transparent,
+                tabs: const [
+                  Tab(icon: Icon(Icons.record_voice_over, size: 16), text: 'AI Call Broadcast'),
+                  Tab(icon: Icon(Icons.history, size: 16), text: 'Call History'),
+                ],
+              ),
+            ),
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildAiCallTab(theme, isDark),
+                _buildHistoryTab(theme, isDark),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -313,7 +374,7 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
                       Icon(Icons.language, size: 16, color: _kAiPurple),
                       SizedBox(width: 6),
                       Text(
-                        'Select Voice Language / भाषा निवडा',
+                        'Select Voice Language',
                         style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                       ),
                     ],
@@ -321,11 +382,11 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      _buildLangChoice('mr-IN', 'मराठी (Marathi)'),
-                      const SizedBox(width: 8),
-                      _buildLangChoice('hi-IN', 'हिंदी (Hindi)'),
-                      const SizedBox(width: 8),
                       _buildLangChoice('en-IN', 'English'),
+                      const SizedBox(width: 8),
+                      _buildLangChoice('mr-IN', 'Marathi'),
+                      const SizedBox(width: 8),
+                      _buildLangChoice('hi-IN', 'Hindi'),
                     ],
                   ),
                 ],
@@ -351,7 +412,7 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        'Message to Speak / संदेश',
+                        'Message to Speak',
                         style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                       ),
                       Container(

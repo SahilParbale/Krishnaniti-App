@@ -38,7 +38,7 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
   }
 
   Future<void> _shareOnWhatsApp() async {
-    final text = 'नमस्कार, प्रभाग १२ मधील नागरिकांसाठी महत्त्वाचे जनमत सर्वेक्षण:\n"${widget.survey.title}"\nकृपया आपले मत नोंदवून प्रभागाच्या विकासात सहकार्य करा.';
+    final text = 'Hello, important citizen opinion survey for Ward 12:\n"${widget.survey.title}"\nPlease register your opinion and help us develop the ward.';
     final uri = Uri.parse('whatsapp://send?text=${Uri.encodeComponent(text)}');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
@@ -67,18 +67,18 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'सर्वेक्षण विश्लेषण व निकाल',
+          'Survey Analysis & Results',
           style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.share_rounded, color: Colors.white),
-            tooltip: 'WhatsApp वर शेअर करा',
+            tooltip: 'Share on WhatsApp',
             onPressed: _shareOnWhatsApp,
           ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-            tooltip: 'ताजे करा',
+            tooltip: 'Refresh',
             onPressed: _loadResponses,
           ),
         ],
@@ -105,11 +105,11 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        'प्रश्ननिहाय नागरिक प्रतिसाद विश्लेषण',
+                        'Question-wise Citizen Response Analysis',
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                       ),
                       Text(
-                        '${widget.survey.questions.length} प्रश्न',
+                        '${widget.survey.questions.length} Questions',
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                       ),
                     ],
@@ -133,7 +133,7 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
         backgroundColor: const Color(0xFF0284C7),
         icon: const Icon(Icons.rate_review_outlined, color: Colors.white),
         label: const Text(
-          'नागरिक प्रतिसाद नोंदवा',
+          'Record Citizen Response',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
@@ -180,7 +180,7 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      widget.survey.isActive ? 'सक्रिय सर्वेक्षण (Active)' : 'बंद (Closed)',
+                      widget.survey.isActive ? 'Active Survey' : 'Closed',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
@@ -221,11 +221,11 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'सुरू केले: $dateFormatted',
+                'Started: $dateFormatted',
                 style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
               ),
               Text(
-                'प्रभाग १२ (कसबा-विश्रामबाग)',
+                'Ward 12 (Kasba-Vishrambaug)',
                 style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
               ),
             ],
@@ -252,7 +252,7 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
                 const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('नोंदवलेले प्रतिसाद', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF1E40AF))),
+                    Text('Recorded Responses', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF1E40AF))),
                     Icon(Icons.how_to_reg_rounded, size: 18, color: Color(0xFF2563EB)),
                   ],
                 ),
@@ -263,7 +263,7 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'नमुना लक्ष्य: $target पैकी',
+                  'Sample Target: out of $target',
                   style: const TextStyle(fontSize: 11, color: Color(0xFF60A5FA), fontWeight: FontWeight.w500),
                 ),
               ],
@@ -285,7 +285,7 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
                 const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('नमुना पूर्णता (Completion)', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF166534))),
+                    Text('Sample Completion', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF166534))),
                     Icon(Icons.pie_chart_rounded, size: 18, color: Color(0xFF16A34A)),
                   ],
                 ),
@@ -336,7 +336,7 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  'प्र.$index',
+                  'Q.$index',
                   style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF0369A1)),
                 ),
               ),
@@ -351,7 +351,7 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'प्रकार: ${q.type.labelMr}',
+                      'Type: ${q.type.name.toUpperCase()}',
                       style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                     ),
                   ],
@@ -381,8 +381,8 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
     int noCount = 0;
     for (final r in _responses) {
       final ans = r.answers[qId]?.toString().toLowerCase();
-      if (ans == 'yes' || ans == 'होय') yesCount++;
-      if (ans == 'no' || ans == 'नाही') noCount++;
+      if (ans == 'yes') yesCount++;
+      if (ans == 'no') noCount++;
     }
 
     final total = yesCount + noCount;
@@ -398,14 +398,14 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
               children: [
                 const Icon(Icons.thumb_up_alt_rounded, size: 14, color: Color(0xFF16A34A)),
                 const SizedBox(width: 6),
-                Text('होय (Yes): $yesCount मत ($yesPerc%)', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF15803D))),
+                Text('Yes: $yesCount votes ($yesPerc%)', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF15803D))),
               ],
             ),
             Row(
               children: [
                 const Icon(Icons.thumb_down_alt_rounded, size: 14, color: Color(0xFFDC2626)),
                 const SizedBox(width: 6),
-                Text('नाही (No): $noCount मत ($noPerc%)', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFFB91C1C))),
+                Text('No: $noCount votes ($noPerc%)', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFFB91C1C))),
               ],
             ),
           ],
@@ -459,7 +459,7 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(opt, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                  Text('$count मत ($perc%)', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
+                  Text('$count votes ($perc%)', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
                 ],
               ),
               const SizedBox(height: 4),
@@ -516,7 +516,7 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
                 ],
               ),
               const SizedBox(height: 2),
-              Text('$total मते', style: const TextStyle(fontSize: 10, color: Color(0xFF92400E))),
+              Text('$total votes', style: const TextStyle(fontSize: 10, color: Color(0xFF92400E))),
             ],
           ),
         ),
@@ -585,11 +585,11 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
               ),
               const SizedBox(height: 12),
               const Text(
-                'नागरिकाचा प्रत्यक्ष प्रतिसाद नोंदवा',
+                'Record Citizen Response Directly',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
               ),
               const SizedBox(height: 4),
-              const Text('फील्डवर नागरिकांची उत्तरे नोंदवून सर्वेक्षणात जोडा', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+              const Text('Record citizen responses on ground and add to survey', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
               const SizedBox(height: 12),
               const Divider(),
               Expanded(
@@ -601,13 +601,13 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('प्र.${i + 1}. ${q.text}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                        Text('Q.${i + 1}. ${q.text}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 8),
                         if (q.type == SurveyQuestionType.yesNo)
                           Row(
                             children: [
                               ChoiceChip(
-                                label: const Text('होय (Yes)'),
+                                label: const Text('Yes'),
                                 selected: localAnswers[q.id] == 'Yes',
                                 onSelected: (sel) {
                                   if (sel) setModalState(() => localAnswers[q.id] = 'Yes');
@@ -615,7 +615,7 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
                               ),
                               const SizedBox(width: 8),
                               ChoiceChip(
-                                label: const Text('नाही (No)'),
+                                label: const Text('No'),
                                 selected: localAnswers[q.id] == 'No',
                                 onSelected: (sel) {
                                   if (sel) setModalState(() => localAnswers[q.id] = 'No');
@@ -671,7 +671,7 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
 
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('नागरिक प्रतिसाद यशस्वीरित्या नोंदवला गेला!')),
+                      const SnackBar(content: Text('Citizen response recorded successfully!')),
                     );
                   }
                 },
@@ -680,7 +680,7 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
                   minimumSize: const Size(double.infinity, 48),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
-                child: const Text('प्रतिसाद जतन करा', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                child: const Text('Save Response', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ),
             ],
           ),

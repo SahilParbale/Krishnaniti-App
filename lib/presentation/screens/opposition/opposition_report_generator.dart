@@ -62,7 +62,7 @@ class OppositionReportGenerator {
                       ),
                       pw.SizedBox(height: 2),
                       pw.Text(
-                        'विरोधी पक्षाची माहिती - उमेदवार, कार्यकर्ते, बालेकिल्ले आणि वादग्रस्त नोंदी',
+                        'Opposition Intelligence - Candidates, Cadre, Strongholds & Controversies',
                         style: const pw.TextStyle(
                           fontSize: 10,
                           color: PdfColors.grey700,
@@ -81,7 +81,7 @@ class OppositionReportGenerator {
                           border: pw.Border.all(color: PdfColors.red300),
                         ),
                         child: pw.Text(
-                          'CONFIDENTIAL / अंतर्गत वापरासाठी',
+                          'CONFIDENTIAL / INTERNAL USE ONLY',
                           style: pw.TextStyle(
                             fontSize: 9,
                             fontWeight: pw.FontWeight.bold,
@@ -107,11 +107,11 @@ class OppositionReportGenerator {
               children: [
                 _buildPdfKpiCard('Total Records', totalMembers.toString(), PdfColors.blue50, PdfColors.blue900),
                 pw.SizedBox(width: 8),
-                _buildPdfKpiCard('Candidates (उमेदवार)', totalCandidates.toString(), PdfColors.indigo50, PdfColors.indigo900),
+                _buildPdfKpiCard('Candidates', totalCandidates.toString(), PdfColors.indigo50, PdfColors.indigo900),
                 pw.SizedBox(width: 8),
-                _buildPdfKpiCard('Workers (कार्यकर्ते)', totalWorkers.toString(), PdfColors.amber50, PdfColors.amber900),
+                _buildPdfKpiCard('Cadre', totalWorkers.toString(), PdfColors.amber50, PdfColors.amber900),
                 pw.SizedBox(width: 8),
-                _buildPdfKpiCard('Controversies (वाद/किस्से)', totalControversies.toString(), PdfColors.red50, PdfColors.red900),
+                _buildPdfKpiCard('Controversies', totalControversies.toString(), PdfColors.red50, PdfColors.red900),
               ],
             ),
 
@@ -121,13 +121,13 @@ class OppositionReportGenerator {
             pw.TableHelper.fromTextArray(
               headers: [
                 '#',
-                'Name (नाव)',
+                'Name',
                 'Party',
                 'Type',
                 'Role / Designation',
                 'Base Area',
                 'Mobile',
-                'Strongholds (बालेकिल्ले)',
+                'Strongholds',
                 'Status / Linked Candidate',
                 'Contr.',
               ],
@@ -189,7 +189,7 @@ class OppositionReportGenerator {
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
                 pw.Text(
-                  'टीप: हा अहवाल केवळ पक्षांतर्गत निवडणूक विश्लेषण आणि रणनीती आखणीसाठी तयार केलेला आहे.',
+                  'Note: This report is strictly prepared for internal campaign analysis and electoral strategy.',
                   style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey600),
                 ),
                 pw.Text(

@@ -168,6 +168,8 @@ class VoterBirthdayModel {
     required this.boothNumber,
     required this.age,
   });
+
+  String get displayName => name.isNotEmpty ? name : nameMarathi;
 }
 
 extension IntFormatting on int {

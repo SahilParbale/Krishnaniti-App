@@ -76,7 +76,7 @@ class ResultAnalysisReportGenerator {
                       ),
                       pw.SizedBox(height: 2),
                       pw.Text(
-                        'पुणे महानगरपालिका निवडणूक निकाल व केंद्रानिहाय कामगिरी विश्लेषण अहवाल',
+                        'Pune Municipal Corporation Election Results & Booth-wise Analysis Report',
                         style: pw.TextStyle(
                           fontSize: 9,
                           fontWeight: pw.FontWeight.bold,
@@ -85,7 +85,7 @@ class ResultAnalysisReportGenerator {
                       ),
                       pw.SizedBox(height: 1),
                       pw.Text(
-                        '$ward • विश्लेषण उमेदवार: $selectedCandidate',
+                        '$ward • Candidate Analysis: $selectedCandidate',
                         style: const pw.TextStyle(
                           fontSize: 8.5,
                           color: PdfColors.grey700,
@@ -154,33 +154,33 @@ class ResultAnalysisReportGenerator {
             pw.Row(
               children: [
                 _buildKpiCard(
-                  'एकूण मते (TOTAL VOTES)',
+                  'TOTAL VOTES',
                   NumberFormat('#,##,###').format(ourVotes),
-                  'एकूण ${NumberFormat('#,##,###').format(totalVotes)} पैकी',
+                  'Out of ${NumberFormat('#,##,###').format(totalVotes)} Total',
                   PdfColors.blue800,
                   PdfColors.blue50,
                 ),
                 pw.SizedBox(width: 8),
                 _buildKpiCard(
-                  'मत वाटा (VOTE SHARE)',
+                  'VOTE SHARE',
                   '${voteShare.toStringAsFixed(1)}%',
-                  'प्रभागातील एकूण मतांची टक्केवारी',
+                  'Percentage of Total Ward Votes',
                   PdfColors.purple800,
                   PdfColors.purple50,
                 ),
                 pw.SizedBox(width: 8),
                 _buildKpiCard(
-                  'विजयी केंद्रे (WINNING BOOTHS)',
+                  'WINNING BOOTHS',
                   '$winningBooths',
-                  'बालेकिल्ले (Strongholds)',
+                  'Strongholds',
                   PdfColors.green800,
                   PdfColors.green50,
                 ),
                 pw.SizedBox(width: 8),
                 _buildKpiCard(
-                  'मागे राहिलेली केंद्रे (LOSING BOOTHS)',
+                  'LOSING BOOTHS',
                   '$losingBooths',
-                  'सुधारणेची गरज (Needs Work)',
+                  'Needs Work / Trailing',
                   PdfColors.red800,
                   PdfColors.red50,
                 ),
@@ -199,11 +199,11 @@ class ResultAnalysisReportGenerator {
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text(
-                    'केंद्रानिहाय मतदान निकाल तपशील (BOOTH-WISE PERFORMANCE BREAKDOWN)',
+                    'BOOTH-WISE PERFORMANCE BREAKDOWN',
                     style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
                   ),
                   pw.Text(
-                    'एकूण केंद्रे: ${boothList.length}',
+                    'Total Booths: ${boothList.length}',
                     style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700),
                   ),
                 ],
@@ -218,8 +218,8 @@ class ResultAnalysisReportGenerator {
                 pw.TableRow(
                   decoration: const pw.BoxDecoration(color: PdfColors.blueGrey800),
                   children: [
-                    _tableHeaderCell('केंद्र क्र.', flex: 1),
-                    _tableHeaderCell('मतदान केंद्र ठिकाण', flex: 3),
+                    _tableHeaderCell('Booth No.', flex: 1),
+                    _tableHeaderCell('Booth Location / School', flex: 3),
                     ...candidates.map((c) {
                       final isSelected = c == selectedCandidate;
                       return _tableHeaderCell(
@@ -228,9 +228,9 @@ class ResultAnalysisReportGenerator {
                         isHighlight: isSelected,
                       );
                     }),
-                    _tableHeaderCell('एकूण मते', flex: 1),
-                    _tableHeaderCell('विजयी उमेदवार', flex: 2),
-                    _tableHeaderCell('मताधिक्य', flex: 1),
+                    _tableHeaderCell('Total Votes', flex: 1),
+                    _tableHeaderCell('Winner Candidate', flex: 2),
+                    _tableHeaderCell('Margin', flex: 1),
                   ],
                 ),
                 // Data Rows

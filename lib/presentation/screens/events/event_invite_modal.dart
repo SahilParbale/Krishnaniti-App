@@ -86,17 +86,7 @@ class _EventInviteModalState extends ConsumerState<EventInviteModal> {
 
     final event = widget.event;
     final message =
-        '🎉 *आमंत्रण : ${event.titleMr}*\n\n'
-        'सस्नेह नमस्कार,\n'
-        'आपणास कळविण्यास आनंद होत आहे की, आपल्या प्रभागात खालील कार्यक्रमाचे आयोजन करण्यात आले आहे:\n\n'
-        '📌 *कार्यक्रम:* ${event.titleMr}\n'
-        '📅 *दिनांक:* ${event.formattedDate}\n'
-        '⏰ *वेळ:* ${event.eventTime}\n'
-        '📍 *ठिकाण:* ${event.locationMr.isNotEmpty ? event.locationMr : event.location}\n\n'
-        '${event.description}\n\n'
-        'तरी आपण सहकुटुंब उपस्थित राहून कार्यक्रमाची शोभा वाढवावी ही नम्र विनंती!\n\n'
-        '— *आपला नम्र सेवक, अमित चौगुले*\n'
-        '(नगरसेवक, प्रभाग क्र. १२, पुणे महानगरपालिका)';
+        '🎉 *Invitation: ${event.title}*\n\nDear Resident,\nYou are cordially invited to attend the community program:\n\n📌 *Event:* ${event.title}\n📅 *Date:* ${event.formattedDate}\n⏰ *Time:* ${event.eventTime}\n📍 *Venue:* ${event.location}\n\nPlease join us with your family.\n\n— *Nagarsevak Amit Chougale*\n(Ward No. 12, Pune Municipal Corporation)';
 
     final encoded = Uri.encodeComponent(message);
     // If 1 voter selected, send directly to their number. If multiple, open generic WhatsApp share
@@ -111,7 +101,7 @@ class _EventInviteModalState extends ConsumerState<EventInviteModal> {
         Clipboard.setData(ClipboardData(text: message));
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('आमंत्रण मजकूर क्लिपबोर्डवर कॉपी केला!')),
+            const SnackBar(content: Text('Invitation text copied to clipboard!')),
           );
         }
       }
@@ -140,7 +130,7 @@ class _EventInviteModalState extends ConsumerState<EventInviteModal> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '${_selectedMobiles.length} नागरिकांना WhatsApp आमंत्रण पाठवले!',
+              'WhatsApp invitations sent to ${_selectedMobiles.length} residents!',
             ),
             backgroundColor: const Color(0xFF16A34A),
           ),
@@ -202,7 +192,7 @@ class _EventInviteModalState extends ConsumerState<EventInviteModal> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'कार्यक्रम आमंत्रणे पाठवा (Send Invites)',
+                        'Send Event Invitations',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -242,7 +232,7 @@ class _EventInviteModalState extends ConsumerState<EventInviteModal> {
                 TextField(
                   controller: _searchCtrl,
                   decoration: InputDecoration(
-                    hintText: 'नावाने किंवा मोबाईलने मतदार शोधा...',
+                    hintText: 'Search voters by name or mobile...',
                     hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                     prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Color(0xFF64748B)),
                     suffixIcon: _searchCtrl.text.isNotEmpty
@@ -273,15 +263,15 @@ class _EventInviteModalState extends ConsumerState<EventInviteModal> {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      _buildAreaChip('सर्व भाग (${_allVoters.length})', 'all'),
+                      _buildAreaChip('All Areas (${_allVoters.length})', 'all'),
                       const SizedBox(width: 6),
-                      _buildAreaChip('शनिवार पेठ', 'शनिवार पेठ'),
+                      _buildAreaChip('Shaniwar Peth', 'Shaniwar Peth'),
                       const SizedBox(width: 6),
-                      _buildAreaChip('कसबा पेठ', 'कसबा पेठ'),
+                      _buildAreaChip('Kasba Peth', 'Kasba Peth'),
                       const SizedBox(width: 6),
-                      _buildAreaChip('नारायण पेठ', 'नारायण पेठ'),
+                      _buildAreaChip('Narayan Peth', 'Narayan Peth'),
                       const SizedBox(width: 6),
-                      _buildAreaChip('रास्ता पेठ', 'रास्ता पेठ'),
+                      _buildAreaChip('Rasta Peth', 'Rasta Peth'),
                     ],
                   ),
                 ),
@@ -305,7 +295,7 @@ class _EventInviteModalState extends ConsumerState<EventInviteModal> {
                         onChanged: (_) => _toggleSelectAll(),
                       ),
                       Text(
-                        allSelected ? 'सर्व निवड रद्द करा' : 'सर्व निवडा (Select All)',
+                        allSelected ? 'Deselect All' : 'Select All',
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
@@ -323,7 +313,7 @@ class _EventInviteModalState extends ConsumerState<EventInviteModal> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    '${_selectedMobiles.length} निवडले',
+                    '${_selectedMobiles.length} Selected',
                     style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
@@ -347,7 +337,7 @@ class _EventInviteModalState extends ConsumerState<EventInviteModal> {
                         Icon(Icons.people_outline_rounded, size: 40, color: Colors.grey.shade400),
                         const SizedBox(height: 8),
                         const Text(
-                          'कोणतेही नागरिक आढळले नाहीत.',
+                          'No citizens found.',
                           style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
                         ),
                       ],
@@ -402,7 +392,7 @@ class _EventInviteModalState extends ConsumerState<EventInviteModal> {
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      '${voter.address} • वय: ${voter.age} वर्षे',
+                                      '${voter.address} • Age: ${voter.age} yrs',
                                       style: const TextStyle(
                                         fontSize: 11.5,
                                         color: Color(0xFF64748B),
@@ -449,7 +439,7 @@ class _EventInviteModalState extends ConsumerState<EventInviteModal> {
                       padding: const EdgeInsets.symmetric(vertical: 13),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
-                    child: const Text('रद्द करा'),
+                    child: const Text('Cancel'),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -468,8 +458,8 @@ class _EventInviteModalState extends ConsumerState<EventInviteModal> {
                         : const Icon(Icons.send_rounded, size: 18),
                     label: Text(
                       _isSending
-                          ? 'पाठवत आहे...'
-                          : 'WhatsApp आमंत्रण (${_selectedMobiles.length})',
+                          ? 'Sending...'
+                          : 'Send WhatsApp Invites (${_selectedMobiles.length})',
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     style: ElevatedButton.styleFrom(

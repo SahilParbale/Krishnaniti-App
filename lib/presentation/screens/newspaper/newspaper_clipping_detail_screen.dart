@@ -54,19 +54,19 @@ class _NewspaperClippingDetailScreenState
               Icon(Icons.delete_outline_rounded, color: Colors.red),
               SizedBox(width: 8),
               Text(
-                'Delete Clipping / हटवा',
+                'Delete Clipping',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ],
           ),
           content: Text(
-            'Are you sure you want to delete this clipping from ${_clipping.newspaper}?\n\nतुम्ही हे वृत्तपत्र कात्रण निश्चितपणे हटवू इच्छिता का?',
+            'Are you sure you want to delete this clipping from ${_clipping.newspaper}?',
             style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel / रद्द करा',
+              child: const Text('Cancel',
                   style: TextStyle(color: Colors.grey)),
             ),
             ElevatedButton(
@@ -85,7 +85,7 @@ class _NewspaperClippingDetailScreenState
                       content: Text('Newspaper clipping deleted successfully.')),
                 );
               },
-              child: const Text('Delete / हटवा'),
+              child: const Text('Delete'),
             ),
           ],
         );
@@ -133,7 +133,7 @@ class _NewspaperClippingDetailScreenState
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
-                          'Edit Clipping / कात्रण संपादित करा',
+                          'Edit Clipping',
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -153,7 +153,7 @@ class _NewspaperClippingDetailScreenState
                       padding: const EdgeInsets.all(16),
                       children: [
                         // Sentiment Selector
-                        const Text('Coverage Type / प्रकार',
+                        const Text('Coverage Type',
                             style: TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 13)),
                         const SizedBox(height: 6),
@@ -179,7 +179,7 @@ class _NewspaperClippingDetailScreenState
                                   ),
                                   alignment: Alignment.center,
                                   child: Text(
-                                    'Positive (सकारात्मक)',
+                                    'Positive',
                                     style: TextStyle(
                                       color: sentiment == 'positive'
                                           ? Colors.white
@@ -212,7 +212,7 @@ class _NewspaperClippingDetailScreenState
                                   ),
                                   alignment: Alignment.center,
                                   child: Text(
-                                    'Negative / Civic Issue (दखलपात्र)',
+                                    'Negative / Civic Issue',
                                     style: TextStyle(
                                       color: sentiment == 'negative'
                                           ? Colors.white
@@ -229,7 +229,7 @@ class _NewspaperClippingDetailScreenState
                         const SizedBox(height: 14),
 
                         // Newspaper Dropdown
-                        const Text('Newspaper / वृत्तपत्र',
+                        const Text('Newspaper',
                             style: TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 13)),
                         const SizedBox(height: 6),
@@ -242,18 +242,18 @@ class _NewspaperClippingDetailScreenState
                           ),
                           items: const [
                             DropdownMenuItem(
-                                value: 'Sakal', child: Text('Sakal (सकाळ)')),
+                                value: 'Sakal', child: Text('Sakal')),
                             DropdownMenuItem(
-                                value: 'Lokmat', child: Text('Lokmat (लोकमत)')),
+                                value: 'Lokmat', child: Text('Lokmat')),
                             DropdownMenuItem(
                                 value: 'Maharashtra Times',
-                                child: Text('Maharashtra Times (महाराष्ट्र टाइम्स)')),
+                                child: Text('Maharashtra Times')),
                             DropdownMenuItem(
                                 value: 'Pudhari',
-                                child: Text('Pudhari (पुढारी)')),
+                                child: Text('Pudhari')),
                             DropdownMenuItem(
                                 value: 'Loksatta',
-                                child: Text('Loksatta (लोकसत्ता)')),
+                                child: Text('Loksatta')),
                             DropdownMenuItem(
                                 value: 'The Indian Express',
                                 child: Text('The Indian Express')),
@@ -267,7 +267,7 @@ class _NewspaperClippingDetailScreenState
                         const SizedBox(height: 14),
 
                         // Title Marathi
-                        const Text('Headline Marathi (मराठी शीर्षक)',
+                        const Text('Headline (Marathi / Regional)',
                             style: TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 13)),
                         const SizedBox(height: 6),
@@ -282,7 +282,7 @@ class _NewspaperClippingDetailScreenState
                         const SizedBox(height: 14),
 
                         // Title English
-                        const Text('Headline English (इंग्रजी शीर्षक)',
+                        const Text('Headline (English)',
                             style: TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 13)),
                         const SizedBox(height: 6),
@@ -297,7 +297,7 @@ class _NewspaperClippingDetailScreenState
                         const SizedBox(height: 14),
 
                         // Description Marathi
-                        const Text('Description (मराठी बातमीचा गोषवारा)',
+                        const Text('Description',
                             style: TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 13)),
                         const SizedBox(height: 6),
@@ -312,7 +312,7 @@ class _NewspaperClippingDetailScreenState
                         const SizedBox(height: 14),
 
                         // Action Taken
-                        const Text('Civic Action Taken / नगरसेवक पाठपुरावा',
+                        const Text('Civic Action Taken',
                             style: TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 13)),
                         const SizedBox(height: 6),
@@ -335,7 +335,7 @@ class _NewspaperClippingDetailScreenState
                                 borderRadius: BorderRadius.circular(10)),
                           ),
                           icon: const Icon(Icons.check_circle_outline_rounded),
-                          label: const Text('Update Clipping / जतन करा',
+                          label: const Text('Update Clipping',
                               style: TextStyle(
                                   fontWeight: FontWeight.bold, fontSize: 14)),
                           onPressed: () {
@@ -615,7 +615,7 @@ class _NewspaperClippingDetailScreenState
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               const Text(
-                                'Headline & Article / बातमी मजकूर',
+                                'Headline & Article',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 13,
@@ -644,7 +644,7 @@ class _NewspaperClippingDetailScreenState
                                               BorderRadius.circular(20),
                                         ),
                                         child: Text(
-                                          'मराठी',
+                                          'Regional',
                                           style: TextStyle(
                                             color: _showMarathi
                                                 ? Colors.white
@@ -721,7 +721,7 @@ class _NewspaperClippingDetailScreenState
 
               const SizedBox(height: 16),
 
-              // Civic Action Taken Card (नगरसेवक पाठपुरावा / कृती अहवाल)
+              // Civic Action Taken Card
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
@@ -765,8 +765,8 @@ class _NewspaperClippingDetailScreenState
                         const SizedBox(width: 8),
                         Text(
                           _clipping.isPositive
-                            ? 'Development Milestone / कामाची उपलब्धी'
-                            : 'Civic Action Taken / पाठपुरावा व निवारण',
+                            ? 'Development Milestone'
+                            : 'Civic Action Taken',
                           style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.bold,
@@ -778,7 +778,7 @@ class _NewspaperClippingDetailScreenState
                     const SizedBox(height: 8),
                     Text(
                       _clipping.actionTaken ??
-                          'मनपा अधिकाऱ्यांसमवेत प्रत्यक्ष पाहणी करून तत्काळ उपाययोजना केली.',
+                          'Conducted inspection with municipal engineers and resolved the civic issue.',
                       style: const TextStyle(
                         fontSize: 12.5,
                         height: 1.5,
@@ -805,7 +805,7 @@ class _NewspaperClippingDetailScreenState
                         elevation: 0,
                       ),
                       icon: const Icon(Icons.share_rounded, size: 18),
-                      label: const Text('Share Summary / सामायिक करा',
+                      label: const Text('Share Summary',
                           style: TextStyle(fontWeight: FontWeight.bold)),
                       onPressed: _copySummary,
                     ),

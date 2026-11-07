@@ -7,11 +7,11 @@ import '../../../data/models/voter_model.dart';
 import '../../../data/models/whatsapp_broadcast_model.dart';
 import '../../../data/repositories/whatsapp_repository.dart';
 import 'whatsapp_history_report_generator.dart';
+import '../../navigation/app_drawer.dart';
 
 const _kWaGreen = Color(0xFF25D366);
 const _kWaDark = Color(0xFF075E54);
 const _kWaLight = Color(0xFFE8F5E9);
-const _kWaLightBorder = Color(0xFFA5D6A7);
 
 class WhatsAppCallingScreen extends ConsumerStatefulWidget {
   const WhatsAppCallingScreen({super.key});
@@ -43,8 +43,8 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
   final List<WhatsAppBroadcastModel> _seedLogs = [
     WhatsAppBroadcastModel(
       id: 'wacall-001',
-      title: 'WhatsApp Voice Call - रमेश कुलकर्णी',
-      message: 'WhatsApp Call initiated to रमेश कुलकर्णी (+91 9822011223)',
+      title: 'WhatsApp Voice Call - Ramesh Kulkarni',
+      message: 'WhatsApp Call initiated to Ramesh Kulkarni (+91 9822011223)',
       sentAt: DateTime.now().subtract(const Duration(hours: 2)),
       channel: 'wa_call',
       recipients: 1,
@@ -52,12 +52,12 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
       deliveredCount: 1,
       failedCount: 0,
       status: 'COMPLETED',
-      category: 'व्हॉट्सॲप कॉल',
+      category: 'WhatsApp Call',
     ),
     WhatsAppBroadcastModel(
       id: 'wacall-002',
-      title: 'WhatsApp Voice Call - सुरेश पाटील',
-      message: 'WhatsApp Call initiated to सुरेश पाटील (+91 9822044556)',
+      title: 'WhatsApp Voice Call - Suresh Patil',
+      message: 'WhatsApp Call initiated to Suresh Patil (+91 9822044556)',
       sentAt: DateTime.now().subtract(const Duration(days: 1)),
       channel: 'wa_call',
       recipients: 1,
@@ -65,7 +65,7 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
       deliveredCount: 1,
       failedCount: 0,
       status: 'COMPLETED',
-      category: 'व्हॉट्सॲप कॉल',
+      category: 'WhatsApp Call',
     ),
   ];
 
@@ -187,7 +187,7 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
         deliveredCount: 1,
         failedCount: 0,
         status: 'COMPLETED',
-        category: 'व्हॉट्सॲप कॉल',
+        category: 'WhatsApp Call',
       );
 
       try {
@@ -248,7 +248,7 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
             Icon(Icons.help_outline_rounded, color: _kWaGreen),
             SizedBox(width: 8),
             Text(
-              'व्हॉट्सॲप कॉल मार्गदर्शक',
+              'WhatsApp Call Guide',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ],
@@ -259,24 +259,24 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildTutorialStep(
-                step: '१',
-                title: 'बॉट स्थिती तपासा',
-                desc: 'वरील "बॉट सक्रिय" हिरवा इंडिकेटर सक्रिय असल्याचे सुनिश्चित करा. हे थेट इंटरनेट व्हॉट्सॲप कॉल जोडणी सक्षम करते.',
+                step: '1',
+                title: 'Check Bot Status',
+                desc: 'Ensure the "Bot Active" green indicator is active. This enables direct internet WhatsApp call routing.',
               ),
               _buildTutorialStep(
-                step: '२',
-                title: 'मतदार शोध व फिल्टर',
-                desc: 'नाव, मोबाईल किंवा पत्त्यानुसार विशिष्ट मतदाराला शोधून काढा.',
+                step: '2',
+                title: 'Voter Search & Filters',
+                desc: 'Search specific voters by name, mobile number, or address.',
               ),
               _buildTutorialStep(
-                step: '३',
-                title: '१-टॅप थेट व्हॉट्सॲप कॉल',
-                desc: 'प्रत्येक मतदाराच्या कार्डवरील "WA कॉल" बटणावर टॅप करा. यामुळे मतदाराचा नंबर थेट व्हॉट्सॲपमध्ये ओपन होऊन कॉल सुरू होईल.',
+                step: '3',
+                title: '1-Tap Direct WhatsApp Call',
+                desc: 'Tap "WA Call" on each voter card to launch the WhatsApp dialer and initiate the call.',
               ),
               _buildTutorialStep(
-                step: '४',
-                title: 'कॉल इतिहास व अहवाल',
-                desc: 'केलेल्या सर्व व्हॉट्सॲप कॉल्सची तारीख, वेळ व तपशील "कॉल इतिहास" टॅबमध्ये नोंदवले जातात. अधिकृत A4 PDF अहवाल एका टॅपवर डाउनलोड करा.',
+                step: '4',
+                title: 'Call Logs & Reports',
+                desc: 'All placed calls are recorded with timestamps in the Call History tab. Download official A4 PDF reports in 1-tap.',
               ),
             ],
           ),
@@ -289,7 +289,7 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('समजले', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text('Got it', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -337,15 +337,44 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      drawer: const NagarsevakAppDrawer(),
       appBar: AppBar(
-        title: Row(
+        backgroundColor: const Color(0xFF0284C7),
+        foregroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+            tooltip: 'Open Menu Drawer',
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
+        ),
+        titleSpacing: 0,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: const [
-            Icon(Icons.phone_in_talk, color: _kWaGreen, size: 22),
-            SizedBox(width: 8),
-            Text('WhatsApp Call'),
+            Text(
+              'WhatsApp Call',
+              style: TextStyle(
+                fontSize: 17.5,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: -0.2,
+              ),
+            ),
+            Text(
+              'Direct 1-on-1 WhatsApp internet voice calls',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFFE0F2FE),
+              ),
+            ),
           ],
         ),
-        elevation: 0,
         actions: [
           // Bot status badge
           Center(
@@ -353,10 +382,10 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
               margin: const EdgeInsets.only(right: 8),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: _botStatus == 'connected' ? _kWaLight : const Color(0xFFFEE2E2),
+                color: Colors.white.withOpacity(0.18),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: _botStatus == 'connected' ? _kWaLightBorder : const Color(0xFFFECACA),
+                  color: Colors.white.withOpacity(0.35),
                 ),
               ),
               child: Row(
@@ -368,18 +397,18 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
                       width: 7,
                       height: 7,
                       decoration: BoxDecoration(
-                        color: _botStatus == 'connected' ? _kWaGreen : const Color(0xFFDC2626),
+                        color: _botStatus == 'connected' ? const Color(0xFF4ADE80) : const Color(0xFFF87171),
                         shape: BoxShape.circle,
                       ),
                     ),
                   ),
                   const SizedBox(width: 5),
                   Text(
-                    _botStatus == 'connected' ? 'बॉट सक्रिय' : 'बॉट निष्क्रिय',
-                    style: TextStyle(
+                    _botStatus == 'connected' ? 'Bot Active' : 'Bot Offline',
+                    style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
-                      color: _botStatus == 'connected' ? _kWaDark : const Color(0xFF991B1B),
+                      color: Colors.white,
                     ),
                   ),
                 ],
@@ -388,26 +417,58 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
           ),
           IconButton(
             onPressed: _showTutorialDialog,
-            icon: const Icon(Icons.help_outline_rounded),
-            tooltip: 'मदत / Help',
+            icon: const Icon(Icons.help_outline_rounded, color: Colors.white),
+            tooltip: 'Help Guide',
           ),
         ],
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: _kWaDark,
-          unselectedLabelColor: isDark ? Colors.grey[400] : Colors.grey[600],
-          indicatorColor: _kWaGreen,
-          tabs: const [
-            Tab(icon: Icon(Icons.phone), text: 'कॉल करा (Make Call)'),
-            Tab(icon: Icon(Icons.history), text: 'कॉल इतिहास (Call History)'),
-          ],
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
+      body: Column(
         children: [
-          _buildCallingTab(theme, isDark),
-          _buildHistoryTab(theme, isDark),
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            alignment: Alignment.centerLeft,
+            child: Container(
+              height: 40,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                indicator: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                labelColor: const Color(0xFF0284C7),
+                unselectedLabelColor: const Color(0xFF64748B),
+                labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+                indicatorSize: TabBarIndicatorSize.tab,
+                dividerColor: Colors.transparent,
+                tabs: const [
+                  Tab(icon: Icon(Icons.phone, size: 16), text: 'Make Call'),
+                  Tab(icon: Icon(Icons.history, size: 16), text: 'Call History'),
+                ],
+              ),
+            ),
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildCallingTab(theme, isDark),
+                _buildHistoryTab(theme, isDark),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -431,7 +492,7 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
                     child: TextField(
                       controller: _searchController,
                       decoration: InputDecoration(
-                        hintText: 'नाव किंवा मोबाईल नंबर शोधा...',
+                        hintText: 'Search name or mobile number...',
                         prefixIcon: const Icon(Icons.search, size: 20),
                         isDense: true,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -452,7 +513,7 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
               TextField(
                 controller: _addressController,
                 decoration: InputDecoration(
-                  hintText: 'पत्ता / परिसर फिल्टर करा...',
+                  hintText: 'Filter address / area...',
                   prefixIcon: const Icon(Icons.location_on_outlined, size: 20),
                   isDense: true,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -471,7 +532,7 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'उपलब्ध संपर्क (Available Voters): ${_voters.length}',
+                'Available Contacts: ${_voters.length}',
                 style: theme.textTheme.bodySmall?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: isDark ? Colors.grey[300] : Colors.grey[700],
@@ -498,7 +559,7 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
                         children: [
                           Icon(Icons.phone_disabled_outlined, size: 48, color: Colors.grey[400]),
                           const SizedBox(height: 12),
-                          Text('वैध मोबाईल नंबर असलेले मतदार आढळले नाहीत', style: TextStyle(color: Colors.grey[600])),
+                          Text('No voters with valid mobile numbers found', style: TextStyle(color: Colors.grey[600])),
                         ],
                       ),
                     )
@@ -524,8 +585,8 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
                               child: Row(
                                 children: [
                                   CircleAvatar(
-                                    backgroundColor: _kWaLight,
-                                    foregroundColor: _kWaDark,
+                                    backgroundColor: const Color(0xFFE0F2FE),
+                                    foregroundColor: const Color(0xFF0284C7),
                                     child: const Icon(Icons.person),
                                   ),
                                   const SizedBox(width: 12),
@@ -540,13 +601,13 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
                                         const SizedBox(height: 2),
                                         Row(
                                           children: [
-                                            const Icon(Icons.phone, size: 13, color: _kWaDark),
+                                            const Icon(Icons.phone, size: 13, color: Color(0xFF0284C7)),
                                             const SizedBox(width: 4),
                                             Text(
                                               hasPhone ? voter.mobile! : 'No mobile',
                                               style: TextStyle(
                                                 fontSize: 12,
-                                                color: hasPhone ? _kWaDark : Colors.grey,
+                                                color: hasPhone ? const Color(0xFF0284C7) : Colors.grey,
                                                 fontWeight: FontWeight.w600,
                                               ),
                                             ),
@@ -568,7 +629,7 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
                                   ElevatedButton.icon(
                                     onPressed: hasPhone ? () => _initiateWhatsAppCall(voter) : null,
                                     icon: const Icon(Icons.phone_in_talk, size: 16),
-                                    label: const Text('WA कॉल'),
+                                    label: const Text('WA Call'),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: _kWaGreen,
                                       foregroundColor: Colors.white,
@@ -606,7 +667,7 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '${_callLogs.length} व्हॉट्सॲप कॉल्स (Calls)',
+                '${_callLogs.length} WhatsApp Calls',
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
               ),
               Row(
@@ -617,12 +678,12 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
                         ? const SizedBox(
                             width: 14,
                             height: 14,
-                            child: CircularProgressIndicator(strokeWidth: 1.5, color: _kWaDark),
+                            child: CircularProgressIndicator(strokeWidth: 1.5, color: Color(0xFF0284C7)),
                           )
-                        : const Icon(Icons.picture_as_pdf, size: 16, color: _kWaDark),
-                    label: const Text('PDF अहवाल', style: TextStyle(fontSize: 12, color: _kWaDark)),
+                        : const Icon(Icons.picture_as_pdf, size: 16, color: Color(0xFF0284C7)),
+                    label: const Text('PDF Report', style: TextStyle(fontSize: 12, color: Color(0xFF0284C7))),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: _kWaLightBorder),
+                      side: const BorderSide(color: Color(0xFFCBD5E1)),
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     ),
                   ),
@@ -648,14 +709,14 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
                       Icon(Icons.history_outlined, size: 48, color: Colors.grey[400]),
                       const SizedBox(height: 12),
                       Text(
-                        'अद्याप कोणतेही व्हॉट्सॲप कॉल लॉग नाहीत',
+                        'No WhatsApp call logs yet',
                         style: TextStyle(color: Colors.grey[600], fontSize: 13),
                       ),
                       const SizedBox(height: 12),
                       OutlinedButton.icon(
                         onPressed: _loadHistory,
                         icon: const Icon(Icons.refresh),
-                        label: const Text('रिफ्रेश'),
+                        label: const Text('Refresh'),
                       ),
                     ],
                   ),

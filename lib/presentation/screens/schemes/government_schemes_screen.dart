@@ -752,25 +752,19 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
           scrolledUnderElevation: 0,
           leading: Builder(
             builder: (ctx) => IconButton(
-              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 24),
-              tooltip: 'Back',
-              onPressed: () {
-                if (Navigator.canPop(context)) {
-                  Navigator.pop(context);
-                } else {
-                  Scaffold.of(ctx).openDrawer();
-                }
-              },
+              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+              tooltip: 'Open Menu Drawer',
+              onPressed: () => Scaffold.of(ctx).openDrawer(),
             ),
           ),
           titleSpacing: 0,
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
-            children: [
+            children: const [
               Text(
-                isMr ? 'शासकीय योजना (Govt Schemes)' : 'Government Schemes',
-                style: const TextStyle(
+                'Government Schemes',
+                style: TextStyle(
                   fontSize: 17.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
@@ -778,11 +772,11 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                 ),
               ),
               Text(
-                isMr ? 'कल्याणकारी योजना व लाभार्थी व्यवस्थापन' : 'Welfare schemes & citizen entitlements',
+                'State and central welfare schemes, subsidies and benefits',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w400,
-                  color: Colors.white.withValues(alpha: 0.85),
+                  color: Color(0xFFE0F2FE),
                 ),
               ),
             ],

@@ -130,7 +130,7 @@ class _NewspaperClippingsScreenState
               mainAxisSize: MainAxisSize.min,
               children: const [
                 Text(
-                  'वृत्तपत्र कात्रणे व मीडिया मॉनिटरिंग मार्गदर्शक',
+                  'Newspaper Clippings & Media Monitoring Guide',
                   style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
@@ -139,25 +139,25 @@ class _NewspaperClippingsScreenState
                 SizedBox(height: 10),
                 _GuideStep(
                   number: '1',
-                  title: 'Sentiment Tabs / बातम्यांचे प्रकार',
+                  title: 'Coverage Categories',
                   desc:
                       'Switch between "Positive" and "Negative" to track public appreciation versus critical issues requiring municipal resolution.',
                 ),
                 _GuideStep(
                   number: '2',
-                  title: 'Add New Clipping / नवीन कात्रण',
+                  title: 'Add New Clipping',
                   desc:
                       'Upload news cutting images along with Marathi headline, page number, edition, and civic action taken report.',
                 ),
                 _GuideStep(
                   number: '3',
-                  title: 'Official PDF Report / अहवाल',
+                  title: 'Official PDF Report',
                   desc:
                       'Generate landscape A4 print-ready reports with clippings ledger for ward party meetings and review.',
                 ),
                 _GuideStep(
                   number: '4',
-                  title: 'Dual Views / ग्रिड व टेबल व्ह्यू',
+                  title: 'Dual Views',
                   desc:
                       'Toggle between rich visual news card grid and tabular audit report view.',
                 ),
@@ -173,7 +173,7 @@ class _NewspaperClippingsScreenState
                     borderRadius: BorderRadius.circular(8)),
               ),
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Got it / समजले'),
+              child: const Text('Got it'),
             ),
           ],
         );
@@ -226,7 +226,7 @@ class _NewspaperClippingsScreenState
                                 color: Colors.white),
                             SizedBox(width: 8),
                             Text(
-                              'Add Newspaper Clipping / कात्रण जोडा',
+                              'Add Newspaper Clipping',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -248,7 +248,7 @@ class _NewspaperClippingsScreenState
                       padding: const EdgeInsets.all(16),
                       children: [
                         // Sentiment Type
-                        const Text('Coverage Type / बातमीचा प्रकार',
+                        const Text('Coverage Type',
                             style: TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 13)),
                         const SizedBox(height: 6),
@@ -274,7 +274,7 @@ class _NewspaperClippingsScreenState
                                   ),
                                   alignment: Alignment.center,
                                   child: Text(
-                                    'Positive (सकारात्मक)',
+                                    'Positive',
                                     style: TextStyle(
                                       color: sentiment == 'positive'
                                           ? Colors.white
@@ -307,7 +307,7 @@ class _NewspaperClippingsScreenState
                                   ),
                                   alignment: Alignment.center,
                                   child: Text(
-                                    'Negative / Issue (दखलपात्र)',
+                                    'Negative / Civic Issue',
                                     style: TextStyle(
                                       color: sentiment == 'negative'
                                           ? Colors.white
@@ -324,7 +324,7 @@ class _NewspaperClippingsScreenState
                         const SizedBox(height: 14),
 
                         // Newspaper Dropdown
-                        const Text('Newspaper / वृत्तपत्र',
+                        const Text('Newspaper',
                             style: TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 13)),
                         const SizedBox(height: 6),
@@ -349,14 +349,14 @@ class _NewspaperClippingsScreenState
                         const SizedBox(height: 14),
 
                         // Headline Marathi
-                        const Text('Headline Marathi (मराठी ठळक बातमी)',
+                        const Text('Headline (Marathi / Local)',
                             style: TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 13)),
                         const SizedBox(height: 6),
                         TextField(
                           controller: titleMrCtrl,
                           decoration: const InputDecoration(
-                            hintText: 'उदा. प्रभाग १२ मध्ये नवीन रस्ते...',
+                            hintText: 'e.g., Road resurfacing in Ward 12...',
                             border: OutlineInputBorder(),
                             contentPadding: EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 10),
@@ -365,7 +365,7 @@ class _NewspaperClippingsScreenState
                         const SizedBox(height: 14),
 
                         // Headline English
-                        const Text('Headline English (इंग्रजी शीर्षक)',
+                        const Text('Headline (English)',
                             style: TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 13)),
                         const SizedBox(height: 6),
@@ -381,7 +381,7 @@ class _NewspaperClippingsScreenState
                         const SizedBox(height: 14),
 
                         // Description Marathi
-                        const Text('Description (मराठी बातमीचा गोषवारा)',
+                        const Text('Description',
                             style: TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 13)),
                         const SizedBox(height: 6),
@@ -389,7 +389,7 @@ class _NewspaperClippingsScreenState
                           controller: descMrCtrl,
                           maxLines: 3,
                           decoration: const InputDecoration(
-                            hintText: 'बातमीचा संपूर्ण गोषवारा येथे प्रविष्ट करा...',
+                            hintText: 'Enter article summary here...',
                             border: OutlineInputBorder(),
                             contentPadding: EdgeInsets.all(12),
                           ),
@@ -397,7 +397,7 @@ class _NewspaperClippingsScreenState
                         const SizedBox(height: 14),
 
                         // Civic Action Taken
-                        const Text('Civic Action Taken / नगरसेवक पाठपुरावा व उपाय',
+                        const Text('Civic Action Taken',
                             style: TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 13)),
                         const SizedBox(height: 6),
@@ -405,7 +405,7 @@ class _NewspaperClippingsScreenState
                           controller: actionCtrl,
                           maxLines: 2,
                           decoration: const InputDecoration(
-                            hintText: 'बातमी प्रसिद्ध झाल्यानंतर केलेली प्रत्यक्ष कृती...',
+                            hintText: 'Action taken by Nagarsevak after news publication...',
                             border: OutlineInputBorder(),
                             contentPadding: EdgeInsets.all(12),
                           ),
@@ -463,7 +463,7 @@ class _NewspaperClippingsScreenState
                           ),
                           icon: const Icon(Icons.check_circle_outline_rounded),
                           label: const Text(
-                            'Save Clipping / कात्रण जतन करा',
+                            'Save Clipping',
                             style: TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 14),
                           ),
@@ -501,7 +501,7 @@ class _NewspaperClippingsScreenState
                                       : descEnCtrl.text.trim(),
                               actionTaken: actionCtrl.text.trim().isNotEmpty
                                   ? actionCtrl.text.trim()
-                                  : 'मनपा अधिकाऱ्यांसमवेत प्रत्यक्ष पाहणी करून तत्काळ उपाययोजना केली.',
+                                  : 'Conducted site inspection with PMC municipal engineers and resolved the issue.',
                               journalistName: journalistCtrl.text.trim().isNotEmpty
                                   ? journalistCtrl.text.trim()
                                   : null,
@@ -558,48 +558,34 @@ class _NewspaperClippingsScreenState
         appBar: AppBar(
           backgroundColor: const Color(0xFF0284C7),
           elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
+          scrolledUnderElevation: 0,
+          leading: Builder(
+            builder: (ctx) => IconButton(
+              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+              tooltip: 'Open Menu Drawer',
+              onPressed: () => Scaffold.of(ctx).openDrawer(),
+            ),
           ),
+          titleSpacing: 0,
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Text(
-                    'Newspaper Clipping',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16.5,
-                      letterSpacing: 0.2,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      'एकूण: $totalCount',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              Text(
+                'Newspaper Clippings',
+                style: TextStyle(
+                  fontSize: 17.5,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: -0.2,
+                ),
               ),
               Text(
-                'वृत्तपत्र कात्रणे व मीडिया मॉनिटरिंग • प्रभाग १२',
+                'Print news coverage, press clippings and PR tracking',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.85),
                   fontSize: 11,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFFE0F2FE),
                 ),
               ),
             ],
@@ -737,7 +723,7 @@ class _NewspaperClippingsScreenState
           foregroundColor: Colors.white,
           elevation: 3,
           icon: const Icon(Icons.add_photo_alternate_rounded),
-          label: const Text('Add Clipping / कात्रण जोडा',
+          label: const Text('Add Clipping',
               style: TextStyle(fontWeight: FontWeight.bold)),
           onPressed: _showAddClippingModal,
         ),
@@ -764,7 +750,7 @@ class _NewspaperClippingsScreenState
             child: _buildTabButton(
               id: 'all',
               label: 'All News',
-              marathi: 'सर्व बातम्या',
+              marathi: 'All News',
               count: totalCount,
               activeColor: const Color(0xFF0284C7),
             ),
@@ -773,7 +759,7 @@ class _NewspaperClippingsScreenState
             child: _buildTabButton(
               id: 'positive',
               label: 'Positive',
-              marathi: 'सकारात्मक',
+              marathi: 'Positive',
               count: positiveCount,
               activeColor: const Color(0xFF16A34A),
             ),
@@ -782,7 +768,7 @@ class _NewspaperClippingsScreenState
             child: _buildTabButton(
               id: 'negative',
               label: 'Civic Issues',
-              marathi: 'दखलपात्र',
+              marathi: 'Civic Issues',
               count: negativeCount,
               activeColor: const Color(0xFFDC2626),
             ),
@@ -873,7 +859,7 @@ class _NewspaperClippingsScreenState
             Expanded(
               child: _buildKpiItem(
                 title: 'Total Clippings',
-                marathi: 'एकूण कात्रणे',
+                marathi: 'Total',
                 value: '$total',
                 icon: Icons.newspaper_rounded,
                 color: const Color(0xFF0284C7),
@@ -884,7 +870,7 @@ class _NewspaperClippingsScreenState
             Expanded(
               child: _buildKpiItem(
                 title: 'Positive News',
-                marathi: 'सकारात्मक बातम्या',
+                marathi: 'Positive',
                 value: '$positive',
                 icon: Icons.thumb_up_alt_outlined,
                 color: const Color(0xFF16A34A),
@@ -899,7 +885,7 @@ class _NewspaperClippingsScreenState
             Expanded(
               child: _buildKpiItem(
                 title: 'Civic Issues',
-                marathi: 'दखलपात्र समस्या',
+                marathi: 'Civic Issues',
                 value: '$negative',
                 icon: Icons.report_problem_outlined,
                 color: const Color(0xFFDC2626),
@@ -910,7 +896,7 @@ class _NewspaperClippingsScreenState
             Expanded(
               child: _buildKpiItem(
                 title: 'Dailies Covered',
-                marathi: 'वृत्तपत्रे',
+                marathi: 'Dailies',
                 value: '$papers',
                 icon: Icons.menu_book_rounded,
                 color: const Color(0xFF9333EA),
@@ -1257,7 +1243,7 @@ class _NewspaperClippingsScreenState
                           const SizedBox(width: 5),
                           Expanded(
                             child: Text(
-                              'कृती: ${item.actionTaken!}',
+                              'Action: ${item.actionTaken!}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
@@ -1295,7 +1281,7 @@ class _NewspaperClippingsScreenState
                   Row(
                     children: const [
                       Text(
-                        'कात्रण पहा / View Details',
+                        'View Details',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
@@ -1448,7 +1434,7 @@ class _NewspaperClippingsScreenState
           Icon(Icons.newspaper_outlined, size: 48, color: Color(0xFF94A3B8)),
           SizedBox(height: 12),
           Text(
-            'No newspaper clippings found / कात्रणे आढळली नाहीत',
+            'No newspaper clippings found',
             style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 14,

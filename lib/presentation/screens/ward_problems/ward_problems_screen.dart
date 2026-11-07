@@ -9,6 +9,7 @@ import '../../../data/models/staff_model.dart';
 import '../../../data/repositories/complaints_repository.dart';
 import '../../../data/repositories/voters_repository.dart';
 import '../../navigation/app_drawer.dart';
+import '../../providers/navigation_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../complaints/complaint_detail_screen.dart';
 import '../ward_map/ward_map_screen.dart';
@@ -550,25 +551,19 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
           scrolledUnderElevation: 0,
           leading: Builder(
             builder: (ctx) => IconButton(
-              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 24),
-              tooltip: 'Back',
-              onPressed: () {
-                if (Navigator.canPop(context)) {
-                  Navigator.pop(context);
-                } else {
-                  Scaffold.of(ctx).openDrawer();
-                }
-              },
+              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+              tooltip: 'Open Menu Drawer',
+              onPressed: () => Scaffold.of(ctx).openDrawer(),
             ),
           ),
           titleSpacing: 0,
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
-            children: [
+            children: const [
               Text(
-                isMr ? 'प्रभाग समस्या (Ward Problems)' : 'Ward Problems',
-                style: const TextStyle(
+                'Ward Problems Heatmap',
+                style: TextStyle(
                   fontSize: 17.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
@@ -576,11 +571,11 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                 ),
               ),
               Text(
-                isMr ? 'स्व-ओळखलेल्या व परिसरातील नागरी समस्या' : 'Self-identified & ward civic pain points',
+                'Self-identified & ward civic pain points',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w400,
-                  color: Colors.white.withValues(alpha: 0.85),
+                  color: Color(0xFFE0F2FE),
                 ),
               ),
             ],
@@ -611,7 +606,7 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
               icon: const Icon(Icons.map_outlined, color: Colors.white, size: 21),
               tooltip: 'Ward Map View',
               onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const WardMapScreen()));
+                ref.read(activeScreenProvider.notifier).setScreen('ward_map');
               },
             ),
             // PDF Export

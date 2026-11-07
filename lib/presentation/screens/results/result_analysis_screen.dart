@@ -187,7 +187,7 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
                   CircularProgressIndicator(strokeWidth: 3, color: Color(0xFF0284C7)),
                   SizedBox(height: 16),
                   Text(
-                    'निवडणूक निकाल माहिती लोड होत आहे...',
+                    'Loading election results data...',
                     style: TextStyle(fontSize: 14, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                   ),
                 ],
@@ -235,7 +235,7 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
         backgroundColor: const Color(0xFF0284C7),
         icon: const Icon(Icons.add_chart_rounded, color: Colors.white),
         label: const Text(
-          'निकाल नोंदवा',
+          'Add Result',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
@@ -246,39 +246,53 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
     return AppBar(
       backgroundColor: const Color(0xFF0284C7),
       elevation: 0,
+      scrolledUnderElevation: 0,
       centerTitle: false,
-      leading: IconButton(
-        icon: const Icon(Icons.menu_rounded, color: Colors.white),
-        onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-        tooltip: 'मेनू उघडा',
+      leading: Builder(
+        builder: (ctx) => IconButton(
+          icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+          tooltip: 'Open Menu Drawer',
+          onPressed: () => Scaffold.of(ctx).openDrawer(),
+        ),
       ),
-      title: const Column(
+      titleSpacing: 0,
+      title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+        mainAxisSize: MainAxisSize.min,
+        children: const [
           Text(
-            'निवडणूक निकाल विश्लेषण',
-            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+            'Result Analysis',
+            style: TextStyle(
+              fontSize: 17.5,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+              letterSpacing: -0.2,
+            ),
           ),
           Text(
-            'Election Result & Polling Booth Analytics',
-            style: TextStyle(color: Color(0xFFBAE6FD), fontSize: 11),
+            'Past election results, booth-wise margins and turnouts',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w400,
+              color: Color(0xFFE0F2FE),
+            ),
           ),
         ],
       ),
       actions: [
         IconButton(
           icon: const Icon(Icons.help_outline_rounded, color: Colors.white),
-          tooltip: 'मदत व माहिती (Help Guide)',
+          tooltip: 'Help Guide',
           onPressed: _showHelpGuide,
         ),
         IconButton(
           icon: const Icon(Icons.picture_as_pdf_rounded, color: Colors.white),
-          tooltip: 'पीडीएफ अहवाल (Download PDF)',
+          tooltip: 'Download PDF Report',
           onPressed: _exportPdfReport,
         ),
         IconButton(
           icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-          tooltip: 'ताजे करा',
+          tooltip: 'Refresh',
           onPressed: _loadWardsAndResults,
         ),
       ],
@@ -319,11 +333,11 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'कामगिरी अहवाल (Performance Report)',
+                      'Performance Report',
                       style: TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                     ),
                     Text(
-                      _selectedCandidate.isNotEmpty ? _selectedCandidate : 'उमेदवार निवडा',
+                      _selectedCandidate.isNotEmpty ? _selectedCandidate : 'Select Candidate',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -355,7 +369,7 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'प्रभाग निवडा (Ward):',
+                          'Select Ward:',
                           style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
                         ),
                         const SizedBox(height: 6),
@@ -370,7 +384,7 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
                             child: DropdownButton<String>(
                               isExpanded: true,
                               value: _availableWards.contains(_selectedWard) ? _selectedWard : null,
-                              hint: const Text('प्रभाग निवडा', style: TextStyle(fontSize: 13)),
+                              hint: const Text('Select Ward', style: TextStyle(fontSize: 13)),
                               icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF0284C7)),
                               items: _availableWards.map((w) {
                                 return DropdownMenuItem(
@@ -399,7 +413,7 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'विश्लेषण निवडा (Analyze for):',
+                          'Analyze for Candidate:',
                           style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
                         ),
                         const SizedBox(height: 6),
@@ -414,7 +428,7 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
                             child: DropdownButton<String>(
                               isExpanded: true,
                               value: _availableCandidates.contains(_selectedCandidate) ? _selectedCandidate : null,
-                              hint: const Text('उमेदवार निवडा', style: TextStyle(fontSize: 13)),
+                              hint: const Text('Select Candidate', style: TextStyle(fontSize: 13)),
                               icon: const Icon(Icons.person_pin_rounded, color: Color(0xFF0284C7)),
                               items: _availableCandidates.map((c) {
                                 return DropdownMenuItem(
@@ -449,9 +463,9 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
         final isWide = constraints.maxWidth >= 600;
 
         final cardTotalVotes = _buildKpiCard(
-          title: 'एकूण मते (Total Votes)',
+          title: 'Total Votes',
           value: NumberFormat('#,##,###').format(ourVotes),
-          subtitle: 'एकूण ${NumberFormat('#,##,###').format(totalVotes)} पैकी',
+          subtitle: 'Out of ${NumberFormat('#,##,###').format(totalVotes)} Total',
           icon: Icons.people_alt_rounded,
           iconColor: const Color(0xFF3B82F6),
           cardBg: const Color(0xFFEFF6FF),
@@ -459,9 +473,9 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
         );
 
         final cardVoteShare = _buildKpiCard(
-          title: 'मत वाटा (Vote Share)',
+          title: 'Vote Share',
           value: '${voteShare.toStringAsFixed(1)}%',
-          subtitle: 'प्रभागातील एकूण मतांची टक्केवारी',
+          subtitle: 'Percentage of total ward votes',
           icon: Icons.pie_chart_rounded,
           iconColor: const Color(0xFFA855F7),
           cardBg: const Color(0xFFFAF5FF),
@@ -470,9 +484,9 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
         );
 
         final cardWinning = _buildKpiCard(
-          title: 'विजयी केंद्रे (Winning)',
+          title: 'Winning Booths',
           value: '$winningBooths',
-          subtitle: 'बालेकिल्ले (Strongholds)',
+          subtitle: 'Strongholds',
           icon: Icons.check_circle_rounded,
           iconColor: const Color(0xFF16A34A),
           cardBg: const Color(0xFFF0FDF4),
@@ -480,9 +494,9 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
         );
 
         final cardLosing = _buildKpiCard(
-          title: 'मागे राहिलेली (Losing)',
+          title: 'Losing Booths',
           value: '$losingBooths',
-          subtitle: 'सुधारणेची गरज (Needs Work)',
+          subtitle: 'Needs Work / Trailing',
           icon: Icons.cancel_rounded,
           iconColor: const Color(0xFFDC2626),
           cardBg: const Color(0xFFFEF2F2),
@@ -613,7 +627,7 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
                 Icon(Icons.how_to_vote_rounded, color: Color(0xFF0284C7), size: 20),
                 SizedBox(width: 8),
                 Text(
-                  'केंद्रानिहाय निकाल कामगिरी',
+                  'Booth-wise Result Performance',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
                 ),
               ],
@@ -630,13 +644,13 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
                     children: [
                       _buildToggleButton(
                         icon: Icons.view_agenda_outlined,
-                        tooltip: 'कार्ड व्ह्यू (Cards)',
+                        tooltip: 'Cards View',
                         isSelected: _displayMode == 'cards',
                         onTap: () => setState(() => _displayMode = 'cards'),
                       ),
                       _buildToggleButton(
                         icon: Icons.table_chart_outlined,
-                        tooltip: 'तक्ता व्ह्यू (Table)',
+                        tooltip: 'Table View',
                         isSelected: _displayMode == 'table',
                         onTap: () => setState(() => _displayMode = 'table'),
                       ),
@@ -655,7 +669,7 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
                   ),
                   icon: const Icon(Icons.picture_as_pdf_outlined, size: 16),
                   label: const Text(
-                    'PDF अहवाल',
+                    'PDF Report',
                     style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -671,7 +685,7 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
           controller: _searchCtrl,
           onChanged: (_) => setState(() {}),
           decoration: InputDecoration(
-            hintText: 'केंद्र क्रमांक किंवा शाळेच्या नावाने शोधा...',
+            hintText: 'Search by booth number or school name...',
             hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
             prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF64748B), size: 20),
             suffixIcon: _searchCtrl.text.isNotEmpty
@@ -708,11 +722,11 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
           scrollDirection: Axis.horizontal,
           child: Row(
             children: [
-              _buildFilterChip('all', 'सर्व केंद्रे (${_results.where((r) => r.boothNumber != "एकूण मत").length})'),
+              _buildFilterChip('all', 'All Booths (${_results.where((r) => r.boothNumber != "एकूण मत" && r.boothNumber != "Total").length})'),
               const SizedBox(width: 8),
-              _buildFilterChip('winning', 'बालेकिल्ले (${_results.where((r) => r.isWinner(_selectedCandidate)).length})'),
+              _buildFilterChip('winning', 'Strongholds (${_results.where((r) => r.isWinner(_selectedCandidate)).length})'),
               const SizedBox(width: 8),
-              _buildFilterChip('losing', 'सुधारणेची गरज (${_results.where((r) => !r.isWinner(_selectedCandidate) && r.boothNumber != "एकूण मत").length})'),
+              _buildFilterChip('losing', 'Needs Work (${_results.where((r) => !r.isWinner(_selectedCandidate) && r.boothNumber != "एकूण मत" && r.boothNumber != "Total").length})'),
             ],
           ),
         ),
@@ -817,7 +831,7 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
                           border: Border.all(color: const Color(0xFFCBD5E1)),
                         ),
                         child: Text(
-                          'केंद्र क्र. ${booth.boothNumber}',
+                          'Booth No. ${booth.boothNumber}',
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
@@ -844,7 +858,7 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              isWin ? 'विजयी (+${booth.margin})' : 'मागे (${booth.winner})',
+                              isWin ? 'Lead (+${booth.margin})' : 'Trail (${booth.winner})',
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
@@ -889,7 +903,7 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            '$candidateVotes मते (${voteShare.toStringAsFixed(1)}%)',
+                            '$candidateVotes votes (${voteShare.toStringAsFixed(1)}%)',
                             style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w800,
@@ -902,7 +916,7 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           const Text(
-                            'एकूण मतदान',
+                            'Total Votes',
                             style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                           ),
                           const SizedBox(height: 2),
@@ -941,7 +955,7 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'विजयी: ${booth.winner}',
+                        'Winner: ${booth.winner}',
                         style: TextStyle(
                           fontSize: 11,
                           color: isWin ? const Color(0xFF15803D) : const Color(0xFF64748B),
@@ -949,7 +963,7 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
                         ),
                       ),
                       Text(
-                        'फरक: +${booth.margin} मते',
+                        'Margin: +${booth.margin} votes',
                         style: const TextStyle(
                           fontSize: 11,
                           color: Color(0xFF64748B),
@@ -994,13 +1008,13 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
             columns: [
               const DataColumn(
                 label: Text(
-                  'केंद्र क्र.',
+                  'Booth No.',
                   style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                 ),
               ),
               const DataColumn(
                 label: Text(
-                  'मतदान केंद्र ठिकाण',
+                  'Polling Station / Venue',
                   style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                 ),
               ),
@@ -1018,19 +1032,19 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
               }),
               const DataColumn(
                 label: Text(
-                  'एकूण मते',
+                  'Total Votes',
                   style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                 ),
               ),
               const DataColumn(
                 label: Text(
-                  'विजयी',
+                  'Winner',
                   style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                 ),
               ),
               const DataColumn(
                 label: Text(
-                  'मताधिक्य',
+                  'Margin',
                   style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                 ),
               ),
@@ -1132,12 +1146,12 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
           Icon(Icons.search_off_rounded, size: 48, color: Colors.grey.shade400),
           const SizedBox(height: 12),
           const Text(
-            'कोणतेही केंद्र आढळले नाही',
+            'No polling booths found',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
           ),
           const SizedBox(height: 4),
           const Text(
-            'कृपया शोध शब्द किंवा फिल्टर बदलून पहा',
+            'Please try different search keywords or filters',
             style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
           ),
         ],
@@ -1179,7 +1193,7 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'केंद्र क्र. ${booth.boothNumber}',
+                        'Booth No. ${booth.boothNumber}',
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                       ),
                       const SizedBox(height: 2),
@@ -1203,17 +1217,17 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
             // Statistics Summary
             Row(
               children: [
-                _buildStatPill('एकूण मतदार', '${booth.totalVoters > 0 ? booth.totalVoters : "-"}'),
+                _buildStatPill('Total Voters', '${booth.totalVoters > 0 ? booth.totalVoters : "-"}'),
                 const SizedBox(width: 8),
-                _buildStatPill('झालेले मतदान', '${booth.totalVotesCasted}'),
+                _buildStatPill('Votes Casted', '${booth.totalVotesCasted}'),
                 const SizedBox(width: 8),
-                _buildStatPill('मतदान %', '${booth.turnoutPercentage.toStringAsFixed(1)}%'),
+                _buildStatPill('Turnout %', '${booth.turnoutPercentage.toStringAsFixed(1)}%'),
               ],
             ),
 
             const SizedBox(height: 16),
             const Text(
-              'उमेदवारनिहाय निकाल (Candidate Votes Breakdown)',
+              'Candidate Votes Breakdown',
               style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
             ),
             const SizedBox(height: 10),
@@ -1252,7 +1266,7 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
                           ],
                         ),
                         Text(
-                          '$votes मते (${percent.toStringAsFixed(1)}%)',
+                          '$votes votes (${percent.toStringAsFixed(1)}%)',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
@@ -1286,7 +1300,7 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(ctx),
-                    child: const Text('बंद करा'),
+                    child: const Text('Close'),
                   ),
                 ),
               ],
@@ -1326,7 +1340,7 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
           children: [
             Icon(Icons.help_outline_rounded, color: Color(0xFF0284C7)),
             SizedBox(width: 8),
-            Text('निवडणूक निकाल विश्लेषण मदत', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text('Election Results Analysis Guide', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ],
         ),
         content: const SingleChildScrollView(
@@ -1335,42 +1349,42 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                '१. प्रभाग व उमेदवार निवड:',
+                '1. Select Ward & Candidate:',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
               ),
               SizedBox(height: 4),
               Text(
-                'वर दिलेल्या ड्रॉपडाउनमधून प्रभाग निवडा व ज्या उमेदवाराचा निकाल विश्लेषित करायचा आहे ते नाव निवडा.',
+                'Select your ward and the candidate you wish to analyze from the dropdowns above.',
                 style: TextStyle(fontSize: 12, color: Color(0xFF475569)),
               ),
               SizedBox(height: 12),
               Text(
-                '२. बालेकिल्ले व सुधारणेची गरज:',
+                '2. Strongholds & Trailing Booths:',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
               ),
               SizedBox(height: 4),
               Text(
-                'ज्या मतदान केंद्रांवर निवडक उमेदवाराने सर्वाधिक मते मिळवून विजय मिळवला ती केंद्रे "बालेकिल्ले" म्हणून हिरव्या रंगात दाखवली जातात. इतर केंद्रे सुधारणेची गरज म्हणून लाल रंगात दर्शवली जातात.',
+                'Booths where your selected candidate gained the highest votes are highlighted as Strongholds (in green). Other booths are categorized as Needs Work (in amber/red).',
                 style: TextStyle(fontSize: 12, color: Color(0xFF475569)),
               ),
               SizedBox(height: 12),
               Text(
-                '३. तक्ता आणि कार्ड व्ह्यू:',
+                '3. Table & Card Views:',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
               ),
               SizedBox(height: 4),
               Text(
-                'मोबाईलवर सुलभतेसाठी कार्ड व्ह्यू किंवा संगणकावर सविस्तर तक्ता (Table) पाहण्यासाठी वरील टॉगल बटणे वापरा.',
+                'Switch between responsive mobile Cards view and full Table view using the toggle buttons above.',
                 style: TextStyle(fontSize: 12, color: Color(0xFF475569)),
               ),
               SizedBox(height: 12),
               Text(
-                '४. अधिकृत PDF अहवाल:',
+                '4. Official PDF Report:',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
               ),
               SizedBox(height: 4),
               Text(
-                'वरील "PDF अहवाल" बटणावर क्लिक करून संपूर्ण प्रभागाचा अधिकृत लँडस्केप A4 अहवाल तयार करा व प्रिंट किंवा शेअर करा.',
+                'Click "Download PDF" to generate and print a full landscape A4 performance audit report.',
                 style: TextStyle(fontSize: 12, color: Color(0xFF475569)),
               ),
             ],
@@ -1379,7 +1393,7 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('समजले', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.bold)),
+            child: const Text('Got it', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -1390,7 +1404,7 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
     try {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('अधिकृत निवडणूक निकाल PDF तयार होत आहे...'),
+          content: Text('Generating official election results PDF report...'),
           duration: Duration(seconds: 2),
         ),
       );
@@ -1404,7 +1418,7 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('PDF तयार करताना त्रुटी: $e'),
+            content: Text('Error generating PDF: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -1426,7 +1440,7 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('नवीन मतदान केंद्र निकाल नोंदवा', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        title: const Text('Add Polling Booth Result', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1434,7 +1448,7 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
               TextField(
                 controller: boothNumCtrl,
                 decoration: const InputDecoration(
-                  labelText: 'केंद्र क्रमांक (उदा. १२/१५)',
+                  labelText: 'Booth Number (e.g. 12/15)',
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -1442,7 +1456,7 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
               TextField(
                 controller: boothNameCtrl,
                 decoration: const InputDecoration(
-                  labelText: 'मतदान केंद्र ठिकाण / शाळा',
+                  labelText: 'Polling Station / School Venue',
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -1451,13 +1465,13 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
                 controller: totalVotersCtrl,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
-                  labelText: 'एकूण मतदार संख्या',
+                  labelText: 'Total Registered Voters',
                   border: OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 14),
               const Text(
-                'उमेदवार मते नोंदवा:',
+                'Candidate Votes Received:',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
               ),
               const SizedBox(height: 8),
@@ -1481,7 +1495,7 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('रद्द करा'),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -1489,7 +1503,7 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
               final name = boothNameCtrl.text.trim();
               if (num.isEmpty || name.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('कृपया आवश्यक माहिती भरा')),
+                  const SnackBar(content: Text('Please fill all required fields')),
                 );
                 return;
               }
@@ -1535,11 +1549,11 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
 
               if (!mounted) return;
               messenger.showSnackBar(
-                const SnackBar(content: Text('नवीन मतदान केंद्र निकाल यशस्वीरित्या जतन केला!')),
+                const SnackBar(content: Text('Polling booth result saved successfully!')),
               );
             },
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0284C7)),
-            child: const Text('जतन करा', style: TextStyle(color: Colors.white)),
+            child: const Text('Save', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),

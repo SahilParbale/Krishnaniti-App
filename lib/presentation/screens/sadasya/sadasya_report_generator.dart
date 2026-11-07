@@ -44,7 +44,7 @@ class SadasyaReportGenerator {
                       ),
                       pw.SizedBox(height: 2),
                       pw.Text(
-                        'पक्ष सदस्य (सदस्य नोंदणी) अधिकृत अहवाल • प्रभागातील नोंदणीकृत कार्यकर्त्यांची यादी',
+                        'Party Members & Cadre Official Report • Registered Cadre Directory',
                         style: pw.TextStyle(
                           fontSize: 9,
                           fontWeight: pw.FontWeight.bold,
@@ -122,33 +122,33 @@ class SadasyaReportGenerator {
             pw.Row(
               children: [
                 _buildKpiCard(
-                  'एकूण सदस्य (TOTAL CADRE)',
+                  'TOTAL CADRE',
                   '$totalCount',
-                  'नोंदणीकृत पक्ष कार्यकर्ते',
+                  'Registered Party Cadre',
                   PdfColors.blue800,
                   PdfColors.blue50,
                 ),
                 pw.SizedBox(width: 8),
                 _buildKpiCard(
-                  'मतदार सदस्य (VOTERS)',
+                  'VOTER MEMBERS',
                   '$voterCount',
-                  'प्रभागातील मतदार नोंद असलेले',
+                  'Registered Ward Voters',
                   PdfColors.green800,
                   PdfColors.green50,
                 ),
                 pw.SizedBox(width: 8),
                 _buildKpiCard(
-                  'इतर सदस्य (MEMBERS)',
+                  'OTHER MEMBERS',
                   '$nonVoterCount',
-                  'थेट पक्ष सदस्य नोंदणी',
+                  'Direct Cadre Registrations',
                   PdfColors.purple800,
                   PdfColors.purple50,
                 ),
                 pw.SizedBox(width: 8),
                 _buildKpiCard(
-                  'सक्रिय परिसर (AREAS)',
+                  'ACTIVE AREAS',
                   '$areasCount',
-                  'शनिवार, कसबा, नारायण पेठ इ.',
+                  'Shaniwar, Kasba, Narayan Peth etc.',
                   PdfColors.cyan800,
                   PdfColors.cyan50,
                 ),
@@ -167,11 +167,11 @@ class SadasyaReportGenerator {
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text(
-                    'पक्ष कार्यकर्ते व सदस्य तपशील सूची (PARTY MEMBERS & CADRE DIRECTORY)',
+                    'PARTY MEMBERS & CADRE DIRECTORY',
                     style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
                   ),
                   pw.Text(
-                    'नोंद संख्या: ${members.length}',
+                    'Total Records: ${members.length}',
                     style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700),
                   ),
                 ],
@@ -186,13 +186,13 @@ class SadasyaReportGenerator {
                 pw.TableRow(
                   decoration: const pw.BoxDecoration(color: PdfColors.blueGrey800),
                   children: [
-                    _tableHeaderCell('अ.क्र.', flex: 1),
-                    _tableHeaderCell('कार्यकर्त्याचे नाव', flex: 3),
-                    _tableHeaderCell('मोबाईल क्रमांक', flex: 2),
-                    _tableHeaderCell('परिसर / वॉर्ड', flex: 2),
-                    _tableHeaderCell('पत्ता / निवासस्थान', flex: 3),
-                    _tableHeaderCell('प्रकार / जबाबदारी', flex: 2),
-                    _tableHeaderCell('नोंदणी दिनांक', flex: 2),
+                    _tableHeaderCell('Sr.', flex: 1),
+                    _tableHeaderCell('Member Name', flex: 3),
+                    _tableHeaderCell('Mobile No', flex: 2),
+                    _tableHeaderCell('Area / Ward', flex: 2),
+                    _tableHeaderCell('Address / Residence', flex: 3),
+                    _tableHeaderCell('Role / Responsibility', flex: 2),
+                    _tableHeaderCell('Reg. Date', flex: 2),
                   ],
                 ),
                 // Data Rows
@@ -239,7 +239,7 @@ class SadasyaReportGenerator {
                                 borderRadius: pw.BorderRadius.circular(2),
                               ),
                               child: pw.Text(
-                                item.isVoter ? 'मतदार सदस्य' : 'पक्ष सदस्य',
+                                item.isVoter ? 'Voter Member' : 'Party Member',
                                 style: pw.TextStyle(
                                   fontSize: 6.5,
                                   fontWeight: pw.FontWeight.bold,

@@ -3,10 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../data/models/voter_model.dart';
 import '../../../data/repositories/sms_repository.dart';
+import '../../navigation/app_drawer.dart';
 
 class ConferenceMeetingModel {
   final String id;
@@ -75,33 +75,33 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
   final List<ConferenceMeetingModel> _seedMeetings = [
     ConferenceMeetingModel(
       id: 'conf-101',
-      title: 'प्रभाग १२ नागरिक पाणीपुरवठा व रस्ते आढावा बैठक',
+      title: 'Ward 12 Water Supply & Road Infrastructure Review Meeting',
       meetLink: 'https://meet.jit.si/nagarsevak-water-review-782a',
       scheduledAt: DateTime.now().add(const Duration(hours: 3)),
       createdAt: DateTime.now().subtract(const Duration(days: 1)),
       status: 'scheduled',
       invitedCount: 35,
-      notes: 'शनिवार पेठ व कसबा पेठ नागरिकांशी थेट संवाद व तक्रार निवारण.',
+      notes: 'Direct citizen grievance review with Shaniwar Peth and Kasba Peth residents.',
     ),
     ConferenceMeetingModel(
       id: 'conf-102',
-      title: 'सोसायटी चेअरमन व सेक्रेटरी डिजिटल कॉन्फरन्स',
+      title: 'Housing Society Chairman & Secretary Digital Conference',
       meetLink: 'https://meet.jit.si/nagarsevak-society-sync-941b',
       scheduledAt: DateTime.now().add(const Duration(days: 1, hours: 2)),
       createdAt: DateTime.now().subtract(const Duration(days: 2)),
       status: 'scheduled',
       invitedCount: 48,
-      notes: 'कचरा वर्गीकरण व सौर ऊर्जा अनुदानाबाबत सोसायटी पदाधिकाऱ्यांशी चर्चा.',
+      notes: 'Discussion with society executives on waste management and solar power subsidies.',
     ),
     ConferenceMeetingModel(
       id: 'conf-103',
-      title: 'तरुण मंडळ व गणेशोत्सव सुरक्षा समन्वय बैठक',
+      title: 'Youth Club & Festival Security Coordination Meeting',
       meetLink: 'https://meet.jit.si/nagarsevak-mandal-security-23c',
       scheduledAt: DateTime.now().subtract(const Duration(days: 3)),
       createdAt: DateTime.now().subtract(const Duration(days: 4)),
       status: 'ended',
       invitedCount: 62,
-      notes: 'मंडळ पदाधिकाऱ्यांशी ऑनलाइन संवाद यशस्वीरीत्या पार पडला.',
+      notes: 'Online coordination conference held successfully with festival mandal committees.',
     ),
   ];
 
@@ -268,7 +268,7 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2563EB),
+                backgroundColor: const Color(0xFF0284C7),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
@@ -382,7 +382,7 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                   ),
                   Text(
                     meeting.title,
-                    style: const TextStyle(fontSize: 12, color: Color(0xFF2563EB), fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF0284C7), fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 10),
                   TextField(
@@ -399,7 +399,7 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                   const SizedBox(height: 10),
                   Expanded(
                     child: isLoadingVoters
-                        ? const Center(child: CircularProgressIndicator())
+                        ? const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)))
                         : voterList.isEmpty
                             ? const Center(child: Text('No voters found'))
                             : ListView.separated(
@@ -422,7 +422,7 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                                     title: Text(v.displayName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                                     subtitle: Text('${v.mobile ?? '-'} · ${v.address}', style: const TextStyle(fontSize: 11)),
                                     dense: true,
-                                    activeColor: const Color(0xFF2563EB),
+                                    activeColor: const Color(0xFF0284C7),
                                   );
                                 },
                               ),
@@ -467,7 +467,7 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                       icon: const Icon(Icons.send_rounded, size: 18),
                       label: Text('Send Meeting Invites (${selectedIds.length})'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2563EB),
+                        backgroundColor: const Color(0xFF0284C7),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
@@ -492,43 +492,104 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
     final past = _meetings.where((m) => m.status == 'ended').toList();
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      drawer: const NagarsevakAppDrawer(),
       appBar: AppBar(
-        title: Row(
-          children: const [
-            Icon(Icons.groups_rounded, color: Color(0xFF2563EB), size: 22),
-            SizedBox(width: 8),
-            Text('Conference Room'),
-          ],
-        ),
+        backgroundColor: const Color(0xFF0284C7),
+        foregroundColor: Colors.white,
         elevation: 0,
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: const Color(0xFF2563EB),
-          unselectedLabelColor: isDark ? Colors.grey[400] : Colors.grey[600],
-          indicatorColor: const Color(0xFF2563EB),
-          tabs: [
-            Tab(icon: const Icon(Icons.videocam_outlined), text: 'Upcoming (${upcoming.length})'),
-            Tab(icon: const Icon(Icons.history_outlined), text: 'Past Meetings (${past.length})'),
+        scrolledUnderElevation: 0,
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+            tooltip: 'Open Menu Drawer',
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
+        ),
+        titleSpacing: 0,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Text(
+              'Conference Room',
+              style: TextStyle(
+                fontSize: 17.5,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: -0.2,
+              ),
+            ),
+            Text(
+              'Multi-party telephone bridges with ward engineers and chairmen',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFFE0F2FE),
+              ),
+            ),
           ],
         ),
         actions: [
           IconButton(
             onPressed: _showCreateMeetingDialog,
-            icon: const Icon(Icons.add_circle_outline, color: Color(0xFF2563EB)),
+            icon: const Icon(Icons.add_circle_outline, color: Colors.white),
             tooltip: 'Schedule Meeting',
           ),
         ],
       ),
-      body: TabBarView(
-        controller: _tabController,
+      body: Column(
         children: [
-          _buildMeetingsList(upcoming, theme, isDark, isUpcoming: true),
-          _buildMeetingsList(past, theme, isDark, isUpcoming: false),
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            alignment: Alignment.centerLeft,
+            child: Container(
+              height: 40,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                indicator: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                labelColor: const Color(0xFF0284C7),
+                unselectedLabelColor: const Color(0xFF64748B),
+                labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+                indicatorSize: TabBarIndicatorSize.tab,
+                dividerColor: Colors.transparent,
+                tabs: [
+                  Tab(icon: const Icon(Icons.videocam_outlined, size: 16), text: 'Upcoming (${upcoming.length})'),
+                  Tab(icon: const Icon(Icons.history_outlined, size: 16), text: 'Past Meetings (${past.length})'),
+                ],
+              ),
+            ),
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildMeetingsList(upcoming, theme, isDark, isUpcoming: true),
+                _buildMeetingsList(past, theme, isDark, isUpcoming: false),
+              ],
+            ),
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showCreateMeetingDialog,
-        backgroundColor: const Color(0xFF2563EB),
+        backgroundColor: const Color(0xFF0284C7),
         foregroundColor: Colors.white,
         icon: const Icon(Icons.video_call),
         label: const Text('New Meeting'),
@@ -543,7 +604,7 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
     required bool isUpcoming,
   }) {
     if (_isLoading && list.isEmpty) {
-      return const Center(child: CircularProgressIndicator(color: Color(0xFF2563EB)));
+      return const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)));
     }
 
     if (list.isEmpty) {
@@ -564,7 +625,7 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                 icon: const Icon(Icons.add),
                 label: const Text('Schedule First Meeting'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2563EB),
+                  backgroundColor: const Color(0xFF0284C7),
                   foregroundColor: Colors.white,
                 ),
               ),
@@ -575,7 +636,7 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
 
     return RefreshIndicator(
       onRefresh: _loadMeetings,
-      color: const Color(0xFF2563EB),
+      color: const Color(0xFF0284C7),
       child: ListView.separated(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
         itemCount: list.length,
@@ -604,7 +665,7 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                         decoration: BoxDecoration(
                           color: meeting.status == 'ended'
                               ? Colors.grey.withOpacity(0.15)
-                              : const Color(0xFFDBEAFE),
+                              : const Color(0xFFE0F2FE),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
@@ -612,7 +673,7 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
-                            color: meeting.status == 'ended' ? Colors.grey[700] : const Color(0xFF1D4ED8),
+                            color: meeting.status == 'ended' ? Colors.grey[700] : const Color(0xFF0369A1),
                           ),
                         ),
                       ),
@@ -666,7 +727,7 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                       ),
                       IconButton(
                         onPressed: () => _showInviteVoterDialog(meeting),
-                        icon: const Icon(Icons.person_add_alt_1, size: 18, color: Color(0xFF2563EB)),
+                        icon: const Icon(Icons.person_add_alt_1, size: 18, color: Color(0xFF0284C7)),
                         tooltip: 'Invite Voters',
                       ),
                       const Spacer(),
@@ -675,7 +736,7 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                         icon: const Icon(Icons.videocam, size: 16),
                         label: const Text('Join Room'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2563EB),
+                          backgroundColor: const Color(0xFF0284C7),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),

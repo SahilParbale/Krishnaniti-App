@@ -38,12 +38,12 @@ class _GalleryDetailScreenState extends ConsumerState<GalleryDetailScreen> {
   Future<void> _handleShare() async {
     final text =
         '📸 *${_item.titleMr}*\n\n'
-        '📂 श्रेणी: ${_item.category.titleMr}\n'
-        '📍 ठिकाण: ${_item.location}\n'
-        '📅 तारीख: ${_item.formattedDateFull}\n\n'
+        '📂 Category: ${_item.category.titleEn}\n'
+        '📍 Location: ${_item.location}\n'
+        '📅 Date: ${_item.formattedDateFull}\n\n'
         '${_item.descriptionMr}\n\n'
-        '🔗 छायाचित्र: ${_item.imageUrl}\n\n'
-        '— नगरसेवक अमित चौगुले (प्रभाग १२, पुणे मनपा)';
+        '🔗 Image: ${_item.imageUrl}\n\n'
+        '— Nagarsevak Amit Chougale (Ward 12, PMC)';
 
     final encoded = Uri.encodeComponent(text);
     final uri = Uri.parse('https://wa.me/?text=$encoded');
@@ -54,7 +54,7 @@ class _GalleryDetailScreenState extends ConsumerState<GalleryDetailScreen> {
         Clipboard.setData(ClipboardData(text: text));
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('तपशील क्लिपबोर्डवर कॉपी केला!')),
+            const SnackBar(content: Text('Details copied to clipboard!')),
           );
         }
       }
@@ -68,7 +68,7 @@ class _GalleryDetailScreenState extends ConsumerState<GalleryDetailScreen> {
     setState(() => _copied = true);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('वर्णन क्लिपबोर्डवर कॉपी केले!'),
+        content: Text('Description copied to clipboard!'),
         backgroundColor: Color(0xFF059669),
         duration: Duration(seconds: 2),
       ),
@@ -108,17 +108,17 @@ class _GalleryDetailScreenState extends ConsumerState<GalleryDetailScreen> {
                 _item.isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
                 color: _item.isFavorite ? const Color(0xFFEF4444) : Colors.white,
               ),
-              tooltip: 'आवडते (Favorite)',
+              tooltip: 'Favorite',
               onPressed: _handleToggleFavorite,
             ),
             IconButton(
               icon: const Icon(Icons.picture_as_pdf_rounded, color: Colors.white),
-              tooltip: 'अधिकृत PDF अहवाल',
+              tooltip: 'Official PDF Report',
               onPressed: () => GalleryReportGenerator.generateAndPrintReport(items: [_item]),
             ),
             IconButton(
               icon: const Icon(Icons.share_rounded, color: Colors.white),
-              tooltip: 'शेअर करा',
+              tooltip: 'Share',
               onPressed: _handleShare,
             ),
           ],
@@ -163,7 +163,7 @@ class _GalleryDetailScreenState extends ConsumerState<GalleryDetailScreen> {
                               Icon(Icons.broken_image_rounded, size: 48, color: Colors.white54),
                               SizedBox(height: 8),
                               Text(
-                                'फोटो उपलब्ध नाही',
+                                'No image available',
                                 style: TextStyle(color: Colors.white70, fontSize: 13),
                               ),
                             ],
@@ -233,7 +233,7 @@ class _GalleryDetailScreenState extends ConsumerState<GalleryDetailScreen> {
                         const Icon(Icons.visibility_outlined, size: 14, color: Color(0xFF64748B)),
                         const SizedBox(width: 4),
                         Text(
-                          '${_item.viewsCount} पाहिले',
+                          '${_item.viewsCount} views',
                           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
                         ),
                       ],
@@ -300,7 +300,7 @@ class _GalleryDetailScreenState extends ConsumerState<GalleryDetailScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
-                          'छायाचित्राचे वर्णन (Description)',
+                          'Image Description',
                           style: TextStyle(
                             fontSize: 13.5,
                             fontWeight: FontWeight.bold,
@@ -321,7 +321,7 @@ class _GalleryDetailScreenState extends ConsumerState<GalleryDetailScreen> {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  _copied ? 'कॉपी केले!' : 'कॉपी',
+                                  _copied ? 'Copied!' : 'Copy',
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
@@ -380,7 +380,7 @@ class _GalleryDetailScreenState extends ConsumerState<GalleryDetailScreen> {
                     child: ElevatedButton.icon(
                       onPressed: _handleShare,
                       icon: const Icon(Icons.share_rounded, size: 18),
-                      label: const Text('फोटो शेअर करा (WhatsApp)', style: TextStyle(fontWeight: FontWeight.bold)),
+                      label: const Text('Share Photo (WhatsApp)', style: TextStyle(fontWeight: FontWeight.bold)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF16A34A),
                         foregroundColor: Colors.white,

@@ -45,7 +45,7 @@ class WhatsAppHistoryReportGenerator {
                       ),
                       pw.SizedBox(height: 2),
                       pw.Text(
-                        'सार्वजनिक संवाद व व्हॉट्सॲप मोहीम अहवाल (Public Communication & WhatsApp Broadcast Report)',
+                        'Public Communication & WhatsApp Broadcast Report',
                         style: pw.TextStyle(
                           fontSize: 14,
                           fontWeight: pw.FontWeight.bold,
@@ -103,7 +103,7 @@ class WhatsAppHistoryReportGenerator {
             pw.Row(
               children: [
                 _buildKpiCard(
-                  'एकूण मोहीम (Total Broadcasts)',
+                  'Total Broadcasts',
                   '$totalBroadcasts',
                   'Dispatched Campaigns',
                   const PdfColor.fromInt(0xFFE8F5E9),
@@ -111,7 +111,7 @@ class WhatsAppHistoryReportGenerator {
                 ),
                 pw.SizedBox(width: 8),
                 _buildKpiCard(
-                  'एकूण मतदार (Targeted Voters)',
+                  'Targeted Voters',
                   '$totalRecipients',
                   'Registered Mobile Contacts',
                   const PdfColor.fromInt(0xFFF1F5F9),
@@ -119,7 +119,7 @@ class WhatsAppHistoryReportGenerator {
                 ),
                 pw.SizedBox(width: 8),
                 _buildKpiCard(
-                  'यशस्वी पोहोचले (Delivered)',
+                  'Delivered',
                   '$totalDelivered',
                   '$deliveryRate% Delivery Rate',
                   const PdfColor.fromInt(0xFFECFDF5),
@@ -127,7 +127,7 @@ class WhatsAppHistoryReportGenerator {
                 ),
                 pw.SizedBox(width: 8),
                 _buildKpiCard(
-                  'अयशस्वी (Failed / Inactive)',
+                  'Failed / Inactive',
                   '$totalFailed',
                   'Unreachable / Network',
                   const PdfColor.fromInt(0xFFFEF2F2),
@@ -157,15 +157,15 @@ class WhatsAppHistoryReportGenerator {
                 pw.TableRow(
                   decoration: const pw.BoxDecoration(color: PdfColors.grey200),
                   children: [
-                    _buildCell('अ.क्र.', isHeader: true, align: pw.TextAlign.center),
-                    _buildCell('दिनांक व वेळ (Date)', isHeader: true),
-                    _buildCell('मोहीम व व्हॉट्सॲप संदेश (Title & Message)', isHeader: true),
-                    _buildCell('वर्ग / निकष (Target)', isHeader: true),
-                    _buildCell('चॅनेल', isHeader: true, align: pw.TextAlign.center),
-                    _buildCell('प्राप्तकर्ते', isHeader: true, align: pw.TextAlign.center),
-                    _buildCell('पोहोचले', isHeader: true, align: pw.TextAlign.center),
-                    _buildCell('अयशस्वी', isHeader: true, align: pw.TextAlign.center),
-                    _buildCell('स्थिती', isHeader: true, align: pw.TextAlign.center),
+                    _buildCell('Sr.', isHeader: true, align: pw.TextAlign.center),
+                    _buildCell('Date & Time', isHeader: true),
+                    _buildCell('Title & Message', isHeader: true),
+                    _buildCell('Target Criteria', isHeader: true),
+                    _buildCell('Channel', isHeader: true, align: pw.TextAlign.center),
+                    _buildCell('Recipients', isHeader: true, align: pw.TextAlign.center),
+                    _buildCell('Delivered', isHeader: true, align: pw.TextAlign.center),
+                    _buildCell('Failed', isHeader: true, align: pw.TextAlign.center),
+                    _buildCell('Status', isHeader: true, align: pw.TextAlign.center),
                   ],
                 ),
                 // Data Rows
@@ -289,7 +289,7 @@ class WhatsAppHistoryReportGenerator {
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
                       pw.Text(
-                        'नोंद व मार्गदर्शक तत्त्वे (Important Notice & WhatsApp Compliance):',
+                        'Important Notice & WhatsApp Compliance:',
                         style: pw.TextStyle(
                           fontSize: 8,
                           fontWeight: pw.FontWeight.bold,
@@ -298,9 +298,9 @@ class WhatsAppHistoryReportGenerator {
                       ),
                       pw.SizedBox(height: 2),
                       pw.Text(
-                        '१. सर्व व्हॉट्सॲप संदेश अधिकृत नगरसेवक व्हॉट्सॲप बॉट प्रणालीद्वारे सुरक्षितपणे प्रसारित केले जातात.\n'
-                        '२. नागरिकांचा संपर्क तपशील अत्यंत गोपनीय ठेवला जातो व कोणत्याही बाह्य यंत्रणेला दिला जात नाही.\n'
-                        '३. जनहित व प्रभागातील विकासकामांच्या पारदर्शक माहितीसाठी हा अहवाल संकलित केला आहे.',
+                        '1. All WhatsApp broadcasts are securely dispatched via the official corporator WhatsApp bot.\n'
+                        '2. Citizen contact details are strictly confidential and never shared with third parties.\n'
+                        '3. This report is compiled for transparency in public grievance redressal and developmental updates.',
                         style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey700),
                       ),
                     ],
@@ -312,7 +312,7 @@ class WhatsAppHistoryReportGenerator {
                     pw.Container(width: 140, height: 1, color: PdfColors.grey700),
                     pw.SizedBox(height: 4),
                     pw.Text(
-                      'नगरसेवक / प्रभाग समिती प्रमुख',
+                      'Corporator / Ward Committee Head',
                       style: pw.TextStyle(
                         fontSize: 9,
                         fontWeight: pw.FontWeight.bold,
@@ -320,7 +320,7 @@ class WhatsAppHistoryReportGenerator {
                       ),
                     ),
                     pw.Text(
-                      'प्रभाग क्र. १२, पुणे महानगरपालिका',
+                      'Ward 12, Pune Municipal Corporation',
                       style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey600),
                     ),
                   ],

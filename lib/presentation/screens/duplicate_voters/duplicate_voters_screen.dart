@@ -5,6 +5,7 @@ import '../../../data/models/duplicate_voter_group_model.dart';
 import '../../../data/repositories/duplicate_voters_repository.dart';
 import '../voters/voter_profile_screen.dart';
 import 'duplicate_voters_report_generator.dart';
+import '../../navigation/app_drawer.dart';
 
 class DuplicateVotersScreen extends ConsumerStatefulWidget {
   const DuplicateVotersScreen({super.key});
@@ -95,7 +96,7 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
             const SizedBox(width: 10),
             const Expanded(
               child: Text(
-                'ड्युप्लिकेट रेकॉर्ड हटवायचे का?',
+                'Delete Duplicate Record?',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
@@ -106,12 +107,12 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '${voter.displayName} (ओळखपत्र: ${voter.epicNo.isNotEmpty ? voter.epicNo : '-'}) हे रेकॉर्ड कायमचे हटवले जाईल.',
+              '${voter.displayName} (EPIC: ${voter.epicNo.isNotEmpty ? voter.epicNo : '-'}) will be permanently removed.',
               style: const TextStyle(fontSize: 14, color: Color(0xFF334155), fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             const Text(
-              'ही कृती पूर्ववत केली जाऊ शकत नाही. तुम्ही नक्की अचूक अतिरिक्त ड्युप्लिकेट रेकॉर्ड हटवत आहात याची खात्री करा.',
+              'This action cannot be undone. Please ensure you are deleting the exact extra duplicate record.',
               style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
             ),
           ],
@@ -119,7 +120,7 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('रद्द करा (Cancel)'),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -127,7 +128,7 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
               backgroundColor: const Color(0xFFDC2626),
               foregroundColor: Colors.white,
             ),
-            child: const Text('होय, हटवा (Yes, Delete)'),
+            child: const Text('Yes, Delete'),
           ),
         ],
       ),
@@ -141,7 +142,7 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
 
       messenger.showSnackBar(
         SnackBar(
-          content: Text('${voter.displayName} यांचे ड्युप्लिकेट रेकॉर्ड यशस्वीरित्या हटवले.'),
+          content: Text('Duplicate record for ${voter.displayName} deleted successfully.'),
           backgroundColor: const Color(0xFF16A34A),
           duration: const Duration(seconds: 2),
         ),
@@ -155,27 +156,47 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
+      drawer: const NagarsevakAppDrawer(),
       appBar: AppBar(
-        title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'ड्युप्लिकेट मतदार शोध',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-            ),
-            Text(
-              'समान नावे असलेले मतदार रेकॉर्ड शोधा आणि स्वच्छ करा',
-              style: TextStyle(fontSize: 11, color: Colors.white70),
-            ),
-          ],
-        ),
         backgroundColor: const Color(0xFF0284C7),
         foregroundColor: Colors.white,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+            tooltip: 'Open Menu Drawer',
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
+        ),
+        titleSpacing: 0,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Text(
+              'Duplicate Voters',
+              style: TextStyle(
+                fontSize: 17.5,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: -0.2,
+              ),
+            ),
+            Text(
+              'Identify and filter suspected duplicate entries',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFFE0F2FE),
+              ),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.picture_as_pdf_outlined),
-            tooltip: 'पीडीएफ अहवाल (Download PDF)',
+            tooltip: 'Download PDF Report',
             onPressed: () => DuplicateVotersReportGenerator.generateAndPrintReport(
               duplicateGroups: _duplicateGroups,
               totalAffectedVoters: totalAffected,
@@ -183,7 +204,7 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.refresh),
-            tooltip: 'रिफ्रेश करा',
+            tooltip: 'Refresh',
             onPressed: _loadDuplicates,
           ),
         ],
@@ -211,7 +232,7 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'एकूण गट: ${_duplicateGroups.length}',
+                    'Total Groups: ${_duplicateGroups.length}',
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF475569)),
                   ),
                   Row(
@@ -219,7 +240,7 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
                       TextButton.icon(
                         onPressed: _expandAll,
                         icon: const Icon(Icons.unfold_more, size: 16),
-                        label: const Text('सर्व उघडा', style: TextStyle(fontSize: 12)),
+                        label: const Text('Expand All', style: TextStyle(fontSize: 12)),
                         style: TextButton.styleFrom(
                           foregroundColor: const Color(0xFF0284C7),
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -229,7 +250,7 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
                       TextButton.icon(
                         onPressed: _collapseAll,
                         icon: const Icon(Icons.unfold_less, size: 16),
-                        label: const Text('सर्व बंद करा', style: TextStyle(fontSize: 12)),
+                        label: const Text('Collapse All', style: TextStyle(fontSize: 12)),
                         style: TextButton.styleFrom(
                           foregroundColor: const Color(0xFF64748B),
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -286,7 +307,7 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
           childAspectRatio: isWide ? 2.4 : 1.15,
           children: [
             _buildStatCard(
-              title: 'ड्युप्लिकेट गट',
+              title: 'Duplicate Groups',
               subtitle: 'Duplicate Groups',
               count: groupsCount.toString(),
               color: const Color(0xFF0284C7),
@@ -294,7 +315,7 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
               borderColor: const Color(0xFFBAE6FD),
             ),
             _buildStatCard(
-              title: 'बाधित मतदार',
+              title: 'Affected Voters',
               subtitle: 'Affected Voters',
               count: totalAffected.toString(),
               color: const Color(0xFFDC2626),
@@ -302,7 +323,7 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
               borderColor: const Color(0xFFFECACA),
             ),
             _buildStatCard(
-              title: 'अतिरिक्त रेकॉर्ड',
+              title: 'Extra Records',
               subtitle: 'Form 7 Extras',
               count: estExtra.toString(),
               color: const Color(0xFF475569),
@@ -375,7 +396,7 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
             controller: _searchController,
             onChanged: (val) => _loadDuplicates(),
             decoration: InputDecoration(
-              hintText: 'ड्युप्लिकेट नावे किंवा मतदार शोधा...',
+              hintText: 'Search duplicate names or voters...',
               hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
               prefixIcon: const Icon(Icons.search, size: 20, color: Color(0xFF64748B)),
               suffixIcon: _searchController.text.isNotEmpty
@@ -409,12 +430,12 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               const Text(
-                'शोध निकष: ',
+                'Match Criteria: ',
                 style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
               ),
-              _buildMatchTypeChip(label: 'समान पूर्ण नाव', type: 'name'),
-              _buildMatchTypeChip(label: 'समान EPIC क्र.', type: 'epic'),
-              _buildMatchTypeChip(label: 'समान मोबाईल क्र.', type: 'mobile'),
+              _buildMatchTypeChip(label: 'Same Full Name', type: 'name'),
+              _buildMatchTypeChip(label: 'Same EPIC No.', type: 'epic'),
+              _buildMatchTypeChip(label: 'Same Mobile No.', type: 'mobile'),
             ],
           ),
         ],
@@ -490,7 +511,7 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'या नावाचे $count मतदार रेकॉर्ड आढळले',
+                          '$count voter records found with this name',
                           style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                         ),
                       ],
@@ -504,7 +525,7 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
                       border: Border.all(color: const Color(0xFFFECACA)),
                     ),
                     child: Text(
-                      '$count ड्युप्लिकेट',
+                      '$count Duplicates',
                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFDC2626)),
                     ),
                   ),
@@ -540,7 +561,7 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
                         SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            'तुलना: अचूक रेकॉर्ड ठेवा आणि नमुना क्र. ७ द्वारे ड्युप्लिकेट हटवा',
+                            'Comparison: Keep the accurate record and submit Form 7 for deletion',
                             style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0369A1)),
                           ),
                         ),
@@ -619,7 +640,7 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
                   ),
                 ),
                 child: Text(
-                  isFirst ? 'पहिले रेकॉर्ड (First Record)' : 'ड्युप्लिकेट नोंद #${index + 1}',
+                  isFirst ? 'Primary Record' : 'Duplicate Entry #${index + 1}',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
@@ -664,22 +685,10 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
           Row(
             children: [
               Expanded(
-                child: _buildAttributeItem('ओळखपत्र क्र. (EPIC)', voter.epicNo.isNotEmpty ? voter.epicNo : '-'),
+                child: _buildAttributeItem('EPIC No.', voter.epicNo.isNotEmpty ? voter.epicNo : '-'),
               ),
               Expanded(
-                child: _buildAttributeItem('यादी भाग क्र.', voter.serialNo != null ? voter.serialNo.toString() : '-'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-
-          Row(
-            children: [
-              Expanded(
-                child: _buildAttributeItem('वय व लिंग', '${voter.age} वर्षे / ${voter.genderLabelMarathi}'),
-              ),
-              Expanded(
-                child: _buildAttributeItem('घर क्र.', voter.houseNo ?? '-'),
+                child: _buildAttributeItem('Part / Serial No.', voter.serialNo != null ? voter.serialNo.toString() : '-'),
               ),
             ],
           ),
@@ -688,10 +697,22 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
           Row(
             children: [
               Expanded(
-                child: _buildAttributeItem('मतदान केंद्र', voter.booth),
+                child: _buildAttributeItem('Age & Gender', '${voter.age} Yrs / ${voter.gender}'),
               ),
               Expanded(
-                child: _buildAttributeItem('मोबाईल', voter.mobile ?? '-'),
+                child: _buildAttributeItem('House No.', voter.houseNo ?? '-'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+
+          Row(
+            children: [
+              Expanded(
+                child: _buildAttributeItem('Polling Station', voter.booth),
+              ),
+              Expanded(
+                child: _buildAttributeItem('Mobile', voter.mobile ?? '-'),
               ),
             ],
           ),
@@ -724,7 +745,7 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
                     );
                   },
                   icon: const Icon(Icons.visibility_outlined, size: 14),
-                  label: const Text('तपशील', style: TextStyle(fontSize: 11)),
+                  label: const Text('Details', style: TextStyle(fontSize: 11)),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFF0284C7),
                     side: const BorderSide(color: Color(0xFFBAE6FD)),
@@ -738,7 +759,7 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
                   child: OutlinedButton.icon(
                     onPressed: () => _confirmDeleteVoter(voter, groupKey),
                     icon: const Icon(Icons.delete_outline, size: 14),
-                    label: const Text('हटवा', style: TextStyle(fontSize: 11)),
+                    label: const Text('Delete', style: TextStyle(fontSize: 11)),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFFDC2626),
                       side: const BorderSide(color: Color(0xFFFECACA)),
@@ -796,12 +817,12 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
           ),
           const SizedBox(height: 16),
           const Text(
-            'कोणतेही ड्युप्लिकेट मतदार आढळले नाहीत!',
+            'No duplicate voters found!',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
           ),
           const SizedBox(height: 6),
           const Text(
-            'सर्व मतदार रेकॉर्डची नावे अद्वितीय आहेत. डेटा स्वच्छ ठेवल्याबद्दल अभिनंदन!',
+            'All voter records are unique. Clean database maintained!',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
           ),

@@ -111,13 +111,13 @@ class NewspaperReportGenerator {
             // KPI Strip
             pw.Row(
               children: [
-                _buildKpiCard('Total Clippings (एकूण कात्रणे)', '$totalCount', 'Print Media Coverage', PdfColors.blue700, PdfColors.blue50),
+                _buildKpiCard('Total Clippings', '$totalCount', 'Print Media Coverage', PdfColors.blue700, PdfColors.blue50),
                 pw.SizedBox(width: 8),
-                _buildKpiCard('Positive News (सकारात्मक कव्हरेज)', '$positiveCount', '${((positiveCount / (totalCount > 0 ? totalCount : 1)) * 100).toStringAsFixed(0)}% Public Appreciation', PdfColors.green700, PdfColors.green50),
+                _buildKpiCard('Positive News', '$positiveCount', '${((positiveCount / (totalCount > 0 ? totalCount : 1)) * 100).toStringAsFixed(0)}% Public Appreciation', PdfColors.green700, PdfColors.green50),
                 pw.SizedBox(width: 8),
-                _buildKpiCard('Civic Issues / Complaints (दखलपात्र)', '$negativeCount', 'Issues Resolved by PMC', PdfColors.red700, PdfColors.red50),
+                _buildKpiCard('Civic Issues / Complaints', '$negativeCount', 'Issues Resolved by PMC', PdfColors.red700, PdfColors.red50),
                 pw.SizedBox(width: 8),
-                _buildKpiCard('Newspapers Tracked (वृत्तपत्रे)', '$uniquePapers', 'Leading Dailies Covered', PdfColors.purple700, PdfColors.purple50),
+                _buildKpiCard('Newspapers Tracked', '$uniquePapers', 'Leading Dailies Covered', PdfColors.purple700, PdfColors.purple50),
               ],
             ),
             pw.SizedBox(height: 12),
@@ -143,7 +143,7 @@ class NewspaperReportGenerator {
                     _tableHeaderCell('Newspaper & Page'),
                     _tableHeaderCell('News Headline & Coverage Summary'),
                     _tableHeaderCell('Type'),
-                    _tableHeaderCell('Civic Action Taken / पाठपुरावा'),
+                    _tableHeaderCell('Civic Action Taken'),
                   ],
                 ),
                 // Rows

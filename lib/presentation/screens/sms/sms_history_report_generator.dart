@@ -45,7 +45,7 @@ class SmsHistoryReportGenerator {
                       ),
                       pw.SizedBox(height: 2),
                       pw.Text(
-                        'सार्वजनिक संवाद व एसएमएस मोहीम अहवाल (Public Communication & Bulk SMS Report)',
+                        'Public Communication & Bulk SMS Report',
                         style: pw.TextStyle(
                           fontSize: 14,
                           fontWeight: pw.FontWeight.bold,
@@ -102,13 +102,13 @@ class SmsHistoryReportGenerator {
             // KPI Cards Row
             pw.Row(
               children: [
-                _buildKpiCard('एकूण मोहीम (Total Campaigns)', '$totalCampaigns', 'Broadcast Dispatches', PdfColors.blue50, PdfColors.blue900),
+                _buildKpiCard('Total Campaigns', '$totalCampaigns', 'Broadcast Dispatches', PdfColors.blue50, PdfColors.blue900),
                 pw.SizedBox(width: 8),
-                _buildKpiCard('एकूण प्राप्तकर्ते (Recipients)', '$totalRecipients', 'Registered Voters', const PdfColor.fromInt(0xFFF1F5F9), const PdfColor.fromInt(0xFF1E293B)),
+                _buildKpiCard('Total Recipients', '$totalRecipients', 'Registered Voters', const PdfColor.fromInt(0xFFF1F5F9), const PdfColor.fromInt(0xFF1E293B)),
                 pw.SizedBox(width: 8),
-                _buildKpiCard('यशस्वी डिलिव्हरी (Delivered)', '$totalDelivered', '$deliveryRate% Success Rate', const PdfColor.fromInt(0xFFECFDF5), const PdfColor.fromInt(0xFF047857)),
+                _buildKpiCard('Delivered', '$totalDelivered', '$deliveryRate% Success Rate', const PdfColor.fromInt(0xFFECFDF5), const PdfColor.fromInt(0xFF047857)),
                 pw.SizedBox(width: 8),
-                _buildKpiCard('अयशस्वी (Failed)', '$totalFailed', 'Invalid / Network Issues', const PdfColor.fromInt(0xFFFEF2F2), const PdfColor.fromInt(0xFFDC2626)),
+                _buildKpiCard('Failed', '$totalFailed', 'Invalid / Network Issues', const PdfColor.fromInt(0xFFFEF2F2), const PdfColor.fromInt(0xFFDC2626)),
               ],
             ),
 
@@ -132,14 +132,14 @@ class SmsHistoryReportGenerator {
                 pw.TableRow(
                   decoration: const pw.BoxDecoration(color: PdfColors.grey200),
                   children: [
-                    _buildCell('अ.क्र.', isHeader: true, align: pw.TextAlign.center),
-                    _buildCell('दिनांक व वेळ (Date)', isHeader: true),
-                    _buildCell('मोहीम व संदेश (Campaign / Message)', isHeader: true),
-                    _buildCell('चॅनेल', isHeader: true, align: pw.TextAlign.center),
-                    _buildCell('प्राप्तकर्ते', isHeader: true, align: pw.TextAlign.center),
-                    _buildCell('डिलिव्हर्ड', isHeader: true, align: pw.TextAlign.center),
-                    _buildCell('अयशस्वी', isHeader: true, align: pw.TextAlign.center),
-                    _buildCell('स्थिती', isHeader: true, align: pw.TextAlign.center),
+                    _buildCell('Sr.', isHeader: true, align: pw.TextAlign.center),
+                    _buildCell('Date & Time', isHeader: true),
+                    _buildCell('Campaign & Message', isHeader: true),
+                    _buildCell('Channel', isHeader: true, align: pw.TextAlign.center),
+                    _buildCell('Recipients', isHeader: true, align: pw.TextAlign.center),
+                    _buildCell('Delivered', isHeader: true, align: pw.TextAlign.center),
+                    _buildCell('Failed', isHeader: true, align: pw.TextAlign.center),
+                    _buildCell('Status', isHeader: true, align: pw.TextAlign.center),
                   ],
                 ),
                 // Data Rows
@@ -248,14 +248,14 @@ class SmsHistoryReportGenerator {
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
                       pw.Text(
-                        'नोंद (Important Compliance):',
+                        'Important Compliance:',
                         style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900),
                       ),
                       pw.SizedBox(height: 2),
                       pw.Text(
-                        '१. सर्व एसएमएस संदेश TRAI DLT नियमांनुसार नोंदणीकृत हेडर व टेम्प्लेटद्वारे पाठवले जातात.\n'
-                        '२. नागरिक डेटा गोपनीयता व सायबर सुरक्षा मानकांचे काटेकोर पालन केले जाते.\n'
-                        '३. अधिकृत आपत्कालीन सूचना मनपा नियंत्रण कक्षाच्या मान्यतेने प्रसारित केल्या जातात.',
+                        '1. All SMS broadcasts are sent via TRAI DLT approved headers and registered templates.\n'
+                        '2. Citizen data privacy and cybersecurity standards are strictly maintained.\n'
+                        '3. Official emergency alerts are broadcast with approvals from PMC disaster management.',
                         style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey700),
                       ),
                     ],
@@ -267,11 +267,11 @@ class SmsHistoryReportGenerator {
                     pw.Container(width: 140, height: 1, color: PdfColors.grey700),
                     pw.SizedBox(height: 4),
                     pw.Text(
-                      'नगरसेवक / प्रभाग समिती प्रमुख',
+                      'Corporator / Ward Committee Head',
                       style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900),
                     ),
                     pw.Text(
-                      'प्रभाग क्र. १२, पुणे महानगरपालिका',
+                      'Ward 12, Pune Municipal Corporation',
                       style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey600),
                     ),
                   ],

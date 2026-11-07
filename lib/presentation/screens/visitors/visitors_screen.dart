@@ -568,25 +568,19 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
           scrolledUnderElevation: 0,
           leading: Builder(
             builder: (ctx) => IconButton(
-              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 24),
-              tooltip: 'Back',
-              onPressed: () {
-                if (Navigator.canPop(context)) {
-                  Navigator.pop(context);
-                } else {
-                  Scaffold.of(ctx).openDrawer();
-                }
-              },
+              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+              tooltip: 'Open Menu Drawer',
+              onPressed: () => Scaffold.of(ctx).openDrawer(),
             ),
           ),
           titleSpacing: 0,
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
-            children: [
+            children: const [
               Text(
-                isMr ? 'भेट देणारे (Visitor Log)' : 'Visitor Log',
-                style: const TextStyle(
+                'Visitor Register',
+                style: TextStyle(
                   fontSize: 17.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
@@ -594,11 +588,11 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                 ),
               ),
               Text(
-                isMr ? 'कार्यालयात येणाऱ्या नागरिकांची नोंद' : 'Track daily citizen visits & appointments',
+                'Track daily citizen visits & appointments',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w400,
-                  color: Colors.white.withOpacity(0.85),
+                  color: Color(0xFFE0F2FE),
                 ),
               ),
             ],

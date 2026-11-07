@@ -6,38 +6,8 @@ import '../../../data/repositories/complaints_repository.dart';
 import '../../../data/repositories/voters_repository.dart';
 import '../../../data/repositories/letters_repository.dart';
 import '../complaints/new_complaint_screen.dart';
-import '../ward_map/ward_map_screen.dart';
-import '../diary/diary_screen.dart';
-import '../visitors/visitors_screen.dart';
-import '../schemes/government_schemes_screen.dart';
-import '../ward_problems/ward_problems_screen.dart';
-import '../works/work_history_screen.dart';
-import '../ward_improvements/possible_improvements_screen.dart';
-import '../ward_provisions/ward_provisions_screen.dart';
-import '../gb_register/gb_register_screen.dart';
-import '../ward_budget/ward_budget_screen.dart';
-import '../government_office/government_office_screen.dart';
-import '../social/social_analytics_screen.dart';
-import '../newspaper/newspaper_clippings_screen.dart';
-import '../media_tracking/media_tracking_screen.dart';
-import '../content_studio/ai_content_studio_screen.dart';
-import '../events/events_screen.dart';
-import '../gallery/gallery_screen.dart';
-import '../results/result_analysis_screen.dart';
-import '../sadasya/sadasya_screen.dart';
-import '../surveys/surveys_screen.dart';
-import '../voters/voters_screen.dart';
-import '../team/team_screen.dart';
-import '../opposition/opposition_screen.dart';
-import '../social_organizations/social_organizations_screen.dart';
-import '../housing_societies/housing_societies_screen.dart';
-import '../duplicate_voters/duplicate_voters_screen.dart';
-import '../voter_forms/voter_forms_screen.dart';
-import '../karyakarta_work/karyakarta_work_management_screen.dart';
-import '../sms/sms_communication_screen.dart';
-import '../whatsapp/whatsapp_communication_screen.dart';
 import '../../navigation/app_drawer.dart';
-import '../more/module_detail_screen.dart';
+import '../../providers/navigation_provider.dart';
 
 final lettersRepoProvider = Provider((ref) => LettersRepository());
 
@@ -50,7 +20,11 @@ class DashboardScreen extends ConsumerStatefulWidget {
   ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+class _DashboardScreenState extends ConsumerState<DashboardScreen>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   bool _isLoading = true;
   Map<String, int> _complaintStats = {'total': 128, 'pending': 32, 'inProgress': 76, 'resolved': 20};
   int _voterCount = 42560;
@@ -275,284 +249,20 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   void _openModuleDetail(String title, String subtitle, String category, IconData icon, List<String> highlights) {
-    if (title.toLowerCase() == 'gb register' || title.toLowerCase().contains('gb register')) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const GbRegisterScreen()),
-      );
-      return;
+    final key = resolveScreenKey(title) ?? resolveScreenKey(category) ?? resolveScreenKey(subtitle);
+    if (key != null) {
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+      ref.read(activeScreenProvider.notifier).setScreen(key);
+      if (key == 'dashboard') ref.read(mainTabIndexProvider.notifier).setTab(0);
+      if (key == 'complaints') ref.read(mainTabIndexProvider.notifier).setTab(1);
+      if (key == 'letters') ref.read(mainTabIndexProvider.notifier).setTab(2);
+      if (key == 'profile_settings') ref.read(mainTabIndexProvider.notifier).setTab(3);
+      if (key == 'complaints') widget.onTabChange(1);
+      if (key == 'letters') widget.onTabChange(2);
+      if (key == 'profile_settings') widget.onTabChange(3);
     }
-    if (title.toLowerCase() == 'diary' || (title.toLowerCase().contains('diary') && !title.toLowerCase().contains('gb'))) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const DiaryScreen()),
-      );
-      return;
-    }
-    if (title.toLowerCase().contains('visitor')) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const VisitorsScreen()),
-      );
-      return;
-    }
-    if (title.toLowerCase().contains('scheme')) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const GovernmentSchemesScreen()),
-      );
-      return;
-    }
-    if (title.toLowerCase().contains('ward problem')) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const WardProblemsScreen()),
-      );
-      return;
-    }
-    if (title.toLowerCase().contains('work history')) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const WorkHistoryScreen()),
-      );
-      return;
-    }
-    if (title.toLowerCase().contains('improvement')) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const PossibleImprovementsScreen()),
-      );
-      return;
-    }
-    if (title.toLowerCase().contains('provision')) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const WardProvisionsScreen()),
-      );
-      return;
-    }
-    if (title.toLowerCase().contains('budget')) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const WardBudgetScreen()),
-      );
-      return;
-    }
-    if (title.toLowerCase().contains('government office') ||
-        (title.toLowerCase().contains('office') &&
-            !title.toLowerCase().contains('visitor') &&
-            !title.toLowerCase().contains('diary'))) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const GovernmentOfficeScreen()),
-      );
-      return;
-    }
-    if (title.toLowerCase().contains('social analytics') ||
-        title.toLowerCase() == 'social' ||
-        title.toLowerCase().contains('social media')) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const SocialAnalyticsScreen()),
-      );
-      return;
-    }
-    if (title.toLowerCase().contains('newspaper') ||
-        title.toLowerCase().contains('clipping') ||
-        title.toLowerCase().contains('वृत्तपत्र')) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const NewspaperClippingsScreen()),
-      );
-      return;
-    }
-    if (title.toLowerCase().contains('media tracking') ||
-        (title.toLowerCase().contains('tracking') &&
-            !title.toLowerCase().contains('visitor')) ||
-        title.toLowerCase().contains('माध्यम मागोवा')) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const MediaTrackingScreen()),
-      );
-      return;
-    }
-    if (title.toLowerCase().contains('ai content') ||
-        title.toLowerCase().contains('content studio') ||
-        title.toLowerCase().contains('कंटेंट स्टुडिओ')) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const AiContentStudioScreen()),
-      );
-      return;
-    }
-    if (title.toLowerCase().contains('event') ||
-        title.toLowerCase().contains('invite') ||
-        title.toLowerCase().contains('कार्यक्रम')) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const EventsScreen()),
-      );
-      return;
-    }
-    if (title.toLowerCase().contains('gallery') ||
-        title.toLowerCase().contains('गॅलरी') ||
-        title.toLowerCase().contains('फोटो')) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const GalleryScreen()),
-      );
-      return;
-    }
-    if (title.toLowerCase().contains('result') ||
-        title.toLowerCase().contains('election') ||
-        title.toLowerCase().contains('निकाल')) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const ResultAnalysisScreen()),
-      );
-      return;
-    }
-    if (title.toLowerCase().contains('sadasya') ||
-        title.toLowerCase().contains('सदस्य') ||
-        title.toLowerCase().contains('party member')) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const SadasyaScreen()),
-      );
-      return;
-    }
-    if (title.toLowerCase().contains('survey') ||
-        title.toLowerCase().contains('सर्वेक्षण') ||
-        title.toLowerCase().contains('चाचण्या') ||
-        title.toLowerCase() == 'sample surveys') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const SurveysScreen()),
-      );
-      return;
-    }
-
-    if (title.toLowerCase().contains('voter search') ||
-        title.toLowerCase().contains('मतदार शोध') ||
-        title.toLowerCase() == 'voter search' ||
-        title.toLowerCase() == 'voters') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const VotersScreen()),
-      );
-      return;
-    }
-
-    if (title.toLowerCase().contains('team') ||
-        title.toLowerCase().contains('staff') ||
-        title.toLowerCase().contains('कार्यसंघ') ||
-        title.toLowerCase().contains('कर्मचारी') ||
-        title.toLowerCase() == 'my team') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const TeamScreen()),
-      );
-      return;
-    }
-
-    if (title.toLowerCase().contains('opposition') ||
-        title.toLowerCase().contains('विरोध') ||
-        title.toLowerCase().contains('विरोधी') ||
-        title.toLowerCase() == 'opposition information') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const OppositionScreen()),
-      );
-      return;
-    }
-
-    if (title.toLowerCase().contains('mandal') ||
-        title.toLowerCase().contains('ngo') ||
-        title.toLowerCase().contains('मंडळ') ||
-        title.toLowerCase().contains('संस्था') ||
-        title.toLowerCase() == 'ngo & mandals info') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const SocialOrganizationsScreen()),
-      );
-      return;
-    }
-
-    if (title.toLowerCase().contains('societ') ||
-        title.toLowerCase().contains('सोसायटी') ||
-        title.toLowerCase() == 'housing societies') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const HousingSocietiesScreen()),
-      );
-      return;
-    }
-
-    if (title.toLowerCase().contains('duplicate') ||
-        title.toLowerCase().contains('ड्युप्लिकेट') ||
-        title.toLowerCase() == 'duplicate voters') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const DuplicateVotersScreen()),
-      );
-      return;
-    }
-
-    if (title.toLowerCase().contains('form') ||
-        title.toLowerCase().contains('अर्ज') ||
-        title.toLowerCase() == 'voter forms') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const VoterFormsScreen()),
-      );
-      return;
-    }
-
-    if (title.toLowerCase().contains('karyakarta work') ||
-        title.toLowerCase().contains('कार्यकर्ता काम') ||
-        title.toLowerCase() == 'karyakarta work management') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const KaryakartaWorkManagementScreen()),
-      );
-      return;
-    }
-
-    if (title.toLowerCase().contains('send sms') ||
-        title.toLowerCase().contains('sms पाठवा') ||
-        title.toLowerCase().contains('एसएमएस') ||
-        title.toLowerCase() == 'send sms' ||
-        title.toLowerCase() == 'sms') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const SmsCommunicationScreen()),
-      );
-      return;
-    }
-
-    if (title.toLowerCase().contains('whatsapp message') ||
-        title.toLowerCase().contains('व्हॉट्सॲप') ||
-        title.toLowerCase() == 'whatsapp message') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const WhatsAppCommunicationScreen()),
-      );
-      return;
-    }
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ModuleDetailScreen(
-          title: title,
-          subtitle: subtitle,
-          category: category,
-          icon: icon,
-          description: subtitle,
-          highlights: highlights,
-        ),
-      ),
-    );
   }
 
   void _showComplaintDetailsModal(ComplaintModel complaint) {
@@ -710,6 +420,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final totalVal = (_complaintStats['total'] ?? 128);
     final pendingVal = (_complaintStats['pending'] ?? 32);
     final inProgressVal = (_complaintStats['inProgress'] ?? 76);
@@ -910,23 +621,25 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 _QuickActionPill(
                                   icon: Icons.search_rounded,
                                   label: 'Search Voter',
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const VotersScreen()),
-                                    );
-                                  },
+                                  onTap: () => _openModuleDetail(
+                                    'Voter Search',
+                                    'Search voter directory and voter slips',
+                                    'Political',
+                                    Icons.search_rounded,
+                                    const [],
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.groups_rounded,
                                   label: 'Staff / Team',
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const TeamScreen()),
-                                    );
-                                  },
+                                  onTap: () => _openModuleDetail(
+                                    'My Team',
+                                    'Staff & coordinator team members',
+                                    'Political',
+                                    Icons.groups_rounded,
+                                    const [],
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
@@ -956,276 +669,301 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 _QuickActionPill(
                                   icon: Icons.badge_outlined,
                                   label: 'Visitors',
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const VisitorsScreen()),
-                                    );
-                                  },
+                                  onTap: () => _openModuleDetail(
+                                    'Visitor Register',
+                                    'Track daily citizen visits & appointments',
+                                    'Daily work',
+                                    Icons.badge_outlined,
+                                    const [],
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.map_outlined,
                                   label: 'Ward Map',
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const WardMapScreen()),
-                                    );
-                                  },
+                                  onTap: () => _openModuleDetail(
+                                    'Ward Map',
+                                    'Geographic boundaries, booths & civil works',
+                                    'Ward Info',
+                                    Icons.map_outlined,
+                                    const [],
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.history_rounded,
                                   label: 'Work History',
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const WorkHistoryScreen()),
-                                    );
-                                  },
+                                  onTap: () => _openModuleDetail(
+                                    'Ward Development Works',
+                                    'Development works, grievances & welfare',
+                                    'Ward Info',
+                                    Icons.history_rounded,
+                                    const [],
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.lightbulb_outline_rounded,
                                   label: 'Improvements',
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const PossibleImprovementsScreen()),
-                                    );
-                                  },
+                                  onTap: () => _openModuleDetail(
+                                    'Possible Improvements',
+                                    'Propose and track future development works',
+                                    'Ward Info',
+                                    Icons.lightbulb_outline_rounded,
+                                    const [],
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.currency_rupee_rounded,
                                   label: 'Provision',
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const WardProvisionsScreen()),
-                                    );
-                                  },
+                                  onTap: () => _openModuleDetail(
+                                    'Ward Provisions',
+                                    'Budget provisions and funding proposals',
+                                    'Ward Info',
+                                    Icons.currency_rupee_rounded,
+                                    const [],
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.menu_book_outlined,
                                   label: 'GB Register',
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const GbRegisterScreen()),
-                                    );
-                                  },
+                                  onTap: () => _openModuleDetail(
+                                    'GB Register',
+                                    'General Body motions and civic resolutions',
+                                    'Municipal',
+                                    Icons.menu_book_outlined,
+                                    const [],
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.account_balance_wallet_outlined,
                                   label: 'Ward Budget',
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const WardBudgetScreen()),
-                                    );
-                                  },
+                                  onTap: () => _openModuleDetail(
+                                    'Ward Budget',
+                                    'Track development funds & expenditure',
+                                    'Municipal',
+                                    Icons.account_balance_wallet_outlined,
+                                    const [],
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.location_city_outlined,
                                   label: 'Govt Offices',
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const GovernmentOfficeScreen()),
-                                    );
-                                  },
+                                  onTap: () => _openModuleDetail(
+                                    'Government Offices',
+                                    'Ward municipal offices & emergency directory',
+                                    'Municipal',
+                                    Icons.location_city_outlined,
+                                    const [],
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.trending_up_rounded,
                                   label: 'Social Analytics',
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const SocialAnalyticsScreen()),
-                                    );
-                                  },
+                                  onTap: () => _openModuleDetail(
+                                    'Social Analytics',
+                                    'Social media engagement and public interaction',
+                                    'Media',
+                                    Icons.trending_up_rounded,
+                                    const [],
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.newspaper_outlined,
                                   label: 'Newspaper',
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const NewspaperClippingsScreen()),
-                                    );
-                                  },
+                                  onTap: () => _openModuleDetail(
+                                    'Newspaper Clippings',
+                                    'Print news coverage and press clippings',
+                                    'Media',
+                                    Icons.newspaper_outlined,
+                                    const [],
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.language_rounded,
                                   label: 'Media Tracking',
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const MediaTrackingScreen()),
-                                    );
-                                  },
+                                  onTap: () => _openModuleDetail(
+                                    'Media Tracking',
+                                    'Broadcast news channels and press monitors',
+                                    'Media',
+                                    Icons.language_rounded,
+                                    const [],
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.auto_awesome_rounded,
                                   label: 'AI Content Studio',
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const AiContentStudioScreen()),
-                                    );
-                                  },
+                                  onTap: () => _openModuleDetail(
+                                    'AI Content Studio',
+                                    'Social media post generation & PR copy',
+                                    'Media',
+                                    Icons.auto_awesome_rounded,
+                                    const [],
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.event_available_rounded,
                                   label: 'Events & Invites',
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const EventsScreen()),
-                                    );
-                                  },
+                                  onTap: () => _openModuleDetail(
+                                    'Events & Invites',
+                                    'Public programs, rallies & inauguration events',
+                                    'Programs',
+                                    Icons.event_available_rounded,
+                                    const [],
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.photo_library_outlined,
                                   label: 'Gallery & Media',
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const GalleryScreen()),
-                                    );
-                                  },
+                                  onTap: () => _openModuleDetail(
+                                    'Gallery & Media',
+                                    'Event photos, project images & public press',
+                                    'Programs',
+                                    Icons.photo_library_outlined,
+                                    const [],
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.bar_chart_rounded,
                                   label: 'Election Results',
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const ResultAnalysisScreen()),
-                                    );
-                                  },
+                                  onTap: () => _openModuleDetail(
+                                    'Result Analysis',
+                                    'Past election results, booth margins & turnout',
+                                    'Programs',
+                                    Icons.bar_chart_rounded,
+                                    const [],
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.group_add_outlined,
                                   label: 'Sadasya (Members)',
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const SadasyaScreen()),
-                                    );
-                                  },
+                                  onTap: () => _openModuleDetail(
+                                    'Sadasya (Party Members)',
+                                    'Active party cadre & booth coordinators',
+                                    'Political',
+                                    Icons.group_add_outlined,
+                                    const [],
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.fact_check_outlined,
                                   label: 'Surveys (जनमत)',
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const SurveysScreen()),
-                                    );
-                                  },
+                                  onTap: () => _openModuleDetail(
+                                    'Sample Surveys',
+                                    'Opinion polls, field surveys and voter sentiment data',
+                                    'Political',
+                                    Icons.fact_check_outlined,
+                                    const [],
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.groups_2_outlined,
                                   label: 'Opposition Info',
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const OppositionScreen()),
-                                    );
-                                  },
+                                  onTap: () => _openModuleDetail(
+                                    'Opposition Candidates',
+                                    'Opposition candidate profiles & past records',
+                                    'Political',
+                                    Icons.groups_2_outlined,
+                                    const [],
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.apartment_outlined,
                                   label: 'NGO & Mandals',
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const SocialOrganizationsScreen()),
-                                    );
-                                  },
+                                  onTap: () => _openModuleDetail(
+                                    'Social Organizations & Mandals',
+                                    'Youth mandals, festival committees & NGOs',
+                                    'Political',
+                                    Icons.apartment_outlined,
+                                    const [],
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.home_work_outlined,
                                   label: 'Societies',
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const HousingSocietiesScreen()),
-                                    );
-                                  },
+                                  onTap: () => _openModuleDetail(
+                                    'Housing Societies',
+                                    'Apartments & resident welfare associations',
+                                    'Political',
+                                    Icons.home_work_outlined,
+                                    const [],
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.warning_amber_rounded,
                                   label: 'Duplicates',
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const DuplicateVotersScreen()),
-                                    );
-                                  },
+                                  onTap: () => _openModuleDetail(
+                                    'Duplicate Voters',
+                                    'Identify and filter duplicate entries',
+                                    'Political',
+                                    Icons.warning_amber_rounded,
+                                    const [],
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.description_outlined,
                                   label: 'Voter Forms',
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const VoterFormsScreen()),
-                                    );
-                                  },
+                                  onTap: () => _openModuleDetail(
+                                    'Voter Forms',
+                                    'Form 6, 7 & 8 electoral applications',
+                                    'Political',
+                                    Icons.description_outlined,
+                                    const [],
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.assignment_ind_outlined,
                                   label: 'Karyakarta Work',
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const KaryakartaWorkManagementScreen()),
-                                    );
-                                  },
+                                  onTap: () => _openModuleDetail(
+                                    'Karyakarta Work Management',
+                                    'Assign field tasks & track metrics',
+                                    'Political',
+                                    Icons.assignment_ind_outlined,
+                                    const [],
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.sms_outlined,
                                   label: 'Send SMS',
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const SmsCommunicationScreen()),
-                                    );
-                                  },
+                                  onTap: () => _openModuleDetail(
+                                    'Send SMS',
+                                    'Send notifications & updates to voters',
+                                    'Public Communication',
+                                    Icons.sms_outlined,
+                                    const [],
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.chat_rounded,
                                   label: 'WhatsApp',
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const WhatsAppCommunicationScreen()),
-                                    );
-                                  },
+                                  onTap: () => _openModuleDetail(
+                                    'WhatsApp Message',
+                                    'Direct messaging & voter broadcast',
+                                    'Public Communication',
+                                    Icons.chat_rounded,
+                                    const [],
+                                  ),
                                 ),
                               ],
                             ),

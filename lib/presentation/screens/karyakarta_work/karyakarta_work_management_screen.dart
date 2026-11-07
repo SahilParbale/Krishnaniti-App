@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/karyakarta_work_model.dart';
 import '../../../data/repositories/karyakarta_work_repository.dart';
 import 'karyakarta_work_report_generator.dart';
+import '../../navigation/app_drawer.dart';
 
 class KaryakartaWorkManagementScreen extends ConsumerStatefulWidget {
   const KaryakartaWorkManagementScreen({super.key});
@@ -99,7 +100,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('कामाची स्थिती अद्ययावत केली: $newStatus'),
+          content: Text('Task status updated: $newStatus'),
           backgroundColor: const Color(0xFF047857),
           duration: const Duration(seconds: 2),
         ),
@@ -114,7 +115,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('काम यशस्वीरीत्या दुसऱ्या सदस्याला सोपवले!'),
+          content: Text('Task reassigned successfully!'),
           backgroundColor: Color(0xFF0284C7),
           duration: const Duration(seconds: 2),
         ),
@@ -132,7 +133,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('तक्रारीची स्थिती अद्ययावत केली: $newStatus'),
+          content: Text('Complaint status updated: $newStatus'),
           backgroundColor: const Color(0xFF047857),
           duration: const Duration(seconds: 2),
         ),
@@ -147,7 +148,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('तक्रार यशस्वीरीत्या दुसऱ्या सदस्याला सोपवली!'),
+          content: Text('Complaint reassigned successfully!'),
           backgroundColor: Color(0xFF0284C7),
           duration: const Duration(seconds: 2),
         ),
@@ -176,9 +177,9 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
     final allComplaints = await repo.getComplaints();
     final tabStaff = _workloads.map((w) => w.staff).toList();
 
-    String tabLabel = 'कार्यालय टीम (Office Team)';
-    if (_activeTab == 'Cooperative') tabLabel = 'शासकीय काम (Government Work)';
-    if (_activeTab == 'Party') tabLabel = 'पक्ष कार्यकर्ता (Paksha Karyakarta)';
+    String tabLabel = 'Office Team';
+    if (_activeTab == 'Cooperative') tabLabel = 'Government Work';
+    if (_activeTab == 'Party') tabLabel = 'Party Cadre';
 
     await KaryakartaWorkReportGenerator.generateAndPrintReport(
       staffList: tabStaff,
@@ -200,7 +201,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'कार्यभार अहवाल — ${_getTabTitle(_activeTab)}',
+                'Workload Report — ${_getTabTitle(_activeTab)}',
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
@@ -213,7 +214,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'तयार केले: ${DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.now())}',
+                'Generated: ${DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.now())}',
                 style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
               ),
               const SizedBox(height: 12),
@@ -226,17 +227,17 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                 ),
                 child: Column(
                   children: [
-                    _buildPreviewRow('एकूण सदस्य:', '${_workloads.length}'),
-                    _buildPreviewRow('एकूण कार्यभार:', '${_summary.totalLoad} (${_summary.totalTasks} कामे + ${_summary.totalComplaints} तक्रारी)'),
-                    _buildPreviewRow('प्रलंबित भार:', '${_summary.pendingLoad}'),
-                    _buildPreviewRow('काम सुरू:', '${_summary.inProgressLoad}'),
-                    _buildPreviewRow('पूर्ण झालेले:', '${_summary.completedLoad}'),
+                    _buildPreviewRow('Total Members:', '${_workloads.length}'),
+                    _buildPreviewRow('Total Workload:', '${_summary.totalLoad} (${_summary.totalTasks} Tasks + ${_summary.totalComplaints} Complaints)'),
+                    _buildPreviewRow('Pending Load:', '${_summary.pendingLoad}'),
+                    _buildPreviewRow('In Progress:', '${_summary.inProgressLoad}'),
+                    _buildPreviewRow('Completed:', '${_summary.completedLoad}'),
                   ],
                 ),
               ),
               const SizedBox(height: 12),
               const Text(
-                'हा अहवाल अधिकृत पुणे महानगरपालिका प्रभाग १२ लेटरहेडवर A4 लँडस्केप फॉरमॅटमध्ये जनरेट केला जाईल.',
+                'This report will be generated on official Ward 12 letterhead in A4 landscape format.',
                 style: TextStyle(fontSize: 12, color: Color(0xFF475569)),
               ),
             ],
@@ -245,7 +246,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('बंद करा', style: TextStyle(color: Color(0xFF64748B))),
+            child: const Text('Close', style: TextStyle(color: Color(0xFF64748B))),
           ),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
@@ -258,7 +259,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
               _generatePdfReport();
             },
             icon: const Icon(Icons.print_outlined, size: 18),
-            label: const Text('पीडीएफ डाउनलोड / प्रिंट'),
+            label: const Text('Download / Print PDF'),
           ),
         ],
       ),
@@ -281,11 +282,11 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
   String _getTabTitle(String tab) {
     switch (tab) {
       case 'Office':
-        return 'कार्यालय टीम';
+        return 'Office Team';
       case 'Cooperative':
-        return 'शासकीय काम';
+        return 'Government Work';
       case 'Party':
-        return 'पक्ष कार्यकर्ता';
+        return 'Party Cadre';
       default:
         return tab;
     }
@@ -323,34 +324,39 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
+      drawer: const NagarsevakAppDrawer(),
       appBar: AppBar(
+        backgroundColor: const Color(0xFF0284C7),
         elevation: 0,
-        backgroundColor: Colors.white,
-        titleSpacing: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF0F172A)),
-          onPressed: () => Navigator.pop(context),
+        scrolledUnderElevation: 0,
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+            tooltip: 'Open Menu Drawer',
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
         ),
+        titleSpacing: 0,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.assignment_ind_outlined, size: 20, color: tabColor),
-                const SizedBox(width: 8),
-                const Text(
-                  'कार्यकर्ता काम व्यवस्थापन',
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
-                  ),
-                ),
-              ],
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Text(
+              'Karyakarta Work Management',
+              style: TextStyle(
+                fontSize: 17.5,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: -0.2,
+              ),
             ),
-            const Text(
-              'कार्यालय, शासकीय आणि पक्ष टीमला काम सोपवा व देखरेख करा',
-              style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+            Text(
+              'Assign field tasks and track completion metrics',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFFE0F2FE),
+              ),
             ),
           ],
         ),
@@ -359,16 +365,16 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
             padding: const EdgeInsets.only(right: 8),
             child: OutlinedButton.icon(
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Color(0xFFCBD5E1)),
+                side: const BorderSide(color: Colors.white38),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                backgroundColor: Colors.white,
+                backgroundColor: Colors.white.withOpacity(0.18),
               ),
               onPressed: _showReportPreviewDialog,
-              icon: const Icon(Icons.picture_as_pdf_outlined, size: 16, color: Color(0xFF0284C7)),
+              icon: const Icon(Icons.picture_as_pdf_outlined, size: 16, color: Colors.white),
               label: const Text(
-                'कार्यभार अहवाल',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                'Workload Report',
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
               ),
             ),
           ),
@@ -409,7 +415,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                       Icon(Icons.bar_chart_rounded, size: 20, color: tabColor),
                       const SizedBox(width: 6),
                       const Text(
-                        'टीम कार्यभार मॉनिटर',
+                        'Team Workload Monitor',
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                       ),
                     ],
@@ -422,14 +428,14 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                     onPressed: _generatePdfReport,
                     icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
                     label: const Text(
-                      'पीडीएफ डाउनलोड',
+                      'Download PDF',
                       style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                     ),
                   ),
                 ],
               ),
               const Text(
-                'प्रत्येक सदस्याला सोपवलेली कामे व तक्रारी — तपशील पाहण्यासाठी कार्डवर क्लिक करा',
+                'Tasks & complaints assigned to each member — click card to expand',
                 style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
               ),
               const SizedBox(height: 10),
@@ -476,9 +482,9 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
   // ─────────────────────────────────────────────────────────────
   Widget _buildCategoryTabBar() {
     final tabs = [
-      {'id': 'Office', 'title': 'कार्यालय टीम', 'icon': Icons.apartment_outlined, 'color': const Color(0xFF6D28D9)},
-      {'id': 'Cooperative', 'title': 'शासकीय काम', 'icon': Icons.work_outline_rounded, 'color': const Color(0xFF0284C7)},
-      {'id': 'Party', 'title': 'पक्ष कार्यकर्ता', 'icon': Icons.flag_outlined, 'color': const Color(0xFFF97316)},
+      {'id': 'Office', 'title': 'Office Team', 'icon': Icons.apartment_outlined, 'color': const Color(0xFF6D28D9)},
+      {'id': 'Cooperative', 'title': 'Govt Work', 'icon': Icons.work_outline_rounded, 'color': const Color(0xFF0284C7)},
+      {'id': 'Party', 'title': 'Party Cadre', 'icon': Icons.flag_outlined, 'color': const Color(0xFFF97316)},
     ];
 
     return Container(
@@ -573,7 +579,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
               },
               style: const TextStyle(fontSize: 13),
               decoration: InputDecoration(
-                hintText: 'नाव किंवा मोबाईल शोधा...',
+                hintText: 'Search name or mobile...',
                 hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                 prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF94A3B8)),
                 suffixIcon: _searchQuery.isNotEmpty
@@ -612,7 +618,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                 icon: const Icon(Icons.keyboard_arrow_down, size: 18, color: Color(0xFF64748B)),
                 style: const TextStyle(fontSize: 12, color: Color(0xFF0F172A), fontWeight: FontWeight.w500),
                 items: [
-                  const DropdownMenuItem(value: 'All', child: Text('सर्व क्षेत्र')),
+                  const DropdownMenuItem(value: 'All', child: Text('All Areas')),
                   ..._areas.map((a) => DropdownMenuItem(value: a, child: Text(a))),
                 ],
                 onChanged: (val) {
@@ -636,33 +642,33 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
     return Row(
       children: [
         _buildMetricTile(
-          title: 'एकूण कार्यभार',
+          title: 'Total Workload',
           value: '${_summary.totalLoad}',
-          subtitle: '${_summary.totalTasks} कामे · ${_summary.totalComplaints} तक्रारी',
+          subtitle: '${_summary.totalTasks} Tasks · ${_summary.totalComplaints} Complaints',
           bg: const Color(0xFFF1F5F9),
           textColor: const Color(0xFF1E293B),
         ),
         const SizedBox(width: 8),
         _buildMetricTile(
-          title: 'प्रलंबित',
+          title: 'Pending',
           value: '${_summary.pendingLoad}',
-          subtitle: 'लक्ष देणे आवश्यक',
+          subtitle: 'Needs Attention',
           bg: const Color(0xFFFFFBEB),
           textColor: const Color(0xFFB45309),
         ),
         const SizedBox(width: 8),
         _buildMetricTile(
-          title: 'प्रगतीपथावर',
+          title: 'In Progress',
           value: '${_summary.inProgressLoad}',
-          subtitle: 'काम सुरू आहे',
+          subtitle: 'Active Work',
           bg: const Color(0xFFEFF6FF),
           textColor: const Color(0xFF1D4ED8),
         ),
         const SizedBox(width: 8),
         _buildMetricTile(
-          title: 'पूर्ण झाले',
+          title: 'Completed',
           value: '${_summary.completedLoad}',
-          subtitle: 'पूर्ण व बंद',
+          subtitle: 'Resolved & Closed',
           bg: const Color(0xFFECFDF5),
           textColor: const Color(0xFF047857),
         ),
@@ -846,7 +852,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                   ),
                   child: Row(
                     children: [
-                      const Text('कामे: ', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                      const Text('Tasks: ', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
                       Text(
                         '${workload.tasksPending}',
                         style: TextStyle(
@@ -870,7 +876,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                   ),
                   child: Row(
                     children: [
-                      const Text('तक्रारी: ', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                      const Text('Complaints: ', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
                       Text(
                         '${workload.complaintsPending}',
                         style: TextStyle(
@@ -895,7 +901,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          const Text('प्रगती: ', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                          const Text('Progress: ', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
                           Text(
                             '${workload.progressPct}%',
                             style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF047857)),
@@ -949,7 +955,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                     color: isSelected ? const Color(0xFF0284C7) : const Color(0xFF475569),
                   ),
                   label: Text(
-                    isSelected ? 'लपवा' : 'तपशील पहा',
+                    isSelected ? 'Hide' : 'View Details',
                     style: TextStyle(
                       fontSize: 11.5,
                       fontWeight: FontWeight.bold,
@@ -971,7 +977,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                   ),
                   onPressed: () => _openQuickTaskModal(staff),
                   icon: const Icon(Icons.add, size: 14),
-                  label: const Text('सोपवा', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                  label: const Text('Assign', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -1048,7 +1054,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                   ),
                   onPressed: () => _openQuickTaskModal(staff),
                   icon: const Icon(Icons.add, size: 14),
-                  label: const Text('काम सोपवा', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  label: const Text('Assign Task', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                 ),
                 const SizedBox(width: 4),
                 IconButton(
@@ -1068,15 +1074,15 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
             ),
             child: Row(
               children: [
-                _buildMiniStat('एकूण', '${workload.totalAssigned}', const Color(0xFF334155)),
-                _buildMiniStat('प्रलंबित', '${workload.totalPending}', const Color(0xFFD97706)),
-                _buildMiniStat('पूर्ण', '${workload.totalCompleted}', const Color(0xFF047857)),
-                _buildMiniStat('प्रगती', '${workload.progressPct}%', const Color(0xFF0284C7)),
+                _buildMiniStat('Total', '${workload.totalAssigned}', const Color(0xFF334155)),
+                _buildMiniStat('Pending', '${workload.totalPending}', const Color(0xFFD97706)),
+                _buildMiniStat('Done', '${workload.totalCompleted}', const Color(0xFF047857)),
+                _buildMiniStat('Progress', '${workload.progressPct}%', const Color(0xFF0284C7)),
               ],
             ),
           ),
 
-          // Sub-tabs (कामे / तक्रारी)
+          // Sub-tabs (Tasks / Complaints)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
             decoration: const BoxDecoration(
@@ -1084,9 +1090,9 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
             ),
             child: Row(
               children: [
-                _buildSubTabButton('tasks', 'कामे (Tasks)', workload.tasksTotal),
+                _buildSubTabButton('tasks', 'Tasks', workload.tasksTotal),
                 const SizedBox(width: 8),
-                _buildSubTabButton('complaints', 'तक्रारी (Complaints)', workload.complaintsTotal),
+                _buildSubTabButton('complaints', 'Complaints', workload.complaintsTotal),
               ],
             ),
           ),
@@ -1177,7 +1183,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
               children: [
                 Icon(Icons.check_circle_outline, size: 36, color: Color(0xFFCBD5E1)),
                 SizedBox(height: 6),
-                Text('अजून कोणतेही काम सोपवले नाही.', style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
+                Text('No tasks assigned yet.', style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
               ],
             ),
           ),
@@ -1305,11 +1311,11 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
                       value: task.assignedStaffId ?? '',
-                      hint: const Text('सोपवा...', style: TextStyle(fontSize: 10)),
+                      hint: const Text('Assign...', style: TextStyle(fontSize: 10)),
                       icon: const Icon(Icons.arrow_drop_down, size: 16),
                       style: const TextStyle(fontSize: 10.5, color: Color(0xFF0F172A)),
                       items: [
-                        const DropdownMenuItem(value: '', child: Text('न सोपवलेले')),
+                        const DropdownMenuItem(value: '', child: Text('Unassigned')),
                         ..._allStaff.map(
                           (s) => DropdownMenuItem(value: s.id, child: Text(s.name)),
                         ),
@@ -1337,7 +1343,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                     onPressed: () => _handleUpdateTaskStatus(task.id, task.status),
                     icon: const Icon(Icons.bolt, size: 12),
                     label: Text(
-                      task.isPending ? 'सुरू करा' : 'पूर्ण',
+                      task.isPending ? 'Start' : 'Complete',
                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -1359,7 +1365,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
               children: [
                 Icon(Icons.assignment_turned_in_outlined, size: 36, color: Color(0xFFCBD5E1)),
                 SizedBox(height: 6),
-                Text('कोणतीही तक्रार सोपवली नाही.', style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
+                Text('No complaints assigned.', style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
               ],
             ),
           ),
@@ -1414,7 +1420,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
             if (complaint.voterName != null) ...[
               const SizedBox(height: 2),
               Text(
-                'कडून: ${complaint.voterName} ${complaint.voterMobile != null ? '(${complaint.voterMobile})' : ''}',
+                'From: ${complaint.voterName} ${complaint.voterMobile != null ? '(${complaint.voterMobile})' : ''}',
                 style: const TextStyle(fontSize: 11, color: Color(0xFF0284C7), fontWeight: FontWeight.w500),
               ),
             ],
@@ -1470,11 +1476,11 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
                       value: complaint.assignedTo ?? '',
-                      hint: const Text('सोपवा...', style: TextStyle(fontSize: 10)),
+                      hint: const Text('Assign...', style: TextStyle(fontSize: 10)),
                       icon: const Icon(Icons.arrow_drop_down, size: 16),
                       style: const TextStyle(fontSize: 10.5, color: Color(0xFF0F172A)),
                       items: [
-                        const DropdownMenuItem(value: '', child: Text('न सोपवलेले')),
+                        const DropdownMenuItem(value: '', child: Text('Unassigned')),
                         ..._allStaff.map(
                           (s) => DropdownMenuItem(value: s.id, child: Text(s.name)),
                         ),
@@ -1502,7 +1508,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                     onPressed: () => _handleUpdateComplaintStatus(complaint.id, complaint.status),
                     icon: const Icon(Icons.bolt, size: 12),
                     label: Text(
-                      complaint.isPending ? 'सुरू' : 'सोडवा',
+                      complaint.isPending ? 'Start' : 'Resolve',
                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -1540,11 +1546,11 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'न सोपवलेल्या कामांचा संच (Unassigned Work Pool)',
+                        'Unassigned Work Pool',
                         style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF92400E)),
                       ),
                       Text(
-                        '${_unassignedTasks.length} कामे व ${_unassignedComplaints.length} तक्रारी सोपवणे बाकी आहे',
+                        '${_unassignedTasks.length} tasks and ${_unassignedComplaints.length} complaints pending assignment',
                         style: const TextStyle(fontSize: 11, color: Color(0xFFB45309)),
                       ),
                     ],
@@ -1560,7 +1566,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
               child: Text(
-                'असोपवलेली कामे (${_unassignedTasks.length}):',
+                'Unassigned Tasks (${_unassignedTasks.length}):',
                 style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF92400E)),
               ),
             ),
@@ -1572,7 +1578,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
               child: Text(
-                'असोपवलेल्या तक्रारी (${_unassignedComplaints.length}):',
+                'Unassigned Complaints (${_unassignedComplaints.length}):',
                 style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF92400E)),
               ),
             ),
@@ -1643,10 +1649,10 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 value: '',
-                hint: const Text('— सोपवा —', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF15803D))),
+                hint: const Text('— Assign —', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF15803D))),
                 icon: const Icon(Icons.arrow_drop_down, size: 16, color: Color(0xFF15803D)),
                 items: [
-                  const DropdownMenuItem(value: '', child: Text('— सोपवा —', style: TextStyle(color: Color(0xFF94A3B8)))),
+                  const DropdownMenuItem(value: '', child: Text('— Assign —', style: TextStyle(color: Color(0xFF94A3B8)))),
                   ..._allStaff.map(
                     (s) => DropdownMenuItem(value: s.id, child: Text('${s.name} (${s.category})')),
                   ),
@@ -1711,10 +1717,10 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 value: '',
-                hint: const Text('— सोपवा —', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF15803D))),
+                hint: const Text('— Assign —', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF15803D))),
                 icon: const Icon(Icons.arrow_drop_down, size: 16, color: Color(0xFF15803D)),
                 items: [
-                  const DropdownMenuItem(value: '', child: Text('— सोपवा —', style: TextStyle(color: Color(0xFF94A3B8)))),
+                  const DropdownMenuItem(value: '', child: Text('— Assign —', style: TextStyle(color: Color(0xFF94A3B8)))),
                   ..._allStaff.map(
                     (s) => DropdownMenuItem(value: s.id, child: Text('${s.name} (${s.category})')),
                   ),
@@ -1746,13 +1752,13 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
           const Icon(Icons.people_outline, size: 48, color: Color(0xFF94A3B8)),
           const SizedBox(height: 10),
           Text(
-            '${_getTabTitle(_activeTab)} मधील कोणतेही सदस्य आढळले नाहीत.',
+            'No members found in ${_getTabTitle(_activeTab)}.',
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 4),
           const Text(
-            'शोध किंवा फिल्टर निकष बदला अथवा कर्मचारी व्यवस्थापनावरून सदस्य जोडा.',
+            'Change search filters or add members from staff management.',
             style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
             textAlign: TextAlign.center,
           ),
@@ -1826,7 +1832,7 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
         widget.onTaskAssigned();
         messenger.showSnackBar(
           SnackBar(
-            content: Text('${widget.staff.name} ला काम यशस्वीरीत्या सोपवले!'),
+            content: Text('Task assigned to ${widget.staff.name} successfully!'),
             backgroundColor: const Color(0xFF047857),
           ),
         );
@@ -1836,7 +1842,7 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
         setState(() => _isSaving = false);
         messenger.showSnackBar(
           const SnackBar(
-            content: Text('काम सोपवण्यात त्रुटी आली. कृपया पुन्हा प्रयत्न करा.'),
+            content: Text('Error assigning task. Please try again.'),
             backgroundColor: Color(0xFFDC2626),
           ),
         );
@@ -1875,11 +1881,11 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'नवीन काम सोपवा (Assign New Task)',
+                        'Assign New Task',
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                       ),
                       Text(
-                        'कडे: ${widget.staff.displayName}',
+                        'To: ${widget.staff.displayName}',
                         style: const TextStyle(fontSize: 12, color: Color(0xFFE0F2FE)),
                       ),
                     ],
@@ -1903,7 +1909,7 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
                     children: [
                       // Task Title
                       const Text(
-                        'कामाचे शीर्षक *',
+                        'Task Title *',
                         style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
                       ),
                       const SizedBox(height: 4),
@@ -1911,14 +1917,14 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
                         controller: _titleController,
                         style: const TextStyle(fontSize: 13),
                         decoration: InputDecoration(
-                          hintText: 'उदा. प्रभाग १२ मधील रस्ता खड्डे बुजविणे',
+                          hintText: 'e.g. Ward 12 road pothole repairs',
                           hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                           filled: true,
                           fillColor: const Color(0xFFF8FAFC),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
                         ),
-                        validator: (v) => (v == null || v.trim().isEmpty) ? 'कृपया कामाचे शीर्षक प्रविष्ट करा' : null,
+                        validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter task title' : null,
                       ),
                       const SizedBox(height: 12),
 
@@ -1930,7 +1936,7 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('प्राधान्य', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                                const Text('Priority', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
                                 const SizedBox(height: 4),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -1945,9 +1951,9 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
                                       isExpanded: true,
                                       style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A)),
                                       items: const [
-                                        DropdownMenuItem(value: 'Low', child: Text('कमी (Low)')),
-                                        DropdownMenuItem(value: 'Medium', child: Text('मध्यम (Medium)')),
-                                        DropdownMenuItem(value: 'High', child: Text('उच्च (High)')),
+                                        DropdownMenuItem(value: 'Low', child: Text('Low')),
+                                        DropdownMenuItem(value: 'Medium', child: Text('Medium')),
+                                        DropdownMenuItem(value: 'High', child: Text('High')),
                                       ],
                                       onChanged: (v) => setState(() => _priority = v ?? 'Medium'),
                                     ),
@@ -1963,7 +1969,7 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('देय तारीख', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                                const Text('Due Date', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
                                 const SizedBox(height: 4),
                                 InkWell(
                                   onTap: () async {
@@ -1987,7 +1993,7 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
                                         const Icon(Icons.calendar_today, size: 14, color: Color(0xFF64748B)),
                                         const SizedBox(width: 6),
                                         Text(
-                                          _dueDate != null ? DateFormat('dd/MM/yyyy').format(_dueDate!) : 'तारीख निवडा',
+                                          _dueDate != null ? DateFormat('dd/MM/yyyy').format(_dueDate!) : 'Select Date',
                                           style: const TextStyle(fontSize: 12.5, color: Color(0xFF0F172A)),
                                         ),
                                       ],
@@ -2003,7 +2009,7 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
 
                       // Address / Location
                       const Text(
-                        'स्थान / पत्ता',
+                        'Location / Address',
                         style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
                       ),
                       const SizedBox(height: 4),
@@ -2011,7 +2017,7 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
                         controller: _addressController,
                         style: const TextStyle(fontSize: 13),
                         decoration: InputDecoration(
-                          hintText: 'उदा. शनिवार पेठ गणपती मंदिरासमोर',
+                          hintText: 'e.g. Opposite Ganpati Temple, Shaniwar Peth',
                           hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                           filled: true,
                           fillColor: const Color(0xFFF8FAFC),
@@ -2023,7 +2029,7 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
 
                       // Description
                       const Text(
-                        'तपशील / सूचना',
+                        'Details / Instructions',
                         style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
                       ),
                       const SizedBox(height: 4),
@@ -2032,7 +2038,7 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
                         maxLines: 3,
                         style: const TextStyle(fontSize: 13),
                         decoration: InputDecoration(
-                          hintText: 'कामाबद्दल अधिक माहिती व सूचना लिहा...',
+                          hintText: 'Enter more details and instructions about this task...',
                           hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                           filled: true,
                           fillColor: const Color(0xFFF8FAFC),
@@ -2048,12 +2054,12 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
                           Expanded(
                             child: OutlinedButton(
                               style: OutlinedButton.styleFrom(
-                                side: const BorderSide(color: Color(0xFFCBD5E1)),
+                                side: const BorderSide(color: Colors.white38),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                 padding: const EdgeInsets.symmetric(vertical: 12),
                               ),
                               onPressed: () => Navigator.pop(context),
-                              child: const Text('रद्द करा', style: TextStyle(color: Color(0xFF64748B))),
+                              child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -2069,7 +2075,7 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
                               onPressed: _isSaving ? null : _submit,
                               child: _isSaving
                                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                                  : const Text('काम सोपवा', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  : const Text('Assign Task', style: TextStyle(fontWeight: FontWeight.bold)),
                             ),
                           ),
                         ],

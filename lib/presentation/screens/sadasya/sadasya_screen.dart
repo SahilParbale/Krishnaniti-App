@@ -96,7 +96,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
 
   Future<void> _openWhatsApp(String number, String name) async {
     final clean = number.replaceAll(RegExp(r'[^\d]'), '');
-    final uri = Uri.parse('https://wa.me/$clean?text=नमस्कार $name जी,');
+    final uri = Uri.parse('https://wa.me/$clean?text=Hello $name,');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
@@ -123,7 +123,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
                   CircularProgressIndicator(strokeWidth: 3, color: Color(0xFF0284C7)),
                   SizedBox(height: 16),
                   Text(
-                    'पक्ष सदस्य माहिती लोड होत आहे...',
+                    'Loading party members...',
                     style: TextStyle(fontSize: 14, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                   ),
                 ],
@@ -171,7 +171,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
         backgroundColor: const Color(0xFF0284C7),
         icon: const Icon(Icons.person_add_rounded, color: Colors.white),
         label: const Text(
-          'सदस्य जोडा',
+          'Add Member',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
@@ -182,39 +182,53 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
     return AppBar(
       backgroundColor: const Color(0xFF0284C7),
       elevation: 0,
+      scrolledUnderElevation: 0,
       centerTitle: false,
-      leading: IconButton(
-        icon: const Icon(Icons.menu_rounded, color: Colors.white),
-        onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-        tooltip: 'मेनू उघडा',
+      leading: Builder(
+        builder: (ctx) => IconButton(
+          icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+          tooltip: 'Open Menu Drawer',
+          onPressed: () => Scaffold.of(ctx).openDrawer(),
+        ),
       ),
-      title: const Column(
+      titleSpacing: 0,
+      title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+        mainAxisSize: MainAxisSize.min,
+        children: const [
           Text(
-            'पक्ष सदस्य (सदस्य नोंदणी)',
-            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+            'Sadasya (Party Members)',
+            style: TextStyle(
+              fontSize: 17.5,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+              letterSpacing: -0.2,
+            ),
           ),
           Text(
-            'Party Members & Active Cadre Directory',
-            style: TextStyle(color: Color(0xFFBAE6FD), fontSize: 11),
+            'Active party cadre, booth coordinators and ward volunteers',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w400,
+              color: Color(0xFFE0F2FE),
+            ),
           ),
         ],
       ),
       actions: [
         IconButton(
           icon: const Icon(Icons.help_outline_rounded, color: Colors.white),
-          tooltip: 'मदत व माहिती (Help Guide)',
+          tooltip: 'Help Guide',
           onPressed: _showHelpGuide,
         ),
         IconButton(
           icon: const Icon(Icons.picture_as_pdf_rounded, color: Colors.white),
-          tooltip: 'पीडीएफ अहवाल (Download PDF)',
+          tooltip: 'Download PDF Report',
           onPressed: _exportPdfReport,
         ),
         IconButton(
           icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-          tooltip: 'ताजे करा',
+          tooltip: 'Refresh',
           onPressed: _loadMembers,
         ),
       ],
@@ -252,12 +266,12 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'प्रभाग १२ पक्ष संघटन व कार्यकर्ते',
+                  'Ward 12 Party Organization & Cadre',
                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                 ),
                 const SizedBox(height: 2),
                 const Text(
-                  'बूथ प्रमुख, वॉर्ड समन्वयक आणि नोंदणीकृत सदस्य यादी',
+                  'Booth in-charges, ward coordinators & registered members',
                   style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                 ),
               ],
@@ -271,7 +285,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
               border: Border.all(color: const Color(0xFFBBF7D0)),
             ),
             child: Text(
-              'एकूण: $totalCount',
+              'Total: $totalCount',
               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
             ),
           ),
@@ -286,9 +300,9 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
         final isWide = constraints.maxWidth >= 600;
 
         final cardTotal = _buildKpiCard(
-          'एकूण सदस्य (Total)',
+          'Total Cadre',
           '$total',
-          'नोंदणीकृत कार्यकर्ते',
+          'Registered Cadre',
           Icons.group_rounded,
           const Color(0xFF0284C7),
           const Color(0xFFEFF6FF),
@@ -296,9 +310,9 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
         );
 
         final cardVoters = _buildKpiCard(
-          'मतदार सदस्य (Voters)',
+          'Voter Members',
           '$voters',
-          'प्रभागातील मतदार नोंद',
+          'Registered Voters',
           Icons.how_to_vote_rounded,
           const Color(0xFF16A34A),
           const Color(0xFFF0FDF4),
@@ -306,9 +320,9 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
         );
 
         final cardNonVoters = _buildKpiCard(
-          'इतर सदस्य (Members)',
+          'Other Members',
           '$nonVoters',
-          'थेट सदस्य नोंदणी',
+          'Direct Cadre',
           Icons.person_outline_rounded,
           const Color(0xFFA855F7),
           const Color(0xFFFAF5FF),
@@ -316,9 +330,9 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
         );
 
         final cardAreas = _buildKpiCard(
-          'सक्रिय परिसर (Areas)',
+          'Active Areas',
           '$areas',
-          'शनिवार, कसबा, इ.',
+          'Shaniwar, Kasba, etc.',
           Icons.location_city_rounded,
           const Color(0xFFD97706),
           const Color(0xFFFFFBEB),
@@ -416,7 +430,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
                 controller: _searchCtrl,
                 onChanged: (_) => setState(() {}),
                 decoration: InputDecoration(
-                  hintText: 'नाव, मोबाईल, किंवा पत्त्याने शोधा...',
+                  hintText: 'Search by name, mobile, or address...',
                   hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                   prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF64748B), size: 20),
                   suffixIcon: _searchCtrl.text.isNotEmpty
@@ -458,13 +472,13 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
                 children: [
                   _buildViewButton(
                     icon: Icons.view_agenda_outlined,
-                    tooltip: 'कार्ड व्ह्यू (Cards)',
+                    tooltip: 'Card View',
                     isSelected: _displayMode == 'cards',
                     onTap: () => setState(() => _displayMode = 'cards'),
                   ),
                   _buildViewButton(
                     icon: Icons.table_chart_outlined,
-                    tooltip: 'तक्ता व्ह्यू (Table)',
+                    tooltip: 'Table View',
                     isSelected: _displayMode == 'table',
                     onTap: () => setState(() => _displayMode = 'table'),
                   ),
@@ -481,11 +495,11 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
           scrollDirection: Axis.horizontal,
           child: Row(
             children: [
-              _buildTypeFilterChip('all', 'सर्व सदस्य (${_allMembers.length})'),
+              _buildTypeFilterChip('all', 'All Members (${_allMembers.length})'),
               const SizedBox(width: 8),
-              _buildTypeFilterChip('voter', 'नोंदणीकृत मतदार (${_allMembers.where((m) => m.isVoter).length})'),
+              _buildTypeFilterChip('voter', 'Registered Voters (${_allMembers.where((m) => m.isVoter).length})'),
               const SizedBox(width: 8),
-              _buildTypeFilterChip('non-voter', 'केवळ सदस्य (${_allMembers.where((m) => !m.isVoter).length})'),
+              _buildTypeFilterChip('non-voter', 'Party Members Only (${_allMembers.where((m) => !m.isVoter).length})'),
             ],
           ),
         ),
@@ -497,7 +511,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
           scrollDirection: Axis.horizontal,
           child: Row(
             children: [
-              _buildAreaChip('All', 'सर्व परिसर'),
+              _buildAreaChip('All', 'All Areas'),
               ..._areaCounts.entries.map((entry) {
                 return Padding(
                   padding: const EdgeInsets.only(left: 6),
@@ -662,7 +676,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
                                     ),
                                   ),
                                   child: Text(
-                                    member.isVoter ? 'नोंदणीकृत मतदार' : 'पक्ष सदस्य',
+                                    member.isVoter ? 'Registered Voter' : 'Party Member',
                                     style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
@@ -710,7 +724,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
                               children: [
                                 Icon(Icons.account_circle_outlined, size: 18, color: Color(0xFF0284C7)),
                                 SizedBox(width: 8),
-                                Text('तपशील पहा', style: TextStyle(fontSize: 13)),
+                                Text('View Profile', style: TextStyle(fontSize: 13)),
                               ],
                             ),
                           ),
@@ -720,7 +734,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
                               children: [
                                 Icon(Icons.edit_outlined, size: 18, color: Color(0xFF475569)),
                                 SizedBox(width: 8),
-                                Text('संपादित करा', style: TextStyle(fontSize: 13)),
+                                Text('Edit Member', style: TextStyle(fontSize: 13)),
                               ],
                             ),
                           ),
@@ -730,7 +744,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
                               children: [
                                 Icon(Icons.delete_outline_rounded, size: 18, color: Color(0xFFDC2626)),
                                 SizedBox(width: 8),
-                                Text('काढून टाका', style: TextStyle(fontSize: 13, color: Color(0xFFDC2626))),
+                                Text('Remove', style: TextStyle(fontSize: 13, color: Color(0xFFDC2626))),
                               ],
                             ),
                           ),
@@ -749,7 +763,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
                       const Icon(Icons.location_on_outlined, size: 14, color: Color(0xFF64748B)),
                       const SizedBox(width: 4),
                       Text(
-                        member.area ?? member.ward ?? 'शनिवार पेठ',
+                        member.area ?? member.ward ?? 'Shaniwar Peth',
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
                       ),
                       const SizedBox(width: 8),
@@ -796,7 +810,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
                                   Icon(Icons.call_rounded, size: 13, color: Color(0xFF0284C7)),
                                   SizedBox(width: 4),
                                   Text(
-                                    'कॉल',
+                                    'Call',
                                     style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                                   ),
                                 ],
@@ -854,13 +868,13 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
             horizontalMargin: 16,
             columnSpacing: 18,
             columns: const [
-              DataColumn(label: Text('नाव', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('मोबाईल', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('परिसर', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('पत्ता', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('प्रकार', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('जबाबदारी', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('कृती', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(label: Text('Name', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(label: Text('Mobile', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(label: Text('Area', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(label: Text('Address', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(label: Text('Type', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(label: Text('Role', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(label: Text('Action', style: TextStyle(fontWeight: FontWeight.bold))),
             ],
             rows: _filteredMembers.map((m) {
               return DataRow(
@@ -885,7 +899,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        m.isVoter ? 'मतदार' : 'सदस्य',
+                        m.isVoter ? 'Voter' : 'Member',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
@@ -901,12 +915,12 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
                         IconButton(
                           icon: const Icon(Icons.call_rounded, size: 16, color: Color(0xFF0284C7)),
                           onPressed: () => _makeCall(m.mobile),
-                          tooltip: 'कॉल',
+                          tooltip: 'Call',
                         ),
                         IconButton(
                           icon: const Icon(Icons.edit_outlined, size: 16, color: Color(0xFF64748B)),
                           onPressed: () => _openEditMemberDialog(m),
-                          tooltip: 'संपादित करा',
+                          tooltip: 'Edit',
                         ),
                       ],
                     ),
@@ -929,12 +943,12 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
           Icon(Icons.person_search_rounded, size: 48, color: Colors.grey.shade400),
           const SizedBox(height: 12),
           const Text(
-            'कोणतेही पक्ष सदस्य आढळले नाहीत',
+            'No party members found',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
           ),
           const SizedBox(height: 4),
           const Text(
-            'शोध निकष बदला किंवा "सदस्य जोडा" बटणावर क्लिक करा',
+            'Adjust your filters or click "Add Member" button',
             style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
           ),
         ],
@@ -959,7 +973,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
             await _loadMembers();
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('${member.displayName} यांना सदस्य यादीतून काढले.')),
+                SnackBar(content: Text('${member.displayName} removed from members list.')),
               );
             }
           },
@@ -977,7 +991,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
           children: [
             Icon(Icons.help_outline_rounded, color: Color(0xFF0284C7)),
             SizedBox(width: 8),
-            Text('पक्ष सदस्य व्यवस्थापन मदत', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text('Party Members Management Guide', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ],
         ),
         content: const SingleChildScrollView(
@@ -986,42 +1000,42 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                '१. मतदार यादीतून सदस्य नोंदणी:',
+                '1. Member Registration from Voter List:',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
               ),
               SizedBox(height: 4),
               Text(
-                '"सदस्य जोडा" वर क्लिक करून पहिल्या टॅबमध्ये प्रभागातील मतदार शोधा आणि थेट एक क्लिकवर पक्ष सदस्य म्हणून जोडा.',
+                'Click "Add Member" and find voters in the ward from the first tab to register them directly as party members.',
                 style: TextStyle(fontSize: 12, color: Color(0xFF475569)),
               ),
               SizedBox(height: 12),
               Text(
-                '२. थेट नवीन सदस्य नोंदणी:',
+                '2. Direct New Member Registration:',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
               ),
               SizedBox(height: 4),
               Text(
-                'दुसऱ्या टॅबमध्ये नाव, मोबाईल, प्रभाग व पत्ता भरून थेट नवीन पक्ष कार्यकर्त्याची नोंद करा.',
+                'In the second tab, fill in name, mobile, ward, and address to directly register a new party worker.',
                 style: TextStyle(fontSize: 12, color: Color(0xFF475569)),
               ),
               SizedBox(height: 12),
               Text(
-                '३. थेट संपर्क (Call / WhatsApp):',
+                '3. Direct Contact (Call / WhatsApp):',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
               ),
               SizedBox(height: 4),
               Text(
-                'प्रत्येक सदस्याच्या कार्डवर कॉल व व्हॉट्सॲप मेसेजिंगची थेट सुविधा उपलब्ध आहे.',
+                'Direct calling and WhatsApp messaging options are available on each member card.',
                 style: TextStyle(fontSize: 12, color: Color(0xFF475569)),
               ),
               SizedBox(height: 12),
               Text(
-                '४. अधिकृत PDF अहवाल:',
+                '4. Official PDF Report:',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
               ),
               SizedBox(height: 4),
               Text(
-                'वरील "PDF अहवाल" चिन्हावर क्लिक करून संपूर्ण प्रभागाचा अधिकृत लँडस्केप A4 अहवाल जनरेट व प्रिंट करा.',
+                'Click the "PDF Report" icon above to generate and export the official ward report.',
                 style: TextStyle(fontSize: 12, color: Color(0xFF475569)),
               ),
             ],
@@ -1030,7 +1044,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('समजले', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.bold)),
+            child: const Text('Got it', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -1041,7 +1055,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
     try {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('पक्ष सदस्य अधिकृत PDF अहवाल तयार होत आहे...'),
+          content: Text('Generating party cadre official PDF report...'),
           duration: Duration(seconds: 2),
         ),
       );
@@ -1055,7 +1069,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('PDF तयार करताना त्रुटी: $e'),
+            content: Text('Error generating PDF: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -1080,9 +1094,9 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
     final nameCtrl = TextEditingController(text: member.name);
     final mobileCtrl = TextEditingController(text: member.mobile);
     final ageCtrl = TextEditingController(text: member.age > 0 ? member.age.toString() : '');
-    final areaCtrl = TextEditingController(text: member.area ?? 'शनिवार पेठ');
+    final areaCtrl = TextEditingController(text: member.area ?? 'Shaniwar Peth');
     final addressCtrl = TextEditingController(text: member.displayAddress);
-    final roleCtrl = TextEditingController(text: member.role ?? 'सक्रिय कार्यकर्ता');
+    final roleCtrl = TextEditingController(text: member.role ?? 'Active Member');
     String gender = member.gender;
 
     showDialog(
@@ -1090,20 +1104,20 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('सदस्य माहिती संपादित करा', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          title: const Text('Edit Member Details', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   controller: nameCtrl,
-                  decoration: const InputDecoration(labelText: 'पूर्ण नाव', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(labelText: 'Full Name', border: OutlineInputBorder()),
                 ),
                 const SizedBox(height: 10),
                 TextField(
                   controller: mobileCtrl,
                   keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(labelText: 'मोबाईल क्रमांक', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(labelText: 'Mobile Number', border: OutlineInputBorder()),
                 ),
                 const SizedBox(height: 10),
                 Row(
@@ -1112,18 +1126,18 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
                       child: TextField(
                         controller: ageCtrl,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: 'वय', border: OutlineInputBorder()),
+                        decoration: const InputDecoration(labelText: 'Age', border: OutlineInputBorder()),
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: DropdownButtonFormField<String>(
                         value: gender,
-                        decoration: const InputDecoration(labelText: 'लिंग', border: OutlineInputBorder()),
+                        decoration: const InputDecoration(labelText: 'Gender', border: OutlineInputBorder()),
                         items: const [
-                          DropdownMenuItem(value: 'M', child: Text('पुरुष (Male)')),
-                          DropdownMenuItem(value: 'F', child: Text('स्त्री (Female)')),
-                          DropdownMenuItem(value: 'O', child: Text('इतर (Other)')),
+                          DropdownMenuItem(value: 'M', child: Text('Male')),
+                          DropdownMenuItem(value: 'F', child: Text('Female')),
+                          DropdownMenuItem(value: 'O', child: Text('Other')),
                         ],
                         onChanged: (val) {
                           if (val != null) setDialogState(() => gender = val);
@@ -1135,17 +1149,17 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
                 const SizedBox(height: 10),
                 TextField(
                   controller: areaCtrl,
-                  decoration: const InputDecoration(labelText: 'परिसर / भाग', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(labelText: 'Area / Region', border: OutlineInputBorder()),
                 ),
                 const SizedBox(height: 10),
                 TextField(
                   controller: addressCtrl,
-                  decoration: const InputDecoration(labelText: 'पत्ता', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(labelText: 'Address', border: OutlineInputBorder()),
                 ),
                 const SizedBox(height: 10),
                 TextField(
                   controller: roleCtrl,
-                  decoration: const InputDecoration(labelText: 'हुद्दा / जबाबदारी (Role)', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(labelText: 'Role / Designation', border: OutlineInputBorder()),
                 ),
               ],
             ),
@@ -1153,7 +1167,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('रद्द करा'),
+              child: const Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -1181,11 +1195,11 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
 
                 if (!mounted) return;
                 messenger.showSnackBar(
-                  const SnackBar(content: Text('सदस्य माहिती अद्ययावत केली!')),
+                  const SnackBar(content: Text('Member details updated successfully!')),
                 );
               },
               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0284C7)),
-              child: const Text('जतन करा', style: TextStyle(color: Colors.white)),
+              child: const Text('Save', style: TextStyle(color: Colors.white)),
             ),
           ],
         ),
@@ -1198,12 +1212,12 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('सदस्य काढण्याची खात्री करा', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        content: Text('आपण खरोखरच "${member.displayName}" यांना सदस्य यादीतून काढू इच्छिता?'),
+        title: const Text('Confirm Remove Member', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        content: Text('Are you sure you want to remove "${member.displayName}" from members list?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('रद्द करा'),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -1215,11 +1229,11 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
 
               if (!mounted) return;
               messenger.showSnackBar(
-                SnackBar(content: Text('${member.displayName} यांना सदस्य यादीतून काढले.')),
+                SnackBar(content: Text('${member.displayName} removed from members list.')),
               );
             },
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
-            child: const Text('काढून टाका', style: TextStyle(color: Colors.white)),
+            child: const Text('Remove', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -1246,16 +1260,16 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
   bool _isSearchingVoters = false;
   VoterModel? _selectedVoter;
   final TextEditingController _confirmMobileCtrl = TextEditingController(text: '+91 ');
-  final TextEditingController _confirmAreaCtrl = TextEditingController(text: 'शनिवार पेठ');
-  final TextEditingController _confirmRoleCtrl = TextEditingController(text: 'बूथ कार्यकर्ता');
+  final TextEditingController _confirmAreaCtrl = TextEditingController(text: 'Shaniwar Peth');
+  final TextEditingController _confirmRoleCtrl = TextEditingController(text: 'Booth Cadre');
 
   // Manual Tab State
   final TextEditingController _manualNameCtrl = TextEditingController();
   final TextEditingController _manualMobileCtrl = TextEditingController(text: '+91 ');
   final TextEditingController _manualAgeCtrl = TextEditingController();
-  final TextEditingController _manualAreaCtrl = TextEditingController(text: 'शनिवार पेठ');
+  final TextEditingController _manualAreaCtrl = TextEditingController(text: 'Shaniwar Peth');
   final TextEditingController _manualAddressCtrl = TextEditingController();
-  final TextEditingController _manualRoleCtrl = TextEditingController(text: 'सक्रिय कार्यकर्ता');
+  final TextEditingController _manualRoleCtrl = TextEditingController(text: 'Active Member');
   String _manualGender = 'M';
 
   @override
@@ -1333,7 +1347,7 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'नवीन पक्ष सदस्य जोडा',
+                  'Add New Party Member',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                 ),
                 IconButton(
@@ -1354,11 +1368,11 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
             tabs: const [
               Tab(
                 icon: Icon(Icons.how_to_vote_rounded, size: 18),
-                text: 'मतदार यादीतून जोडा',
+                text: 'Add from Voter List',
               ),
               Tab(
                 icon: Icon(Icons.edit_note_rounded, size: 18),
-                text: 'थेट नवीन नोंदणी',
+                text: 'Direct Registration',
               ),
             ],
           ),
@@ -1394,7 +1408,7 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
                 ),
                 const SizedBox(width: 4),
                 const Text(
-                  'सदस्य माहितीची खात्री करा',
+                  'Confirm Member Details',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                 ),
               ],
@@ -1415,9 +1429,9 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0369A1)),
                   ),
                   const SizedBox(height: 4),
-                  Text('EPIC: ${_selectedVoter!.epicNo} • वय: ${_selectedVoter!.age} • बूथ: ${_selectedVoter!.booth}'),
+                  Text('EPIC: ${_selectedVoter!.epicNo} • Age: ${_selectedVoter!.age} • Booth: ${_selectedVoter!.booth}'),
                   const SizedBox(height: 2),
-                  Text('पत्ता: ${_selectedVoter!.address}'),
+                  Text('Address: ${_selectedVoter!.address}'),
                 ],
               ),
             ),
@@ -1426,7 +1440,7 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
               controller: _confirmMobileCtrl,
               keyboardType: TextInputType.phone,
               decoration: const InputDecoration(
-                labelText: 'मोबाईल क्रमांक *',
+                labelText: 'Mobile Number *',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -1434,7 +1448,7 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
             TextField(
               controller: _confirmAreaCtrl,
               decoration: const InputDecoration(
-                labelText: 'परिसर / भाग *',
+                labelText: 'Area / Region *',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -1442,7 +1456,7 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
             TextField(
               controller: _confirmRoleCtrl,
               decoration: const InputDecoration(
-                labelText: 'हुद्दा / जबाबदारी (उदा. बूथ प्रमुख)',
+                labelText: 'Role / Designation (e.g. Booth Head)',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -1454,7 +1468,7 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
                 minimumSize: const Size(double.infinity, 48),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
-              child: const Text('सदस्य म्हणून जोडा', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              child: const Text('Add as Member', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -1469,7 +1483,7 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
             controller: _voterSearchCtrl,
             onChanged: _searchVoters,
             decoration: InputDecoration(
-              hintText: 'मतदाराचे नाव, EPIC क्र. किंवा मोबाईलने शोधा...',
+              hintText: 'Search by voter name, EPIC No. or mobile...',
               prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF0284C7)),
               filled: true,
               fillColor: const Color(0xFFF8FAFC),
@@ -1483,7 +1497,7 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
             const Expanded(
               child: Center(
                 child: Text(
-                  'मतदार शोधण्यासाठी वरील बॉक्समध्ये नाव किंवा EPIC क्रमांक टाईप करा',
+                  'Type voter name or EPIC number above to search voters',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
                 ),
@@ -1500,12 +1514,12 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
                     leading: CircleAvatar(
                       backgroundColor: const Color(0xFFE0F2FE),
                       child: Text(
-                        v.displayName.isNotEmpty ? v.displayName.characters.first : 'म',
+                        v.displayName.isNotEmpty ? v.displayName.characters.first : 'M',
                         style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.bold),
                       ),
                     ),
                     title: Text(v.displayName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                    subtitle: Text('EPIC: ${v.epicNo} • बूथ: ${v.booth} • वय: ${v.age}'),
+                    subtitle: Text('EPIC: ${v.epicNo} • Booth: ${v.booth} • Age: ${v.age}'),
                     trailing: const Icon(Icons.add_circle_outline_rounded, color: Color(0xFF0284C7)),
                     onTap: () {
                       setState(() {
@@ -1532,13 +1546,13 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
         children: [
           TextField(
             controller: _manualNameCtrl,
-            decoration: const InputDecoration(labelText: 'पूर्ण नाव *', border: OutlineInputBorder()),
+            decoration: const InputDecoration(labelText: 'Full Name *', border: OutlineInputBorder()),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _manualMobileCtrl,
             keyboardType: TextInputType.phone,
-            decoration: const InputDecoration(labelText: 'मोबाईल क्रमांक *', border: OutlineInputBorder()),
+            decoration: const InputDecoration(labelText: 'Mobile Number *', border: OutlineInputBorder()),
           ),
           const SizedBox(height: 12),
           Row(
@@ -1547,18 +1561,18 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
                 child: TextField(
                   controller: _manualAgeCtrl,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'वय', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(labelText: 'Age', border: OutlineInputBorder()),
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: DropdownButtonFormField<String>(
                   value: _manualGender,
-                  decoration: const InputDecoration(labelText: 'लिंग', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(labelText: 'Gender', border: OutlineInputBorder()),
                   items: const [
-                    DropdownMenuItem(value: 'M', child: Text('पुरुष (Male)')),
-                    DropdownMenuItem(value: 'F', child: Text('स्त्री (Female)')),
-                    DropdownMenuItem(value: 'O', child: Text('इतर (Other)')),
+                    DropdownMenuItem(value: 'M', child: Text('Male')),
+                    DropdownMenuItem(value: 'F', child: Text('Female')),
+                    DropdownMenuItem(value: 'O', child: Text('Other')),
                   ],
                   onChanged: (val) {
                     if (val != null) setState(() => _manualGender = val);
@@ -1570,17 +1584,17 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
           const SizedBox(height: 12),
           TextField(
             controller: _manualAreaCtrl,
-            decoration: const InputDecoration(labelText: 'परिसर / भाग (उदा. शनिवार पेठ) *', border: OutlineInputBorder()),
+            decoration: const InputDecoration(labelText: 'Area / Region (e.g. Shaniwar Peth) *', border: OutlineInputBorder()),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _manualAddressCtrl,
-            decoration: const InputDecoration(labelText: 'निवासस्थान पत्ता *', border: OutlineInputBorder()),
+            decoration: const InputDecoration(labelText: 'Residential Address *', border: OutlineInputBorder()),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _manualRoleCtrl,
-            decoration: const InputDecoration(labelText: 'हुद्दा / जबाबदारी (Role)', border: OutlineInputBorder()),
+            decoration: const InputDecoration(labelText: 'Role / Designation', border: OutlineInputBorder()),
           ),
           const SizedBox(height: 20),
           ElevatedButton(
@@ -1590,7 +1604,7 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
               minimumSize: const Size(double.infinity, 48),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            child: const Text('थेट सदस्य नोंदवा', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: const Text('Register Member', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -1603,7 +1617,7 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
 
     final mobile = _confirmMobileCtrl.text.trim();
     if (mobile.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('कृपया मोबाईल क्रमांक भरा')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter mobile number')));
       return;
     }
 
@@ -1615,8 +1629,8 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
       mobile: mobile,
       age: voter.age,
       gender: voter.gender,
-      ward: 'प्रभाग १२',
-      area: _confirmAreaCtrl.text.trim().isNotEmpty ? _confirmAreaCtrl.text.trim() : 'शनिवार पेठ',
+      ward: 'Ward 12',
+      area: _confirmAreaCtrl.text.trim().isNotEmpty ? _confirmAreaCtrl.text.trim() : 'Shaniwar Peth',
       address: voter.address,
       addressMarathi: voter.address,
       addressEnglish: voter.address,
@@ -1624,7 +1638,7 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
       voterId: voter.epicNo,
       linkedVoterId: voter.id,
       status: 'Active',
-      role: _confirmRoleCtrl.text.trim().isNotEmpty ? _confirmRoleCtrl.text.trim() : 'सक्रिय कार्यकर्ता',
+      role: _confirmRoleCtrl.text.trim().isNotEmpty ? _confirmRoleCtrl.text.trim() : 'Active Member',
       registeredAt: DateTime.now(),
     );
 
@@ -1636,7 +1650,7 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
       Navigator.pop(context);
       await widget.onMemberAdded();
       messenger.showSnackBar(
-        SnackBar(content: Text('${voter.displayName} यांना पक्ष सदस्य म्हणून नोंदवले!')),
+        SnackBar(content: Text('${voter.displayName} registered as party member!')),
       );
     }
   }
@@ -1648,7 +1662,7 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
     final area = _manualAreaCtrl.text.trim();
 
     if (name.isEmpty || mobile.isEmpty || address.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('कृपया नाव, मोबाईल व पत्ता भरा')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter name, mobile and address')));
       return;
     }
 
@@ -1659,13 +1673,13 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
       mobile: mobile,
       age: int.tryParse(_manualAgeCtrl.text.trim()) ?? 0,
       gender: _manualGender,
-      ward: 'प्रभाग १२',
-      area: area.isNotEmpty ? area : 'शनिवार पेठ',
+      ward: 'Ward 12',
+      area: area.isNotEmpty ? area : 'Shaniwar Peth',
       address: address,
       addressMarathi: address,
       isVoter: false,
       status: 'Active',
-      role: _manualRoleCtrl.text.trim().isNotEmpty ? _manualRoleCtrl.text.trim() : 'सक्रिय कार्यकर्ता',
+      role: _manualRoleCtrl.text.trim().isNotEmpty ? _manualRoleCtrl.text.trim() : 'Active Member',
       registeredAt: DateTime.now(),
     );
 
@@ -1677,7 +1691,7 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
       Navigator.pop(context);
       await widget.onMemberAdded();
       messenger.showSnackBar(
-        SnackBar(content: Text('$name यांना नवीन पक्ष सदस्य म्हणून नोंदवले!')),
+        SnackBar(content: Text('$name registered as new party member!')),
       );
     }
   }

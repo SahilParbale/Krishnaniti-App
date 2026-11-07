@@ -5,6 +5,7 @@ import '../../../data/models/whatsapp_broadcast_model.dart';
 import '../../../data/models/voter_model.dart';
 import '../../../data/repositories/whatsapp_repository.dart';
 import 'whatsapp_history_report_generator.dart';
+import '../../navigation/app_drawer.dart';
 
 // WhatsApp brand colors
 const _kWaGreen = Color(0xFF25D366);
@@ -184,7 +185,7 @@ class _WhatsAppCommunicationScreenState
   Future<void> _openDirectWhatsApp(VoterModel voter) async {
     if (voter.mobile == null || voter.mobile!.isEmpty) return;
     final repo = ref.read(whatsAppRepoProvider);
-    final greetText = 'नमस्कार ${voter.nameMarathi}! प्रभाग १२ नगरसेवक कार्यालयातून संपर्क.';
+    final greetText = 'Greetings ${voter.displayName}! Contacting you from Ward 12 Corporator Office.';
     await repo.launchDirectWhatsApp(mobile: voter.mobile!, text: greetText);
   }
 
@@ -192,7 +193,7 @@ class _WhatsAppCommunicationScreenState
     if (_selectedVoterIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('कृपया किमान एक मतदार निवडा.'),
+          content: Text('Please select at least one voter.'),
           backgroundColor: Color(0xFFDC2626),
         ),
       );
@@ -201,7 +202,7 @@ class _WhatsAppCommunicationScreenState
     if (_messageController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('कृपया संदेश प्रविष्ट करा.'),
+          content: Text('Please enter message text.'),
           backgroundColor: Color(0xFFDC2626),
         ),
       );
@@ -218,7 +219,7 @@ class _WhatsAppCommunicationScreenState
             SizedBox(width: 8),
             Expanded(
               child: Text(
-                'व्हॉट्सॲप संदेश पाठवण्याची पुष्टी करा',
+                'Confirm WhatsApp Broadcast',
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
               ),
             ),
@@ -229,7 +230,7 @@ class _WhatsAppCommunicationScreenState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'मी पुष्टी करतो की मी प्राप्तकर्त्यांची यादी व संदेश तपासला आहे आणि हा अधिकृत व्हॉट्सॲप संदेश पाठवायचा आहे.',
+              'I confirm that I have reviewed the recipient list and message content and wish to send this official WhatsApp broadcast.',
               style: TextStyle(fontSize: 12.5, color: Color(0xFF475569)),
             ),
             const SizedBox(height: 12),
@@ -246,9 +247,9 @@ class _WhatsAppCommunicationScreenState
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('निवडलेले मतदार:', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                      const Text('Selected Voters:', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
                       Text(
-                        '${_selectedVoterIds.length} मतदार',
+                        '${_selectedVoterIds.length} Voters',
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _kWaDark),
                       ),
                     ],
@@ -257,7 +258,7 @@ class _WhatsAppCommunicationScreenState
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: const [
-                      Text('चॅनेल:', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                      Text('Channel:', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
                       Text(
                         'WhatsApp Bot (wa.me)',
                         style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF047857)),
@@ -265,7 +266,7 @@ class _WhatsAppCommunicationScreenState
                     ],
                   ),
                   const Divider(height: 14, color: Color(0xFFE2E8F0)),
-                  const Text('संदेश पूर्वावलोकन:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                  const Text('Message Preview:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
                   const SizedBox(height: 4),
                   Container(
                     width: double.infinity,
@@ -290,7 +291,7 @@ class _WhatsAppCommunicationScreenState
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('रद्द करा', style: TextStyle(color: Color(0xFF64748B))),
+            child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
           ),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
@@ -303,7 +304,7 @@ class _WhatsAppCommunicationScreenState
               _executeSendWhatsApp();
             },
             icon: const Icon(Icons.send_rounded, size: 16),
-            label: const Text('पुष्टी करा व पाठवा', style: TextStyle(fontWeight: FontWeight.bold)),
+            label: const Text('Confirm & Send', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -326,7 +327,7 @@ class _WhatsAppCommunicationScreenState
         message: _messageController.text.trim(),
         recipients: selectedVotersList,
         category: _selectedTemplate?.category,
-        targetCriteria: '${selectedVotersList.length} निवडलेले मतदार · प्रभाग १२',
+        targetCriteria: '${selectedVotersList.length} Selected Voters · Ward 12',
       );
 
       if (mounted) {
@@ -341,7 +342,7 @@ class _WhatsAppCommunicationScreenState
 
         messenger.showSnackBar(
           SnackBar(
-            content: Text('${broadcast.recipients} मतदारांसाठी व्हॉट्सॲप संदेश रांगेत जोडला! 🚀'),
+            content: Text('WhatsApp message queued for ${broadcast.recipients} voters! 🚀'),
             backgroundColor: _kWaDark,
             duration: const Duration(seconds: 3),
           ),
@@ -354,7 +355,7 @@ class _WhatsAppCommunicationScreenState
         setState(() => _isSending = false);
         messenger.showSnackBar(
           const SnackBar(
-            content: Text('व्हॉट्सॲप पाठवण्यात त्रुटी आली. कृपया पुन्हा प्रयत्न करा.'),
+            content: Text('Error sending WhatsApp message. Please try again.'),
             backgroundColor: Color(0xFFDC2626),
           ),
         );
@@ -376,7 +377,7 @@ class _WhatsAppCommunicationScreenState
           children: const [
             Icon(Icons.hub_rounded, color: _kWaGreen),
             SizedBox(width: 8),
-            Text('व्हॉट्सॲप बॉट स्थिती', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text('WhatsApp Bot Status', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ],
         ),
         content: Column(
@@ -403,7 +404,7 @@ class _WhatsAppCommunicationScreenState
                   const SizedBox(width: 8),
                   const Expanded(
                     child: Text(
-                      'बॉट सक्रिय (Bot Connected & Active)',
+                      'Bot Connected & Active',
                       style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: _kWaDark),
                     ),
                   ),
@@ -412,12 +413,12 @@ class _WhatsAppCommunicationScreenState
             ),
             const SizedBox(height: 12),
             const Text(
-              'सर्व्हर एंडपॉईंट: nagarsevak-managment-1.onrender.com',
+              'Server Endpoint: nagarsevak-managment-1.onrender.com',
               style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
             ),
             const SizedBox(height: 6),
             const Text(
-              'प्रभाग १२ अधिकृत व्हॉट्सॲप व्यवसाय खात्याशी थेट संलग्नित आहे. संदेश स्वयंचलितरीत्या बॉट रांगेत जमा होऊन पाठवले जातात.',
+              'Directly integrated with the Ward 12 official WhatsApp Business account. Outbound broadcasts are automatically queued and dispatched by the bot.',
               style: TextStyle(fontSize: 11.5, color: Color(0xFF475569)),
             ),
           ],
@@ -430,7 +431,7 @@ class _WhatsAppCommunicationScreenState
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('ठीक आहे'),
+            child: const Text('OK'),
           ),
         ],
       ),
@@ -446,7 +447,7 @@ class _WhatsAppCommunicationScreenState
           children: const [
             Icon(Icons.help_outline_rounded, color: _kWaDark),
             SizedBox(width: 8),
-            Text('व्हॉट्सॲप संवाद मार्गदर्शन', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+            Text('WhatsApp Communication Guide', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
           ],
         ),
         content: SingleChildScrollView(
@@ -455,29 +456,29 @@ class _WhatsAppCommunicationScreenState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildTutorialStep(
-                step: '१',
-                title: 'बॉट स्थिती तपासा',
-                desc: 'वरील "बॉट कनेक्टेड" हिरवा दिवा सक्रिय असल्याचे सुनिश्चित करा. बॉट सक्रिय असल्यासच बल्क मेसेज वितरित होतात.',
+                step: '1',
+                title: 'Check Bot Status',
+                desc: 'Ensure the "Bot Active" indicator is green. Messages are dispatched only when the bot service is online.',
               ),
               _buildTutorialStep(
-                step: '२',
-                title: 'फिल्टर व मतदार शोध',
-                desc: 'नाव, परिसर, घर क्र., वय, लिंग किंवा जातीनुसार विशिष्ट मतदार शोधा व निवडा.',
+                step: '2',
+                title: 'Filters & Voter Search',
+                desc: 'Search and filter voters by name, area, house no., age, gender, or community.',
               ),
               _buildTutorialStep(
-                step: '३',
-                title: 'त्वरित टेम्प्लेट्स किंवा संदेश',
-                desc: 'पाणीपुरवठा, शासकीय योजना किंवा उत्सवांचे तयार टेम्प्लेट्स एका टॅपवर निवडा किंवा स्वतः टाईप करा.',
+                step: '3',
+                title: 'Quick Templates or Custom Text',
+                desc: 'Select pre-approved templates for water notices, govt schemes, or festivals in 1-tap, or type your own text.',
               ),
               _buildTutorialStep(
-                step: '४',
-                title: '१-टॅप वैयक्तिक व्हॉट्सॲप',
-                desc: 'प्रत्येक मतदाराच्या कार्डवरील हिरव्या व्हॉट्सॲप आयकॉनवर टॅप करून थेट अधिकृत व्हॉट्सॲप ॲपमध्ये १-ऑन-१ चॅट करा.',
+                step: '4',
+                title: '1-Tap Personal WhatsApp',
+                desc: 'Tap the green WhatsApp icon on any voter card to open a direct 1-on-1 chat in the official WhatsApp app.',
               ),
               _buildTutorialStep(
-                step: '५',
-                title: 'इतिहास व अधिकृत अहवाल',
-                desc: 'पाठवलेल्या सर्व मोहिमांची डिलिव्हरी संख्या तपासा व महानगरपालिकेसाठी लँडस्केप A4 पीडीएफ अहवाल डाउनलोड करा.',
+                step: '5',
+                title: 'History & Official Reports',
+                desc: 'Track delivery metrics across all sent broadcasts and download landscape A4 PDF reports for official records.',
               ),
             ],
           ),
@@ -490,7 +491,7 @@ class _WhatsAppCommunicationScreenState
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('समजले', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text('Got it', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -536,44 +537,48 @@ class _WhatsAppCommunicationScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
+      drawer: const NagarsevakAppDrawer(),
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
-        titleSpacing: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF0F172A)),
-          onPressed: () => Navigator.pop(context),
+        scrolledUnderElevation: 0,
+        backgroundColor: const Color(0xFF0284C7),
+        foregroundColor: Colors.white,
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+            tooltip: 'Open Menu Drawer',
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
         ),
+        titleSpacing: 0,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                // WhatsApp Logo icon
-                Container(
-                  width: 24,
-                  height: 24,
-                  decoration: const BoxDecoration(color: _kWaGreen, shape: BoxShape.circle),
-                  child: const Icon(Icons.chat_rounded, size: 14, color: Colors.white),
-                ),
-                const SizedBox(width: 8),
-                const Text(
-                  'व्हॉट्सॲप संदेश (WhatsApp)',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                ),
-              ],
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Text(
+              'WhatsApp Message',
+              style: TextStyle(
+                fontSize: 17.5,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: -0.2,
+              ),
             ),
-            const Text(
-              'मतदारांना थेट व्हॉट्सॲप संदेश पाठवा · प्रभाग १२',
-              style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+            Text(
+              'Send official WhatsApp broadcasts to constituents',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFFE0F2FE),
+              ),
             ),
           ],
         ),
         actions: [
           // Help button matching web's tutorial-wa-help
           IconButton(
-            tooltip: 'मदत व माहिती (Help)',
-            icon: const Icon(Icons.help_outline_rounded, color: _kWaDark, size: 20),
+            tooltip: 'Help Guide',
+            icon: const Icon(Icons.help_outline_rounded, color: Colors.white, size: 20),
             onPressed: _showHelpTutorialDialog,
           ),
           // Bot status pill (clickable)
@@ -588,10 +593,10 @@ class _WhatsAppCommunicationScreenState
                   margin: const EdgeInsets.only(right: 6),
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                   decoration: BoxDecoration(
-                    color: isConn ? const Color(0xFFF0FDF4) : const Color(0xFFFEF2F2),
+                    color: Colors.white.withOpacity(0.18),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: isConn ? const Color(0xFFBBF7D0) : const Color(0xFFFECACA),
+                      color: Colors.white.withOpacity(0.35),
                     ),
                   ),
                   child: Row(
@@ -603,17 +608,17 @@ class _WhatsAppCommunicationScreenState
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: isConn
-                              ? _kWaGreen.withOpacity(_pulseAnim.value)
+                              ? const Color(0xFF4ADE80)
                               : const Color(0xFFEF4444),
                         ),
                       ),
                       const SizedBox(width: 5),
                       Text(
-                        isConn ? 'बॉट सक्रिय' : 'बॉट निष्क्रिय',
-                        style: TextStyle(
+                        isConn ? 'Bot Active' : 'Bot Offline',
+                        style: const TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
-                          color: isConn ? _kWaDark : const Color(0xFFB91C1C),
+                          color: Colors.white,
                         ),
                       ),
                     ],
@@ -626,25 +631,26 @@ class _WhatsAppCommunicationScreenState
             padding: const EdgeInsets.only(right: 8),
             child: OutlinedButton.icon(
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Color(0xFFBBF7D0)),
+                side: BorderSide(color: Colors.white.withOpacity(0.35)),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                backgroundColor: const Color(0xFFF0FDF4),
+                backgroundColor: Colors.white.withOpacity(0.18),
               ),
               onPressed: _generatePdfReport,
-              icon: const Icon(Icons.picture_as_pdf_outlined, size: 16, color: _kWaDark),
+              icon: const Icon(Icons.picture_as_pdf_outlined, size: 16, color: Colors.white),
               label: const Text(
-                'अहवाल',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _kWaDark),
+                'Report',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
               ),
             ),
           ),
         ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(48),
-          child: Container(
+        ),
+      body: Column(
+        children: [
+          Container(
             color: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             alignment: Alignment.centerLeft,
             child: Container(
               height: 38,
@@ -655,12 +661,13 @@ class _WhatsAppCommunicationScreenState
               child: TabBar(
                 controller: _tabController,
                 indicator: BoxDecoration(
-                  color: _kWaDark,
+                  color: const Color(0xFF0284C7),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 labelColor: Colors.white,
                 unselectedLabelColor: const Color(0xFF64748B),
                 labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                dividerColor: Colors.transparent,
                 tabs: const [
                   Tab(
                     child: Row(
@@ -668,7 +675,7 @@ class _WhatsAppCommunicationScreenState
                       children: [
                         Icon(Icons.send_rounded, size: 14),
                         SizedBox(width: 5),
-                        Text('व्हॉट्सॲप पाठवा'),
+                        Text('Send WhatsApp'),
                       ],
                     ),
                   ),
@@ -678,7 +685,7 @@ class _WhatsAppCommunicationScreenState
                       children: [
                         Icon(Icons.history_rounded, size: 14),
                         SizedBox(width: 5),
-                        Text('इतिहास व अहवाल'),
+                        Text('History & Reports'),
                       ],
                     ),
                   ),
@@ -686,13 +693,15 @@ class _WhatsAppCommunicationScreenState
               ),
             ),
           ),
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildSendTab(),
-          _buildHistoryTab(),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildSendTab(),
+                _buildHistoryTab(),
+              ],
+            ),
+          ),
         ],
       ),
       bottomNavigationBar:
@@ -720,7 +729,7 @@ class _WhatsAppCommunicationScreenState
                 Icon(Icons.auto_awesome_rounded, size: 15, color: _kWaGreen),
                 SizedBox(width: 5),
                 Text(
-                  'त्वरित टेम्प्लेट्स (Quick WhatsApp Templates)',
+                  'Quick WhatsApp Templates',
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                 ),
               ],
@@ -741,10 +750,10 @@ class _WhatsAppCommunicationScreenState
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                       decoration: BoxDecoration(
-                        color: isSelected ? _kWaDark : Colors.white,
+                        color: isSelected ? const Color(0xFF0284C7) : Colors.white,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: isSelected ? _kWaDark : _kWaLightBorder,
+                          color: isSelected ? const Color(0xFF0284C7) : const Color(0xFFCBD5E1),
                         ),
                       ),
                       child: Row(
@@ -790,7 +799,7 @@ class _WhatsAppCommunicationScreenState
                           Icon(Icons.edit_rounded, size: 14, color: _kWaGreen),
                           SizedBox(width: 5),
                           Text(
-                            'संदेश लिहा (Compose Message) *',
+                            'Compose Message *',
                             style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                           ),
                         ],
@@ -829,7 +838,7 @@ class _WhatsAppCommunicationScreenState
                       style: const TextStyle(fontSize: 13, color: Color(0xFF1E293B)),
                       onChanged: (_) => setState(() {}),
                       decoration: const InputDecoration(
-                        hintText: 'येथे व्हॉट्सॲप संदेश लिहा...\n*ठळक* _टेढे_ ~खोडलेले~',
+                        hintText: 'Type your WhatsApp message here...\n*bold* _italic_ ~strikethrough~',
                         hintStyle: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                         filled: true,
                         fillColor: Colors.transparent,
@@ -848,13 +857,13 @@ class _WhatsAppCommunicationScreenState
                           Icon(Icons.info_outline, size: 12, color: Color(0xFF64748B)),
                           SizedBox(width: 4),
                           Text(
-                            '*ठळक* _टेढे_ ~खोडलेले~ - WA फॉर्मेटिंग',
+                            '*bold* _italic_ ~strikethrough~ - WA Formatting',
                             style: TextStyle(fontSize: 10, color: Color(0xFF64748B)),
                           ),
                         ],
                       ),
                       Text(
-                        '${_messageController.text.length} अक्षरे',
+                        '${_messageController.text.length} characters',
                         style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _kWaGreen),
                       ),
                     ],
@@ -880,7 +889,7 @@ class _WhatsAppCommunicationScreenState
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        'मतदार फिल्टर व शोध',
+                        'Voter Filters & Search',
                         style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                       ),
                       TextButton(
@@ -901,7 +910,7 @@ class _WhatsAppCommunicationScreenState
                           });
                           _loadVoters();
                         },
-                        child: const Text('रीसेट', style: TextStyle(fontSize: 11, color: _kWaGreen)),
+                        child: const Text('Reset', style: TextStyle(fontSize: 11, color: Color(0xFF0284C7))),
                       ),
                     ],
                   ),
@@ -917,7 +926,7 @@ class _WhatsAppCommunicationScreenState
                             controller: _nameController,
                             style: const TextStyle(fontSize: 12.5),
                             decoration: InputDecoration(
-                              hintText: 'नाव शोधा...',
+                              hintText: 'Search name...',
                               hintStyle: const TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
                               prefixIcon: const Icon(Icons.search, size: 16, color: Color(0xFF94A3B8)),
                               contentPadding: const EdgeInsets.symmetric(vertical: 8),
@@ -938,7 +947,7 @@ class _WhatsAppCommunicationScreenState
                             controller: _addressController,
                             style: const TextStyle(fontSize: 12.5),
                             decoration: InputDecoration(
-                              hintText: 'पत्ता / परिसर...',
+                              hintText: 'Address / Area...',
                               hintStyle: const TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
                               prefixIcon: const Icon(Icons.location_on_outlined, size: 16, color: Color(0xFF94A3B8)),
                               contentPadding: const EdgeInsets.symmetric(vertical: 8),
@@ -966,7 +975,7 @@ class _WhatsAppCommunicationScreenState
                             controller: _houseNoController,
                             style: const TextStyle(fontSize: 12.5),
                             decoration: InputDecoration(
-                              hintText: 'घर नं...',
+                              hintText: 'House No...',
                               hintStyle: const TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
                               prefixIcon: const Icon(Icons.home_outlined, size: 16, color: Color(0xFF94A3B8)),
                               contentPadding: const EdgeInsets.symmetric(vertical: 8),
@@ -987,7 +996,7 @@ class _WhatsAppCommunicationScreenState
                             controller: _casteController,
                             style: const TextStyle(fontSize: 12.5),
                             decoration: InputDecoration(
-                              hintText: 'जात / समाज...',
+                              hintText: 'Community / Group...',
                               hintStyle: const TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
                               prefixIcon: const Icon(Icons.people_outline, size: 16, color: Color(0xFF94A3B8)),
                               contentPadding: const EdgeInsets.symmetric(vertical: 8),
@@ -1013,11 +1022,11 @@ class _WhatsAppCommunicationScreenState
                         child: _buildDropdownFilter(
                           value: _ageFilter,
                           items: const [
-                            DropdownMenuItem(value: 'All', child: Text('सर्व वय')),
-                            DropdownMenuItem(value: '18-25', child: Text('वय १८-२५')),
-                            DropdownMenuItem(value: '26-40', child: Text('वय २६-४०')),
-                            DropdownMenuItem(value: '41-60', child: Text('वय ४१-६०')),
-                            DropdownMenuItem(value: '60+', child: Text('वय ६०+')),
+                            DropdownMenuItem(value: 'All', child: Text('All Ages')),
+                            DropdownMenuItem(value: '18-25', child: Text('Age 18-25')),
+                            DropdownMenuItem(value: '26-40', child: Text('Age 26-40')),
+                            DropdownMenuItem(value: '41-60', child: Text('Age 41-60')),
+                            DropdownMenuItem(value: '60+', child: Text('Age 60+')),
                           ],
                           onChanged: (v) {
                             if (v != null) {
@@ -1033,9 +1042,9 @@ class _WhatsAppCommunicationScreenState
                         child: _buildDropdownFilter(
                           value: _genderFilter,
                           items: const [
-                            DropdownMenuItem(value: 'All', child: Text('सर्व लिंग')),
-                            DropdownMenuItem(value: 'M', child: Text('पुरुष')),
-                            DropdownMenuItem(value: 'F', child: Text('महिला')),
+                            DropdownMenuItem(value: 'All', child: Text('All Genders')),
+                            DropdownMenuItem(value: 'M', child: Text('Male')),
+                            DropdownMenuItem(value: 'F', child: Text('Female')),
                           ],
                           onChanged: (v) {
                             if (v != null) {
@@ -1051,11 +1060,11 @@ class _WhatsAppCommunicationScreenState
                         child: _buildDropdownFilter(
                           value: _boothFilter,
                           items: const [
-                            DropdownMenuItem(value: 'All', child: Text('सर्व बूथ')),
-                            DropdownMenuItem(value: '२८/शनिवार पेठ', child: Text('बूथ २८')),
-                            DropdownMenuItem(value: '२९/कसबा पेठ', child: Text('बूथ २९')),
-                            DropdownMenuItem(value: '३०/रविवार पेठ', child: Text('बूथ ३०')),
-                            DropdownMenuItem(value: '३१/सोमवार पेठ', child: Text('बूथ ३१')),
+                            DropdownMenuItem(value: 'All', child: Text('All Booths')),
+                            DropdownMenuItem(value: '28', child: Text('Booth 28 (Shaniwar Peth)')),
+                            DropdownMenuItem(value: '29', child: Text('Booth 29 (Kasba Peth)')),
+                            DropdownMenuItem(value: '30', child: Text('Booth 30 (Raviwar Peth)')),
+                            DropdownMenuItem(value: '31', child: Text('Booth 31 (Somwar Peth)')),
                           ],
                           onChanged: (v) {
                             if (v != null) {
@@ -1088,7 +1097,7 @@ class _WhatsAppCommunicationScreenState
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        'सर्व निवडा (दिसणारे) (${_voters.length} मतदार)',
+                        'Select All (Visible) (${_voters.length} voters)',
                         style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
                       ),
                     ],
@@ -1104,7 +1113,7 @@ class _WhatsAppCommunicationScreenState
                         border: Border.all(color: _kWaLightBorder),
                       ),
                       child: Text(
-                        '${_selectedVoterIds.length} निवडले',
+                        '${_selectedVoterIds.length} Selected',
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _kWaDark),
                       ),
                     ),
@@ -1113,7 +1122,7 @@ class _WhatsAppCommunicationScreenState
                       InkWell(
                         onTap: _clearSelection,
                         child: const Text(
-                          'साफ करा',
+                          'Clear',
                           style: TextStyle(fontSize: 11.5, color: Color(0xFFEF4444), fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -1215,7 +1224,7 @@ class _WhatsAppCommunicationScreenState
                                 Row(
                                   children: [
                                     Text(
-                                      '${voter.genderLabelMarathi} · वय ${voter.age}',
+                                      '${voter.gender} · Age ${voter.age}',
                                       style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                                     ),
                                     if (voter.booth.isNotEmpty) ...[
@@ -1296,7 +1305,7 @@ class _WhatsAppCommunicationScreenState
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const Text(
-                                      'इतिहास व अहवाल',
+                                      'History & Reports',
                                       style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.bold,
@@ -1311,16 +1320,16 @@ class _WhatsAppCommunicationScreenState
                                 ),
                                 OutlinedButton.icon(
                                   style: OutlinedButton.styleFrom(
-                                    side: const BorderSide(color: _kWaLightBorder),
-                                    backgroundColor: _kWaLight,
+                                    side: const BorderSide(color: Color(0xFFCBD5E1)),
+                                    backgroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                   ),
                                   onPressed: _generatePdfReport,
-                                  icon: const Icon(Icons.picture_as_pdf_outlined, size: 15, color: _kWaDark),
+                                  icon: const Icon(Icons.picture_as_pdf_outlined, size: 15, color: Color(0xFF0284C7)),
                                   label: const Text(
-                                    'पीडीएफ डाउनलोड',
-                                    style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: _kWaDark),
+                                    'Download PDF',
+                                    style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                                   ),
                                 ),
                               ],
@@ -1355,18 +1364,17 @@ class _WhatsAppCommunicationScreenState
   Widget _buildKpiSummary() {
     final totalRecipients = _broadcastHistory.fold<int>(0, (s, b) => s + b.recipients);
     final totalDelivered = _broadcastHistory.fold<int>(0, (s, b) => s + b.deliveredCount);
-    final totalFailed = _broadcastHistory.fold<int>(0, (s, b) => s + b.failedCount);
     final rate = totalRecipients > 0 ? ((totalDelivered / totalRecipients) * 100).toStringAsFixed(1) : '98.5';
 
     return Row(
       children: [
-        _buildKpiCard('मोहीम', '${_broadcastHistory.length}', Icons.campaign_rounded, _kWaDark),
+        _buildKpiCard('Broadcasts', '${_broadcastHistory.length}', Icons.campaign_rounded, _kWaDark),
         const SizedBox(width: 8),
-        _buildKpiCard('मतदार', '$totalRecipients', Icons.people_rounded, const Color(0xFF0369A1)),
+        _buildKpiCard('Voters', '$totalRecipients', Icons.people_rounded, const Color(0xFF0369A1)),
         const SizedBox(width: 8),
-        _buildKpiCard('पोहोचले', '$totalDelivered', Icons.check_circle_rounded, const Color(0xFF047857)),
+        _buildKpiCard('Delivered', '$totalDelivered', Icons.check_circle_rounded, const Color(0xFF047857)),
         const SizedBox(width: 8),
-        _buildKpiCard('दर', '$rate%', Icons.trending_up_rounded, _kWaGreen),
+        _buildKpiCard('Delivery Rate', '$rate%', Icons.trending_up_rounded, _kWaGreen),
       ],
     );
   }
@@ -1500,14 +1508,14 @@ class _WhatsAppCommunicationScreenState
           // Stats row
           Row(
             children: [
-              _buildMiniStat('प्राप्तकर्ते', '${broadcast.recipients}', const Color(0xFF0369A1)),
+              _buildMiniStat('Recipients', '${broadcast.recipients}', const Color(0xFF0369A1)),
               const SizedBox(width: 8),
-              _buildMiniStat('पाठवले', '${broadcast.sentCount}', _kWaGreen),
+              _buildMiniStat('Sent', '${broadcast.sentCount}', _kWaGreen),
               const SizedBox(width: 8),
-              _buildMiniStat('पोहोचले', '${broadcast.deliveredCount}', const Color(0xFF047857)),
+              _buildMiniStat('Delivered', '${broadcast.deliveredCount}', const Color(0xFF047857)),
               const SizedBox(width: 8),
               _buildMiniStat(
-                'अयशस्वी',
+                'Failed',
                 '${broadcast.failedCount}',
                 broadcast.failedCount > 0 ? const Color(0xFFDC2626) : const Color(0xFF94A3B8),
               ),
@@ -1551,11 +1559,11 @@ class _WhatsAppCommunicationScreenState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${_selectedVoterIds.length} मतदार निवडलेले',
+                  '${_selectedVoterIds.length} voters selected',
                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                 ),
                 const Text(
-                  'व्हॉट्सॲप बॉटद्वारे पाठवले जाईल',
+                  'Dispatched via official WhatsApp Bot',
                   style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
                 ),
               ],
@@ -1578,7 +1586,7 @@ class _WhatsAppCommunicationScreenState
                     )
                   : const Icon(Icons.send_rounded, size: 16),
               label: Text(
-                _isSending ? 'पाठवत आहे...' : 'व्हॉट्सॲप पाठवा',
+                _isSending ? 'Sending...' : 'Send WhatsApp',
                 style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
               ),
             ),
@@ -1646,12 +1654,12 @@ class _WhatsAppCommunicationScreenState
           Icon(Icons.search_off_rounded, size: 44, color: Color(0xFF94A3B8)),
           SizedBox(height: 8),
           Text(
-            'फिल्टरनुसार कोणताही मतदार आढळला नाही.',
+            'No voters found matching current filters.',
             style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
           ),
           SizedBox(height: 4),
           Text(
-            'मोबाईल नंबर असलेले मतदार दाखवले जातात.',
+            'Only voters with registered mobile numbers are displayed.',
             style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
           ),
         ],
@@ -1667,12 +1675,12 @@ class _WhatsAppCommunicationScreenState
           Icon(Icons.chat_bubble_outline_rounded, size: 52, color: Color(0xFFCBD5E1)),
           SizedBox(height: 10),
           Text(
-            'कोणताही व्हॉट्सॲप संदेश पाठवला नाही.',
+            'No WhatsApp broadcasts sent yet.',
             style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
           ),
           SizedBox(height: 4),
           Text(
-            '"व्हॉट्सॲप पाठवा" टॅबवर जाऊन पहिला संदेश पाठवा!',
+            'Switch to "Send WhatsApp" tab to dispatch your first broadcast!',
             style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
           ),
         ],

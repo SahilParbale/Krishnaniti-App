@@ -81,7 +81,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
     final titleCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     final locCtrl = TextEditingController();
-    final areaCtrl = TextEditingController(text: 'शनिवार पेठ');
+    final areaCtrl = TextEditingController(text: 'Shaniwar Peth');
     DateTime selectedDate = DateTime.now().add(const Duration(days: 3));
     TimeOfDay selectedTime = const TimeOfDay(hour: 10, minute: 0);
     EventType selectedType = EventType.publicMeeting;
@@ -137,7 +137,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                       const SizedBox(width: 12),
                       const Expanded(
                         child: Text(
-                          'नवीन कार्यक्रम तयार करा (New Event)',
+                          'Create New Event',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -155,14 +155,14 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
 
                   // Title
                   const Text(
-                    'कार्यक्रम शीर्षक (Title)*',
+                    'Event Title*',
                     style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
                   ),
                   const SizedBox(height: 6),
                   TextField(
                     controller: titleCtrl,
                     decoration: InputDecoration(
-                      hintText: 'उदा. प्रभाग १२ विकास आढावा नागरिक सभा',
+                      hintText: 'e.g., Ward 12 Citizen Meeting',
                       hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                       filled: true,
                       fillColor: const Color(0xFFF8FAFC),
@@ -178,14 +178,14 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        'वर्णन (Description)*',
+                        'Description*',
                         style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
                       ),
                       InkWell(
                         onTap: () {
                           if (titleCtrl.text.isNotEmpty) {
                             descCtrl.text =
-                                'प्रभाग १२ मधील सर्व नागरिकांसाठी \'${titleCtrl.text.trim()}\' कार्यक्रमाचे आयोजन करण्यात आले आहे. सर्व नागरिकांनी सहकुटुंब वेळेत उपस्थित राहावे ही नम्र विनंती.';
+                                'You are cordially invited to attend the event organized for the citizens of Ward 12. Please join us on time.';
                             setModalState(() {});
                           }
                         },
@@ -194,7 +194,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                             Icon(Icons.auto_awesome_rounded, size: 14, color: Color(0xFF0284C7)),
                             SizedBox(width: 4),
                             Text(
-                              'AI मसुदा सहाय्य',
+                              'AI Draft Assistant',
                               style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                             ),
                           ],
@@ -207,7 +207,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                     controller: descCtrl,
                     maxLines: 3,
                     decoration: InputDecoration(
-                      hintText: 'कार्यक्रमाबद्दल सविस्तर तपशील...',
+                      hintText: 'Detailed event description...',
                       hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                       filled: true,
                       fillColor: const Color(0xFFF8FAFC),
@@ -225,7 +225,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('तारीख (Date)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                            const Text('Date', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                             const SizedBox(height: 6),
                             InkWell(
                               onTap: () async {
@@ -266,7 +266,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('वेळ (Time)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                            const Text('Time', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                             const SizedBox(height: 6),
                             InkWell(
                               onTap: () async {
@@ -313,12 +313,12 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('स्थान / ठिकाण (Location)*', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                            const Text('Location / Venue*', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                             const SizedBox(height: 6),
                             TextField(
                               controller: locCtrl,
                               decoration: InputDecoration(
-                                hintText: 'उदा. समाज मंदिर सभागृह',
+                                hintText: 'e.g., Community Hall',
                                 hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                                 filled: true,
                                 fillColor: const Color(0xFFF8FAFC),
@@ -334,12 +334,12 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('भाग (Area)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                            const Text('Area / Ward Section', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                             const SizedBox(height: 6),
                             TextField(
                               controller: areaCtrl,
                               decoration: InputDecoration(
-                                hintText: 'उदा. शनिवार पेठ',
+                                hintText: 'e.g., Shaniwar Peth',
                                 hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                                 filled: true,
                                 fillColor: const Color(0xFFF8FAFC),
@@ -356,7 +356,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                   const SizedBox(height: 12),
 
                   // Event Type Dropdown
-                  const Text('प्रकार (Event Type)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  const Text('Event Type', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -403,14 +403,14 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                           titleMr: titleCtrl.text.trim(),
                           description: descCtrl.text.trim().isNotEmpty
                               ? descCtrl.text.trim()
-                              : 'प्रभाग १२ मधील नागरिकांसाठी आयोजित कार्यक्रम.',
+                              : 'Event organized for Ward 12 citizens.',
                           eventDate: selectedDate,
                           eventTime: selectedTime.format(ctx),
-                          location: locCtrl.text.trim().isNotEmpty ? locCtrl.text.trim() : 'प्रभाग १२ कार्यालय',
-                          locationMr: locCtrl.text.trim().isNotEmpty ? locCtrl.text.trim() : 'प्रभाग १२ कार्यालय',
+                          location: locCtrl.text.trim().isNotEmpty ? locCtrl.text.trim() : 'Ward 12 Office',
+                          locationMr: locCtrl.text.trim().isNotEmpty ? locCtrl.text.trim() : 'Ward 12 Office',
                           type: selectedType,
                           status: 'Planned',
-                          area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : 'शनिवार पेठ',
+                          area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : 'Shaniwar Peth',
                           targetAudience: targetAudience,
                           createdAt: DateTime.now(),
                         );
@@ -424,7 +424,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                           _loadEvents();
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('नवीन कार्यक्रम यशस्वीरित्या तयार झाला!'),
+                              content: Text('New event created successfully!'),
                               backgroundColor: Color(0xFF16A34A),
                             ),
                           );
@@ -436,7 +436,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         elevation: 0,
                       ),
-                      child: const Text('कार्यक्रम जतन करा (Create Event)', style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text('Create Event', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],
@@ -467,67 +467,34 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
         appBar: AppBar(
           backgroundColor: const Color(0xFF0284C7),
           elevation: 0,
+          scrolledUnderElevation: 0,
           leading: Builder(
             builder: (ctx) => IconButton(
-              icon: const Icon(Icons.menu_rounded, color: Colors.white),
+              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+              tooltip: 'Open Menu Drawer',
               onPressed: () => Scaffold.of(ctx).openDrawer(),
             ),
           ),
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.18),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.event_available_rounded,
+          titleSpacing: 0,
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              Text(
+                'Events & Invitations',
+                style: TextStyle(
+                  fontSize: 17.5,
+                  fontWeight: FontWeight.w800,
                   color: Colors.white,
-                  size: 18,
+                  letterSpacing: -0.2,
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'कार्यक्रम आणि आमंत्रणे',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    Text(
-                      'सामुदायिक कार्यक्रम आणि आमंत्रणे व्यवस्थापित करा',
-                      style: TextStyle(
-                        fontSize: 10.5,
-                        color: Colors.white.withOpacity(0.85),
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
-                    width: 0.8,
-                  ),
-                ),
-                child: Text(
-                  'एकूण: $totalEvents',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w600,
-                  ),
+              Text(
+                'Ward programs, inaugurations and invitations',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFFE0F2FE),
                 ),
               ),
             ],
@@ -538,7 +505,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                 _viewMode == 'grid' ? Icons.table_rows_rounded : Icons.grid_view_rounded,
                 color: Colors.white,
               ),
-              tooltip: _viewMode == 'grid' ? 'तक्ता दृश्य (Table)' : 'कार्ड दृश्य (Grid)',
+              tooltip: _viewMode == 'grid' ? 'Table View' : 'Grid View',
               onPressed: () {
                 setState(() {
                   _viewMode = _viewMode == 'grid' ? 'report' : 'grid';
@@ -547,12 +514,12 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
             ),
             IconButton(
               icon: const Icon(Icons.picture_as_pdf_rounded, color: Colors.white),
-              tooltip: 'अधिकृत PDF अहवाल',
+              tooltip: 'Official PDF Report',
               onPressed: () => EventReportGenerator.generateAndPrintReport(events: filtered),
             ),
             IconButton(
               icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-              tooltip: 'रिफ्रेश करा',
+              tooltip: 'Refresh',
               onPressed: _loadEvents,
             ),
           ],
@@ -595,7 +562,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
           foregroundColor: Colors.white,
           icon: const Icon(Icons.add_rounded),
           label: const Text(
-            'नवीन कार्यक्रम (New Event)',
+            'New Event',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
@@ -606,13 +573,13 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
   Widget _buildKpiSummaryRow(int total, int upcoming, int rsvps, int going) {
     return Row(
       children: [
-        _buildKpiCard('एकूण कार्यक्रम', '$total', 'सर्व कार्यक्रम', const Color(0xFF0284C7), Icons.calendar_month_rounded),
+        _buildKpiCard('Total Events', '$total', 'All Events', const Color(0xFF0284C7), Icons.calendar_month_rounded),
         const SizedBox(width: 8),
-        _buildKpiCard('नियोजित', '$upcoming', 'आगामी कार्यक्रम', const Color(0xFF8B5CF6), Icons.access_time_rounded),
+        _buildKpiCard('Upcoming', '$upcoming', 'Upcoming Events', const Color(0xFF8B5CF6), Icons.access_time_rounded),
         const SizedBox(width: 8),
-        _buildKpiCard('एकूण RSVP', '$rsvps', 'नागरिक प्रतिसाद', const Color(0xFFD97706), Icons.people_alt_rounded),
+        _buildKpiCard('Total RSVPs', '$rsvps', 'Citizen Responses', const Color(0xFFD97706), Icons.people_alt_rounded),
         const SizedBox(width: 8),
-        _buildKpiCard('निश्चित हजेरी', '$going', 'येणारे नागरिक', const Color(0xFF16A34A), Icons.check_circle_rounded),
+        _buildKpiCard('Confirmed', '$going', 'Going Attendees', const Color(0xFF16A34A), Icons.check_circle_rounded),
       ],
     );
   }
@@ -681,7 +648,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
           TextField(
             controller: _searchCtrl,
             decoration: InputDecoration(
-              hintText: 'शीर्षक, स्थान किंवा वर्णनाद्वारे शोधा...',
+              hintText: 'Search by title, location or description...',
               hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
               prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Color(0xFF64748B)),
               suffixIcon: _searchCtrl.text.isNotEmpty
@@ -719,7 +686,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                       isExpanded: true,
                       icon: const Icon(Icons.arrow_drop_down_rounded),
                       items: [
-                        const DropdownMenuItem(value: 'all', child: Text('सर्व भाग (All Areas)', style: TextStyle(fontSize: 12))),
+                        const DropdownMenuItem(value: 'all', child: Text('All Areas', style: TextStyle(fontSize: 12))),
                         ..._allAreas.map((a) => DropdownMenuItem(value: a, child: Text(a, style: const TextStyle(fontSize: 12)))),
                       ],
                       onChanged: (val) {
@@ -739,19 +706,19 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _buildCategoryChip('सर्व (${_allEvents.length})', 'all'),
+                _buildCategoryChip('All (${_allEvents.length})', 'all'),
                 const SizedBox(width: 6),
-                _buildCategoryChip('सार्वजनिक सभा', 'Public Meeting'),
+                _buildCategoryChip('Public Meetings', 'Public Meeting'),
                 const SizedBox(width: 6),
-                _buildCategoryChip('उद्घाटन', 'Inauguration'),
+                _buildCategoryChip('Inaugurations', 'Inauguration'),
                 const SizedBox(width: 6),
-                _buildCategoryChip('आरोग्य शिबिर', 'Health Camp'),
+                _buildCategoryChip('Health Camps', 'Health Camp'),
                 const SizedBox(width: 6),
-                _buildCategoryChip('रॅली / मोर्चा', 'Rally'),
+                _buildCategoryChip('Rallies', 'Rally'),
                 const SizedBox(width: 6),
-                _buildCategoryChip('गाठीभेटी', 'Door-to-Door'),
+                _buildCategoryChip('Door-to-Door Visits', 'Door-to-Door'),
                 const SizedBox(width: 6),
-                _buildCategoryChip('सांस्कृतिक', 'Cultural'),
+                _buildCategoryChip('Cultural Programs', 'Cultural'),
               ],
             ),
           ),
@@ -793,7 +760,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
             Icon(Icons.event_busy_rounded, size: 48, color: Colors.grey.shade400),
             const SizedBox(height: 10),
             const Text(
-              'कोणताही कार्यक्रम आढळला नाही.',
+              'No events found.',
               style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
             ),
           ],
@@ -921,7 +888,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                           ),
                           const Spacer(),
                           Text(
-                            event.isCompleted ? 'पूर्ण' : 'नियोजित',
+                            event.isCompleted ? 'Completed' : 'Upcoming',
                             style: TextStyle(
                               fontSize: 10.5,
                               fontWeight: FontWeight.bold,
@@ -997,7 +964,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    '${event.goingCount} हजर • ${event.totalRsvps} प्रतिसाद',
+                    '${event.goingCount} Going • ${event.totalRsvps} Responses',
                     style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
@@ -1013,7 +980,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                     _loadEvents();
                   },
                   icon: const Icon(Icons.send_rounded, size: 13),
-                  label: const Text('आमंत्रणे पाठवा', style: TextStyle(fontSize: 11.5)),
+                  label: const Text('Send Invites', style: TextStyle(fontSize: 11.5)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF16A34A),
                     foregroundColor: Colors.white,
@@ -1033,7 +1000,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                     _loadEvents();
                   },
                   icon: const Icon(Icons.people_outline_rounded, size: 13),
-                  label: const Text('RSVP पहा', style: TextStyle(fontSize: 11.5)),
+                  label: const Text('View RSVPs', style: TextStyle(fontSize: 11.5)),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFF0284C7),
                     side: const BorderSide(color: Color(0xFF0284C7)),
@@ -1054,7 +1021,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
   // ==========================================
   Widget _buildReportTableView(List<EventModel> events) {
     if (events.isEmpty) {
-      return const Center(child: Text('कोणतेही कार्यक्रम उपलब्ध नाहीत.'));
+      return const Center(child: Text('No events available.'));
     }
 
     return Container(
@@ -1070,13 +1037,13 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
           horizontalMargin: 12,
           columnSpacing: 16,
           columns: const [
-            DataColumn(label: Text('तारीख व वेळ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-            DataColumn(label: Text('कार्यक्रम शीर्षक', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-            DataColumn(label: Text('प्रकार', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-            DataColumn(label: Text('भाग / परिसर', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-            DataColumn(label: Text('स्थान', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+            DataColumn(label: Text('Date & Time', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+            DataColumn(label: Text('Event Title', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+            DataColumn(label: Text('Type', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+            DataColumn(label: Text('Area', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+            DataColumn(label: Text('Venue', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
             DataColumn(label: Text('RSVP (Going/Total)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-            DataColumn(label: Text('स्थिती', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+            DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
           ],
           rows: events.map((event) {
             return DataRow(
@@ -1133,7 +1100,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      event.isCompleted ? 'पूर्ण' : 'नियोजित',
+                      event.isCompleted ? 'Completed' : 'Upcoming',
                       style: TextStyle(
                         fontSize: 10.5,
                         fontWeight: FontWeight.bold,

@@ -450,25 +450,19 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
           scrolledUnderElevation: 0,
           leading: Builder(
             builder: (ctx) => IconButton(
-              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 24),
-              tooltip: 'Back',
-              onPressed: () {
-                if (Navigator.canPop(context)) {
-                  Navigator.pop(context);
-                } else {
-                  Scaffold.of(ctx).openDrawer();
-                }
-              },
+              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+              tooltip: 'Open Menu Drawer',
+              onPressed: () => Scaffold.of(ctx).openDrawer(),
             ),
           ),
           titleSpacing: 0,
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
-            children: [
+            children: const [
               Text(
-                isMr ? 'प्रभाग अंदाजपत्रक (Ward Budget)' : 'Ward Budget',
-                style: const TextStyle(
+                'Ward Budget',
+                style: TextStyle(
                   fontSize: 17.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
@@ -476,11 +470,11 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                 ),
               ),
               Text(
-                isMr ? 'विकास निधी वाटप आणि खर्चाचा मागोवा' : 'Track development funds & expenditure',
+                'Track development funds & expenditure',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w400,
-                  color: Colors.white.withValues(alpha: 0.85),
+                  color: Color(0xFFE0F2FE),
                 ),
               ),
             ],

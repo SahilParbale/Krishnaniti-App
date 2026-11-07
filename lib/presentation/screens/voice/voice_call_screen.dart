@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../data/models/voter_model.dart';
 import '../../../data/models/whatsapp_broadcast_model.dart';
 import '../../../data/repositories/sms_repository.dart';
+import '../../navigation/app_drawer.dart';
 
 class VoiceCallScreen extends ConsumerStatefulWidget {
   const VoiceCallScreen({super.key});
@@ -33,8 +33,8 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
   final List<WhatsAppBroadcastModel> _seedCallLogs = [
     WhatsAppBroadcastModel(
       id: 'call-001',
-      title: 'Manual Voice Call - रमेश कुलकर्णी',
-      message: 'Direct phone call placed to रमेश कुलकर्णी (9822011223)',
+      title: 'Manual Voice Call - Ramesh Kulkarni',
+      message: 'Direct phone call placed to Ramesh Kulkarni (9822011223)',
       sentAt: DateTime.now().subtract(const Duration(hours: 3)),
       channel: 'call',
       recipients: 1,
@@ -45,8 +45,8 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
     ),
     WhatsAppBroadcastModel(
       id: 'call-002',
-      title: 'Manual Voice Call - सुरेश पाटील',
-      message: 'Direct phone call placed to सुरेश पाटील (9822044556)',
+      title: 'Manual Voice Call - Suresh Patil',
+      message: 'Direct phone call placed to Suresh Patil (9822044556)',
       sentAt: DateTime.now().subtract(const Duration(days: 1)),
       channel: 'call',
       recipients: 1,
@@ -193,25 +193,91 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      drawer: const NagarsevakAppDrawer(),
       appBar: AppBar(
-        title: const Text('Voice Call'),
+        backgroundColor: const Color(0xFF0284C7),
         elevation: 0,
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: theme.colorScheme.primary,
-          unselectedLabelColor: isDark ? Colors.grey[400] : Colors.grey[600],
-          indicatorColor: theme.colorScheme.primary,
-          tabs: const [
-            Tab(icon: Icon(Icons.phone), text: 'Voice Call'),
-            Tab(icon: Icon(Icons.history), text: 'Call History'),
+        scrolledUnderElevation: 0,
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+            tooltip: 'Open Menu Drawer',
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
+        ),
+        titleSpacing: 0,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Text(
+              'Voice Call',
+              style: TextStyle(
+                fontSize: 17.5,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: -0.2,
+              ),
+            ),
+            Text(
+              "Outbound recorded audio broadcasts in Nagarsevak's voice",
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFFE0F2FE),
+              ),
+            ),
           ],
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
+        ),
+      body: Column(
         children: [
-          _buildCallTab(theme, isDark),
-          _buildHistoryTab(theme, isDark),
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            alignment: Alignment.centerLeft,
+            child: Container(
+              height: 40,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                indicator: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                labelColor: const Color(0xFF0284C7),
+                unselectedLabelColor: const Color(0xFF64748B),
+                labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+                indicatorSize: TabBarIndicatorSize.tab,
+                dividerColor: Colors.transparent,
+                tabs: const [
+                  Tab(icon: Icon(Icons.phone, size: 16), text: 'Voice Call'),
+                  Tab(icon: Icon(Icons.history, size: 16), text: 'Call History'),
+                ],
+              ),
+            ),
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildCallTab(theme, isDark),
+                _buildHistoryTab(theme, isDark),
+              ],
+            ),
+          ),
         ],
       ),
     );

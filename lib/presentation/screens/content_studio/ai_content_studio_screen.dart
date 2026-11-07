@@ -74,7 +74,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('\'${tmpl.titleMr}\' टेम्पलेट लागू केले'),
+        content: Text('\'${tmpl.titleMr}\' template applied'),
         duration: const Duration(seconds: 1),
         backgroundColor: const Color(0xFF0284C7),
       ),
@@ -86,7 +86,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
     if (topic.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('कृपया प्रथम विषय किंवा संदर्भ प्रविष्ट करा'),
+          content: Text('Please enter a topic or context first'),
           backgroundColor: Color(0xFFDC2626),
         ),
       );
@@ -121,7 +121,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('कंटेंट यशस्वीरित्या तयार झाले! (Generated)'),
+            content: Text('Content generated successfully!'),
             backgroundColor: Color(0xFF059669),
             duration: Duration(seconds: 2),
           ),
@@ -132,7 +132,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
         setState(() => _isGenerating = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('त्रुटी: ${e.toString()}'),
+            content: Text('Error: ${e.toString()}'),
             backgroundColor: const Color(0xFFDC2626),
           ),
         );
@@ -146,7 +146,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
     setState(() => _copied = true);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('कंटेंट क्लिपबोर्डवर कॉपी केले!'),
+        content: Text('Content copied to clipboard!'),
         backgroundColor: Color(0xFF059669),
         duration: Duration(seconds: 2),
       ),
@@ -157,7 +157,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
   }
 
   Future<void> _handleShare(AiContentHistoryItem item) async {
-    final text = '${item.title}\n\n${item.generatedContent}\n\n— नगरसेवक अमित चौगुले (प्रभाग १२)';
+    final text = '${item.title}\n\n${item.generatedContent}\n\n— Nagarsevak Amit Chougale (Ward 12)';
     final encoded = Uri.encodeComponent(text);
     final uri = Uri.parse('https://wa.me/?text=$encoded');
     try {
@@ -167,7 +167,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
         Clipboard.setData(ClipboardData(text: text));
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('कंटेंट क्लिपबोर्डवर कॉपी केले!')),
+            const SnackBar(content: Text('Content copied to clipboard!')),
           );
         }
       }
@@ -175,7 +175,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
       Clipboard.setData(ClipboardData(text: text));
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('कंटेंट क्लिपबोर्डवर कॉपी केले!')),
+          const SnackBar(content: Text('Content copied to clipboard!')),
         );
       }
     }
@@ -193,7 +193,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('\'${item.title}\' एडिटरमध्ये लोड केले'),
+        content: Text('\'${item.title}\' loaded in editor'),
         duration: const Duration(seconds: 1),
         backgroundColor: const Color(0xFF0284C7),
       ),
@@ -204,17 +204,17 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('मसुदा हटवायचा आहे का?'),
-        content: const Text('हा मसुदा आपल्या इतिहासामधून कायमस्वरूपी काढला जाईल.'),
+        title: const Text('Delete Draft?'),
+        content: const Text('This draft will be permanently removed from your history.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('रद्द करा'),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
-            child: const Text('हटवा', style: TextStyle(color: Colors.white)),
+            child: const Text('Delete', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -269,67 +269,34 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
         appBar: AppBar(
           backgroundColor: const Color(0xFF0284C7),
           elevation: 0,
+          scrolledUnderElevation: 0,
           leading: Builder(
             builder: (ctx) => IconButton(
-              icon: const Icon(Icons.menu_rounded, color: Colors.white),
+              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+              tooltip: 'Open Menu Drawer',
               onPressed: () => Scaffold.of(ctx).openDrawer(),
             ),
           ),
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.18),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.auto_awesome_rounded,
+          titleSpacing: 0,
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              Text(
+                'AI Content Studio',
+                style: TextStyle(
+                  fontSize: 17.5,
+                  fontWeight: FontWeight.w800,
                   color: Colors.white,
-                  size: 18,
+                  letterSpacing: -0.2,
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'AI कंटेंट स्टुडिओ',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    Text(
-                      'भाषणे, कॅप्शन आणि सूचना तयार करा',
-                      style: TextStyle(
-                        fontSize: 10.5,
-                        color: Colors.white.withOpacity(0.85),
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
-                    width: 0.8,
-                  ),
-                ),
-                child: Text(
-                  'मसुदे: ${_allHistory.length}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w600,
-                  ),
+              Text(
+                'Generate press releases, festival greetings and speeches',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFFE0F2FE),
                 ),
               ),
             ],
@@ -337,43 +304,64 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
           actions: [
             IconButton(
               icon: const Icon(Icons.picture_as_pdf_rounded, color: Colors.white),
-              tooltip: 'अधिकृत PDF अहवाल डाउनलोड',
+              tooltip: 'Download Official PDF Report',
               onPressed: _exportDossierPdf,
             ),
             IconButton(
               icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-              tooltip: 'रिफ्रेश करा',
+              tooltip: 'Refresh',
               onPressed: _loadData,
             ),
           ],
-          bottom: TabBar(
-            controller: _tabController,
-            indicatorColor: Colors.white,
-            indicatorWeight: 3,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white.withOpacity(0.7),
-            labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-            tabs: [
-              Tab(
-                icon: const Icon(Icons.edit_note_rounded, size: 18),
-                text: 'कंटेंट तयार करा (Studio)',
-              ),
-              Tab(
-                icon: const Icon(Icons.history_rounded, size: 18),
-                text: 'इतिहास व मसुदे (${_allHistory.length})',
-              ),
-            ],
           ),
-        ),
         body: _isLoading
             ? const Center(
                 child: CircularProgressIndicator(color: Color(0xFF0284C7)),
               )
-            : TabBarView(
-                controller: _tabController,
+            : Column(
                 children: [
-                  _buildStudioTab(),
-                  _buildHistoryTab(),
+                  Container(
+                    color: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    alignment: Alignment.centerLeft,
+                    child: Container(
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: TabBar(
+                        controller: _tabController,
+                        indicator: BoxDecoration(
+                          color: const Color(0xFF0284C7),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        labelColor: Colors.white,
+                        unselectedLabelColor: const Color(0xFF64748B),
+                        labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        dividerColor: Colors.transparent,
+                        tabs: [
+                          const Tab(
+                            icon: Icon(Icons.edit_note_rounded, size: 18),
+                            text: 'Create Content (Studio)',
+                          ),
+                          Tab(
+                            icon: const Icon(Icons.history_rounded, size: 18),
+                            text: 'History & Drafts (${_allHistory.length})',
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildStudioTab(),
+                        _buildHistoryTab(),
+                      ],
+                    ),
+                  ),
                 ],
               ),
       ),
@@ -422,13 +410,13 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
 
     return Row(
       children: [
-        _buildStatPill('भाषणे', '$speeches', const Color(0xFF8B5CF6), Icons.record_voice_over_rounded),
+        _buildStatPill('Speeches', '$speeches', const Color(0xFF8B5CF6), Icons.record_voice_over_rounded),
         const SizedBox(width: 8),
-        _buildStatPill('सोशल पोस्ट', '$posts', const Color(0xFF0284C7), Icons.tag_rounded),
+        _buildStatPill('Social Posts', '$posts', const Color(0xFF0284C7), Icons.tag_rounded),
         const SizedBox(width: 8),
-        _buildStatPill('सूचना/पत्रे', '$notices', const Color(0xFFD97706), Icons.description_rounded),
+        _buildStatPill('Notices/Letters', '$notices', const Color(0xFFD97706), Icons.description_rounded),
         const SizedBox(width: 8),
-        _buildStatPill('प्रेस नोट', '$press', const Color(0xFF059669), Icons.newspaper_rounded),
+        _buildStatPill('Press Releases', '$press', const Color(0xFF059669), Icons.newspaper_rounded),
       ],
     );
   }
@@ -492,7 +480,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
             const Icon(Icons.flash_on_rounded, size: 16, color: Color(0xFFD97706)),
             const SizedBox(width: 4),
             const Text(
-              'झटपट राजकीय मसुदा टेम्पलेट्स (Quick Prompts)',
+              'Quick Political Drafting Templates (Prompts)',
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
@@ -605,7 +593,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
               ),
               const SizedBox(width: 8),
               const Text(
-                'मसुदा तपशील प्रविष्ट करा',
+                'Enter Draft Details',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
@@ -618,7 +606,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
 
           // Topic / Context TextArea
           const Text(
-            'विषय / संदर्भ (Topic / Context)',
+            'Topic / Context',
             style: TextStyle(
               fontSize: 12.5,
               fontWeight: FontWeight.w600,
@@ -630,7 +618,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
             controller: _topicCtrl,
             maxLines: 3,
             decoration: InputDecoration(
-              hintText: 'उदा. रविवारी प्रभाग १२ मध्ये नवीन समाज मंदिराचे उद्घाटन...',
+              hintText: 'e.g., Inauguration of new community center in Ward 12 on Sunday...',
               hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
               filled: true,
               fillColor: const Color(0xFFF8FAFC),
@@ -670,7 +658,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'प्रकार (Type)',
+                      'Content Type',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -725,7 +713,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'टोन / स्वर (Tone)',
+                      'Tone / Sentiment',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -783,7 +771,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'भाषा (Language)',
+                'Language',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -816,8 +804,8 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                           alignment: Alignment.center,
                           child: Text(
                             lang.id == 'Marathi'
-                                ? 'मराठी'
-                                : (lang.id == 'Hindi' ? 'हिंदी' : 'English'),
+                                ? 'Marathi'
+                                : (lang.id == 'Hindi' ? 'Hindi' : 'English'),
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
@@ -863,7 +851,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                         ),
                         SizedBox(width: 10),
                         Text(
-                          'कंटेंट तयार करत आहे...',
+                          'Generating Content...',
                           style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -874,7 +862,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                         Icon(Icons.auto_awesome_rounded, size: 18),
                         SizedBox(width: 8),
                         Text(
-                          'कंटेंट तयार करा (Generate Content)',
+                          'Generate Content',
                           style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -965,7 +953,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        _copied ? 'कॉपी केले!' : 'कॉपी',
+                        _copied ? 'Copied!' : 'Copy',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
@@ -1013,14 +1001,14 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
               const Icon(Icons.menu_book_rounded, size: 12, color: Color(0xFF64748B)),
               const SizedBox(width: 4),
               Text(
-                '${item.wordCount} शब्द',
+                '${item.wordCount} words',
                 style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
               ),
               const SizedBox(width: 12),
               const Icon(Icons.timer_outlined, size: 12, color: Color(0xFF64748B)),
               const SizedBox(width: 4),
               Text(
-                'अंदाजे वाचन: ${item.readingTimeFormatted}',
+                'Reading Time: ${item.readingTimeFormatted}',
                 style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
               ),
             ],
@@ -1068,7 +1056,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                     );
                   },
                   icon: const Icon(Icons.fullscreen_rounded, size: 16),
-                  label: const Text('पूर्ण स्क्रीन पहा', style: TextStyle(fontSize: 12)),
+                  label: const Text('View Full Screen', style: TextStyle(fontSize: 12)),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFF0284C7),
                     side: const BorderSide(color: Color(0xFF0284C7)),
@@ -1081,7 +1069,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                 child: ElevatedButton.icon(
                   onPressed: () => AiContentReportGenerator.printDocument(item),
                   icon: const Icon(Icons.print_rounded, size: 16),
-                  label: const Text('लेटरहेड प्रिंट', style: TextStyle(fontSize: 12)),
+                  label: const Text('Print Letterhead', style: TextStyle(fontSize: 12)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF0284C7),
                     foregroundColor: Colors.white,
@@ -1115,7 +1103,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
               TextField(
                 controller: _historySearchCtrl,
                 decoration: InputDecoration(
-                  hintText: 'मसुदा किंवा विषय शोधा... (Search drafts)',
+                  hintText: 'Search drafts or topics...',
                   hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                   prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Color(0xFF64748B)),
                   suffixIcon: _historySearchCtrl.text.isNotEmpty
@@ -1144,17 +1132,17 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    _buildFilterChip('सर्व (${_allHistory.length})', 'all'),
+                    _buildFilterChip('All (${_allHistory.length})', 'all'),
                     const SizedBox(width: 6),
-                    _buildFilterChip('भाषण', 'Speech'),
+                    _buildFilterChip('Speeches', 'Speech'),
                     const SizedBox(width: 6),
-                    _buildFilterChip('सोशल कॅप्शन', 'Social Media Caption'),
+                    _buildFilterChip('Social Captions', 'Social Media Caption'),
                     const SizedBox(width: 6),
-                    _buildFilterChip('पत्र / सूचना', 'Letter/Notice'),
+                    _buildFilterChip('Letters & Notices', 'Letter/Notice'),
                     const SizedBox(width: 6),
-                    _buildFilterChip('प्रेस रिलीज', 'Press Release'),
+                    _buildFilterChip('Press Releases', 'Press Release'),
                     const SizedBox(width: 6),
-                    _buildFilterChip('कामाचा अहवाल', 'Work Report'),
+                    _buildFilterChip('Work Reports', 'Work Report'),
                   ],
                 ),
               ),
@@ -1175,8 +1163,8 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                       const SizedBox(height: 10),
                       Text(
                         _historySearchCtrl.text.isNotEmpty
-                            ? 'कोणताही मसुदा आढळला नाही'
-                            : 'अद्याप कोणताही मसुदा इतिहास नाही',
+                            ? 'No drafts found matching search'
+                            : 'No draft history found',
                         style: const TextStyle(fontSize: 14, color: Color(0xFF64748B)),
                       ),
                     ],
@@ -1322,7 +1310,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
             Row(
               children: [
                 Text(
-                  '${item.wordCount} शब्द • ${item.language.id}',
+                  '${item.wordCount} words • ${item.language.id}',
                   style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
                 ),
                 const Spacer(),
@@ -1338,7 +1326,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                         Icon(Icons.edit_rounded, size: 14, color: Color(0xFF0284C7)),
                         SizedBox(width: 4),
                         Text(
-                          'वापरा',
+                          'Use',
                           style: TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.bold,

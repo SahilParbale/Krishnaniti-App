@@ -45,7 +45,7 @@ class SurveyReportGenerator {
                       ),
                       pw.SizedBox(height: 2),
                       pw.Text(
-                        'जनमत चाचण्या व नमुना सर्वेक्षण अधिकृत अहवाल • नागरिक अभिप्राय सारांश',
+                        'Public Opinion Polls & Sample Survey Official Report • Citizen Feedback Summary',
                         style: pw.TextStyle(
                           fontSize: 9,
                           fontWeight: pw.FontWeight.bold,
@@ -120,33 +120,33 @@ class SurveyReportGenerator {
             pw.Row(
               children: [
                 _buildKpiCard(
-                  'एकूण चाचण्या (TOTAL SURVEYS)',
+                  'TOTAL SURVEYS',
                   '$totalCount',
-                  'एकूण नोंदणीकृत चाचण्या',
+                  'Total Registered Surveys',
                   PdfColors.blue800,
                   PdfColors.blue50,
                 ),
                 pw.SizedBox(width: 8),
                 _buildKpiCard(
-                  'सक्रिय चाचण्या (ACTIVE POLLS)',
+                  'ACTIVE POLLS',
                   '$activeCount',
-                  '$closedCount पूर्ण झालेले / बंद',
+                  '$closedCount Completed / Closed',
                   PdfColors.green800,
                   PdfColors.green50,
                 ),
                 pw.SizedBox(width: 8),
                 _buildKpiCard(
-                  'नोंदवलेले प्रतिसाद (RESPONSES)',
+                  'RESPONSES COLLECTED',
                   '$totalResponses',
-                  'नागरिकांकडून मिळालेली उत्तरे',
+                  'Citizen Feedback Collected',
                   PdfColors.purple800,
                   PdfColors.purple50,
                 ),
                 pw.SizedBox(width: 8),
                 _buildKpiCard(
-                  'नमुना लक्ष्य (TARGET 1% SIZE)',
+                  'TARGET 1% SAMPLE SIZE',
                   '$targetSampleSize',
-                  'एकूण ${NumberFormat('#,##,###').format(totalVoters)} मतदारांपैकी',
+                  'Out of total ${NumberFormat('#,##,###').format(totalVoters)} voters',
                   PdfColors.cyan800,
                   PdfColors.cyan50,
                 ),
@@ -165,11 +165,11 @@ class SurveyReportGenerator {
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text(
-                    'प्रभागातील जनमत सर्वेक्षण तपशील सूची (WARD PUBLIC SURVEY REGISTER)',
+                    'WARD PUBLIC SURVEY REGISTER',
                     style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
                   ),
                   pw.Text(
-                    'एकूण सर्वेक्षणे: ${surveys.length}',
+                    'Total Surveys: ${surveys.length}',
                     style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700),
                   ),
                 ],
@@ -183,13 +183,13 @@ class SurveyReportGenerator {
                 pw.TableRow(
                   decoration: const pw.BoxDecoration(color: PdfColors.blueGrey800),
                   children: [
-                    _tableHeaderCell('अ.क्र.', flex: 1),
-                    _tableHeaderCell('सर्वेक्षणाचा विषय व तपशील', flex: 4),
-                    _tableHeaderCell('परिसर / भाग', flex: 2),
-                    _tableHeaderCell('स्थिती', flex: 1),
-                    _tableHeaderCell('प्रश्न', flex: 1),
-                    _tableHeaderCell('प्रतिसाद / लक्ष्य', flex: 2),
-                    _tableHeaderCell('निर्मिती दिनांक', flex: 2),
+                    _tableHeaderCell('Sr.', flex: 1),
+                    _tableHeaderCell('Survey Title & Details', flex: 4),
+                    _tableHeaderCell('Area / Ward', flex: 2),
+                    _tableHeaderCell('Status', flex: 1),
+                    _tableHeaderCell('Questions', flex: 1),
+                    _tableHeaderCell('Responses / Target', flex: 2),
+                    _tableHeaderCell('Created Date', flex: 2),
                   ],
                 ),
                 ...surveys.asMap().entries.map((entry) {
@@ -222,7 +222,7 @@ class SurveyReportGenerator {
                           ],
                         ),
                       ),
-                      _tableDataCell(item.area ?? 'सर्व प्रभाग १२'),
+                      _tableDataCell(item.area ?? 'Entire Ward 12'),
                       pw.Padding(
                         padding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                         child: pw.Center(
@@ -233,7 +233,7 @@ class SurveyReportGenerator {
                               borderRadius: pw.BorderRadius.circular(3),
                             ),
                             child: pw.Text(
-                              item.status == 'Active' ? 'सक्रिय' : 'बंद',
+                              item.status == 'Active' ? 'Active' : 'Closed',
                               style: pw.TextStyle(
                                 fontSize: 6.5,
                                 fontWeight: pw.FontWeight.bold,

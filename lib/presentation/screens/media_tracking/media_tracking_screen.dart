@@ -142,7 +142,7 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
               mainAxisSize: MainAxisSize.min,
               children: const [
                 Text(
-                  'माध्यम मागोवा व ऑनलाइन पोर्टल मॉनिटरिंग',
+                  'Media Tracking & Online Portal Monitoring Guide',
                   style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
@@ -151,25 +151,25 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
                 SizedBox(height: 10),
                 _GuideStep(
                   number: '1',
-                  title: 'Search & Profiles / शोध व प्रोफाइल्स',
+                  title: 'Search & Profiles',
                   desc:
                       'Track news mentions of the Nagarsevak, opposition leaders, or Prabhag 12 development works across regional portals.',
                 ),
                 _GuideStep(
                   number: '2',
-                  title: 'Telemetry Logs / स्कॅनर टर्मिनल',
+                  title: 'Telemetry Logs',
                   desc:
                       'Tap the terminal icon to inspect real-time RSS crawlers scanning Sakal, ABP Majha, TV9, Lokmat, and Twitter.',
                 ),
                 _GuideStep(
                   number: '3',
-                  title: 'Save to Newspaper Clippings / जतन करा',
+                  title: 'Save to Newspaper Clippings',
                   desc:
                       'One-click export allows any online digital story to be archived directly into your official Newspaper Clippings register.',
                 ),
                 _GuideStep(
                   number: '4',
-                  title: 'PDF Audit Reports / अहवाल',
+                  title: 'PDF Audit Reports',
                   desc:
                       'Download official landscape A4 reports summarizing sentiment share and estimated digital media reach.',
                 ),
@@ -185,7 +185,7 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
                     borderRadius: BorderRadius.circular(8)),
               ),
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Got it / समजले'),
+              child: const Text('Got it'),
             ),
           ],
         );
@@ -200,7 +200,7 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
     final urlCtrl = TextEditingController();
     final summaryMrCtrl = TextEditingController();
     final summaryEnCtrl = TextEditingController();
-    final personCtrl = TextEditingController(text: 'Amit Chougale (नगरसेवक)');
+    final personCtrl = TextEditingController(text: 'Amit Chougale (Nagarsevak)');
     final reachCtrl = TextEditingController(text: '25000');
     String sentiment = 'positive';
     String sourceType = 'portal';
@@ -236,7 +236,7 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
                             Icon(Icons.add_link_rounded, color: Colors.white),
                             SizedBox(width: 8),
                             Text(
-                              'Track Web News URL / बातमी लिंक जोडा',
+                              'Track Web News URL',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -258,7 +258,7 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
                       padding: const EdgeInsets.all(16),
                       children: [
                         // Sentiment Type
-                        const Text('Coverage Sentiment / बातमीचा सूर',
+                        const Text('Coverage Sentiment',
                             style: TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 13)),
                         const SizedBox(height: 6),
@@ -284,7 +284,7 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
                                   ),
                                   alignment: Alignment.center,
                                   child: Text(
-                                    'Positive (सकारात्मक)',
+                                    'Positive',
                                     style: TextStyle(
                                       color: sentiment == 'positive'
                                           ? Colors.white
@@ -317,7 +317,7 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
                                   ),
                                   alignment: Alignment.center,
                                   child: Text(
-                                    'Critical (दखलपात्र)',
+                                    'Critical',
                                     style: TextStyle(
                                       color: sentiment == 'negative'
                                           ? Colors.white
@@ -334,7 +334,7 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
                         const SizedBox(height: 14),
 
                         // Source Portal
-                        const Text('Source Portal / न्यूज पोर्टल',
+                        const Text('Source Portal',
                             style: TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 13)),
                         const SizedBox(height: 6),
@@ -350,7 +350,7 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
                         const SizedBox(height: 14),
 
                         // URL
-                        const Text('Portal Article URL / बातमीची वेब लिंक',
+                        const Text('Portal Article URL',
                             style: TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 13)),
                         const SizedBox(height: 6),
@@ -366,14 +366,14 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
                         const SizedBox(height: 14),
 
                         // Headline Marathi
-                        const Text('Headline Marathi (मराठी ठळक बातमी)',
+                        const Text('Headline (Marathi / Regional)',
                             style: TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 13)),
                         const SizedBox(height: 6),
                         TextField(
                           controller: titleMrCtrl,
                           decoration: const InputDecoration(
-                            hintText: 'उदा. प्रभाग १२ मध्ये विकासकामे वेगात...',
+                            hintText: 'e.g., Development works in Ward 12...',
                             border: OutlineInputBorder(),
                             contentPadding: EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 10),
@@ -382,7 +382,7 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
                         const SizedBox(height: 14),
 
                         // Headline English
-                        const Text('Headline English (इंग्रजी शीर्षक)',
+                        const Text('Headline (English)',
                             style: TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 13)),
                         const SizedBox(height: 6),
@@ -398,7 +398,7 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
                         const SizedBox(height: 14),
 
                         // Summary Marathi
-                        const Text('Summary (मराठी गोषवारा)',
+                        const Text('Summary',
                             style: TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 13)),
                         const SizedBox(height: 6),
@@ -453,7 +453,7 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
                           ),
                           icon: const Icon(Icons.check_circle_outline_rounded),
                           label: const Text(
-                            'Save & Start Tracking / बातमी ट्रॅक करा',
+                            'Save & Start Tracking',
                             style: TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 14),
                           ),
@@ -492,7 +492,7 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
                                   : summaryEnCtrl.text.trim(),
                               reachEstimate:
                                   int.tryParse(reachCtrl.text) ?? 20000,
-                              keywords: ['#पुणे', '#माध्यम', '#विकासकामे'],
+                              keywords: ['#Pune', '#Media', '#Development'],
                             );
 
                             final repo = ref.read(mediaTrackingRepoProvider);
@@ -548,48 +548,34 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
         appBar: AppBar(
           backgroundColor: const Color(0xFF0284C7),
           elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
+          scrolledUnderElevation: 0,
+          leading: Builder(
+            builder: (ctx) => IconButton(
+              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+              tooltip: 'Open Menu Drawer',
+              onPressed: () => Scaffold.of(ctx).openDrawer(),
+            ),
           ),
+          titleSpacing: 0,
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Text(
-                    'Media Tracking',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16.5,
-                      letterSpacing: 0.2,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      'उल्लेख: $totalCount',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              Text(
+                'Media Tracking',
+                style: TextStyle(
+                  fontSize: 17.5,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: -0.2,
+                ),
               ),
               Text(
-                'ऑनलाइन बातम्या, पोर्टल्स व प्रसिद्धी • प्रभाग १२',
+                'Broadcast news channels, local web portals and press monitors',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.85),
                   fontSize: 11,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFFE0F2FE),
                 ),
               ),
             ],
@@ -749,7 +735,7 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
           foregroundColor: Colors.white,
           elevation: 3,
           icon: const Icon(Icons.add_link_rounded),
-          label: const Text('Track URL / बातमी जोडा',
+          label: const Text('Track URL',
               style: TextStyle(fontWeight: FontWeight.bold)),
           onPressed: _showAddArticleModal,
         ),
@@ -893,7 +879,7 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
             Expanded(
               child: _buildKpiTile(
                 title: 'Total Mentions',
-                marathi: 'एकूण बातम्यांचे उल्लेख',
+                marathi: 'Total Mentions',
                 value: '$total',
                 icon: Icons.language_rounded,
                 color: const Color(0xFF0284C7),
@@ -905,7 +891,7 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
             Expanded(
               child: _buildKpiTile(
                 title: 'Sentiment Ratio',
-                marathi: 'भावना गुणोत्तर',
+                marathi: 'Sentiment Ratio',
                 value: '${ratio.toStringAsFixed(0)}%',
                 icon: Icons.sentiment_very_satisfied_rounded,
                 color: const Color(0xFF16A34A),
@@ -921,7 +907,7 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
             Expanded(
               child: _buildKpiTile(
                 title: 'Critical Issues',
-                marathi: 'दखलपात्र बातम्या',
+                marathi: 'Critical Issues',
                 value: '$negative',
                 icon: Icons.shield_outlined,
                 color: const Color(0xFFDC2626),
@@ -933,7 +919,7 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
             Expanded(
               child: _buildKpiTile(
                 title: 'Est. Digital Reach',
-                marathi: 'एकूण पोहोच',
+                marathi: 'Total Reach',
                 value: reach.toLocaleString(),
                 icon: Icons.remove_red_eye_outlined,
                 color: const Color(0xFF9333EA),
@@ -1136,13 +1122,13 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
       child: Row(
         children: [
           Expanded(
-            child: _buildSentimentTabItem('all', 'All Mentions', 'सर्व बातम्या', total, const Color(0xFF0284C7)),
+            child: _buildSentimentTabItem('all', 'All Mentions', 'All Mentions', total, const Color(0xFF0284C7)),
           ),
           Expanded(
-            child: _buildSentimentTabItem('positive', 'Positive', 'सकारात्मक', positive, const Color(0xFF16A34A)),
+            child: _buildSentimentTabItem('positive', 'Positive', 'Positive', positive, const Color(0xFF16A34A)),
           ),
           Expanded(
-            child: _buildSentimentTabItem('negative', 'Critical', 'दखलपात्र', negative, const Color(0xFFDC2626)),
+            child: _buildSentimentTabItem('negative', 'Critical', 'Critical', negative, const Color(0xFFDC2626)),
           ),
         ],
       ),
@@ -1574,7 +1560,7 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
           Icon(Icons.search_off_rounded, size: 48, color: Color(0xFF94A3B8)),
           SizedBox(height: 12),
           Text(
-            'No media mentions found / बातम्यांचे उल्लेख आढळले नाहीत',
+            'No media mentions found',
             style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 14,

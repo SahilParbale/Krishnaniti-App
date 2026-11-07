@@ -37,7 +37,7 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
     setState(() => _copied = true);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('कंटेंट क्लिपबोर्डवर कॉपी केले! (Content copied)'),
+        content: Text('Content copied to clipboard!'),
         backgroundColor: Color(0xFF059669),
         duration: Duration(seconds: 2),
       ),
@@ -48,7 +48,7 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
   }
 
   Future<void> _handleShare() async {
-    final text = '${_item.title}\n\n${_item.generatedContent}\n\n— नगरसेवक अमित चौगुले (प्रभाग १२)';
+    final text = '${_item.title}\n\n${_item.generatedContent}\n\n— Nagarsevak Amit Chougale (Ward 12)';
     final encoded = Uri.encodeComponent(text);
     final uri = Uri.parse('https://wa.me/?text=$encoded');
     try {
@@ -58,7 +58,7 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
         Clipboard.setData(ClipboardData(text: text));
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('कंटेंट क्लिपबोर्डवर कॉपी केले!')),
+            const SnackBar(content: Text('Content copied to clipboard!')),
           );
         }
       }
@@ -66,7 +66,7 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
       Clipboard.setData(ClipboardData(text: text));
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('कंटेंट क्लिपबोर्डवर कॉपी केले!')),
+          const SnackBar(content: Text('Content copied to clipboard!')),
         );
       }
     }
@@ -114,7 +114,7 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
                 ),
               ),
               Text(
-                '${_item.tone.titleMr} स्वर • ${_item.language.label}',
+                '${_item.tone.name} • ${_item.language.label}',
                 style: const TextStyle(
                   fontSize: 11,
                   color: Color(0xFFE0F2FE),
@@ -130,17 +130,17 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
                     : Icons.star_outline_rounded,
                 color: _item.isFavorite ? Colors.amberAccent : Colors.white,
               ),
-              tooltip: 'महत्त्वाचे (Favorite)',
+              tooltip: 'Favorite',
               onPressed: _handleToggleFavorite,
             ),
             IconButton(
               icon: const Icon(Icons.print_rounded, color: Colors.white),
-              tooltip: 'लेटरहेड PDF प्रिंट करा',
+              tooltip: 'Print Letterhead PDF',
               onPressed: _handlePrintPdf,
             ),
             IconButton(
               icon: const Icon(Icons.share_rounded, color: Colors.white),
-              tooltip: 'शेअर करा',
+              tooltip: 'Share',
               onPressed: _handleShare,
             ),
           ],
@@ -264,7 +264,7 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '${_item.wordCount} शब्द',
+                          '${_item.wordCount} words',
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -279,7 +279,7 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          'अंदाजे वाचन: ${_item.readingTimeFormatted}',
+                          'Reading Time: ${_item.readingTimeFormatted}',
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -375,7 +375,7 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
                         size: 18,
                       ),
                       label: Text(
-                        _copied ? 'कॉपी केले!' : 'कंटेंट कॉपी करा',
+                        _copied ? 'Copied!' : 'Copy Content',
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       style: ElevatedButton.styleFrom(
@@ -396,7 +396,7 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
                     onPressed: _handleShare,
                     icon: const Icon(Icons.share_rounded, size: 18),
                     label: const Text(
-                      'शेअर करा',
+                      'Share',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     style: ElevatedButton.styleFrom(
@@ -421,7 +421,7 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
                   onPressed: _handlePrintPdf,
                   icon: const Icon(Icons.picture_as_pdf_rounded, size: 18),
                   label: const Text(
-                    'अधिकृत लेटरहेड PDF डाउनलोड करा',
+                    'Download Official Letterhead PDF',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   style: OutlinedButton.styleFrom(

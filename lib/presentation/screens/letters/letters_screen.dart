@@ -10,15 +10,21 @@ import '../../../data/models/letter_model.dart';
 import '../../providers/auth_provider.dart';
 import '../dashboard/dashboard_screen.dart';
 import 'letter_detail_screen.dart';
+import '../../navigation/app_drawer.dart';
 
 class LettersScreen extends ConsumerStatefulWidget {
-  const LettersScreen({super.key});
+  final ValueChanged<int>? onTabChange;
+
+  const LettersScreen({super.key, this.onTabChange});
 
   @override
   ConsumerState<LettersScreen> createState() => _LettersScreenState();
 }
 
-class _LettersScreenState extends ConsumerState<LettersScreen> {
+class _LettersScreenState extends ConsumerState<LettersScreen>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
   // Tabs: true = Outgoing Letters, false = Incoming Letters
   bool _isOutgoing = true;
 
@@ -645,6 +651,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final isMr = ref.watch(isMarathiProvider);
     final filtered = _filteredLetters;
 
@@ -661,13 +668,44 @@ class _LettersScreenState extends ConsumerState<LettersScreen> {
       ),
       child: Scaffold(
         backgroundColor: const Color(0xFFF8FAFC),
+        drawer: NagarsevakAppDrawer(
+          currentTabIndex: 2,
+          onTabChange: widget.onTabChange,
+        ),
         appBar: AppBar(
           backgroundColor: const Color(0xFF0284C7),
           elevation: 0,
           scrolledUnderElevation: 0,
-          title: Text(
-            isMr ? AppStrings.navLettersMr : AppStrings.navLetters,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white),
+          leading: Builder(
+            builder: (ctx) => IconButton(
+              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+              tooltip: 'Open Menu Drawer',
+              onPressed: () => Scaffold.of(ctx).openDrawer(),
+            ),
+          ),
+          titleSpacing: 0,
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              Text(
+                'Letters & Outward Inward',
+                style: TextStyle(
+                  fontSize: 17.5,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: -0.2,
+                ),
+              ),
+              Text(
+                'Track and issue official ward correspondence',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFFE0F2FE),
+                ),
+              ),
+            ],
           ),
           actions: [
             IconButton(

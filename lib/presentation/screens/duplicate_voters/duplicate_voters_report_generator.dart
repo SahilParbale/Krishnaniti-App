@@ -45,7 +45,7 @@ class DuplicateVotersReportGenerator {
                       ),
                       pw.SizedBox(height: 2),
                       pw.Text(
-                        'ड्युप्लिकेट मतदार शोध व तपासणी अहवाल',
+                        'Duplicate Voters Audit & Verification Report',
                         style: pw.TextStyle(
                           fontSize: 15,
                           fontWeight: pw.FontWeight.bold,
@@ -70,7 +70,7 @@ class DuplicateVotersReportGenerator {
                           border: pw.Border.all(color: const PdfColor.fromInt(0xFFFECACA), width: 0.5),
                         ),
                         child: pw.Text(
-                          'ELECTORAL AUDIT / मतदार यादी तपासणी',
+                          'ELECTORAL AUDIT / VOTER ROLL VERIFICATION',
                           style: pw.TextStyle(
                             fontSize: 7.5,
                             fontWeight: pw.FontWeight.bold,
@@ -80,7 +80,7 @@ class DuplicateVotersReportGenerator {
                       ),
                       pw.SizedBox(height: 4),
                       pw.Text(
-                        'दिनांक: $formattedDate',
+                        'Date: $formattedDate',
                         style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700),
                       ),
                       pw.Text(
@@ -98,11 +98,11 @@ class DuplicateVotersReportGenerator {
             // Summary KPI Cards Row
             pw.Row(
               children: [
-                _buildPdfKpiCard('Duplicate Groups (ड्युप्लिकेट गट)', duplicateGroups.length.toString(), PdfColors.blue50, PdfColors.blue900),
+                _buildPdfKpiCard('Duplicate Groups', duplicateGroups.length.toString(), PdfColors.blue50, PdfColors.blue900),
                 pw.SizedBox(width: 8),
-                _buildPdfKpiCard('Total Affected Voters (एकूण बाधित मतदार)', totalAffectedVoters.toString(), const PdfColor.fromInt(0xFFFEF2F2), const PdfColor.fromInt(0xFFB91C1C)),
+                _buildPdfKpiCard('Total Affected Voters', totalAffectedVoters.toString(), const PdfColor.fromInt(0xFFFEF2F2), const PdfColor.fromInt(0xFFB91C1C)),
                 pw.SizedBox(width: 8),
-                _buildPdfKpiCard('Est. Extra Records (अंदाजे अतिरिक्त रेकॉर्ड)', estExtraRecords.toString(), PdfColors.amber50, PdfColors.amber900),
+                _buildPdfKpiCard('Est. Extra Records', estExtraRecords.toString(), PdfColors.amber50, PdfColors.amber900),
               ],
             ),
 
@@ -113,7 +113,7 @@ class DuplicateVotersReportGenerator {
                 padding: const pw.EdgeInsets.all(24),
                 alignment: pw.Alignment.center,
                 child: pw.Text(
-                  'कोणतेही ड्युप्लिकेट मतदार आढळले नाहीत. सर्व मतदार रेकॉर्ड अद्वितीय आहेत.',
+                  'No duplicate voters found. All voter records are unique.',
                   style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: PdfColors.green800),
                 ),
               )
@@ -139,11 +139,11 @@ class DuplicateVotersReportGenerator {
                           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                           children: [
                             pw.Text(
-                              '${group.displayName} (${group.recordsCount} नोंदी आढळल्या)',
+                              '${group.displayName} (${group.recordsCount} records found)',
                               style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: const PdfColor.fromInt(0xFF0F172A)),
                             ),
                             pw.Text(
-                              '${group.extraRecordsCount} संभाव्य अतिरिक्त नोंद (Form 7 Deletion)',
+                              '${group.extraRecordsCount} potential extra records (Form 7 Deletion)',
                               style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: const PdfColor.fromInt(0xFFDC2626)),
                             ),
                           ],
@@ -212,7 +212,7 @@ class DuplicateVotersReportGenerator {
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
                 pw.Text(
-                  'टीप: मतदार यादीतील ड्युप्लिकेट नावे वगळण्यासाठी निवडणूक आयोगाचा नमुना क्र. ७ (Form 7) दाखल करावा.',
+                  'Note: To remove duplicate names from electoral rolls, submit Form 7 (Deletion) to the Election Commission.',
                   style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey600),
                 ),
                 pw.Text(

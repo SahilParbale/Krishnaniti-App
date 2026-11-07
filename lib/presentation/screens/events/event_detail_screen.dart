@@ -44,11 +44,11 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
   Future<void> _handleShare() async {
     final text =
         '📌 *${_event.titleMr}*\n\n'
-        '📅 तारीख: ${_event.formattedDate}\n'
-        '⏰ वेळ: ${_event.eventTime}\n'
-        '📍 ठिकाण: ${_event.locationMr.isNotEmpty ? _event.locationMr : _event.location}\n\n'
+        '📅 Date: ${_event.formattedDate}\n'
+        '⏰ Time: ${_event.eventTime}\n'
+        '📍 Venue: ${_event.location}\n\n'
         '${_event.description}\n\n'
-        '— नगरसेवक अमित चौगुले जनसंपर्क कार्यालय, प्रभाग १२, पुणे मनपा';
+        '— Nagarsevak Amit Chougale PR Office, Ward 12, PMC';
 
     final encoded = Uri.encodeComponent(text);
     final uri = Uri.parse('https://wa.me/?text=$encoded');
@@ -59,7 +59,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
         Clipboard.setData(ClipboardData(text: text));
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('कार्यक्रम तपशील क्लिपबोर्डवर कॉपी केला!')),
+            const SnackBar(content: Text('Event details copied to clipboard!')),
           );
         }
       }
@@ -77,11 +77,12 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
 
   Future<void> _handleWhatsApp(String mobile, String name) async {
     final msg = Uri.encodeComponent(
-      'नमस्कार $name जी,\n\n'
-      'आपणास *${_event.titleMr}* कार्यक्रमासाठी आमंत्रित केले आहे.\n'
-      'तारीख: ${_event.formattedDate}, वेळ: ${_event.eventTime}.\n'
-      'आपण उपस्थित राहणार आहात का?\n\n'
-      '— नगरसेवक अमित चौगुले कार्यालय',
+      'Hello $name,\n\n'
+      'You are cordially invited to the *${_event.title}* program.\n'
+      'Date: ${_event.formattedDate}, Time: ${_event.eventTime}.\n'
+      'Venue: ${_event.location}.\n'
+      'Will you be attending?\n\n'
+      '— Nagarsevak Amit Chougale Office',
     );
     final uri = Uri.parse('https://wa.me/91$mobile?text=$msg');
     if (await canLaunchUrl(uri)) {
@@ -133,12 +134,12 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
           actions: [
             IconButton(
               icon: const Icon(Icons.picture_as_pdf_rounded, color: Colors.white),
-              tooltip: 'अधिकृत PDF अहवाल',
+              tooltip: 'Official PDF Report',
               onPressed: () => EventReportGenerator.generateAndPrintReport(events: [_event]),
             ),
             IconButton(
               icon: const Icon(Icons.share_rounded, color: Colors.white),
-              tooltip: 'शेअर करा',
+              tooltip: 'Share',
               onPressed: _handleShare,
             ),
           ],
@@ -197,7 +198,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                   },
                   icon: const Icon(Icons.send_rounded, size: 18),
                   label: const Text(
-                    'आमंत्रणे पाठवा (Send Invites)',
+                    'Send Invites',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   style: ElevatedButton.styleFrom(
@@ -309,7 +310,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            _event.isCompleted ? 'पूर्ण' : 'नियोजित',
+                            _event.isCompleted ? 'Completed' : 'Upcoming',
                             style: TextStyle(
                               fontSize: 10.5,
                               fontWeight: FontWeight.bold,
@@ -371,7 +372,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
               const Icon(Icons.flag_outlined, size: 14, color: Color(0xFF64748B)),
               const SizedBox(width: 6),
               Text(
-                'भाग: ${_event.area}',
+                'Area: ${_event.area}',
                 style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
               ),
               const SizedBox(width: 14),
@@ -379,7 +380,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
-                  'लक्षित प्रेक्षक: ${_event.targetAudience}',
+                  'Target Audience: ${_event.targetAudience}',
                   style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -396,27 +397,27 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     return Row(
       children: [
         _buildStatBox(
-          'येणार (Going)',
+          'Going',
           '${_event.goingCount}',
-          '${_event.goingPercentage.toStringAsFixed(0)}% प्रतिसाद',
+          '${_event.goingPercentage.toStringAsFixed(0)}% response',
           const Color(0xFF16A34A),
           const Color(0xFFDCFCE7),
           Icons.check_circle_rounded,
         ),
         const SizedBox(width: 8),
         _buildStatBox(
-          'कदाचित (Maybe)',
+          'Maybe',
           '${_event.maybeCount}',
-          'अपेक्षित उपस्थिती',
+          'Expected Attendance',
           const Color(0xFFD97706),
           const Color(0xFFFEF3C7),
           Icons.help_rounded,
         ),
         const SizedBox(width: 8),
         _buildStatBox(
-          'येणार नाही',
+          'Not Going',
           '${_event.notGoingCount}',
-          'अनुपस्थिती',
+          'Absent',
           const Color(0xFFDC2626),
           const Color(0xFFFEE2E2),
           Icons.cancel_rounded,
@@ -502,7 +503,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
               Icon(Icons.notes_rounded, size: 18, color: Color(0xFF0284C7)),
               SizedBox(width: 6),
               Text(
-                'कार्यक्रमाबद्दल तपशील (About Event)',
+                'About Event',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
@@ -541,7 +542,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
               const Icon(Icons.people_alt_rounded, size: 18, color: Color(0xFF0284C7)),
               const SizedBox(width: 6),
               Text(
-                'प्रतिसाद यादी (RSVP List - ${_event.totalRsvps})',
+                'RSVP List (${_event.totalRsvps})',
                 style: const TextStyle(
                   fontSize: 14.5,
                   fontWeight: FontWeight.bold,
@@ -556,7 +557,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
           TextField(
             controller: _rsvpSearchCtrl,
             decoration: InputDecoration(
-              hintText: 'नावाने किंवा मोबाईलने शोधा...',
+              hintText: 'Search by name or mobile...',
               hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
               prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFF64748B)),
               suffixIcon: _rsvpSearchCtrl.text.isNotEmpty
@@ -587,13 +588,13 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _buildStatusFilterChip('सर्व (${_event.totalRsvps})', 'all'),
+                _buildStatusFilterChip('All (${_event.totalRsvps})', 'all'),
                 const SizedBox(width: 6),
-                _buildStatusFilterChip('येणार (${_event.goingCount})', 'Going'),
+                _buildStatusFilterChip('Going (${_event.goingCount})', 'Going'),
                 const SizedBox(width: 6),
-                _buildStatusFilterChip('कदाचित (${_event.maybeCount})', 'Maybe'),
+                _buildStatusFilterChip('Maybe (${_event.maybeCount})', 'Maybe'),
                 const SizedBox(width: 6),
-                _buildStatusFilterChip('येणार नाही (${_event.notGoingCount})', 'Not Going'),
+                _buildStatusFilterChip('Not Going (${_event.notGoingCount})', 'Not Going'),
               ],
             ),
           ),
@@ -608,8 +609,8 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
               child: Center(
                 child: Text(
                   _event.rsvps.isEmpty
-                      ? 'अद्याप कोणतेही RSVP मिळालेले नाहीत.\nखालील बटनावरून आमंत्रणे पाठवा.'
-                      : 'कोणताही प्रतिसाद जुळला नाही.',
+                      ? 'No RSVPs received yet.\nUse the button below to send invitations.'
+                      : 'No matching responses found.',
                   textAlign: TextAlign.center,
                   style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
                 ),
@@ -665,12 +666,12 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                       IconButton(
                         icon: const Icon(Icons.call_outlined, size: 18, color: Color(0xFF0284C7)),
                         onPressed: () => _handleCall(rsvp.mobile),
-                        tooltip: 'कॉल करा',
+                        tooltip: 'Call',
                       ),
                       IconButton(
                         icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18, color: Color(0xFF16A34A)),
                         onPressed: () => _handleWhatsApp(rsvp.mobile, rsvp.voterNameMr),
-                        tooltip: 'WhatsApp संदेश',
+                        tooltip: 'WhatsApp Message',
                       ),
                     ],
                   ),

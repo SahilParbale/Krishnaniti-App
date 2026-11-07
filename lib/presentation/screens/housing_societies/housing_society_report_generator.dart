@@ -48,7 +48,7 @@ class HousingSocietyReportGenerator {
                       ),
                       pw.SizedBox(height: 2),
                       pw.Text(
-                        'सहकारी गृहनिर्माण संस्था, अध्यक्ष-सचिव व मतदार विश्लेषण अहवाल',
+                        'Cooperative Housing Societies, Executive Contacts & Voter Sentiment Report',
                         style: pw.TextStyle(
                           fontSize: 15,
                           fontWeight: pw.FontWeight.bold,
@@ -73,7 +73,7 @@ class HousingSocietyReportGenerator {
                           border: pw.Border.all(color: PdfColors.blue300, width: 0.5),
                         ),
                         child: pw.Text(
-                          'CONFIDENTIAL / राजकीय व प्रभाग दस्तऐवज',
+                          'CONFIDENTIAL / WARD ELECTORAL DOCUMENT',
                           style: pw.TextStyle(
                             fontSize: 7.5,
                             fontWeight: pw.FontWeight.bold,
@@ -83,7 +83,7 @@ class HousingSocietyReportGenerator {
                       ),
                       pw.SizedBox(height: 4),
                       pw.Text(
-                        'दिनांक: $formattedDate',
+                        'Date: $formattedDate',
                         style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700),
                       ),
                       pw.Text(
@@ -101,13 +101,13 @@ class HousingSocietyReportGenerator {
             // Summary KPI Row
             pw.Row(
               children: [
-                _buildPdfKpiCard('Total Societies (एकूण सोसायट्या)', totalSocieties.toString(), PdfColors.indigo50, PdfColors.indigo900),
+                _buildPdfKpiCard('Total Societies', totalSocieties.toString(), PdfColors.indigo50, PdfColors.indigo900),
                 pw.SizedBox(width: 8),
-                _buildPdfKpiCard('Total Voters (एकूण मतदार)', totalVoters.toString(), PdfColors.blue50, PdfColors.blue900),
+                _buildPdfKpiCard('Total Voters', totalVoters.toString(), PdfColors.blue50, PdfColors.blue900),
                 pw.SizedBox(width: 8),
-                _buildPdfKpiCard('Favourable Support (फेवर मतदार)', totalFavourable.toString(), PdfColors.green50, PdfColors.green900),
+                _buildPdfKpiCard('Favourable Voters', totalFavourable.toString(), PdfColors.green50, PdfColors.green900),
                 pw.SizedBox(width: 8),
-                _buildPdfKpiCard('Support Rating (अंदाजे पाठिंबा)', '$supportPercentage%', PdfColors.amber50, PdfColors.amber900),
+                _buildPdfKpiCard('Support Rating', '$supportPercentage%', PdfColors.amber50, PdfColors.amber900),
               ],
             ),
 
@@ -117,17 +117,17 @@ class HousingSocietyReportGenerator {
             pw.TableHelper.fromTextArray(
               headers: [
                 '#',
-                'Society Name (सोसायटीचे नाव)',
-                'Area (परिसर)',
-                'Chairman (अध्यक्ष)',
+                'Society Name',
+                'Area',
+                'Chairman',
                 'Chairman Mobile',
-                'Secretary (सचिव)',
+                'Secretary',
                 'Secretary Mobile',
                 'Total Voters',
                 'Fav Voters',
                 'Support %',
                 'Status',
-                'Key Issues & Notes (समस्या व मागण्या)',
+                'Key Issues & Notes',
               ],
               data: List.generate(societies.length, (index) {
                 final s = societies[index];
@@ -183,7 +183,7 @@ class HousingSocietyReportGenerator {
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
                 pw.Text(
-                  'टीप: हा अहवाल प्रभाग क्र. १२ मधील सहकारी गृहनिर्माण संस्थांचे संपर्क आणि मतदार समन्वय साध्य करण्यासाठी आहे.',
+                  'Note: This report is compiled for coordination and voter outreach across cooperative housing societies in Ward 12.',
                   style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey600),
                 ),
                 pw.Text(

@@ -16,20 +16,20 @@ class _CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
   final TextEditingController _titleCtrl = TextEditingController();
   final TextEditingController _descCtrl = TextEditingController();
   final TextEditingController _targetCtrl = TextEditingController(text: '426');
-  String _selectedArea = 'शनिवार पेठ';
+  String _selectedArea = 'Shaniwar Peth';
   String _status = 'Active';
 
   final List<_TempQuestion> _questions = [];
 
   final List<String> _prabhagAreas = [
-    'शनिवार पेठ',
-    'कसबा पेठ',
-    'नारायण पेठ',
-    'रास्ता पेठ',
-    'सदाशिव पेठ',
-    'नाना पेठ',
-    'नवी पेठ',
-    'सर्व प्रभाग १२',
+    'Shaniwar Peth',
+    'Kasba Peth',
+    'Narayan Peth',
+    'Rasta Peth',
+    'Sadashiv Peth',
+    'Nana Peth',
+    'Navi Peth',
+    'Entire Ward 12',
   ];
 
   @override
@@ -40,7 +40,7 @@ class _CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
       _titleCtrl.text = s.title;
       _descCtrl.text = s.description;
       _targetCtrl.text = s.targetSampleSize.toString();
-      _selectedArea = s.area ?? 'शनिवार पेठ';
+      _selectedArea = s.area ?? 'Shaniwar Peth';
       _status = s.status;
 
       for (final q in s.questions) {
@@ -55,7 +55,7 @@ class _CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
       // Default initial question
       _questions.add(_TempQuestion(
         id: 'q1',
-        textController: TextEditingController(text: 'या योजनेचा आपल्या कुटुंबाला थेट फायदा झाला का?'),
+        textController: TextEditingController(text: 'Did this scheme directly benefit your family?'),
         type: SurveyQuestionType.yesNo,
         options: [],
       ));
@@ -88,7 +88,7 @@ class _CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
   void _removeQuestion(int index) {
     if (_questions.length <= 1) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('किमान एक प्रश्न असणे आवश्यक आहे')),
+        const SnackBar(content: Text('At least one question is required')),
       );
       return;
     }
@@ -105,7 +105,7 @@ class _CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
 
     if (title.isEmpty || desc.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('कृपया सर्वेक्षणाचा विषय व तपशील भरा')),
+        const SnackBar(content: Text('Please enter survey title and details')),
       );
       return;
     }
@@ -115,7 +115,7 @@ class _CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
       final t = _questions[i].textController.text.trim();
       if (t.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('कृपया प्रश्न क्र. ${i + 1} चे मजकूर भरा')),
+          SnackBar(content: Text('Please enter text for Question ${i + 1}')),
         );
         return;
       }
@@ -164,7 +164,7 @@ class _CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          isEdit ? 'सर्वेक्षण संपादित करा' : 'नवीन सर्वेक्षण तयार करा',
+          isEdit ? 'Edit Survey' : 'Create New Survey',
           style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
         ),
       ),
@@ -185,7 +185,7 @@ class _CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'सर्वेक्षण मूलभूत माहिती',
+                    'Survey Basic Information',
                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                   ),
                   const SizedBox(height: 14),
@@ -193,7 +193,7 @@ class _CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
                   TextField(
                     controller: _titleCtrl,
                     decoration: const InputDecoration(
-                      labelText: 'सर्वेक्षणाचा मुख्य विषय / शीर्षक *',
+                      labelText: 'Survey Main Subject / Title *',
                       border: OutlineInputBorder(),
                     ),
                   ),
@@ -203,7 +203,7 @@ class _CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
                     controller: _descCtrl,
                     maxLines: 3,
                     decoration: const InputDecoration(
-                      labelText: 'सर्वेक्षणाचा तपशील व उद्दिष्ट *',
+                      labelText: 'Survey Details & Objective *',
                       border: OutlineInputBorder(),
                     ),
                   ),
@@ -215,7 +215,7 @@ class _CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
                         child: DropdownButtonFormField<String>(
                           value: _selectedArea,
                           decoration: const InputDecoration(
-                            labelText: 'प्रभाग / परिसर',
+                            labelText: 'Ward / Area',
                             border: OutlineInputBorder(),
                           ),
                           items: _prabhagAreas.map((a) {
@@ -232,7 +232,7 @@ class _CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
                           controller: _targetCtrl,
                           keyboardType: TextInputType.number,
                           decoration: const InputDecoration(
-                            labelText: 'नमुना लक्ष्य (१% = ४२६)',
+                            labelText: 'Sample Target (1% = 426)',
                             border: OutlineInputBorder(),
                           ),
                         ),
@@ -244,11 +244,11 @@ class _CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('सर्वेक्षण स्थिती (Status):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      const Text('Survey Status:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                       SegmentedButton<String>(
                         segments: const [
-                          ButtonSegment(value: 'Active', label: Text('सक्रिय (Active)')),
-                          ButtonSegment(value: 'Draft', label: Text('मसुदा (Draft)')),
+                          ButtonSegment(value: 'Active', label: Text('Active')),
+                          ButtonSegment(value: 'Draft', label: Text('Draft')),
                         ],
                         selected: {_status},
                         onSelectionChanged: (set) => setState(() => _status = set.first),
@@ -266,13 +266,13 @@ class _CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'सर्वेक्षणातील प्रश्न (Questions)',
+                  'Survey Questions',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                 ),
                 TextButton.icon(
                   onPressed: _addNewQuestion,
                   icon: const Icon(Icons.add_circle_outline_rounded, color: Color(0xFF0284C7)),
-                  label: const Text('प्रश्न जोडा', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
+                  label: const Text('Add Question', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
                 ),
               ],
             ),
@@ -298,7 +298,7 @@ class _CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('प्रश्न क्र. ${idx + 1}', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
+                        Text('Question ${idx + 1}', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
                         IconButton(
                           icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 20),
                           onPressed: () => _removeQuestion(idx),
@@ -310,7 +310,7 @@ class _CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
                     TextField(
                       controller: q.textController,
                       decoration: const InputDecoration(
-                        labelText: 'प्रश्नाचा मजकूर *',
+                        labelText: 'Question Text *',
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -319,20 +319,20 @@ class _CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
                     DropdownButtonFormField<SurveyQuestionType>(
                       value: q.type,
                       decoration: const InputDecoration(
-                        labelText: 'प्रश्नाचा प्रकार (Type)',
+                        labelText: 'Question Type',
                         border: OutlineInputBorder(),
                       ),
                       items: const [
-                        DropdownMenuItem(value: SurveyQuestionType.yesNo, child: Text('होय / नाही (Yes/No)')),
-                        DropdownMenuItem(value: SurveyQuestionType.mcq, child: Text('बहुपर्यायी (MCQ)')),
-                        DropdownMenuItem(value: SurveyQuestionType.rating, child: Text('स्टार रेटिंग (१ ते ५)')),
+                        DropdownMenuItem(value: SurveyQuestionType.yesNo, child: Text('Yes / No')),
+                        DropdownMenuItem(value: SurveyQuestionType.mcq, child: Text('Multiple Choice (MCQ)')),
+                        DropdownMenuItem(value: SurveyQuestionType.rating, child: Text('Star Rating (1 to 5)')),
                       ],
                       onChanged: (val) {
                         if (val != null) {
                           setState(() {
                             q.type = val;
                             if (val == SurveyQuestionType.mcq && q.options.isEmpty) {
-                              q.options = ['पर्याय १', 'पर्याय २', 'पर्याय ३'];
+                              q.options = ['Option 1', 'Option 2', 'Option 3'];
                             }
                           });
                         }
@@ -341,7 +341,7 @@ class _CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
 
                     if (q.type == SurveyQuestionType.mcq) ...[
                       const SizedBox(height: 10),
-                      const Text('पर्याय (Options):', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      const Text('Options:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 6),
                       Wrap(
                         spacing: 6,
@@ -359,7 +359,7 @@ class _CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
                       OutlinedButton.icon(
                         onPressed: () => _addOptionToMcq(q),
                         icon: const Icon(Icons.add, size: 14),
-                        label: const Text('नवीन पर्याय जोडा', style: TextStyle(fontSize: 11)),
+                        label: const Text('Add New Option', style: TextStyle(fontSize: 11)),
                       ),
                     ],
                   ],
@@ -378,7 +378,7 @@ class _CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: Text(
-                isEdit ? 'बदल जतन करा' : 'सर्वेक्षण तयार व प्रसिद्ध करा',
+                isEdit ? 'Save Changes' : 'Create & Publish Survey',
                 style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
               ),
             ),
@@ -395,13 +395,13 @@ class _CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('नवीन पर्याय जोडा', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+        title: const Text('Add New Option', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
         content: TextField(
           controller: optCtrl,
-          decoration: const InputDecoration(hintText: 'पर्यायाचे नाव टाईप करा...'),
+          decoration: const InputDecoration(hintText: 'Type option text...'),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('रद्द करा')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
               final t = optCtrl.text.trim();
@@ -410,7 +410,7 @@ class _CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
               }
               Navigator.pop(ctx);
             },
-            child: const Text('जोडा'),
+            child: const Text('Add'),
           ),
         ],
       ),

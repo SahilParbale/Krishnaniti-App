@@ -53,7 +53,7 @@ class _SocialOrgDetailScreenState extends ConsumerState<SocialOrgDetailScreen> {
   void _copyToClipboard(String text) {
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('मोबाईल क्रमांक कॉपी केला!'), duration: Duration(seconds: 2)),
+      const SnackBar(content: Text('Mobile number copied!'), duration: Duration(seconds: 2)),
     );
   }
 
@@ -141,7 +141,7 @@ class _SocialOrgDetailScreenState extends ConsumerState<SocialOrgDetailScreen> {
                   Icon(Icons.event_available_rounded, color: Color(0xFF0284C7), size: 22),
                   SizedBox(width: 8),
                   Text(
-                    'नवीन उपक्रम / उत्सव जोडा',
+                    'Add New Event / Activity',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                   ),
                 ],
@@ -152,8 +152,8 @@ class _SocialOrgDetailScreenState extends ConsumerState<SocialOrgDetailScreen> {
               TextField(
                 controller: titleCtrl,
                 decoration: InputDecoration(
-                  labelText: 'उपक्रमाचे नाव *',
-                  hintText: 'उदा. मोफत आरोग्य शिबिर, दहीहंडी, शिवजयंती',
+                  labelText: 'Event Name *',
+                  hintText: 'e.g. Free Health Camp, Dahi Handi, Shiv Jayanti',
                   filled: true,
                   fillColor: const Color(0xFFF8FAFC),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -166,7 +166,7 @@ class _SocialOrgDetailScreenState extends ConsumerState<SocialOrgDetailScreen> {
                 controller: yearCtrl,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
-                  labelText: 'वर्ष (Year) *',
+                  labelText: 'Year *',
                   hintText: '2026',
                   filled: true,
                   fillColor: const Color(0xFFF8FAFC),
@@ -180,8 +180,8 @@ class _SocialOrgDetailScreenState extends ConsumerState<SocialOrgDetailScreen> {
                 controller: descCtrl,
                 maxLines: 3,
                 decoration: InputDecoration(
-                  labelText: 'उपक्रमाचा सविस्तर तपशील',
-                  hintText: 'सहभागी नागरिक, प्रमुख पाहुणे, पारितोषिके आणि सामाजिक प्रभाव...',
+                  labelText: 'Detailed Event Notes',
+                  hintText: 'Participants, chief guests, awards, and social impact...',
                   filled: true,
                   fillColor: const Color(0xFFF8FAFC),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -196,7 +196,7 @@ class _SocialOrgDetailScreenState extends ConsumerState<SocialOrgDetailScreen> {
                   onPressed: () async {
                     if (titleCtrl.text.trim().isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('कृपया उपक्रमाचे नाव प्रविष्ट करा.')),
+                        const SnackBar(content: Text('Please enter event name.')),
                       );
                       return;
                     }
@@ -220,7 +220,7 @@ class _SocialOrgDetailScreenState extends ConsumerState<SocialOrgDetailScreen> {
                     _refreshOrg();
 
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('उपक्रम यशस्वीरित्या जोडला गेला!'), backgroundColor: Color(0xFF16A34A)),
+                      const SnackBar(content: Text('Event added successfully!'), backgroundColor: Color(0xFF16A34A)),
                     );
                   },
                   style: ElevatedButton.styleFrom(
@@ -229,7 +229,7 @@ class _SocialOrgDetailScreenState extends ConsumerState<SocialOrgDetailScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                  child: const Text('उपक्रम जतन करा', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  child: const Text('Save Event', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                 ),
               ),
             ],
@@ -259,12 +259,12 @@ class _SocialOrgDetailScreenState extends ConsumerState<SocialOrgDetailScreen> {
             IconButton(
               icon: const Icon(Icons.phone_rounded, color: Colors.white),
               onPressed: () => _makePhoneCall(_org.presidentMobile),
-              tooltip: 'कॉल करा',
+              tooltip: 'Call',
             ),
             IconButton(
               icon: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white),
               onPressed: () => _openWhatsApp(_org.presidentMobile),
-              tooltip: 'व्हॉट्सॲप',
+              tooltip: 'WhatsApp',
             ),
           ],
         ],
@@ -348,7 +348,7 @@ class _SocialOrgDetailScreenState extends ConsumerState<SocialOrgDetailScreen> {
                                     ),
                                   ),
                                   child: Text(
-                                    _org.status == 'Active' ? 'सक्रिय' : 'निष्क्रिय',
+                                    _org.status == 'Active' ? 'Active' : 'Inactive',
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.bold,
@@ -392,7 +392,7 @@ class _SocialOrgDetailScreenState extends ConsumerState<SocialOrgDetailScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('अध्यक्ष (President)', style: TextStyle(fontSize: 10, color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
+                                  const Text('President', style: TextStyle(fontSize: 10, color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
                                   const SizedBox(height: 2),
                                   Text(_org.presidentName.isNotEmpty ? _org.presidentName : '-', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
                                 ],
@@ -402,7 +402,7 @@ class _SocialOrgDetailScreenState extends ConsumerState<SocialOrgDetailScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('मोबाईल क्रमांक', style: TextStyle(fontSize: 10, color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
+                                  const Text('Mobile Number', style: TextStyle(fontSize: 10, color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
                                   const SizedBox(height: 2),
                                   if (_org.presidentMobile.isNotEmpty)
                                     Row(
@@ -435,10 +435,10 @@ class _SocialOrgDetailScreenState extends ConsumerState<SocialOrgDetailScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('एकूण सदस्य संख्या', style: TextStyle(fontSize: 10, color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
+                                  const Text('Total Members', style: TextStyle(fontSize: 10, color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
                                   const SizedBox(height: 2),
                                   Text(
-                                    '${_org.membersCount} सदस्य',
+                                    '${_org.membersCount} Members',
                                     style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
                                   ),
                                 ],
@@ -448,7 +448,7 @@ class _SocialOrgDetailScreenState extends ConsumerState<SocialOrgDetailScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('स्थापना वर्ष', style: TextStyle(fontSize: 10, color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
+                                  const Text('Established Year', style: TextStyle(fontSize: 10, color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
                                   const SizedBox(height: 2),
                                   Text(
                                     _org.establishedYear.isNotEmpty ? _org.establishedYear : '-',
@@ -472,7 +472,7 @@ class _SocialOrgDetailScreenState extends ConsumerState<SocialOrgDetailScreen> {
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            'परिसर: ${_org.area}',
+                            'Area: ${_org.area}',
                             style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
                           ),
                         ),
@@ -503,7 +503,7 @@ class _SocialOrgDetailScreenState extends ConsumerState<SocialOrgDetailScreen> {
                       Icon(Icons.workspace_premium_rounded, size: 20, color: Color(0xFF7C3AED)),
                       SizedBox(width: 8),
                       Text(
-                        'नगरसेवक मदत व प्रायोजकत्व इतिहास',
+                        'Corporator Support & Sponsorship History',
                         style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Color(0xFF5B21B6)),
                       ),
                     ],
@@ -512,7 +512,7 @@ class _SocialOrgDetailScreenState extends ConsumerState<SocialOrgDetailScreen> {
                   Text(
                     _org.supportReceived.isNotEmpty
                         ? _org.supportReceived
-                        : 'या संस्थेला अद्याप कोणतीही अधिकृत मदत नोंदवलेली नाही.',
+                        : 'No official support recorded for this organization yet.',
                     style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w500,
@@ -546,7 +546,7 @@ class _SocialOrgDetailScreenState extends ConsumerState<SocialOrgDetailScreen> {
                           const Icon(Icons.event_available_rounded, size: 20, color: Color(0xFF0284C7)),
                           const SizedBox(width: 8),
                           Text(
-                            'प्रमुख उपक्रम व उत्सव (${_org.eventsConducted.length})',
+                            'Key Events & Activities (${_org.eventsConducted.length})',
                             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                           ),
                         ],
@@ -564,7 +564,7 @@ class _SocialOrgDetailScreenState extends ConsumerState<SocialOrgDetailScreen> {
                               Icon(Icons.add, size: 14, color: Color(0xFF0284C7)),
                               SizedBox(width: 4),
                               Text(
-                                'उपक्रम जोडा',
+                                'Add Event',
                                 style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                               ),
                             ],
@@ -584,7 +584,7 @@ class _SocialOrgDetailScreenState extends ConsumerState<SocialOrgDetailScreen> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Text(
-                        'या मंडळासाठी अद्याप कोणतेही उपक्रम नोंदवलेले नाहीत.\n"+ उपक्रम जोडा" बटण वापरून नवीन उत्सव किंवा स्पर्धा नोंदवा.',
+                        'No events recorded for this organization yet.\nClick "+ Add Event" to add festivals or sports tournaments.',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
                       ),

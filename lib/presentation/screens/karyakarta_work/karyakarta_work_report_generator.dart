@@ -62,7 +62,7 @@ class KaryakartaWorkReportGenerator {
                       ),
                       pw.SizedBox(height: 2),
                       pw.Text(
-                        'कार्यकर्ता काम व कार्यभार व्यवस्थापन अहवाल (Workload & Performance Report)',
+                        'Cadre Work & Workload Performance Report',
                         style: pw.TextStyle(
                           fontSize: 14,
                           fontWeight: pw.FontWeight.bold,
@@ -119,13 +119,13 @@ class KaryakartaWorkReportGenerator {
             // KPI Summary Cards in a row
             pw.Row(
               children: [
-                _buildKpiCard('एकूण कार्यभार (Total Load)', '$totalLoad', '$totalTasks कामे · $totalComplaints तक्रारी', PdfColors.blue50, PdfColors.blue900),
+                _buildKpiCard('Total Workload', '$totalLoad', '$totalTasks Tasks · $totalComplaints Complaints', PdfColors.blue50, PdfColors.blue900),
                 pw.SizedBox(width: 8),
-                _buildKpiCard('प्रलंबित कार्यभार (Pending)', '$pendingLoad', 'Needs Attention / लक्ष द्या', PdfColors.amber50, PdfColors.amber800),
+                _buildKpiCard('Pending Workload', '$pendingLoad', 'Needs Attention', PdfColors.amber50, PdfColors.amber800),
                 pw.SizedBox(width: 8),
-                _buildKpiCard('प्रगतीपथावर (In Progress)', '$inProgressLoad', 'Being Worked On / सुरू कामे', const PdfColor.fromInt(0xFFEFF6FF), const PdfColor.fromInt(0xFF1D4ED8)),
+                _buildKpiCard('In Progress', '$inProgressLoad', 'Being Worked On', const PdfColor.fromInt(0xFFEFF6FF), const PdfColor.fromInt(0xFF1D4ED8)),
                 pw.SizedBox(width: 8),
-                _buildKpiCard('पूर्ण झाले (Completed)', '$completedLoad', 'Resolved & Closed / पूर्ण', const PdfColor.fromInt(0xFFECFDF5), const PdfColor.fromInt(0xFF047857)),
+                _buildKpiCard('Completed', '$completedLoad', 'Resolved & Closed', const PdfColor.fromInt(0xFFECFDF5), const PdfColor.fromInt(0xFF047857)),
               ],
             ),
 
@@ -150,15 +150,15 @@ class KaryakartaWorkReportGenerator {
                 pw.TableRow(
                   decoration: const pw.BoxDecoration(color: PdfColors.grey200),
                   children: [
-                    _buildCell('अ.क्र.', isHeader: true, align: pw.TextAlign.center),
-                    _buildCell('कार्यकर्ता / कर्मचारी (Member)', isHeader: true),
-                    _buildCell('भूमिका / क्षेत्र (Role & Area)', isHeader: true),
-                    _buildCell('कामे (P/T)', isHeader: true, align: pw.TextAlign.center),
-                    _buildCell('तक्रारी (P/T)', isHeader: true, align: pw.TextAlign.center),
-                    _buildCell('प्रलंबित', isHeader: true, align: pw.TextAlign.center),
-                    _buildCell('पूर्ण', isHeader: true, align: pw.TextAlign.center),
-                    _buildCell('प्रगती %', isHeader: true, align: pw.TextAlign.center),
-                    _buildCell('स्थिती', isHeader: true, align: pw.TextAlign.center),
+                    _buildCell('Sr.', isHeader: true, align: pw.TextAlign.center),
+                    _buildCell('Cadre / Staff Member', isHeader: true),
+                    _buildCell('Role & Area', isHeader: true),
+                    _buildCell('Tasks (P/T)', isHeader: true, align: pw.TextAlign.center),
+                    _buildCell('Complaints (P/T)', isHeader: true, align: pw.TextAlign.center),
+                    _buildCell('Pending', isHeader: true, align: pw.TextAlign.center),
+                    _buildCell('Completed', isHeader: true, align: pw.TextAlign.center),
+                    _buildCell('Progress %', isHeader: true, align: pw.TextAlign.center),
+                    _buildCell('Status', isHeader: true, align: pw.TextAlign.center),
                   ],
                 ),
                 // Data Rows
@@ -275,14 +275,14 @@ class KaryakartaWorkReportGenerator {
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
                       pw.Text(
-                        'नोंद (Important Instructions):',
+                        'Important Instructions:',
                         style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900),
                       ),
                       pw.SizedBox(height: 2),
                       pw.Text(
-                        '१. प्रलंबित कामे व तक्रारी ३ दिवसांच्या आत पूर्ण करण्याचे आदेश आहेत.\n'
-                        '२. नागरिक तक्रार निवारण झाल्यावर नागरिकांशी संपर्क साधून पडताळणी करावी.\n'
-                        '३. दैनिक कामाचा अहवाल सायंकाळी जनसंपर्क कार्यालयात सादर करावा.',
+                        '1. Pending tasks and complaints must be addressed within 3 days.\n'
+                        '2. Verify resolution directly with citizens after grievance redressal.\n'
+                        '3. Submit daily workload report to the office every evening.',
                         style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey700),
                       ),
                     ],
@@ -294,11 +294,11 @@ class KaryakartaWorkReportGenerator {
                     pw.Container(width: 140, height: 1, color: PdfColors.grey700),
                     pw.SizedBox(height: 4),
                     pw.Text(
-                      'नगरसेवक / प्रभाग समिती अध्यक्ष',
+                      'Corporator / Ward Committee Chairman',
                       style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900),
                     ),
                     pw.Text(
-                      'प्रभाग क्र. १२, पुणे महानगरपालिका',
+                      'Ward 12, Pune Municipal Corporation',
                       style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey600),
                     ),
                   ],

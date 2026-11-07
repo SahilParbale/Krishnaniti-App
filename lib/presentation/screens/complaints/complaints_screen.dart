@@ -22,7 +22,11 @@ class ComplaintsScreen extends ConsumerStatefulWidget {
   ConsumerState<ComplaintsScreen> createState() => _ComplaintsScreenState();
 }
 
-class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen> {
+class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   // Primary Tabs matching Nagarsevak-Managment: 'Complaints' | 'Personal Help'
   String _activeTab = 'Complaints'; 
 
@@ -446,6 +450,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final isMr = ref.watch(isMarathiProvider);
     final filtered = _filteredComplaints;
 

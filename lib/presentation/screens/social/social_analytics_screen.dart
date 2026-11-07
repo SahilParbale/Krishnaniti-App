@@ -100,7 +100,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
   Future<void> _sendBirthdayGreeting(VoterBirthdayModel voter) async {
     final mobileClean = voter.mobile.replaceAll(RegExp(r'[^0-9+]'), '');
     final msg = Uri.encodeComponent(
-      '🎂 वाढदिवसाच्या हार्दिक शुभेच्छा ${voter.nameMarathi}! आपणास उदंड व निरोगी आयुष्य लाभो हीच ईश्वरचरणी प्रार्थना. - आपला नगरसेवक, प्रभाग १२, पुणे.',
+      '🎂 Wishing you a very Happy Birthday ${voter.displayName}! Wishing you good health, long life, and happiness. - Your Nagarsevak, Ward 12, Pune.',
     );
     final uri = Uri.parse('https://wa.me/$mobileClean?text=$msg');
 
@@ -167,28 +167,28 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
               mainAxisSize: MainAxisSize.min,
               children: const [
                 Text(
-                  'सोशल मीडिया विश्लेषण व मतदार संपर्क ट्यूटोरियल',
+                  'Social Media Analytics & Constituent Engagement Guide',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0284C7)),
                 ),
                 SizedBox(height: 10),
                 _TutorialStep(
                   step: '1',
-                  title: 'Performance Overview / सारांश',
+                  title: 'Performance Overview',
                   desc: 'Track total impressions, likes, citizen comments, and shares across Facebook, Instagram, and Twitter.',
                 ),
                 _TutorialStep(
                   step: '2',
-                  title: 'Connect Accounts / खाती लिंक करा',
+                  title: 'Connect Accounts',
                   desc: 'Keep official Facebook page and Instagram accounts synchronized for live performance tracking.',
                 ),
                 _TutorialStep(
                   step: '3',
-                  title: 'Constituent Birthdays / आजचे वाढदिवस',
+                  title: 'Constituent Birthdays',
                   desc: 'Build personal relations by sending customized Marathi greetings via WhatsApp to voters on their birthdays.',
                 ),
                 _TutorialStep(
                   step: '4',
-                  title: 'PDF Audit Reports / अहवाल',
+                  title: 'PDF Audit Reports',
                   desc: 'Export landscape A4 audit report with engagement metrics for corporator review meetings.',
                 ),
               ],
@@ -202,7 +202,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Got it / समजले'),
+              child: const Text('Got it'),
             ),
           ],
         );
@@ -213,7 +213,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
   void _showAddPostModal() {
     final contentEnCtrl = TextEditingController();
     final contentMrCtrl = TextEditingController();
-    final tagsCtrl = TextEditingController(text: '#विकास #प्रभाग१२ #पुणे');
+    final tagsCtrl = TextEditingController(text: '#Development #Ward12 #Pune');
     final imageCtrl = TextEditingController();
     final postUrlCtrl = TextEditingController();
     final reachCtrl = TextEditingController(text: '5000');
@@ -252,7 +252,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                             Icon(Icons.add_circle_outline_rounded, color: Colors.white),
                             SizedBox(width: 8),
                             Text(
-                              'Track New Post / पोस्ट ट्रॅक करा',
+                              'Track New Post',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -275,7 +275,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                       padding: const EdgeInsets.all(16),
                       children: [
                         // Platform Select
-                        const Text('Platform / प्लॅटफॉर्म', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        const Text('Platform', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                         const SizedBox(height: 6),
                         Row(
                           children: ['Facebook', 'Instagram', 'Twitter'].map((p) {
@@ -310,13 +310,13 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                         const SizedBox(height: 14),
 
                         // Post Content Marathi
-                        const Text('Post Content (मराठी मजकूर)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        const Text('Post Content', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                         const SizedBox(height: 6),
                         TextField(
                           controller: contentMrCtrl,
                           maxLines: 3,
                           decoration: const InputDecoration(
-                            hintText: 'उदा. प्रभाग १२ मध्ये विकास कामांची पाहणी...',
+                            hintText: 'e.g., Inspected development works in Ward 12...',
                             border: OutlineInputBorder(),
                             contentPadding: EdgeInsets.all(12),
                           ),
@@ -369,7 +369,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                         const SizedBox(height: 14),
 
                         // Initial Metrics
-                        const Text('Initial Metrics / सुरुवातीची आकडेवारी', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        const Text('Initial Metrics', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                         const SizedBox(height: 8),
                         Row(
                           children: [
@@ -434,7 +434,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                           ),
                           icon: const Icon(Icons.check_circle_outline_rounded),
                           label: const Text(
-                            'Save & Track Post / पोस्ट जतन करा',
+                            'Save & Track Post',
                             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                           ),
                           onPressed: () async {
@@ -513,47 +513,34 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
         appBar: AppBar(
           backgroundColor: const Color(0xFF0284C7),
           elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
+          scrolledUnderElevation: 0,
+          leading: Builder(
+            builder: (ctx) => IconButton(
+              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+              tooltip: 'Open Menu Drawer',
+              onPressed: () => Scaffold.of(ctx).openDrawer(),
+            ),
           ),
+          titleSpacing: 0,
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Text(
-                    'Social Analytics',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16.5,
-                      letterSpacing: 0.2,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      'एकूण: ${_allPosts.length}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              Text(
+                'Social Analytics',
+                style: TextStyle(
+                  fontSize: 17.5,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: -0.2,
+                ),
               ),
               Text(
-                'सोशल मीडिया कामगिरी व मतदार संपर्क • प्रभाग १२',
+                'Social media engagement, reach and public interaction',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.85),
                   fontSize: 11,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFFE0F2FE),
                 ),
               ),
             ],
@@ -689,7 +676,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
           foregroundColor: Colors.white,
           elevation: 3,
           icon: const Icon(Icons.add_rounded),
-          label: const Text('Track Post / नवीन पोस्ट', style: TextStyle(fontWeight: FontWeight.bold)),
+          label: const Text('Track Post', style: TextStyle(fontWeight: FontWeight.bold)),
           onPressed: _showAddPostModal,
         ),
       ),
@@ -723,7 +710,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                   Icon(Icons.share_rounded, size: 16, color: Color(0xFF0284C7)),
                   SizedBox(width: 6),
                   Text(
-                    'Connected Channels / खाती',
+                    'Connected Channels',
                     style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                   ),
                 ],
@@ -819,7 +806,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
             Expanded(
               child: _buildMetricCard(
                 title: 'Total Reach',
-                marathi: 'एकूण पोहोच',
+                marathi: 'Total Reach',
                 value: reach.toLocaleString(),
                 icon: Icons.remove_red_eye_outlined,
                 color: const Color(0xFF0284C7),
@@ -831,7 +818,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
             Expanded(
               child: _buildMetricCard(
                 title: 'Total Likes',
-                marathi: 'लाईक्स',
+                marathi: 'Likes',
                 value: likes.toLocaleString(),
                 icon: Icons.thumb_up_alt_outlined,
                 color: const Color(0xFFE11D48),
@@ -847,7 +834,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
             Expanded(
               child: _buildMetricCard(
                 title: 'Comments',
-                marathi: 'टिप्पण्या',
+                marathi: 'Comments',
                 value: comments.toLocaleString(),
                 icon: Icons.chat_bubble_outline_rounded,
                 color: const Color(0xFF9333EA),
@@ -859,7 +846,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
             Expanded(
               child: _buildMetricCard(
                 title: 'Shares',
-                marathi: 'शेअर्स',
+                marathi: 'Shares',
                 value: shares.toLocaleString(),
                 icon: Icons.share_outlined,
                 color: const Color(0xFF16A34A),
@@ -1053,7 +1040,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                   ),
                   const SizedBox(width: 8),
                   const Text(
-                    "Today's Birthdays / आजचे वाढदिवस",
+                    "Today's Birthdays",
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
@@ -1069,7 +1056,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  '${_birthdays.length} मतदारांना शुभेच्छा',
+                  'Send Wishes (${_birthdays.length})',
                   style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                 ),
               ),
@@ -1119,7 +1106,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                             ),
                           ),
                           Text(
-                            '${voter.nameMarathi} • वय: ${voter.age}',
+                            '${voter.displayName} • Age: ${voter.age}',
                             style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
                           ),
                           Text(
@@ -1152,7 +1139,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                                 Icon(Icons.chat_bubble_outline_rounded, size: 13, color: Colors.white),
                                 SizedBox(width: 4),
                                 Text(
-                                  'शुभेच्छा',
+                                  'Wish',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 11,
@@ -1563,7 +1550,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
           Icon(Icons.search_off_rounded, size: 48, color: Color(0xFF94A3B8)),
           SizedBox(height: 12),
           Text(
-            'No posts found matching filter / शोध आढळला नाही',
+            'No posts found matching filter',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1E293B)),
           ),
           SizedBox(height: 4),

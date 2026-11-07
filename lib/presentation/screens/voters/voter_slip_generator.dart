@@ -1,3 +1,4 @@
+
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -36,6 +37,7 @@ class VoterSlipGenerator {
                   ),
                   child: pw.Column(
                     children: [
+                      
                       pw.Text(
                         'PUNE MUNICIPAL CORPORATION - GENERAL ELECTION',
                         style: pw.TextStyle(
@@ -46,7 +48,7 @@ class VoterSlipGenerator {
                       ),
                       pw.SizedBox(height: 2),
                       pw.Text(
-                        'OFFICIAL VOTER INFORMATION SLIP (मतदार माहिती स्लिप)',
+                        'OFFICIAL VOTER INFORMATION SLIP',
                         style: pw.TextStyle(
                           color: PdfColors.amber200,
                           fontWeight: pw.FontWeight.bold,
@@ -80,7 +82,7 @@ class VoterSlipGenerator {
                         child: pw.Column(
                           crossAxisAlignment: pw.CrossAxisAlignment.start,
                           children: [
-                            pw.Text('मतदार यादीतील अ. क्र. (Serial No.)',
+                            pw.Text('Serial No. in Electoral Roll',
                                 style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.grey700)),
                             pw.Text('#${voter.serialNo ?? "-"}',
                                 style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
@@ -100,7 +102,7 @@ class VoterSlipGenerator {
                         child: pw.Column(
                           crossAxisAlignment: pw.CrossAxisAlignment.start,
                           children: [
-                            pw.Text('बूथ / यादी भाग क्र. (Booth / Part)',
+                            pw.Text('Booth / Part No.',
                                 style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.grey700)),
                             pw.Text(voter.booth,
                                 style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
@@ -126,14 +128,14 @@ class VoterSlipGenerator {
                       1: const pw.FlexColumnWidth(5),
                     },
                     children: [
-                      _buildTableRow('मतदाराचे पूर्ण नाव (Full Name)', voter.displayName),
-                      _buildTableRow('इंग्रजी नाव (English Name)', voter.nameEnglish),
-                      _buildTableRow('ओळखपत्र क्र. (EPIC No.)', voter.epicNo),
-                      _buildTableRow('वय व लिंग (Age / Gender)', '${voter.age} वर्षे / ${voter.genderLabelMarathi} (${voter.gender})'),
-                      _buildTableRow('घर क्रमांक (House No.)', voter.houseNo != null ? '#${voter.houseNo}' : '-'),
-                      _buildTableRow('रहिवासी पत्ता (Address)', voter.address),
-                      _buildTableRow('मोबाईल क्रमांक (Mobile)', voter.mobile != null ? '+91 ${voter.mobile}' : 'नोंद नाही'),
-                      _buildTableRow('मतदान केंद्र (Polling Station)', voter.displayPollingStation),
+                      _buildTableRow('Voter Full Name', voter.displayName),
+                      _buildTableRow('English Name', voter.nameEnglish),
+                      _buildTableRow('EPIC No.', voter.epicNo),
+                      _buildTableRow('Age / Gender', '${voter.age} Yrs / ${voter.gender}'),
+                      _buildTableRow('House No.', voter.houseNo != null ? '#${voter.houseNo}' : '-'),
+                      _buildTableRow('Residential Address', voter.address),
+                      _buildTableRow('Mobile Number', voter.mobile != null ? '+91 ${voter.mobile}' : 'Not Registered'),
+                      _buildTableRow('Polling Station', voter.displayPollingStation),
                     ],
                   ),
                 ),
@@ -153,13 +155,13 @@ class VoterSlipGenerator {
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
                       pw.Text(
-                        'महत्त्वाची सूचना (Important Guidelines):',
+                        'Important Guidelines:',
                         style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: PdfColors.amber900),
                       ),
                       pw.SizedBox(height: 2),
                       pw.Text(
-                        '१. ही स्लिप केवळ मतदान केंद्र व अनुक्रमांक शोधण्यासाठी आहे. मतदानासाठी निवडणूक ओळखपत्र (EPIC) किंवा आधार कार्ड सोबत बाळगणे आवश्यक आहे.\n'
-                        '२. मतदानाची वेळ: सकाळी ७:०० ते सायंकाळी ६:०० वाजेपर्यंत.',
+                        '1. This slip is for finding polling station and serial number. Carrying voter ID (EPIC) or Aadhaar is required for voting.\n'
+                        '2. Voting Hours: 7:00 AM to 6:00 PM.',
                         style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey800),
                       ),
                     ],
@@ -235,7 +237,7 @@ class VoterSlipGenerator {
                         style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900),
                       ),
                       pw.Text(
-                        'VOTER SEARCH DIRECTORY & ELECTORAL ROLL (मतदार शोध यादी व कल अहवाल)',
+                        'VOTER SEARCH DIRECTORY & ELECTORAL ROLL',
                         style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.grey800),
                       ),
                       pw.Text(
@@ -288,11 +290,11 @@ class VoterSlipGenerator {
               child: pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
                 children: [
-                  _buildKpiItem('एकूण प्रभाग मतदार (Total Roll)', NumberFormat('#,##,###').format(totalCount)),
-                  _buildKpiItem('शोध निकाल (Results Shown)', '${voters.length}'),
-                  _buildKpiItem('अनुकूल मतदार (Favourable)', '${voters.where((v) => v.favour == "Favourable").length}'),
-                  _buildKpiItem('तटस्थ मतदार (Neutral)', '${voters.where((v) => v.favour == "Neutral").length}'),
-                  _buildKpiItem('प्रतिकूल मतदार (Against)', '${voters.where((v) => v.favour == "Against").length}'),
+                  _buildKpiItem('Total Ward Roll', NumberFormat('#,##,###').format(totalCount)),
+                  _buildKpiItem('Results Shown', '${voters.length}'),
+                  _buildKpiItem('Favourable Voters', '${voters.where((v) => v.favour == "Favourable").length}'),
+                  _buildKpiItem('Neutral Voters', '${voters.where((v) => v.favour == "Neutral").length}'),
+                  _buildKpiItem('Against Voters', '${voters.where((v) => v.favour == "Against").length}'),
                 ],
               ),
             ),
@@ -315,13 +317,13 @@ class VoterSlipGenerator {
                   decoration: const pw.BoxDecoration(color: PdfColors.blue800),
                   children: [
                     _buildHeaderCell('#'),
-                    _buildHeaderCell('मतदाराचे नाव (Name)'),
-                    _buildHeaderCell('EPIC क्र.'),
-                    _buildHeaderCell('वय / लिंग'),
-                    _buildHeaderCell('रहिवासी पत्ता (Address)'),
-                    _buildHeaderCell('बूथ / यादी'),
-                    _buildHeaderCell('मोबाईल'),
-                    _buildHeaderCell('राजकीय कल'),
+                    _buildHeaderCell('Voter Name'),
+                    _buildHeaderCell('EPIC No.'),
+                    _buildHeaderCell('Age / Gender'),
+                    _buildHeaderCell('Residential Address'),
+                    _buildHeaderCell('Booth / Part'),
+                    _buildHeaderCell('Mobile'),
+                    _buildHeaderCell('Political Stance'),
                   ],
                 ),
                 ...voters.asMap().entries.map((entry) {

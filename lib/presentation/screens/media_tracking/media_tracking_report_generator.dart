@@ -113,13 +113,13 @@ class MediaTrackingReportGenerator {
             // KPI Summary Row
             pw.Row(
               children: [
-                _buildKpiCard('Total Mentions (एकूण बातम्या)', '$totalCount', 'Portals & Media Outlets', PdfColors.blue700, PdfColors.blue50),
+                _buildKpiCard('Total Mentions', '$totalCount', 'Portals & Media Outlets', PdfColors.blue700, PdfColors.blue50),
                 pw.SizedBox(width: 8),
-                _buildKpiCard('Sentiment Ratio (भावना गुणोत्तर)', '${positiveRatio.toStringAsFixed(1)}%', 'Positive Press Share', PdfColors.green700, PdfColors.green50),
+                _buildKpiCard('Sentiment Ratio', '${positiveRatio.toStringAsFixed(1)}%', 'Positive Press Share', PdfColors.green700, PdfColors.green50),
                 pw.SizedBox(width: 8),
-                _buildKpiCard('Critical Issues (दखलपात्र बातम्या)', '$negativeCount', 'Requires Administrative Action', PdfColors.red700, PdfColors.red50),
+                _buildKpiCard('Critical Issues', '$negativeCount', 'Requires Administrative Action', PdfColors.red700, PdfColors.red50),
                 pw.SizedBox(width: 8),
-                _buildKpiCard('Est. Digital Reach (एकूण पोहोच)', totalReach.toLocaleString(), 'Combined Portal Impressions', PdfColors.purple700, PdfColors.purple50),
+                _buildKpiCard('Est. Digital Reach', totalReach.toLocaleString(), 'Combined Portal Impressions', PdfColors.purple700, PdfColors.purple50),
               ],
             ),
             pw.SizedBox(height: 12),
