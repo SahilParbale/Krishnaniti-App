@@ -581,26 +581,6 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
             ],
           ),
           actions: [
-            // Found Count Badge
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-              ),
-              child: Center(
-                child: Text(
-                  isMr ? 'एकूण: ${displayed.length}' : 'Found: ${displayed.length}',
-                  style: const TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
             // Map View Shortcut
             IconButton(
               icon: const Icon(Icons.map_outlined, color: Colors.white, size: 21),

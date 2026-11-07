@@ -598,26 +598,6 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
             ],
           ),
           actions: [
-            // Found Badge
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white.withOpacity(0.3)),
-              ),
-              child: Center(
-                child: Text(
-                  isMr ? 'एकूण: ${filtered.length}' : 'Found: ${filtered.length}',
-                  style: const TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
             IconButton(
               icon: const Icon(Icons.picture_as_pdf_outlined, color: Colors.white, size: 21),
               tooltip: 'Export PDF Report',
