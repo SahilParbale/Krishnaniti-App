@@ -580,41 +580,28 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
             children: const [
               Text(
                 'Visitor Register',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 17.5,
+                  fontSize: 16.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
                   letterSpacing: -0.2,
                 ),
               ),
               Text(
-                'Track daily citizen visits & appointments',
+                'Citizen visits & appointments',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 10.5,
                   fontWeight: FontWeight.w400,
                   color: Color(0xFFE0F2FE),
                 ),
               ),
             ],
           ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.picture_as_pdf_outlined, color: Colors.white, size: 21),
-              tooltip: 'Export PDF Report',
-              onPressed: () {
-                VisitorReportGenerator.generateAndPrintListReport(
-                  visitors: filtered,
-                  filterTitle: 'Tab: $_activeTab | Purpose: $_selectedPurpose',
-                );
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 21),
-              tooltip: 'Refresh',
-              onPressed: _fetchVisitors,
-            ),
-            const SizedBox(width: 4),
-          ],
+          actions: const [],
         ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: _openAddVisitorModal,
@@ -740,6 +727,25 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                       ],
                     ),
                   ],
+                  const SizedBox(width: 8),
+                  InkWell(
+                    onTap: () {
+                      VisitorReportGenerator.generateAndPrintListReport(
+                        visitors: filtered,
+                        filterTitle: 'Tab: $_activeTab | Purpose: $_selectedPurpose',
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      padding: const EdgeInsets.all(9),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: const Icon(Icons.picture_as_pdf_outlined, size: 20, color: Color(0xFF0284C7)),
+                    ),
+                  ),
                 ],
               ),
             ),

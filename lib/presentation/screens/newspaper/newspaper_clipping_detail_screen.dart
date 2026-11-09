@@ -392,9 +392,12 @@ class _NewspaperClippingDetailScreenState
           ),
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
                 'Newspaper Clipping Details',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -403,9 +406,11 @@ class _NewspaperClippingDetailScreenState
               ),
               Text(
                 '${_clipping.newspaper} • ${_clipping.date}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.85),
-                  fontSize: 11.5,
+                  fontSize: 10.5,
                 ),
               ),
             ],

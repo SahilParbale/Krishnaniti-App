@@ -353,8 +353,10 @@ class _WardBudgetDetailScreenState extends ConsumerState<WardBudgetDetailScreen>
             children: [
               Text(
                 isMr ? 'अंदाजपत्रक तपशील' : 'Budget Head Details',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontSize: 17.5,
+                  fontSize: 16.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
                   letterSpacing: -0.2,
@@ -362,8 +364,10 @@ class _WardBudgetDetailScreenState extends ConsumerState<WardBudgetDetailScreen>
               ),
               Text(
                 '${budget.financialYear} • ${budget.area}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 10.5,
                   fontWeight: FontWeight.w400,
                   color: Colors.white.withValues(alpha: 0.85),
                 ),

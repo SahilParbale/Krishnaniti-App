@@ -284,35 +284,28 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
             children: const [
               Text(
                 'AI Content Studio',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 17.5,
+                  fontSize: 16.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
                   letterSpacing: -0.2,
                 ),
               ),
               Text(
-                'Generate press releases, festival greetings and speeches',
+                'AI releases, greetings & speeches',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 10.5,
                   fontWeight: FontWeight.w400,
                   color: Color(0xFFE0F2FE),
                 ),
               ),
             ],
           ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.picture_as_pdf_rounded, color: Colors.white),
-              tooltip: 'Download Official PDF Report',
-              onPressed: _exportDossierPdf,
-            ),
-            IconButton(
-              icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-              tooltip: 'Refresh',
-              onPressed: _loadData,
-            ),
-          ],
+          actions: const [],
           ),
         body: _isLoading
             ? const Center(
@@ -323,34 +316,54 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                   Container(
                     color: Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    alignment: Alignment.centerLeft,
-                    child: Container(
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: TabBar(
-                        controller: _tabController,
-                        indicator: BoxDecoration(
-                          color: const Color(0xFF0284C7),
-                          borderRadius: BorderRadius.circular(8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: TabBar(
+                              controller: _tabController,
+                              indicator: BoxDecoration(
+                                color: const Color(0xFF0284C7),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              labelColor: Colors.white,
+                              unselectedLabelColor: const Color(0xFF64748B),
+                              labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              dividerColor: Colors.transparent,
+                              tabs: [
+                                const Tab(
+                                  icon: Icon(Icons.edit_note_rounded, size: 18),
+                                  text: 'Create Content (Studio)',
+                                ),
+                                Tab(
+                                  icon: const Icon(Icons.history_rounded, size: 18),
+                                  text: 'History & Drafts (${_allHistory.length})',
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                        labelColor: Colors.white,
-                        unselectedLabelColor: const Color(0xFF64748B),
-                        labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                        dividerColor: Colors.transparent,
-                        tabs: [
-                          const Tab(
-                            icon: Icon(Icons.edit_note_rounded, size: 18),
-                            text: 'Create Content (Studio)',
+                        const SizedBox(width: 8),
+                        InkWell(
+                          onTap: _exportDossierPdf,
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            height: 40,
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                            ),
+                            child: const Icon(Icons.picture_as_pdf_rounded, size: 20, color: Color(0xFF0284C7)),
                           ),
-                          Tab(
-                            icon: const Icon(Icons.history_rounded, size: 18),
-                            text: 'History & Drafts (${_allHistory.length})',
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                   Expanded(

@@ -458,52 +458,28 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
             children: const [
               Text(
                 'Ward Development Works',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 17.5,
+                  fontSize: 16.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
                   letterSpacing: -0.2,
                 ),
               ),
               Text(
-                'Development works, grievances & welfare',
+                'Development works & projects',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 10.5,
                   fontWeight: FontWeight.w400,
                   color: Color(0xFFE0F2FE),
                 ),
               ),
             ],
           ),
-          actions: [
-            // Ahwal Mode Button
-            IconButton(
-              icon: Icon(
-                _selectionMode ? Icons.check_circle_rounded : Icons.assignment_outlined,
-                color: Colors.white,
-              ),
-              tooltip: isMr ? 'अहवाल तयार करा' : 'Generate Ahwal',
-              onPressed: _toggleSelectionMode,
-            ),
-            // PDF Export Directory
-            IconButton(
-              icon: const Icon(Icons.download_rounded, color: Colors.white),
-              tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Report',
-              onPressed: () {
-                WorkReportGenerator.generateAndPrintWorkReport(
-                  works: displayed,
-                  statusFilter: _selectedStatus,
-                  areaFilter: _selectedArea != 'All' ? _selectedArea : null,
-                );
-              },
-            ),
-            // Refresh Button
-            IconButton(
-              icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-              tooltip: 'Refresh',
-              onPressed: _loadData,
-            ),
-          ],
+          actions: const [],
         ),
         body: Column(
           children: [
@@ -643,6 +619,46 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                               onPressed: () => setState(() => _viewMode = 'report'),
                             ),
                           ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      InkWell(
+                        onTap: _toggleSelectionMode,
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          height: 44,
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          decoration: BoxDecoration(
+                            color: _selectionMode ? const Color(0xFFE0F2FE) : const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: _selectionMode ? const Color(0xFF0284C7) : const Color(0xFFE2E8F0)),
+                          ),
+                          child: Icon(
+                            _selectionMode ? Icons.check_circle_rounded : Icons.assignment_outlined,
+                            size: 20,
+                            color: const Color(0xFF0284C7),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      InkWell(
+                        onTap: () {
+                          WorkReportGenerator.generateAndPrintWorkReport(
+                            works: displayed,
+                            statusFilter: _selectedStatus,
+                            areaFilter: _selectedArea != 'All' ? _selectedArea : null,
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          height: 44,
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: const Icon(Icons.download_rounded, size: 20, color: Color(0xFF0284C7)),
                         ),
                       ),
                     ],

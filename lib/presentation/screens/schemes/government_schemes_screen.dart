@@ -764,56 +764,28 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
             children: const [
               Text(
                 'Government Schemes',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 17.5,
+                  fontSize: 16.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
                   letterSpacing: -0.2,
                 ),
               ),
               Text(
-                'State and central welfare schemes, subsidies and benefits',
+                'Welfare schemes & benefits',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 10.5,
                   fontWeight: FontWeight.w400,
                   color: Color(0xFFE0F2FE),
                 ),
               ),
             ],
           ),
-          actions: [
-            // Smart Matcher
-            IconButton(
-              icon: const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 21),
-              tooltip: 'Smart Matcher',
-              onPressed: _showSmartMatcherModal,
-            ),
-            // PDF Export
-            IconButton(
-              icon: const Icon(Icons.picture_as_pdf_outlined, color: Colors.white, size: 21),
-              tooltip: 'Export PDF Report',
-              onPressed: () {
-                if (_activeTab == 'schemes') {
-                  SchemeReportGenerator.generateAndPrintListReport(
-                    schemes: displayedSchemes,
-                    isMarathi: isMr,
-                    categoryFilter: _selectedCategory,
-                  );
-                } else {
-                  SchemeReportGenerator.generateAndPrintBeneficiaryReport(
-                    applications: displayedApps,
-                    isMarathi: isMr,
-                  );
-                }
-              },
-            ),
-            // Refresh
-            IconButton(
-              icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 22),
-              tooltip: 'Refresh',
-              onPressed: _loadData,
-            ),
-          ],
+          actions: const [],
         ),
         body: _isLoading
             ? const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)))
@@ -936,42 +908,84 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
           child: Column(
             children: [
-              // Search field
-              Container(
-                height: 44,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Row(
-                  children: [
-                    const Icon(Icons.search_rounded, color: Color(0xFF94A3B8), size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextField(
-                        controller: _searchCtrl,
-                        onChanged: (_) => setState(() {}),
-                        style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
-                        decoration: InputDecoration(
-                          hintText: isMr ? 'योजना, लाभ किंवा पात्रता शोधा...' : 'Search schemes, benefits, eligibility...',
-                          hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                          border: InputBorder.none,
-                          isDense: true,
-                          contentPadding: EdgeInsets.zero,
-                        ),
+              // Search field + Actions
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.search_rounded, color: Color(0xFF94A3B8), size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextField(
+                              controller: _searchCtrl,
+                              onChanged: (_) => setState(() {}),
+                              style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
+                              decoration: InputDecoration(
+                                hintText: isMr ? 'योजना, लाभ किंवा पात्रता शोधा...' : 'Search schemes, benefits, eligibility...',
+                                hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                                border: InputBorder.none,
+                                isDense: true,
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                            ),
+                          ),
+                          if (_searchCtrl.text.isNotEmpty)
+                            GestureDetector(
+                              onTap: () {
+                                _searchCtrl.clear();
+                                setState(() {});
+                              },
+                              child: const Icon(Icons.cancel, color: Color(0xFF94A3B8), size: 18),
+                            ),
+                        ],
                       ),
                     ),
-                    if (_searchCtrl.text.isNotEmpty)
-                      GestureDetector(
-                        onTap: () {
-                          _searchCtrl.clear();
-                          setState(() {});
-                        },
-                        child: const Icon(Icons.cancel, color: Color(0xFF94A3B8), size: 18),
+                  ),
+                  const SizedBox(width: 8),
+                  InkWell(
+                    onTap: _showSmartMatcherModal,
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      height: 44,
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF0F9FF),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFBAE6FD)),
                       ),
-                  ],
-                ),
+                      child: const Icon(Icons.auto_awesome_rounded, size: 20, color: Color(0xFF0284C7)),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  InkWell(
+                    onTap: () {
+                      SchemeReportGenerator.generateAndPrintListReport(
+                        schemes: displayedSchemes,
+                        isMarathi: isMr,
+                        categoryFilter: _selectedCategory,
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      height: 44,
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: const Icon(Icons.picture_as_pdf_outlined, size: 20, color: Color(0xFF0284C7)),
+                    ),
+                  ),
+                ],
               ),
 
               const SizedBox(height: 10),
@@ -1289,42 +1303,68 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
           child: Column(
             children: [
-              // Search
-              Container(
-                height: 44,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Row(
-                  children: [
-                    const Icon(Icons.search_rounded, color: Color(0xFF94A3B8), size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextField(
-                        controller: _appSearchCtrl,
-                        onChanged: (_) => setState(() {}),
-                        style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
-                        decoration: InputDecoration(
-                          hintText: isMr ? 'नागरिक किंवा मोबाईल शोधा...' : 'Search applicant name, mobile, address...',
-                          hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                          border: InputBorder.none,
-                          isDense: true,
-                          contentPadding: EdgeInsets.zero,
-                        ),
+              // Search + Actions
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.search_rounded, color: Color(0xFF94A3B8), size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextField(
+                              controller: _appSearchCtrl,
+                              onChanged: (_) => setState(() {}),
+                              style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
+                              decoration: InputDecoration(
+                                hintText: isMr ? 'नागरिक किंवा मोबाईल शोधा...' : 'Search applicant name, mobile, address...',
+                                hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                                border: InputBorder.none,
+                                isDense: true,
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                            ),
+                          ),
+                          if (_appSearchCtrl.text.isNotEmpty)
+                            GestureDetector(
+                              onTap: () {
+                                _appSearchCtrl.clear();
+                                setState(() {});
+                              },
+                              child: const Icon(Icons.cancel, color: Color(0xFF94A3B8), size: 18),
+                            ),
+                        ],
                       ),
                     ),
-                    if (_appSearchCtrl.text.isNotEmpty)
-                      GestureDetector(
-                        onTap: () {
-                          _appSearchCtrl.clear();
-                          setState(() {});
-                        },
-                        child: const Icon(Icons.cancel, color: Color(0xFF94A3B8), size: 18),
+                  ),
+                  const SizedBox(width: 8),
+                  InkWell(
+                    onTap: () {
+                      SchemeReportGenerator.generateAndPrintBeneficiaryReport(
+                        applications: displayedApps,
+                        isMarathi: isMr,
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      height: 44,
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
                       ),
-                  ],
-                ),
+                      child: const Icon(Icons.picture_as_pdf_outlined, size: 20, color: Color(0xFF0284C7)),
+                    ),
+                  ),
+                ],
               ),
 
               const SizedBox(height: 10),

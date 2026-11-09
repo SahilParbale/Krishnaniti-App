@@ -482,47 +482,28 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
             children: const [
               Text(
                 'Events & Invitations',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 17.5,
+                  fontSize: 16.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
                   letterSpacing: -0.2,
                 ),
               ),
               Text(
-                'Ward programs, inaugurations and invitations',
+                'Programs, inaugurations & invitations',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 10.5,
                   fontWeight: FontWeight.w400,
                   color: Color(0xFFE0F2FE),
                 ),
               ),
             ],
           ),
-          actions: [
-            IconButton(
-              icon: Icon(
-                _viewMode == 'grid' ? Icons.table_rows_rounded : Icons.grid_view_rounded,
-                color: Colors.white,
-              ),
-              tooltip: _viewMode == 'grid' ? 'Table View' : 'Grid View',
-              onPressed: () {
-                setState(() {
-                  _viewMode = _viewMode == 'grid' ? 'report' : 'grid';
-                });
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.picture_as_pdf_rounded, color: Colors.white),
-              tooltip: 'Official PDF Report',
-              onPressed: () => EventReportGenerator.generateAndPrintReport(events: filtered),
-            ),
-            IconButton(
-              icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-              tooltip: 'Refresh',
-              onPressed: _loadEvents,
-            ),
-          ],
+          actions: const [],
         ),
         body: _isLoading
             ? const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)))
@@ -541,7 +522,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                       const SizedBox(height: 16),
 
                       // Search and Filters Card
-                      _buildSearchAndFiltersCard(),
+                      _buildSearchAndFiltersCard(filtered),
 
                       const SizedBox(height: 16),
 
@@ -634,7 +615,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
     );
   }
 
-  Widget _buildSearchAndFiltersCard() {
+  Widget _buildSearchAndFiltersCard(List<EventModel> filtered) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -644,26 +625,63 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
       ),
       child: Column(
         children: [
-          // Search Input
-          TextField(
-            controller: _searchCtrl,
-            decoration: InputDecoration(
-              hintText: 'Search by title, location or description...',
-              hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-              prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Color(0xFF64748B)),
-              suffixIcon: _searchCtrl.text.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear_rounded, size: 18),
-                      onPressed: () => setState(() => _searchCtrl.clear()),
-                    )
-                  : null,
-              filled: true,
-              fillColor: const Color(0xFFF8FAFC),
-              contentPadding: const EdgeInsets.symmetric(vertical: 10),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-            ),
-            onChanged: (_) => setState(() {}),
+          // Search Input & Action Controls
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _searchCtrl,
+                  decoration: InputDecoration(
+                    hintText: 'Search by title, location or description...',
+                    hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                    prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Color(0xFF64748B)),
+                    suffixIcon: _searchCtrl.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear_rounded, size: 18),
+                            onPressed: () => setState(() => _searchCtrl.clear()),
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: Icon(
+                        _viewMode == 'grid' ? Icons.table_rows_rounded : Icons.grid_view_rounded,
+                        color: const Color(0xFF0284C7),
+                        size: 20,
+                      ),
+                      tooltip: _viewMode == 'grid' ? 'Table View' : 'Grid View',
+                      onPressed: () {
+                        setState(() {
+                          _viewMode = _viewMode == 'grid' ? 'report' : 'grid';
+                        });
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.picture_as_pdf_rounded, color: Color(0xFFDC2626), size: 20),
+                      tooltip: 'Official PDF Report',
+                      onPressed: () => EventReportGenerator.generateAndPrintReport(events: filtered),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
 
           const SizedBox(height: 10),

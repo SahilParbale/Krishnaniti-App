@@ -414,35 +414,28 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
           children: const [
             Text(
               'Voter Forms (6, 7, 8)',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 17.5,
+                fontSize: 16.5,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
                 letterSpacing: -0.2,
               ),
             ),
             Text(
-              'Voter registration, deletion and correction forms',
+              'ECI registration forms (6, 7, 8)',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10.5,
                 fontWeight: FontWeight.w400,
                 color: Color(0xFFE0F2FE),
               ),
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.picture_as_pdf_outlined),
-            tooltip: 'Download PDF Report',
-            onPressed: () => VoterFormsReportGenerator.generateAndPrintReport(applications: _applications),
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
-            onPressed: _loadApplications,
-          ),
-        ],
+        actions: const [],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openAddEditModal(),
@@ -809,9 +802,25 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
                 'Logged Applications: ${_applications.length}',
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF475569)),
               ),
-              Text(
-                'Approval Rate: ${_stats['total'] > 0 ? ((_stats['approved'] / _stats['total']) * 100).round() : 0}%',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF16A34A)),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Approval Rate: ${_stats['total'] > 0 ? ((_stats['approved'] / _stats['total']) * 100).round() : 0}%',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF16A34A)),
+                  ),
+                  const SizedBox(width: 8),
+                  TextButton.icon(
+                    onPressed: () => VoterFormsReportGenerator.generateAndPrintReport(applications: _applications),
+                    icon: const Icon(Icons.picture_as_pdf_outlined, size: 16, color: Color(0xFFDC2626)),
+                    label: const Text('PDF Report', style: TextStyle(fontSize: 12, color: Color(0xFFDC2626), fontWeight: FontWeight.bold)),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      backgroundColor: const Color(0xFFFEF2F2),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

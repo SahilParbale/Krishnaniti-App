@@ -307,48 +307,28 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
             children: const [
               Text(
                 'Ward Map',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 17.5,
+                  fontSize: 16.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
                   letterSpacing: -0.2,
                 ),
               ),
               Text(
-                'Geographic boundaries, booths & civil works',
+                'Boundaries, booths & civil works',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 10.5,
                   fontWeight: FontWeight.w400,
                   color: Color(0xFFE0F2FE),
                 ),
               ),
             ],
           ),
-          actions: [
-            // Reset / Center Map
-            IconButton(
-              icon: const Icon(Icons.my_location_rounded, color: Colors.white, size: 21),
-              tooltip: 'Center Ward Map',
-              onPressed: _resetMapZoom,
-            ),
-            // PDF Export
-            IconButton(
-              icon: const Icon(Icons.picture_as_pdf_outlined, color: Colors.white, size: 21),
-              tooltip: 'Export PDF Directory',
-              onPressed: () {
-                WardMapReportGenerator.generateAndPrintWardMapReport(
-                  points: displayed,
-                  categoryFilter: _activeCategory,
-                );
-              },
-            ),
-            // Refresh
-            IconButton(
-              icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 22),
-              tooltip: 'Refresh',
-              onPressed: _loadData,
-            ),
-          ],
+          actions: const [],
         ),
         body: _isLoading
             ? const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)))
@@ -416,6 +396,41 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
                                   _buildViewModeBtn('map', Icons.map_rounded, isMr ? 'नकाशा' : 'Map'),
                                   _buildViewModeBtn('list', Icons.format_list_bulleted_rounded, isMr ? 'यादी' : 'List'),
                                 ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            InkWell(
+                              onTap: _resetMapZoom,
+                              borderRadius: BorderRadius.circular(10),
+                              child: Container(
+                                height: 42,
+                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF0F9FF),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: const Color(0xFFBAE6FD)),
+                                ),
+                                child: const Icon(Icons.my_location_rounded, size: 20, color: Color(0xFF0284C7)),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            InkWell(
+                              onTap: () {
+                                WardMapReportGenerator.generateAndPrintWardMapReport(
+                                  points: displayed,
+                                  categoryFilter: _activeCategory,
+                                );
+                              },
+                              borderRadius: BorderRadius.circular(10),
+                              child: Container(
+                                height: 42,
+                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                                ),
+                                child: const Icon(Icons.picture_as_pdf_outlined, size: 20, color: Color(0xFF0284C7)),
                               ),
                             ),
                           ],

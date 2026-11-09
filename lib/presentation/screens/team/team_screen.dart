@@ -549,43 +549,28 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
           children: const [
             Text(
               'My Team & Staff',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 17.5,
+                fontSize: 16.5,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
                 letterSpacing: -0.2,
               ),
             ),
             Text(
-              'Office executive staff, ward personal assistants and coordinators',
+              'Office staff & coordinators',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10.5,
                 fontWeight: FontWeight.w400,
                 color: Color(0xFFE0F2FE),
               ),
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.picture_as_pdf_rounded, color: Colors.white),
-            tooltip: 'Download Team Report',
-            onPressed: () => TeamReportGenerator.generateAndPrintReport(
-              staffList: filtered,
-              activeCategory: _selectedCategory == 'All' ? 'All Team' : _selectedCategory,
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.help_outline_rounded, color: Colors.white),
-            tooltip: 'Help Guide',
-            onPressed: _showHelpGuide,
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-            tooltip: 'Refresh',
-            onPressed: _loadTeam,
-          ),
-        ],
+        actions: const [],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)))
@@ -600,7 +585,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                   const SizedBox(height: 14),
 
                   // Search Bar
-                  _buildSearchBar(),
+                  _buildSearchBar(filtered),
                   const SizedBox(height: 10),
 
                   // Category Tabs & View Mode Row
@@ -725,7 +710,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildSearchBar(List<TeamMemberModel> filtered) {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
@@ -733,26 +718,53 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.grey.shade200),
       ),
-      child: TextField(
-        controller: _searchCtrl,
-        onChanged: (_) => setState(() {}),
-        decoration: InputDecoration(
-          hintText: 'Search name, role, wing, area, or keyword...',
-          hintStyle: TextStyle(fontSize: 12.5, color: Colors.grey.shade400),
-          prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF0284C7), size: 20),
-          suffixIcon: _searchCtrl.text.isNotEmpty
-              ? IconButton(
-                  icon: const Icon(Icons.clear, size: 16),
-                  onPressed: () {
-                    _searchCtrl.clear();
-                    setState(() {});
-                  },
-                )
-              : null,
-          border: InputBorder.none,
-          isDense: true,
-          contentPadding: const EdgeInsets.symmetric(vertical: 9),
-        ),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _searchCtrl,
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                hintText: 'Search name, role, wing, area, or keyword...',
+                hintStyle: TextStyle(fontSize: 12.5, color: Colors.grey.shade400),
+                prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF0284C7), size: 20),
+                suffixIcon: _searchCtrl.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 16),
+                        onPressed: () {
+                          _searchCtrl.clear();
+                          setState(() {});
+                        },
+                      )
+                    : null,
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(vertical: 9),
+              ),
+            ),
+          ),
+          Container(
+            height: 28,
+            width: 1,
+            color: Colors.grey.shade200,
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+          ),
+          IconButton(
+            icon: const Icon(Icons.help_outline_rounded, color: Color(0xFF64748B), size: 20),
+            tooltip: 'Help Guide',
+            visualDensity: VisualDensity.compact,
+            onPressed: _showHelpGuide,
+          ),
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf_rounded, color: Color(0xFFDC2626), size: 20),
+            tooltip: 'Download Team Report',
+            visualDensity: VisualDensity.compact,
+            onPressed: () => TeamReportGenerator.generateAndPrintReport(
+              staffList: filtered,
+              activeCategory: _selectedCategory == 'All' ? 'All Team' : _selectedCategory,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -417,44 +417,28 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
           children: const [
             Text(
               'Voter Search',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 17.5,
+                fontSize: 16.5,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
                 letterSpacing: -0.2,
               ),
             ),
             Text(
-              'Ward 12 voter directory, booth & family lookup',
+              'Voter directory & booth lookup',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10.5,
                 fontWeight: FontWeight.w400,
                 color: Color(0xFFE0F2FE),
               ),
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.picture_as_pdf_rounded, color: Colors.white),
-            tooltip: 'Download Electoral Roll Report',
-            onPressed: () => VoterSlipGenerator.downloadVotersListReport(
-              voters: filtered,
-              totalCount: totalRoll,
-              currentFilterSummary: _selectedBooth != 'All' ? 'Booth: $_selectedBooth' : null,
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.help_outline_rounded, color: Colors.white),
-            tooltip: 'Help Guide',
-            onPressed: _showHelpGuide,
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-            tooltip: 'Refresh',
-            onPressed: _loadVoters,
-          ),
-        ],
+        actions: const [],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)))
@@ -477,7 +461,7 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                   const SizedBox(height: 10),
 
                   // View Mode & Result Count Row
-                  _buildViewModeBar(filtered.length),
+                  _buildViewModeBar(filtered, totalRoll),
                   const SizedBox(height: 14),
 
                   // Render Voters by Selected View Mode
@@ -723,48 +707,85 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
     );
   }
 
-  Widget _buildViewModeBar(int resultCount) {
+  Widget _buildViewModeBar(List<VoterModel> filtered, int totalRoll) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          '$resultCount voters found',
+          '${filtered.length} voters found',
           style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.grey.shade700),
         ),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.grey.shade200),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: Icon(Icons.grid_view_rounded, size: 17, color: _viewMode == 'cards' ? const Color(0xFF0284C7) : Colors.grey),
-                tooltip: 'Card View',
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                padding: EdgeInsets.zero,
-                onPressed: () => setState(() => _viewMode = 'cards'),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.grey.shade200),
               ),
-              Container(width: 1, height: 18, color: Colors.grey.shade200),
-              IconButton(
-                icon: Icon(Icons.family_restroom_rounded, size: 17, color: _viewMode == 'family' ? const Color(0xFF0284C7) : Colors.grey),
-                tooltip: 'Family Group View',
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                padding: EdgeInsets.zero,
-                onPressed: () => setState(() => _viewMode = 'family'),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.grid_view_rounded, size: 17, color: _viewMode == 'cards' ? const Color(0xFF0284C7) : Colors.grey),
+                    tooltip: 'Card View',
+                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    padding: EdgeInsets.zero,
+                    onPressed: () => setState(() => _viewMode = 'cards'),
+                  ),
+                  Container(width: 1, height: 18, color: Colors.grey.shade200),
+                  IconButton(
+                    icon: Icon(Icons.family_restroom_rounded, size: 17, color: _viewMode == 'family' ? const Color(0xFF0284C7) : Colors.grey),
+                    tooltip: 'Family Group View',
+                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    padding: EdgeInsets.zero,
+                    onPressed: () => setState(() => _viewMode = 'family'),
+                  ),
+                  Container(width: 1, height: 18, color: Colors.grey.shade200),
+                  IconButton(
+                    icon: Icon(Icons.table_rows_rounded, size: 17, color: _viewMode == 'table' ? const Color(0xFF0284C7) : Colors.grey),
+                    tooltip: 'Table View',
+                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    padding: EdgeInsets.zero,
+                    onPressed: () => setState(() => _viewMode = 'table'),
+                  ),
+                ],
               ),
-              Container(width: 1, height: 18, color: Colors.grey.shade200),
-              IconButton(
-                icon: Icon(Icons.table_rows_rounded, size: 17, color: _viewMode == 'table' ? const Color(0xFF0284C7) : Colors.grey),
-                tooltip: 'Table View',
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                padding: EdgeInsets.zero,
-                onPressed: () => setState(() => _viewMode = 'table'),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.grey.shade200),
               ),
-            ],
-          ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.help_outline_rounded, color: Color(0xFF64748B), size: 17),
+                    tooltip: 'Help Guide',
+                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    padding: EdgeInsets.zero,
+                    onPressed: _showHelpGuide,
+                  ),
+                  Container(width: 1, height: 18, color: Colors.grey.shade200),
+                  IconButton(
+                    icon: const Icon(Icons.picture_as_pdf_rounded, color: Color(0xFFDC2626), size: 17),
+                    tooltip: 'Download Electoral Roll Report',
+                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    padding: EdgeInsets.zero,
+                    onPressed: () => VoterSlipGenerator.downloadVotersListReport(
+                      voters: filtered,
+                      totalCount: totalRoll,
+                      currentFilterSummary: _selectedBooth != 'All' ? 'Booth: $_selectedBooth' : null,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ],
     );

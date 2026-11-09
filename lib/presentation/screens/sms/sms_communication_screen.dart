@@ -355,88 +355,101 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
           children: const [
             Text(
               'Send SMS',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 17.5,
+                fontSize: 16.5,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
                 letterSpacing: -0.2,
               ),
             ),
             Text(
-              'Send important notifications & updates to ward voters',
+              'SMS broadcasts & campaign delivery',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10.5,
                 fontWeight: FontWeight.w400,
                 color: Color(0xFFE0F2FE),
               ),
             ),
           ],
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Colors.white38),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                backgroundColor: Colors.white.withOpacity(0.18),
-              ),
-              onPressed: _generatePdfReport,
-              icon: const Icon(Icons.picture_as_pdf_outlined, size: 16, color: Colors.white),
-              label: const Text(
-                'Download Report',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
-              ),
-            ),
-          ),
-        ],
+        actions: const [],
         ),
       body: Column(
         children: [
           Container(
             color: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            alignment: Alignment.centerLeft,
-            child: Container(
-              height: 38,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: TabBar(
-                controller: _tabController,
-                indicator: BoxDecoration(
-                  color: const Color(0xFF0284C7),
-                  borderRadius: BorderRadius.circular(8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: TabBar(
+                      controller: _tabController,
+                      indicator: BoxDecoration(
+                        color: const Color(0xFF0284C7),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      labelColor: Colors.white,
+                      unselectedLabelColor: const Color(0xFF64748B),
+                      labelStyle: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
+                      dividerColor: Colors.transparent,
+                      tabs: const [
+                        Tab(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.send_rounded, size: 15),
+                              SizedBox(width: 6),
+                              Text('Send SMS'),
+                            ],
+                          ),
+                        ),
+                        Tab(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.history_rounded, size: 15),
+                              SizedBox(width: 6),
+                              Text('History & Reports'),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                labelColor: Colors.white,
-                unselectedLabelColor: const Color(0xFF64748B),
-                labelStyle: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
-                dividerColor: Colors.transparent,
-                tabs: const [
-                  Tab(
+                const SizedBox(width: 8),
+                InkWell(
+                  onTap: _generatePdfReport,
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    height: 38,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF2F2),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFFECACA)),
+                    ),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.send_rounded, size: 15),
-                        SizedBox(width: 6),
-                        Text('Send SMS'),
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(Icons.picture_as_pdf_outlined, size: 16, color: Color(0xFFDC2626)),
+                        SizedBox(width: 4),
+                        Text('Report', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFDC2626))),
                       ],
                     ),
                   ),
-                  Tab(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.history_rounded, size: 15),
-                        SizedBox(width: 6),
-                        Text('History & Reports'),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
           Expanded(

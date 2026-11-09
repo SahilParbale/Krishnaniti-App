@@ -343,42 +343,28 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
           children: const [
             Text(
               'Karyakarta Work Management',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 17.5,
+                fontSize: 16.5,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
                 letterSpacing: -0.2,
               ),
             ),
             Text(
-              'Assign field tasks and track completion metrics',
+              'Field tasks & team workload',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10.5,
                 fontWeight: FontWeight.w400,
                 color: Color(0xFFE0F2FE),
               ),
             ),
           ],
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Colors.white38),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                backgroundColor: Colors.white.withOpacity(0.18),
-              ),
-              onPressed: _showReportPreviewDialog,
-              icon: const Icon(Icons.picture_as_pdf_outlined, size: 16, color: Colors.white),
-              label: const Text(
-                'Workload Report',
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
-              ),
-            ),
-          ),
-        ],
+        actions: const [],
       ),
       body: RefreshIndicator(
         onRefresh: _loadData,
@@ -628,6 +614,28 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                   }
                 },
               ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        InkWell(
+          onTap: _showReportPreviewDialog,
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            height: 42,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFCBD5E1)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                Icon(Icons.picture_as_pdf_outlined, size: 16, color: Color(0xFFDC2626)),
+                SizedBox(width: 5),
+                Text('Report', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+              ],
             ),
           ),
         ),

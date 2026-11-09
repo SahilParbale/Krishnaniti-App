@@ -158,14 +158,19 @@ class _VoterProfileScreenState extends ConsumerState<VoterProfileScreen> {
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               _voter.displayName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const Text(
-              'Voter Details & Official Slip',
-              style: TextStyle(color: Colors.white70, fontSize: 11),
+              'Voter details & official slip',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: Color(0xFFE0F2FE), fontSize: 10.5),
             ),
           ],
         ),

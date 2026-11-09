@@ -12,7 +12,6 @@ import '../../navigation/app_drawer.dart';
 import '../../providers/navigation_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../complaints/complaint_detail_screen.dart';
-import '../ward_map/ward_map_screen.dart';
 import 'ward_problems_report_generator.dart';
 
 class WardProblemsScreen extends ConsumerStatefulWidget {
@@ -563,51 +562,28 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
             children: const [
               Text(
                 'Ward Problems Heatmap',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 17.5,
+                  fontSize: 16.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
                   letterSpacing: -0.2,
                 ),
               ),
               Text(
-                'Self-identified & ward civic pain points',
+                'Civic issues & pain points',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 10.5,
                   fontWeight: FontWeight.w400,
                   color: Color(0xFFE0F2FE),
                 ),
               ),
             ],
           ),
-          actions: [
-            // Map View Shortcut
-            IconButton(
-              icon: const Icon(Icons.map_outlined, color: Colors.white, size: 21),
-              tooltip: 'Ward Map View',
-              onPressed: () {
-                ref.read(activeScreenProvider.notifier).setScreen('ward_map');
-              },
-            ),
-            // PDF Export
-            IconButton(
-              icon: const Icon(Icons.picture_as_pdf_outlined, color: Colors.white, size: 21),
-              tooltip: 'Export PDF Report',
-              onPressed: () {
-                WardProblemsReportGenerator.generateAndPrintReport(
-                  problems: displayed,
-                  areaFilter: _selectedArea,
-                  statusFilter: _selectedStatus,
-                );
-              },
-            ),
-            // Refresh
-            IconButton(
-              icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 22),
-              tooltip: 'Refresh',
-              onPressed: _loadData,
-            ),
-          ],
+          actions: const [],
         ),
         body: _isLoading
             ? const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)))
@@ -651,42 +627,83 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                     padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
                     child: Column(
                       children: [
-                        // Search
-                        Container(
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF1F5F9),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.search_rounded, color: Color(0xFF94A3B8), size: 20),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: TextField(
-                                  controller: _searchCtrl,
-                                  onChanged: (_) => setState(() {}),
-                                  style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
-                                  decoration: InputDecoration(
-                                    hintText: isMr ? 'समस्या, परिसर किंवा नागरिक शोधा...' : 'Search problem, area, citizen...',
-                                    hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                                    border: InputBorder.none,
-                                    isDense: true,
-                                    contentPadding: EdgeInsets.zero,
-                                  ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.search_rounded, color: Color(0xFF94A3B8), size: 20),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: TextField(
+                                        controller: _searchCtrl,
+                                        onChanged: (_) => setState(() {}),
+                                        style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
+                                        decoration: InputDecoration(
+                                          hintText: isMr ? 'समस्या, परिसर किंवा नागरिक शोधा...' : 'Search problem, area, citizen...',
+                                          hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                                          border: InputBorder.none,
+                                          isDense: true,
+                                          contentPadding: EdgeInsets.zero,
+                                        ),
+                                      ),
+                                    ),
+                                    if (_searchCtrl.text.isNotEmpty)
+                                      GestureDetector(
+                                        onTap: () {
+                                          _searchCtrl.clear();
+                                          setState(() {});
+                                        },
+                                        child: const Icon(Icons.cancel, color: Color(0xFF94A3B8), size: 18),
+                                      ),
+                                  ],
                                 ),
                               ),
-                              if (_searchCtrl.text.isNotEmpty)
-                                GestureDetector(
-                                  onTap: () {
-                                    _searchCtrl.clear();
-                                    setState(() {});
-                                  },
-                                  child: const Icon(Icons.cancel, color: Color(0xFF94A3B8), size: 18),
+                            ),
+                            const SizedBox(width: 8),
+                            InkWell(
+                              onTap: () => ref.read(activeScreenProvider.notifier).setScreen('ward_map'),
+                              borderRadius: BorderRadius.circular(10),
+                              child: Container(
+                                height: 44,
+                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF0F9FF),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: const Color(0xFFBAE6FD)),
                                 ),
-                            ],
-                          ),
+                                child: const Icon(Icons.map_outlined, size: 20, color: Color(0xFF0284C7)),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            InkWell(
+                              onTap: () {
+                                WardProblemsReportGenerator.generateAndPrintReport(
+                                  problems: displayed,
+                                  areaFilter: _selectedArea,
+                                  statusFilter: _selectedStatus,
+                                );
+                              },
+                              borderRadius: BorderRadius.circular(10),
+                              child: Container(
+                                height: 44,
+                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                                ),
+                                child: const Icon(Icons.picture_as_pdf_outlined, size: 20, color: Color(0xFF0284C7)),
+                              ),
+                            ),
+                          ],
                         ),
 
                         const SizedBox(height: 10),

@@ -400,8 +400,10 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
             children: [
               Text(
                 isMr ? 'महासभा ठराव तपशील' : 'GB Motion Details',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontSize: 17.5,
+                  fontSize: 16.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
                   letterSpacing: -0.2,
@@ -409,8 +411,10 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
               ),
               Text(
                 '${entry.meetingType} • ${entry.area}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 10.5,
                   fontWeight: FontWeight.w400,
                   color: Colors.white.withValues(alpha: 0.85),
                 ),

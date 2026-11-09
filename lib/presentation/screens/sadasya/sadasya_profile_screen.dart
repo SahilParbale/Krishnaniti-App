@@ -46,7 +46,9 @@ class SadasyaProfileScreen extends StatelessWidget {
         ),
         title: const Text(
           'Member Profile',
-          style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(color: Colors.white, fontSize: 16.5, fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(

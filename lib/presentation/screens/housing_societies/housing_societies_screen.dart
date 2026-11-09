@@ -440,35 +440,28 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
           children: const [
             Text(
               'Housing Societies',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 17.5,
+                fontSize: 16.5,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
                 letterSpacing: -0.2,
               ),
             ),
             Text(
-              'Apartments, resident welfare associations and chairmen directory',
+              'Housing societies & RWA directory',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10.5,
                 fontWeight: FontWeight.w400,
                 color: Color(0xFFE0F2FE),
               ),
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.picture_as_pdf_outlined),
-            tooltip: 'Download PDF Report',
-            onPressed: () => HousingSocietyReportGenerator.generateAndPrintReport(societies: _societies),
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
-            onPressed: _loadData,
-          ),
-        ],
+        actions: const [],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openAddEditModal(),
@@ -530,6 +523,12 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                           ),
                           tooltip: 'Table View',
                           onPressed: () => setState(() => _viewMode = 1),
+                        ),
+                        Container(width: 1, height: 24, color: const Color(0xFFE2E8F0)),
+                        IconButton(
+                          icon: const Icon(Icons.picture_as_pdf_outlined, size: 20, color: Color(0xFFDC2626)),
+                          tooltip: 'Download PDF Report',
+                          onPressed: () => HousingSocietyReportGenerator.generateAndPrintReport(societies: _societies),
                         ),
                       ],
                     ),

@@ -104,19 +104,24 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
           ),
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 _item.contentType.titleMr,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontSize: 17,
+                  fontSize: 16.5,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
               Text(
                 '${_item.tone.name} • ${_item.language.label}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontSize: 11,
+                  fontSize: 10.5,
                   color: Color(0xFFE0F2FE),
                 ),
               ),

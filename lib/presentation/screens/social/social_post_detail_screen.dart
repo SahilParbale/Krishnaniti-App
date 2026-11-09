@@ -188,9 +188,12 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
           ),
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
                 'Post Details & Analytics',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -199,9 +202,11 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
               ),
               Text(
                 '${_currentPost.platform} • ${_currentPost.date}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.85),
-                  fontSize: 11.5,
+                  fontSize: 10.5,
                 ),
               ),
             ],

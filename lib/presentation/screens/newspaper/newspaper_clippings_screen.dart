@@ -573,74 +573,28 @@ class _NewspaperClippingsScreenState
             children: const [
               Text(
                 'Newspaper Clippings',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 17.5,
+                  fontSize: 16.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
                   letterSpacing: -0.2,
                 ),
               ),
               Text(
-                'Print news coverage, press clippings and PR tracking',
+                'Print news clippings & media coverage',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 10.5,
                   fontWeight: FontWeight.w400,
                   color: Color(0xFFE0F2FE),
                 ),
               ),
             ],
           ),
-          actions: [
-            // Help / Guide
-            IconButton(
-              icon: const Icon(Icons.help_outline_rounded,
-                  color: Colors.white, size: 20),
-              tooltip: 'Help Guide',
-              onPressed: _showHelpTutorial,
-            ),
-            // PDF Report
-            IconButton(
-              icon: const Icon(Icons.picture_as_pdf_outlined,
-                  color: Colors.white, size: 20),
-              tooltip: 'Download PDF Report',
-              onPressed: () {
-                NewspaperReportGenerator.generateAndPrintReport(
-                  clippings: filtered,
-                  sentimentFilter: _activeSentiment == 'all'
-                      ? 'All News'
-                      : (_activeSentiment == 'positive'
-                          ? 'Positive News'
-                          : 'Negative Issues'),
-                  newspaperFilter: _selectedNewspaper,
-                );
-              },
-            ),
-            // View Mode Toggle
-            IconButton(
-              icon: Icon(
-                _viewMode == 'grid'
-                    ? Icons.table_chart_outlined
-                    : Icons.grid_view_rounded,
-                color: Colors.white,
-                size: 20,
-              ),
-              tooltip: _viewMode == 'grid'
-                  ? 'Switch to Table Report'
-                  : 'Switch to Grid View',
-              onPressed: () {
-                setState(() {
-                  _viewMode = _viewMode == 'grid' ? 'table' : 'grid';
-                });
-              },
-            ),
-            // Refresh
-            IconButton(
-              icon: const Icon(Icons.refresh_rounded,
-                  color: Colors.white, size: 20),
-              tooltip: 'Refresh',
-              onPressed: _loadData,
-            ),
-          ],
+          actions: const [],
         ),
         drawer: const NagarsevakAppDrawer(),
         body: _isLoading
@@ -678,30 +632,78 @@ class _NewspaperClippingsScreenState
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'Showing ${filtered.length} of $totalCount clippings',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF64748B),
-                          ),
-                        ),
-                        if (_filterDate.isNotEmpty)
-                          InkWell(
-                            onTap: () => setState(() => _filterDate = ''),
-                            child: Row(
-                              children: [
-                                Text('Date: $_filterDate',
-                                    style: const TextStyle(
-                                        fontSize: 11,
-                                        color: Color(0xFF0284C7),
-                                        fontWeight: FontWeight.bold)),
-                                const SizedBox(width: 4),
-                                const Icon(Icons.close,
-                                    size: 14, color: Color(0xFF0284C7)),
-                              ],
+                        Expanded(
+                          child: Text(
+                            'Showing ${filtered.length} of $totalCount clippings',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF64748B),
                             ),
                           ),
+                        ),
+                        Row(
+                          children: [
+                            if (_filterDate.isNotEmpty)
+                              InkWell(
+                                onTap: () => setState(() => _filterDate = ''),
+                                child: Padding(
+                                  padding: const EdgeInsets.only(right: 6),
+                                  child: Row(
+                                    children: [
+                                      Text('Date: $_filterDate',
+                                          style: const TextStyle(
+                                              fontSize: 11,
+                                              color: Color(0xFF0284C7),
+                                              fontWeight: FontWeight.bold)),
+                                      const SizedBox(width: 4),
+                                      const Icon(Icons.close,
+                                          size: 14, color: Color(0xFF0284C7)),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            IconButton(
+                              icon: Icon(
+                                _viewMode == 'grid'
+                                    ? Icons.table_chart_outlined
+                                    : Icons.grid_view_rounded,
+                                color: const Color(0xFF0284C7),
+                                size: 20,
+                              ),
+                              tooltip: _viewMode == 'grid'
+                                  ? 'Switch to Table'
+                                  : 'Switch to Grid',
+                              onPressed: () {
+                                setState(() {
+                                  _viewMode = _viewMode == 'grid' ? 'table' : 'grid';
+                                });
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.picture_as_pdf_outlined,
+                                  color: Color(0xFF0284C7), size: 20),
+                              tooltip: 'Download PDF Report',
+                              onPressed: () {
+                                NewspaperReportGenerator.generateAndPrintReport(
+                                  clippings: filtered,
+                                  sentimentFilter: _activeSentiment == 'all'
+                                      ? 'All News'
+                                      : (_activeSentiment == 'positive'
+                                          ? 'Positive News'
+                                          : 'Negative Issues'),
+                                  newspaperFilter: _selectedNewspaper,
+                                );
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.help_outline_rounded,
+                                  color: Color(0xFF64748B), size: 20),
+                              tooltip: 'Help Guide',
+                              onPressed: _showHelpTutorial,
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                     const SizedBox(height: 10),

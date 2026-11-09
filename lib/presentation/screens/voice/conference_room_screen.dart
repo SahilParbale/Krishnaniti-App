@@ -513,30 +513,28 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
           children: const [
             Text(
               'Conference Room',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 17.5,
+                fontSize: 16.5,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
                 letterSpacing: -0.2,
               ),
             ),
             Text(
-              'Multi-party telephone bridges with ward engineers and chairmen',
+              'Multi-party teleconference bridges',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10.5,
                 fontWeight: FontWeight.w400,
                 color: Color(0xFFE0F2FE),
               ),
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            onPressed: _showCreateMeetingDialog,
-            icon: const Icon(Icons.add_circle_outline, color: Colors.white),
-            tooltip: 'Schedule Meeting',
-          ),
-        ],
+        actions: const [],
       ),
       body: Column(
         children: [

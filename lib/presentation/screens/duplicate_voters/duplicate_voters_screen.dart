@@ -176,38 +176,28 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
           children: const [
             Text(
               'Duplicate Voters',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 17.5,
+                fontSize: 16.5,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
                 letterSpacing: -0.2,
               ),
             ),
             Text(
-              'Identify and filter suspected duplicate entries',
+              'Duplicate voter entries & cleanup',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10.5,
                 fontWeight: FontWeight.w400,
                 color: Color(0xFFE0F2FE),
               ),
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.picture_as_pdf_outlined),
-            tooltip: 'Download PDF Report',
-            onPressed: () => DuplicateVotersReportGenerator.generateAndPrintReport(
-              duplicateGroups: _duplicateGroups,
-              totalAffectedVoters: totalAffected,
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
-            onPressed: _loadDuplicates,
-          ),
-        ],
+        actions: const [],
       ),
       body: RefreshIndicator(
         onRefresh: _loadDuplicates,
@@ -253,6 +243,18 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
                         label: const Text('Collapse All', style: TextStyle(fontSize: 12)),
                         style: TextButton.styleFrom(
                           foregroundColor: const Color(0xFF64748B),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      TextButton.icon(
+                        onPressed: () => DuplicateVotersReportGenerator.generateAndPrintReport(
+                          duplicateGroups: _duplicateGroups,
+                          totalAffectedVoters: totalAffected,
+                        ),
+                        icon: const Icon(Icons.picture_as_pdf_outlined, size: 16, color: Color(0xFFDC2626)),
+                        label: const Text('PDF Report', style: TextStyle(fontSize: 12, color: Color(0xFFDC2626))),
+                        style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         ),
                       ),

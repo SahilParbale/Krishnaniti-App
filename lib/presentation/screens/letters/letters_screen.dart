@@ -690,30 +690,28 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
             children: const [
               Text(
                 'Letters & Outward Inward',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 17.5,
+                  fontSize: 16.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
                   letterSpacing: -0.2,
                 ),
               ),
               Text(
-                'Track and issue official ward correspondence',
+                'Ward correspondence & inward outward',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 10.5,
                   fontWeight: FontWeight.w400,
                   color: Color(0xFFE0F2FE),
                 ),
               ),
             ],
           ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 22),
-              onPressed: _fetchLetters,
-              tooltip: isMr ? AppStrings.refreshMr : AppStrings.refresh,
-            ),
-          ],
+          actions: const [],
         ),
         body: Column(
           children: [

@@ -358,106 +358,114 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
           children: const [
             Text(
               'WhatsApp Call',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 17.5,
+                fontSize: 16.5,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
                 letterSpacing: -0.2,
               ),
             ),
             Text(
-              'Direct 1-on-1 WhatsApp internet voice calls',
+              'Direct WhatsApp voice calling',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10.5,
                 fontWeight: FontWeight.w400,
                 color: Color(0xFFE0F2FE),
               ),
             ),
           ],
         ),
-        actions: [
-          // Bot status badge
-          Center(
-            child: Container(
-              margin: const EdgeInsets.only(right: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.18),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.35),
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  FadeTransition(
-                    opacity: _pulseAnim,
-                    child: Container(
-                      width: 7,
-                      height: 7,
-                      decoration: BoxDecoration(
-                        color: _botStatus == 'connected' ? const Color(0xFF4ADE80) : const Color(0xFFF87171),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 5),
-                  Text(
-                    _botStatus == 'connected' ? 'Bot Active' : 'Bot Offline',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          IconButton(
-            onPressed: _showTutorialDialog,
-            icon: const Icon(Icons.help_outline_rounded, color: Colors.white),
-            tooltip: 'Help Guide',
-          ),
-        ],
+        actions: const [],
         ),
       body: Column(
         children: [
           Container(
             color: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            alignment: Alignment.centerLeft,
-            child: Container(
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: TabBar(
-                controller: _tabController,
-                indicator: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.06),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                  ],
+                    child: TabBar(
+                      controller: _tabController,
+                      indicator: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.06),
+                            blurRadius: 4,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                      labelColor: const Color(0xFF0284C7),
+                      unselectedLabelColor: const Color(0xFF64748B),
+                      labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                      unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      dividerColor: Colors.transparent,
+                      tabs: const [
+                        Tab(icon: Icon(Icons.phone, size: 16), text: 'Make Call'),
+                        Tab(icon: Icon(Icons.history, size: 16), text: 'Call History'),
+                      ],
+                    ),
+                  ),
                 ),
-                labelColor: const Color(0xFF0284C7),
-                unselectedLabelColor: const Color(0xFF64748B),
-                labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-                unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
-                indicatorSize: TabBarIndicatorSize.tab,
-                dividerColor: Colors.transparent,
-                tabs: const [
-                  Tab(icon: Icon(Icons.phone, size: 16), text: 'Make Call'),
-                  Tab(icon: Icon(Icons.history, size: 16), text: 'Call History'),
-                ],
-              ),
+                const SizedBox(width: 8),
+                // Bot status badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: _botStatus == 'connected' ? const Color(0xFFF0FDF4) : const Color(0xFFFEF2F2),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: _botStatus == 'connected' ? const Color(0xFFBBF7D0) : const Color(0xFFFECACA),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      FadeTransition(
+                        opacity: _pulseAnim,
+                        child: Container(
+                          width: 7,
+                          height: 7,
+                          decoration: BoxDecoration(
+                            color: _botStatus == 'connected' ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        _botStatus == 'connected' ? 'Active' : 'Offline',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: _botStatus == 'connected' ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 4),
+                IconButton(
+                  onPressed: _showTutorialDialog,
+                  icon: const Icon(Icons.help_outline_rounded, color: Color(0xFF64748B), size: 20),
+                  tooltip: 'Help Guide',
+                  visualDensity: VisualDensity.compact,
+                ),
+              ],
             ),
           ),
           Expanded(

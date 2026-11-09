@@ -578,56 +578,23 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: const [
             Text(
               'Profile Settings',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.white),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.bold, color: Colors.white),
             ),
             Text(
-              'Branding, personal details & system integrations',
-              style: TextStyle(fontSize: 11, color: Colors.white70),
+              'Profile details & system settings',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 10.5, color: Color(0xFFE0F2FE)),
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh',
-            icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-            onPressed: () {
-              _loadTenantSettings();
-              _loadSecurityLogs();
-              _loadSupportTickets();
-            },
-          ),
-          IconButton(
-            tooltip: 'Logout',
-            icon: const Icon(Icons.logout_rounded, color: Colors.white),
-            onPressed: () async {
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  title: const Text('Confirm Logout'),
-                  content: const Text('Are you sure you want to sign out of your account?'),
-                  actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFDC2626),
-                        foregroundColor: Colors.white,
-                      ),
-                      onPressed: () => Navigator.pop(ctx, true),
-                      child: const Text('Logout'),
-                    ),
-                  ],
-                ),
-              );
-              if (confirm == true) {
-                ref.read(authStateProvider.notifier).signOut();
-              }
-            },
-          ),
-        ],
+        actions: const [],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)))
@@ -942,9 +909,71 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
               ),
             ),
           ),
+          const SizedBox(height: 14),
+          Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+              side: const BorderSide(color: Color(0xFFFECACA)),
+            ),
+            color: const Color(0xFFFEF2F2),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Row(
+                children: [
+                  const Icon(Icons.logout_rounded, color: Color(0xFFDC2626), size: 24),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text('Account Session', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF991B1B))),
+                        Text('Sign out of your Nagarsevak account on this device', style: TextStyle(fontSize: 11, color: Color(0xFFB91C1C))),
+                      ],
+                    ),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFDC2626),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    onPressed: _showLogoutConfirmDialog,
+                    child: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  Future<void> _showLogoutConfirmDialog() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        title: const Text('Confirm Logout'),
+        content: const Text('Are you sure you want to sign out of your account?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      ref.read(authStateProvider.notifier).signOut();
+    }
   }
 
   // ─────────────────────────────────────────────────────────────

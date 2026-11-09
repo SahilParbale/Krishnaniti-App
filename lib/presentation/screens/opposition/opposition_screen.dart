@@ -540,40 +540,28 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
           children: const [
             Text(
               'Opposition Candidates',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 17.5,
+                fontSize: 16.5,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
                 letterSpacing: -0.2,
               ),
             ),
             Text(
-              'Opposition candidate profiles, past records and public claims',
+              'Opposition candidate profiles',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10.5,
                 fontWeight: FontWeight.w400,
                 color: Color(0xFFE0F2FE),
               ),
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.picture_as_pdf_outlined, color: Colors.white),
-            tooltip: 'Download PDF Report',
-            onPressed: () {
-              OppositionReportGenerator.generateAndPrintReport(
-                members: _members,
-                getCandidateName: repo.getCandidateName,
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline_rounded, color: Colors.white),
-            tooltip: 'Add New Member',
-            onPressed: () => _showMemberForm(),
-          ),
-        ],
+        actions: const [],
       ),
       body: RefreshIndicator(
         onRefresh: _loadOppositionData,
@@ -668,7 +656,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                   ),
                   const SizedBox(width: 8),
 
-                  // View Toggle
+                  // View & Export Controls
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -687,6 +675,17 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                           icon: Icon(Icons.table_rows_rounded, size: 20, color: _viewMode == 1 ? const Color(0xFF0284C7) : const Color(0xFF94A3B8)),
                           onPressed: () => setState(() => _viewMode = 1),
                           tooltip: 'Table View',
+                        ),
+                        Container(width: 1, height: 20, color: const Color(0xFFE2E8F0)),
+                        IconButton(
+                          icon: const Icon(Icons.picture_as_pdf_outlined, size: 20, color: Color(0xFFDC2626)),
+                          tooltip: 'Download PDF Report',
+                          onPressed: () {
+                            OppositionReportGenerator.generateAndPrintReport(
+                              members: _members,
+                              getCandidateName: repo.getCandidateName,
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -806,6 +805,12 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
             ],
           ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showMemberForm(),
+        backgroundColor: const Color(0xFF0284C7),
+        icon: const Icon(Icons.add_rounded, color: Colors.white),
+        label: const Text('Add Member', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
     );
   }

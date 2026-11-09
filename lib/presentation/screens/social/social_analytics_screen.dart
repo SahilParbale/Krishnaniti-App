@@ -528,66 +528,28 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
             children: const [
               Text(
                 'Social Analytics',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 17.5,
+                  fontSize: 16.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
                   letterSpacing: -0.2,
                 ),
               ),
               Text(
-                'Social media engagement, reach and public interaction',
+                'Social reach & engagement',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 10.5,
                   fontWeight: FontWeight.w400,
                   color: Color(0xFFE0F2FE),
                 ),
               ),
             ],
           ),
-          actions: [
-            // Help / Tutorial
-            IconButton(
-              icon: const Icon(Icons.help_outline_rounded, color: Colors.white, size: 20),
-              tooltip: 'Help Guide',
-              onPressed: _showHelpTutorialDialog,
-            ),
-            // PDF Report Generator
-            IconButton(
-              icon: const Icon(Icons.picture_as_pdf_outlined, color: Colors.white, size: 20),
-              tooltip: 'Download PDF Report',
-              onPressed: () {
-                if (_summary != null) {
-                  SocialAnalyticsReportGenerator.generateAndPrintReport(
-                    posts: filtered,
-                    summary: _summary!,
-                    birthdays: _birthdays,
-                    platformFilter: _selectedPlatform,
-                  );
-                }
-              },
-            ),
-            // View Mode Toggle (Feed vs Table)
-            IconButton(
-              icon: Icon(
-                _viewMode == 'feed' ? Icons.table_chart_outlined : Icons.view_agenda_outlined,
-                color: Colors.white,
-                size: 20,
-              ),
-              tooltip: _viewMode == 'feed' ? 'Switch to Table View' : 'Switch to Feed View',
-              onPressed: () {
-                setState(() {
-                  _viewMode = _viewMode == 'feed' ? 'table' : 'feed';
-                });
-              },
-            ),
-            // Refresh
-            IconButton(
-              icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 20),
-              tooltip: 'Refresh',
-              onPressed: _loadData,
-            ),
-          ],
+          actions: const [],
         ),
         drawer: const NagarsevakAppDrawer(),
         body: _isLoading
@@ -652,6 +614,35 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                               onChanged: (val) {
                                 if (val != null) setState(() => _sortBy = val);
                               },
+                            ),
+                            const SizedBox(width: 6),
+                            IconButton(
+                              icon: Icon(
+                                _viewMode == 'feed' ? Icons.table_chart_outlined : Icons.view_agenda_outlined,
+                                color: const Color(0xFF0284C7),
+                                size: 20,
+                              ),
+                              tooltip: _viewMode == 'feed' ? 'Switch to Table' : 'Switch to Feed',
+                              onPressed: () => setState(() => _viewMode = _viewMode == 'feed' ? 'table' : 'feed'),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.picture_as_pdf_outlined, color: Color(0xFF0284C7), size: 20),
+                              tooltip: 'Download PDF Report',
+                              onPressed: () {
+                                if (_summary != null) {
+                                  SocialAnalyticsReportGenerator.generateAndPrintReport(
+                                    posts: filtered,
+                                    summary: _summary!,
+                                    birthdays: _birthdays,
+                                    platformFilter: _selectedPlatform,
+                                  );
+                                }
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.help_outline_rounded, color: Color(0xFF64748B), size: 20),
+                              tooltip: 'Help Guide',
+                              onPressed: _showHelpTutorialDialog,
                             ),
                           ],
                         ),

@@ -499,56 +499,28 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
             children: const [
               Text(
                 'Government Offices',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 17.5,
+                  fontSize: 16.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
                   letterSpacing: -0.2,
                 ),
               ),
               Text(
-                'Ward municipal offices, police stations & emergency directory',
+                'Municipal offices & emergency directory',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 10.5,
                   fontWeight: FontWeight.w400,
                   color: Color(0xFFE0F2FE),
                 ),
               ),
             ],
           ),
-          actions: [
-            // Download PDF
-            IconButton(
-              icon: const Icon(Icons.download_rounded, color: Colors.white),
-              tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Directory',
-              onPressed: () {
-                GovOfficeReportGenerator.generateAndPrintOfficeReport(
-                  offices: displayed,
-                  categoryFilter: _selectedCategory != 'All' ? _selectedCategory : null,
-                  areaFilter: _selectedArea != 'All' ? _selectedArea : null,
-                );
-              },
-            ),
-            // View Mode Switcher
-            IconButton(
-              icon: Icon(
-                _viewMode == 'grid' ? Icons.table_chart_rounded : Icons.grid_view_rounded,
-                color: Colors.white,
-              ),
-              tooltip: _viewMode == 'grid' ? 'Switch to Table' : 'Switch to Cards',
-              onPressed: () {
-                setState(() {
-                  _viewMode = _viewMode == 'grid' ? 'table' : 'grid';
-                });
-              },
-            ),
-            // Refresh
-            IconButton(
-              icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-              tooltip: 'Refresh',
-              onPressed: _loadData,
-            ),
-          ],
+          actions: const [],
         ),
         floatingActionButton: FloatingActionButton.extended(
           backgroundColor: const Color(0xFF0284C7),
@@ -614,37 +586,87 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         child: Column(
                           children: [
-                            // Search field
-                            TextField(
-                              controller: _searchCtrl,
-                              onChanged: (_) => setState(() {}),
-                              decoration: InputDecoration(
-                                hintText: isMr
-                                    ? 'कार्यालय, अधिकारी, पत्ता किंवा फोन नंबर शोधा...'
-                                    : 'Search office, officer, phone, or address...',
-                                hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                                prefixIcon: const Icon(Icons.search, size: 20, color: Color(0xFF64748B)),
-                                suffixIcon: _searchCtrl.text.isNotEmpty
-                                    ? IconButton(
-                                        icon: const Icon(Icons.clear, size: 18),
-                                        onPressed: () {
-                                          _searchCtrl.clear();
-                                          setState(() {});
-                                        },
-                                      )
-                                    : null,
-                                filled: true,
-                                fillColor: Colors.white,
-                                contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                            // Search row with View Mode & Download
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    controller: _searchCtrl,
+                                    onChanged: (_) => setState(() {}),
+                                    decoration: InputDecoration(
+                                      hintText: isMr
+                                          ? 'कार्यालय, अधिकारी, पत्ता किंवा फोन नंबर शोधा...'
+                                          : 'Search office, officer, phone, or address...',
+                                      hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                                      prefixIcon: const Icon(Icons.search, size: 20, color: Color(0xFF64748B)),
+                                      suffixIcon: _searchCtrl.text.isNotEmpty
+                                          ? IconButton(
+                                              icon: const Icon(Icons.clear, size: 18),
+                                              onPressed: () {
+                                                _searchCtrl.clear();
+                                                setState(() {});
+                                              },
+                                            )
+                                          : null,
+                                      filled: true,
+                                      fillColor: Colors.white,
+                                      contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                const SizedBox(width: 8),
+                                InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      _viewMode = _viewMode == 'grid' ? 'table' : 'grid';
+                                    });
+                                  },
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Container(
+                                    height: 48,
+                                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                                    ),
+                                    child: Icon(
+                                      _viewMode == 'grid' ? Icons.table_chart_rounded : Icons.grid_view_rounded,
+                                      size: 20,
+                                      color: const Color(0xFF0284C7),
+                                    ),
+                                  ),
                                 ),
-                              ),
+                                const SizedBox(width: 6),
+                                InkWell(
+                                  onTap: () {
+                                    GovOfficeReportGenerator.generateAndPrintOfficeReport(
+                                      offices: displayed,
+                                      categoryFilter: _selectedCategory != 'All' ? _selectedCategory : null,
+                                      areaFilter: _selectedArea != 'All' ? _selectedArea : null,
+                                    );
+                                  },
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Container(
+                                    height: 48,
+                                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                                    ),
+                                    child: const Icon(Icons.download_rounded, size: 20, color: Color(0xFF0284C7)),
+                                  ),
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 10),
 

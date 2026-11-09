@@ -557,140 +557,154 @@ class _WhatsAppCommunicationScreenState
           children: const [
             Text(
               'WhatsApp Message',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 17.5,
+                fontSize: 16.5,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
                 letterSpacing: -0.2,
               ),
             ),
             Text(
-              'Send official WhatsApp broadcasts to constituents',
+              'WhatsApp broadcasts & campaign reports',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10.5,
                 fontWeight: FontWeight.w400,
                 color: Color(0xFFE0F2FE),
               ),
             ),
           ],
         ),
-        actions: [
-          // Help button matching web's tutorial-wa-help
-          IconButton(
-            tooltip: 'Help Guide',
-            icon: const Icon(Icons.help_outline_rounded, color: Colors.white, size: 20),
-            onPressed: _showHelpTutorialDialog,
-          ),
-          // Bot status pill (clickable)
-          AnimatedBuilder(
-            animation: _pulseAnim,
-            builder: (context, child) {
-              final isConn = _botStatus == 'connected';
-              return InkWell(
-                onTap: _showBotStatusDialog,
-                borderRadius: BorderRadius.circular(20),
-                child: Container(
-                  margin: const EdgeInsets.only(right: 6),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.18),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.35),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 7,
-                        height: 7,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: isConn
-                              ? const Color(0xFF4ADE80)
-                              : const Color(0xFFEF4444),
-                        ),
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        isConn ? 'Bot Active' : 'Bot Offline',
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: Colors.white.withOpacity(0.35)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                backgroundColor: Colors.white.withOpacity(0.18),
-              ),
-              onPressed: _generatePdfReport,
-              icon: const Icon(Icons.picture_as_pdf_outlined, size: 16, color: Colors.white),
-              label: const Text(
-                'Report',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
-              ),
-            ),
-          ),
-        ],
+        actions: const [],
         ),
       body: Column(
         children: [
           Container(
             color: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            alignment: Alignment.centerLeft,
-            child: Container(
-              height: 38,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: TabBar(
-                controller: _tabController,
-                indicator: BoxDecoration(
-                  color: const Color(0xFF0284C7),
-                  borderRadius: BorderRadius.circular(8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: TabBar(
+                      controller: _tabController,
+                      indicator: BoxDecoration(
+                        color: const Color(0xFF0284C7),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      labelColor: Colors.white,
+                      unselectedLabelColor: const Color(0xFF64748B),
+                      labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      dividerColor: Colors.transparent,
+                      tabs: const [
+                        Tab(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.send_rounded, size: 14),
+                              SizedBox(width: 5),
+                              Text('Send WhatsApp'),
+                            ],
+                          ),
+                        ),
+                        Tab(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.history_rounded, size: 14),
+                              SizedBox(width: 5),
+                              Text('History & Reports'),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                labelColor: Colors.white,
-                unselectedLabelColor: const Color(0xFF64748B),
-                labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                dividerColor: Colors.transparent,
-                tabs: const [
-                  Tab(
+                const SizedBox(width: 8),
+                // Bot status pill (clickable)
+                AnimatedBuilder(
+                  animation: _pulseAnim,
+                  builder: (context, child) {
+                    final isConn = _botStatus == 'connected';
+                    return InkWell(
+                      onTap: _showBotStatusDialog,
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isConn ? const Color(0xFFF0FDF4) : const Color(0xFFFEF2F2),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isConn ? const Color(0xFFBBF7D0) : const Color(0xFFFECACA),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 7,
+                              height: 7,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: isConn
+                                    ? const Color(0xFF16A34A)
+                                    : const Color(0xFFDC2626),
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              isConn ? 'Active' : 'Offline',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: isConn ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 6),
+                IconButton(
+                  tooltip: 'Help Guide',
+                  icon: const Icon(Icons.help_outline_rounded, color: Color(0xFF64748B), size: 20),
+                  visualDensity: VisualDensity.compact,
+                  onPressed: _showHelpTutorialDialog,
+                ),
+                const SizedBox(width: 4),
+                InkWell(
+                  onTap: _generatePdfReport,
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    height: 34,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF2F2),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFFECACA)),
+                    ),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.send_rounded, size: 14),
-                        SizedBox(width: 5),
-                        Text('Send WhatsApp'),
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(Icons.picture_as_pdf_outlined, size: 15, color: Color(0xFFDC2626)),
+                        SizedBox(width: 4),
+                        Text('Report', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFFDC2626))),
                       ],
                     ),
                   ),
-                  Tab(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.history_rounded, size: 14),
-                        SizedBox(width: 5),
-                        Text('History & Reports'),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
           Expanded(

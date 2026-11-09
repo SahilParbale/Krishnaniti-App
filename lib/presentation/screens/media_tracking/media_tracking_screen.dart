@@ -563,82 +563,28 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
             children: const [
               Text(
                 'Media Tracking',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 17.5,
+                  fontSize: 16.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
                   letterSpacing: -0.2,
                 ),
               ),
               Text(
-                'Broadcast news channels, local web portals and press monitors',
+                'TV channels & digital news tracking',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 10.5,
                   fontWeight: FontWeight.w400,
                   color: Color(0xFFE0F2FE),
                 ),
               ),
             ],
           ),
-          actions: [
-            // Help
-            IconButton(
-              icon: const Icon(Icons.help_outline_rounded,
-                  color: Colors.white, size: 20),
-              tooltip: 'Help Guide',
-              onPressed: _showHelpGuide,
-            ),
-            // Telemetry Terminal Toggle
-            IconButton(
-              icon: Icon(
-                _showTelemetry ? Icons.terminal_rounded : Icons.terminal_outlined,
-                color: _showTelemetry ? const Color(0xFF86EFAC) : Colors.white,
-                size: 20,
-              ),
-              tooltip: 'Scanner Telemetry Logs',
-              onPressed: () {
-                setState(() => _showTelemetry = !_showTelemetry);
-              },
-            ),
-            // PDF Report
-            IconButton(
-              icon: const Icon(Icons.picture_as_pdf_outlined,
-                  color: Colors.white, size: 20),
-              tooltip: 'Download PDF Report',
-              onPressed: () {
-                MediaTrackingReportGenerator.generateAndPrintReport(
-                  articles: filtered,
-                  profileFilter: _selectedProfileId,
-                  sentimentFilter: _activeSentiment,
-                );
-              },
-            ),
-            // View Mode Toggle
-            IconButton(
-              icon: Icon(
-                _viewMode == 'stream'
-                    ? Icons.table_chart_outlined
-                    : Icons.view_stream_rounded,
-                color: Colors.white,
-                size: 20,
-              ),
-              tooltip: _viewMode == 'stream'
-                  ? 'Switch to Table Report'
-                  : 'Switch to Stream View',
-              onPressed: () {
-                setState(() {
-                  _viewMode = _viewMode == 'stream' ? 'table' : 'stream';
-                });
-              },
-            ),
-            // Refresh
-            IconButton(
-              icon: const Icon(Icons.refresh_rounded,
-                  color: Colors.white, size: 20),
-              tooltip: 'Refresh',
-              onPressed: _loadData,
-            ),
-          ],
+          actions: const [],
         ),
         drawer: const NagarsevakAppDrawer(),
         body: _isLoading
@@ -687,33 +633,88 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'Showing ${filtered.length} of $totalCount news mentions',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF64748B),
-                          ),
-                        ),
-                        if (_searchCtrl.text.isNotEmpty)
-                          InkWell(
-                            onTap: () {
-                              _searchCtrl.clear();
-                              setState(() {});
-                            },
-                            child: Row(
-                              children: const [
-                                Text('Clear Search',
-                                    style: TextStyle(
-                                        fontSize: 11,
-                                        color: Color(0xFF0284C7),
-                                        fontWeight: FontWeight.bold)),
-                                SizedBox(width: 4),
-                                Icon(Icons.close,
-                                    size: 14, color: Color(0xFF0284C7)),
-                              ],
+                        Expanded(
+                          child: Text(
+                            'Showing ${filtered.length} of $totalCount news mentions',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF64748B),
                             ),
                           ),
+                        ),
+                        Row(
+                          children: [
+                            if (_searchCtrl.text.isNotEmpty)
+                              InkWell(
+                                onTap: () {
+                                  _searchCtrl.clear();
+                                  setState(() {});
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.only(right: 6),
+                                  child: Row(
+                                    children: const [
+                                      Text('Clear',
+                                          style: TextStyle(
+                                              fontSize: 11,
+                                              color: Color(0xFF0284C7),
+                                              fontWeight: FontWeight.bold)),
+                                      SizedBox(width: 4),
+                                      Icon(Icons.close,
+                                          size: 14, color: Color(0xFF0284C7)),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            IconButton(
+                              icon: Icon(
+                                _viewMode == 'stream'
+                                    ? Icons.table_chart_outlined
+                                    : Icons.view_stream_rounded,
+                                color: const Color(0xFF0284C7),
+                                size: 20,
+                              ),
+                              tooltip: _viewMode == 'stream'
+                                  ? 'Switch to Table'
+                                  : 'Switch to Stream',
+                              onPressed: () {
+                                setState(() {
+                                  _viewMode = _viewMode == 'stream' ? 'table' : 'stream';
+                                });
+                              },
+                            ),
+                            IconButton(
+                              icon: Icon(
+                                _showTelemetry ? Icons.terminal_rounded : Icons.terminal_outlined,
+                                color: _showTelemetry ? const Color(0xFF16A34A) : const Color(0xFF0284C7),
+                                size: 20,
+                              ),
+                              tooltip: 'Scanner Telemetry Logs',
+                              onPressed: () {
+                                setState(() => _showTelemetry = !_showTelemetry);
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.picture_as_pdf_outlined,
+                                  color: Color(0xFF0284C7), size: 20),
+                              tooltip: 'Download PDF Report',
+                              onPressed: () {
+                                MediaTrackingReportGenerator.generateAndPrintReport(
+                                  articles: filtered,
+                                  profileFilter: _selectedProfileId,
+                                  sentimentFilter: _activeSentiment,
+                                );
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.help_outline_rounded,
+                                  color: Color(0xFF64748B), size: 20),
+                              tooltip: 'Help Guide',
+                              onPressed: _showHelpGuide,
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                     const SizedBox(height: 10),

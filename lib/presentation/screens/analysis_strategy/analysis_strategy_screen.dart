@@ -510,24 +510,29 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
           children: const [
             Text(
               'Analysis & Strategy',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 17.5,
+                fontSize: 16.5,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
                 letterSpacing: -0.2,
               ),
             ),
             Text(
-              'Electoral data intelligence & demographic insights',
+              'Electoral data & voter insights',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10.5,
                 fontWeight: FontWeight.w400,
                 color: Color(0xFFE0F2FE),
               ),
             ),
           ],
         ),
-        ),
+        actions: const [],
+      ),
       body: Column(
         children: [
           Container(

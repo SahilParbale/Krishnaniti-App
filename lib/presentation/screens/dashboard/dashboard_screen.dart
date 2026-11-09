@@ -474,8 +474,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                 children: const [
                   Text(
                     'Krishnaniti',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 17,
+                      fontSize: 16.5,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
                       letterSpacing: -0.2,
@@ -483,6 +485,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   ),
                   Text(
                     'Nagarsevak Dashboard',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 10.5,
                       fontWeight: FontWeight.w500,
@@ -493,38 +497,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
               ),
             ],
           ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 21),
-              tooltip: 'Refresh Data',
-              onPressed: _loadDashboardData,
-            ),
-            IconButton(
-              icon: const Icon(Icons.help_outline_rounded, color: Colors.white, size: 21),
-              tooltip: 'Help / Tour',
-              onPressed: _showDashboardHelp,
-            ),
-            Padding(
-              padding: const EdgeInsets.only(right: 14, left: 2),
-              child: Center(
-                child: Container(
-                  width: 34,
-                  height: 34,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 1.8),
-                  ),
-                  child: ClipOval(
-                    child: Image.network(
-                      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const Icon(Icons.person, color: Colors.white, size: 20),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
+          actions: const [],
         ),
         body: _isLoading
             ? const Center(
@@ -540,8 +513,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                     // 1) HEADER SECTION (t('dashboard.title'))
                     // ==========================================
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          margin: const EdgeInsets.only(right: 12),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: const Color(0xFF0284C7), width: 2),
+                          ),
+                          child: ClipOval(
+                            child: Image.network(
+                              'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const Icon(Icons.person, color: Color(0xFF0284C7), size: 22),
+                            ),
+                          ),
+                        ),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -567,6 +556,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                             ],
                           ),
                         ),
+                        IconButton(
+                          icon: const Icon(Icons.help_outline_rounded, color: Color(0xFF64748B), size: 22),
+                          tooltip: 'Help / Tour',
+                          onPressed: _showDashboardHelp,
+                        ),
+                        const SizedBox(width: 4),
                         ElevatedButton.icon(
                           onPressed: () {
                             Navigator.push(

@@ -213,24 +213,29 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
           children: const [
             Text(
               'Voice Call',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 17.5,
+                fontSize: 16.5,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
                 letterSpacing: -0.2,
               ),
             ),
             Text(
-              "Outbound recorded audio broadcasts in Nagarsevak's voice",
+              'Audio broadcasts in your voice',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10.5,
                 fontWeight: FontWeight.w400,
                 color: Color(0xFFE0F2FE),
               ),
             ),
           ],
         ),
-        ),
+        actions: const [],
+      ),
       body: Column(
         children: [
           Container(

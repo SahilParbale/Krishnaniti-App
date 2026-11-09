@@ -601,68 +601,28 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
             children: const [
               Text(
                 'Ward Provisions',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 17.5,
+                  fontSize: 16.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
                   letterSpacing: -0.2,
                 ),
               ),
               Text(
-                'Track funding requests & sanctions',
+                'Funding provisions & sanctions',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 10.5,
                   fontWeight: FontWeight.w400,
                   color: Color(0xFFE0F2FE),
                 ),
               ),
             ],
           ),
-          actions: [
-            // Financial Year Selector
-            Theme(
-              data: Theme.of(context).copyWith(canvasColor: const Color(0xFF0369A1)),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: _selectedYear,
-                  icon: const Icon(Icons.calendar_month_rounded, color: Colors.white, size: 20),
-                  dropdownColor: const Color(0xFF0369A1),
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
-                  items: _years.map((y) {
-                    return DropdownMenuItem(
-                      value: y,
-                      child: Text(y == 'All' ? (isMr ? 'सर्व वर्षे' : 'All FY') : 'FY $y'),
-                    );
-                  }).toList(),
-                  onChanged: (val) {
-                    if (val != null) {
-                      setState(() => _selectedYear = val);
-                      _loadData();
-                    }
-                  },
-                ),
-              ),
-            ),
-            // Download PDF
-            IconButton(
-              icon: const Icon(Icons.download_rounded, color: Colors.white),
-              tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Report',
-              onPressed: () {
-                WardProvisionReportGenerator.generateAndPrintProvisionReport(
-                  provisions: displayed,
-                  year: _selectedYear,
-                  categoryFilter: _selectedCategory != 'All' ? _selectedCategory : null,
-                  statusFilter: _selectedStatus != 'All' ? _selectedStatus : null,
-                );
-              },
-            ),
-            // Refresh
-            IconButton(
-              icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-              tooltip: 'Refresh',
-              onPressed: _loadData,
-            ),
-          ],
+          actions: const [],
         ),
         body: Column(
           children: [
@@ -856,6 +816,58 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                               onPressed: () => setState(() => _viewMode = 'report'),
                             ),
                           ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Financial Year Selector
+                      Container(
+                        height: 44,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _selectedYear,
+                            icon: const Icon(Icons.calendar_month_rounded, color: Color(0xFF0284C7), size: 18),
+                            style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.bold, fontSize: 12),
+                            items: _years.map((y) {
+                              return DropdownMenuItem(
+                                value: y,
+                                child: Text(y == 'All' ? (isMr ? 'सर्व वर्षे' : 'All FY') : 'FY $y'),
+                              );
+                            }).toList(),
+                            onChanged: (val) {
+                              if (val != null) {
+                                setState(() => _selectedYear = val);
+                                _loadData();
+                              }
+                            },
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      InkWell(
+                        onTap: () {
+                          WardProvisionReportGenerator.generateAndPrintProvisionReport(
+                            provisions: displayed,
+                            year: _selectedYear,
+                            categoryFilter: _selectedCategory != 'All' ? _selectedCategory : null,
+                            statusFilter: _selectedStatus != 'All' ? _selectedStatus : null,
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          height: 44,
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: const Icon(Icons.download_rounded, size: 20, color: Color(0xFF0284C7)),
                         ),
                       ),
                     ],

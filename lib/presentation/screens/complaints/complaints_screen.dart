@@ -492,31 +492,28 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
             children: [
               Text(
                 isMr ? 'तक्रारी आणि विनंती' : 'Requests & Complaints',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontSize: 17.5,
+                  fontSize: 16.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
                   letterSpacing: -0.2,
                 ),
               ),
               Text(
-                isMr ? 'नागरिकांच्या समस्या आणि विनंती व्यवस्थापन' : 'Manage citizen problems & requests',
-                style: TextStyle(
-                  fontSize: 11,
+                isMr ? 'समस्या आणि विनंती व्यवस्थापन' : 'Citizen complaints & requests',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 10.5,
                   fontWeight: FontWeight.w400,
-                  color: Colors.white.withOpacity(0.85),
+                  color: Color(0xFFE0F2FE),
                 ),
               ),
             ],
           ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 21),
-              tooltip: 'Refresh',
-              onPressed: _fetchComplaints,
-            ),
-            const SizedBox(width: 4),
-          ],
+          actions: const [],
         ),
         body: Column(
           children: [

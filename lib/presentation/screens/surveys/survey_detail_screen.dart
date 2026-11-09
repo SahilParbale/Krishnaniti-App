@@ -68,7 +68,9 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
         ),
         title: const Text(
           'Survey Analysis & Results',
-          style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(color: Colors.white, fontSize: 16.5, fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
@@ -76,18 +78,17 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
             tooltip: 'Share on WhatsApp',
             onPressed: _shareOnWhatsApp,
           ),
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-            tooltip: 'Refresh',
-            onPressed: _loadResponses,
-          ),
         ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)))
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
+          : RefreshIndicator(
+              onRefresh: _loadResponses,
+              color: const Color(0xFF0284C7),
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Title & Meta Card
@@ -128,6 +129,7 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
                 ],
               ),
             ),
+          ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openRecordResponseModal,
         backgroundColor: const Color(0xFF0284C7),

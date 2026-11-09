@@ -301,44 +301,28 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
           children: const [
             Text(
               'Sample Surveys',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 17.5,
+                fontSize: 16.5,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
                 letterSpacing: -0.2,
               ),
             ),
             Text(
-              'Opinion polls, field surveys and voter sentiment data',
+              'Opinion polls & voter sentiment',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10.5,
                 fontWeight: FontWeight.w400,
                 color: Color(0xFFE0F2FE),
               ),
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.help_outline_rounded, color: Colors.white),
-            tooltip: 'Help Guide',
-            onPressed: _showHelpGuide,
-          ),
-          IconButton(
-            icon: const Icon(Icons.picture_as_pdf_rounded, color: Colors.white),
-            tooltip: 'Download PDF Report',
-            onPressed: () => SurveyReportGenerator.generateAndPrintReport(
-              surveys: filtered,
-              responseCounts: _surveyResponseCounts,
-              totalVoters: _totalVoters,
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-            tooltip: 'Refresh',
-            onPressed: _loadSurveys,
-          ),
-        ],
+        actions: const [],
       ),
       body: _isLoading
           ? const Center(
@@ -355,7 +339,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                   const SizedBox(height: 16),
 
                   // Search & Area Filter Bar
-                  _buildSearchAndFilterBar(),
+                  _buildSearchAndFilterBar(filtered),
                   const SizedBox(height: 12),
 
                   // Status Chips & View Mode Switcher Row
@@ -504,7 +488,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
     );
   }
 
-  Widget _buildSearchAndFilterBar() {
+  Widget _buildSearchAndFilterBar(List<SurveyModel> filtered) {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
@@ -597,6 +581,28 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                   const Icon(Icons.arrow_drop_down, size: 18, color: Colors.grey),
                 ],
               ),
+            ),
+          ),
+          Container(
+            height: 28,
+            width: 1,
+            color: Colors.grey.shade200,
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+          ),
+          IconButton(
+            icon: const Icon(Icons.help_outline_rounded, color: Color(0xFF64748B), size: 20),
+            tooltip: 'Help Guide',
+            visualDensity: VisualDensity.compact,
+            onPressed: _showHelpGuide,
+          ),
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf_rounded, color: Color(0xFFDC2626), size: 20),
+            tooltip: 'Download PDF Report',
+            visualDensity: VisualDensity.compact,
+            onPressed: () => SurveyReportGenerator.generateAndPrintReport(
+              surveys: filtered,
+              responseCounts: _surveyResponseCounts,
+              totalVoters: _totalVoters,
             ),
           ),
         ],
