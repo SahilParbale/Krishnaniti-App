@@ -481,7 +481,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
             mainAxisSize: MainAxisSize.min,
             children: const [
               Text(
-                'Events & Invitations',
+                'Events & Invites',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -492,7 +492,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                 ),
               ),
               Text(
-                'Programs, inaugurations & invitations',
+                'Public programs, festival pandal visits and invitations',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(

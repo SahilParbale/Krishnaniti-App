@@ -197,7 +197,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
         mainAxisSize: MainAxisSize.min,
         children: const [
           Text(
-            'Sadasya (Party Members)',
+            'Sadasya (Members)',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
@@ -208,7 +208,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
             ),
           ),
           Text(
-            'Party cadre & ward volunteers',
+            'Party workers, active booth members and volunteer register',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(

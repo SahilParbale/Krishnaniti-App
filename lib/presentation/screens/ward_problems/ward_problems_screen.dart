@@ -561,7 +561,7 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
             mainAxisSize: MainAxisSize.min,
             children: const [
               Text(
-                'Ward Problems Heatmap',
+                'Ward Problems',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -572,7 +572,7 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                 ),
               ),
               Text(
-                'Civic issues & pain points',
+                'Chronic civic issues, garbage spots and bottlenecks',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(

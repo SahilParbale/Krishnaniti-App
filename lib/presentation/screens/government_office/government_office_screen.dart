@@ -498,7 +498,7 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
             mainAxisSize: MainAxisSize.min,
             children: const [
               Text(
-                'Government Offices',
+                'Government office',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -509,7 +509,7 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                 ),
               ),
               Text(
-                'Municipal offices & emergency directory',
+                'Ward municipal offices, police stations, MSEDCL & helpline directory',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -782,7 +782,7 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                               Icon(Icons.location_city_outlined, size: 48, color: Colors.grey.shade400),
                               const SizedBox(height: 12),
                               Text(
-                                isMr ? 'कोणतेही कार्यालय सापडले नाही' : 'No Government Offices Found',
+                                isMr ? 'कोणतेही कार्यालय सापडले नाही' : 'No Government Office Found',
                                 style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                               ),
                               const SizedBox(height: 4),

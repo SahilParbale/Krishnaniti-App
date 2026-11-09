@@ -600,7 +600,7 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
             mainAxisSize: MainAxisSize.min,
             children: const [
               Text(
-                'Ward Provisions',
+                'Ward Wise Provision',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -611,7 +611,7 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                 ),
               ),
               Text(
-                'Funding provisions & sanctions',
+                'Yearly municipal provisions and capital development allocations',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(

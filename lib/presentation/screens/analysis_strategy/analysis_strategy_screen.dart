@@ -509,7 +509,7 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
           mainAxisSize: MainAxisSize.min,
           children: const [
             Text(
-              'Analysis & Strategy',
+              'Analysis Strategy',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -520,7 +520,7 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
               ),
             ),
             Text(
-              'Electoral data & voter insights',
+              'Electoral data intelligence, voter demographics and strategic insights',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(

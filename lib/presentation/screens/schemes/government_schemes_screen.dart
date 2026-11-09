@@ -763,7 +763,7 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
             mainAxisSize: MainAxisSize.min,
             children: const [
               Text(
-                'Government Schemes',
+                'Govt Schemes',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -774,7 +774,7 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                 ),
               ),
               Text(
-                'Welfare schemes & benefits',
+                'Central and state welfare schemes database',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(

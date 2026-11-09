@@ -457,7 +457,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
             mainAxisSize: MainAxisSize.min,
             children: const [
               Text(
-                'Ward Development Works',
+                'Work History',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -468,7 +468,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                 ),
               ),
               Text(
-                'Development works & projects',
+                'Historical archive of completed municipal projects and tenders',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(

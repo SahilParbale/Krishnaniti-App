@@ -548,7 +548,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
           mainAxisSize: MainAxisSize.min,
           children: const [
             Text(
-              'My Team & Staff',
+              'My Team',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -559,7 +559,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
               ),
             ),
             Text(
-              'Office staff & coordinators',
+              'Nagarsevak office staff, field coordinators and roles',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(

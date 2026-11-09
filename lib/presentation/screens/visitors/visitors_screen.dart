@@ -579,7 +579,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
             mainAxisSize: MainAxisSize.min,
             children: const [
               Text(
-                'Visitor Register',
+                'Visitor Log',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -590,7 +590,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                 ),
               ),
               Text(
-                'Citizen visits & appointments',
+                'Daily constituent office meeting register and time log',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(

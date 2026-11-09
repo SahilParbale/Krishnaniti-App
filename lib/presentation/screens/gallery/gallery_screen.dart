@@ -392,7 +392,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
             mainAxisSize: MainAxisSize.min,
             children: const [
               Text(
-                'Media Gallery',
+                'Gallery & Media',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -403,7 +403,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                 ),
               ),
               Text(
-                'Photo gallery & event archives',
+                'Official photo archive, development work images and press albums',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(

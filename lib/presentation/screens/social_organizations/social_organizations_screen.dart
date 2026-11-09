@@ -494,7 +494,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
           mainAxisSize: MainAxisSize.min,
           children: const [
             Text(
-              'Social Organizations & Mandals',
+              'NGO & Mandals Info',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -505,7 +505,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
               ),
             ),
             Text(
-              'Mandals, NGOs & community trusts',
+              'Social organizations, youth mandals and trust directory',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(

@@ -413,7 +413,7 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
           mainAxisSize: MainAxisSize.min,
           children: const [
             Text(
-              'Voter Forms (6, 7, 8)',
+              'Voter Forms',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -424,7 +424,7 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
               ),
             ),
             Text(
-              'ECI registration forms (6, 7, 8)',
+              'ECI Form 6, Form 7, Form 8 registration helpdesk',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(

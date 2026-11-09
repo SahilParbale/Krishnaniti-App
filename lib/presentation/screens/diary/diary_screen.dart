@@ -548,7 +548,7 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
             mainAxisSize: MainAxisSize.min,
             children: const [
               Text(
-                'Personal Diary',
+                'Diary',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -559,7 +559,7 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                 ),
               ),
               Text(
-                'Daily visits, meetings & itinerary',
+                'Task management, daily visits and itinerary',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(

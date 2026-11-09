@@ -473,7 +473,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                 mainAxisSize: MainAxisSize.min,
                 children: const [
                   Text(
-                    'Krishnaniti',
+                    'Dashboard',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -484,7 +484,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                     ),
                   ),
                   Text(
-                    'Nagarsevak Dashboard',
+                    'Overview, analytics & ward summary',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -663,9 +663,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.badge_outlined,
-                                  label: 'Visitors',
+                                  label: 'Visitor Log',
                                   onTap: () => _openModuleDetail(
-                                    'Visitor Register',
+                                    'Visitor Log',
                                     'Track daily citizen visits & appointments',
                                     'Daily work',
                                     Icons.badge_outlined,
@@ -689,7 +689,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                   icon: Icons.history_rounded,
                                   label: 'Work History',
                                   onTap: () => _openModuleDetail(
-                                    'Ward Development Works',
+                                    'Work History',
                                     'Development works, grievances & welfare',
                                     'Ward Info',
                                     Icons.history_rounded,
@@ -699,7 +699,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.lightbulb_outline_rounded,
-                                  label: 'Improvements',
+                                  label: 'Possible Improvements',
                                   onTap: () => _openModuleDetail(
                                     'Possible Improvements',
                                     'Propose and track future development works',
@@ -711,9 +711,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.currency_rupee_rounded,
-                                  label: 'Provision',
+                                  label: 'Ward Wise Provision',
                                   onTap: () => _openModuleDetail(
-                                    'Ward Provisions',
+                                    'Ward Wise Provision',
                                     'Budget provisions and funding proposals',
                                     'Ward Info',
                                     Icons.currency_rupee_rounded,
@@ -747,9 +747,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.location_city_outlined,
-                                  label: 'Govt Offices',
+                                  label: 'Government office',
                                   onTap: () => _openModuleDetail(
-                                    'Government Offices',
+                                    'Government office',
                                     'Ward municipal offices & emergency directory',
                                     'Municipal',
                                     Icons.location_city_outlined,
@@ -771,9 +771,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.newspaper_outlined,
-                                  label: 'Newspaper',
+                                  label: 'Newspaper Clipping',
                                   onTap: () => _openModuleDetail(
-                                    'Newspaper Clippings',
+                                    'Newspaper Clipping',
                                     'Print news coverage and press clippings',
                                     'Media',
                                     Icons.newspaper_outlined,
@@ -831,7 +831,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.bar_chart_rounded,
-                                  label: 'Election Results',
+                                  label: 'Result Analysis',
                                   onTap: () => _openModuleDetail(
                                     'Result Analysis',
                                     'Past election results, booth margins & turnout',
@@ -845,7 +845,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                   icon: Icons.group_add_outlined,
                                   label: 'Sadasya (Members)',
                                   onTap: () => _openModuleDetail(
-                                    'Sadasya (Party Members)',
+                                    'Sadasya (Members)',
                                     'Active party cadre & booth coordinators',
                                     'Political',
                                     Icons.group_add_outlined,
@@ -855,7 +855,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.fact_check_outlined,
-                                  label: 'Surveys (जनमत)',
+                                  label: 'Sample Surveys',
                                   onTap: () => _openModuleDetail(
                                     'Sample Surveys',
                                     'Opinion polls, field surveys and voter sentiment data',
@@ -867,9 +867,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.groups_2_outlined,
-                                  label: 'Opposition Info',
+                                  label: 'Opposition Information',
                                   onTap: () => _openModuleDetail(
-                                    'Opposition Candidates',
+                                    'Opposition Information',
                                     'Opposition candidate profiles & past records',
                                     'Political',
                                     Icons.groups_2_outlined,
@@ -879,9 +879,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.apartment_outlined,
-                                  label: 'NGO & Mandals',
+                                  label: 'NGO & Mandals Info',
                                   onTap: () => _openModuleDetail(
-                                    'Social Organizations & Mandals',
+                                    'NGO & Mandals Info',
                                     'Youth mandals, festival committees & NGOs',
                                     'Political',
                                     Icons.apartment_outlined,

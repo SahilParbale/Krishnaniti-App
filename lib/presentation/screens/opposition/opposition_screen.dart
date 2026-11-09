@@ -539,7 +539,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
           mainAxisSize: MainAxisSize.min,
           children: const [
             Text(
-              'Opposition Candidates',
+              'Opposition Information',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -550,7 +550,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
               ),
             ),
             Text(
-              'Opposition candidate profiles',
+              'Opposition candidate profiles, past records and public claims',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(

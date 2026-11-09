@@ -689,7 +689,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
             mainAxisSize: MainAxisSize.min,
             children: const [
               Text(
-                'Letters & Outward Inward',
+                'Letters',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -700,7 +700,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                 ),
               ),
               Text(
-                'Ward correspondence & inward outward',
+                'Inward and outward official municipal correspondence',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(

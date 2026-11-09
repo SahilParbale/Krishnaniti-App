@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'lazy_indexed_stack.dart';
+import 'curved_bottom_bar.dart';
+import 'radial_quick_access_menu.dart';
 import '../providers/navigation_provider.dart';
+import '../screens/complaints/new_complaint_screen.dart';
 
 // All 39 Screens
 import '../screens/dashboard/dashboard_screen.dart';
@@ -148,10 +152,131 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
     ];
   }
 
+  bool _isRadialOpen = false;
+  Offset? _currentDragPosition;
+  Offset _fabCenterOffset = Offset.zero;
+
   void _onTabChange(int index) {
     ref.read(mainTabIndexProvider.notifier).setTab(index);
     if (index >= 0 && index < 4) {
       ref.read(activeScreenProvider.notifier).setScreen(screenKeys[index]);
+    }
+  }
+
+  void _onFabPointerDown(PointerDownEvent event) {
+    final media = MediaQuery.of(context);
+    final cx = media.size.width / 2;
+    final cy = media.size.height - media.padding.bottom - 63.0;
+
+    setState(() {
+      _fabCenterOffset = Offset(cx, cy);
+      _currentDragPosition = event.position;
+      _isRadialOpen = true;
+    });
+  }
+
+  void _onFabPointerMove(PointerMoveEvent event) {
+    if (_isRadialOpen) {
+      setState(() {
+        _currentDragPosition = event.position;
+      });
+    }
+  }
+
+  int _findClosestItemIndex(Offset pos) {
+    final centerDist = (pos - _fabCenterOffset).distance;
+    if (centerDist < 38.0) return -1;
+
+    int closestIdx = -1;
+    double minDist = 999999.0;
+    for (int i = 0; i < RadialQuickAccessMenu.items.length; i++) {
+      final itemPos = RadialQuickAccessMenu.items[i].getPosition(
+        _fabCenterOffset,
+        RadialQuickAccessMenu.kArcRadius,
+      );
+      final dist = (pos - itemPos).distance;
+      if (dist < minDist) {
+        minDist = dist;
+        closestIdx = i;
+      }
+    }
+
+    if (minDist <= 50.0) {
+      return closestIdx;
+    }
+    return -1;
+  }
+
+  void _onFabPointerUp(PointerUpEvent event) {
+    if (_isRadialOpen) {
+      final idx = _findClosestItemIndex(event.position);
+      if (idx != -1) {
+        final selectedItem = RadialQuickAccessMenu.items[idx];
+        HapticFeedback.mediumImpact();
+        _handleRadialSelect(selectedItem.id);
+        return;
+      }
+
+      // User removed their finger without selecting an item: close immediately by default
+      setState(() {
+        _isRadialOpen = false;
+        _currentDragPosition = null;
+      });
+    }
+  }
+
+  void _onFabPointerCancel() {
+    if (_isRadialOpen) {
+      setState(() {
+        _isRadialOpen = false;
+        _currentDragPosition = null;
+      });
+    }
+  }
+
+  void _openRadialMenu() {
+    HapticFeedback.heavyImpact();
+    final media = MediaQuery.of(context);
+    final cx = media.size.width / 2;
+    final cy = media.size.height - media.padding.bottom - 63.0;
+    setState(() {
+      _fabCenterOffset = Offset(cx, cy);
+      _currentDragPosition = null;
+      _isRadialOpen = true;
+    });
+  }
+
+  void _handleRadialSelect(String id) {
+    setState(() {
+      _isRadialOpen = false;
+      _currentDragPosition = null;
+    });
+
+    switch (id) {
+      case 'works':
+        ref.read(activeScreenProvider.notifier).setScreen('work_history');
+        break;
+      case 'request':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const NewComplaintScreen()),
+        );
+        break;
+      case 'letters':
+        _onTabChange(2);
+        break;
+      case 'voters':
+        ref.read(activeScreenProvider.notifier).setScreen('voters');
+        break;
+      case 'diary':
+        ref.read(activeScreenProvider.notifier).setScreen('diary');
+        break;
+      case 'visitors':
+        ref.read(activeScreenProvider.notifier).setScreen('visitors');
+        break;
+      case 'ai_content':
+        ref.read(activeScreenProvider.notifier).setScreen('ai_content');
+        break;
     }
   }
 
@@ -165,67 +290,55 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
     final bottomBarIndex = isMainTab ? index : 0;
 
     return PopScope(
-      canPop: activeScreen == 'dashboard',
+      canPop: activeScreen == 'dashboard' && !_isRadialOpen,
       onPopInvokedWithResult: (didPop, _) {
+        if (_isRadialOpen) {
+          setState(() {
+            _isRadialOpen = false;
+            _currentDragPosition = null;
+          });
+          return;
+        }
         if (!didPop) {
           ref.read(activeScreenProvider.notifier).setScreen('dashboard');
           ref.read(mainTabIndexProvider.notifier).setTab(0);
         }
       },
-      child: Scaffold(
-        body: LazyIndexedStack(
-          index: index,
-          builders: _builders,
-        ),
-        bottomNavigationBar: isMainTab
-            ? Container(
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  border: Border(
-                    top: BorderSide(color: Color(0xFFE2E8F0), width: 1),
-                  ),
-                ),
-                child: BottomNavigationBar(
-                  currentIndex: bottomBarIndex,
-                  onTap: _onTabChange,
-                  backgroundColor: Colors.white,
-                  elevation: 0,
-                  type: BottomNavigationBarType.fixed,
-                  selectedItemColor: const Color(0xFF0284C7),
-                  unselectedItemColor: const Color(0xFF64748B),
-                  selectedLabelStyle: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                  ),
-                  unselectedLabelStyle: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  items: const [
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.dashboard_outlined),
-                      activeIcon: Icon(Icons.dashboard_rounded),
-                      label: 'Dashboard',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.assignment_outlined),
-                      activeIcon: Icon(Icons.assignment_rounded),
-                      label: 'Requests',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.mail_outline_rounded),
-                      activeIcon: Icon(Icons.mail_rounded),
-                      label: 'Letters',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.settings_outlined),
-                      activeIcon: Icon(Icons.settings_rounded),
-                      label: 'Settings',
-                    ),
-                  ],
-                ),
-              )
-            : null,
+      child: Stack(
+        children: [
+          Scaffold(
+            backgroundColor: const Color(0xFFF8FAFC),
+            body: LazyIndexedStack(
+              index: index,
+              builders: _builders,
+            ),
+            bottomNavigationBar: isMainTab
+                ? CurvedBottomBar(
+                    currentIndex: bottomBarIndex,
+                    onTap: _onTabChange,
+                    onFabTap: _openRadialMenu,
+                    onFabPointerDown: _onFabPointerDown,
+                    onFabPointerMove: _onFabPointerMove,
+                    onFabPointerUp: _onFabPointerUp,
+                    onFabPointerCancel: _onFabPointerCancel,
+                  )
+                : null,
+          ),
+
+          // Semicircular Gesture-Driven Radial Quick Access Overlay
+          if (_isRadialOpen)
+            RadialQuickAccessMenu(
+              centerOffset: _fabCenterOffset,
+              dragPosition: _currentDragPosition,
+              onSelect: _handleRadialSelect,
+              onClose: () {
+                setState(() {
+                  _isRadialOpen = false;
+                  _currentDragPosition = null;
+                });
+              },
+            ),
+        ],
       ),
     );
   }

@@ -572,7 +572,7 @@ class _NewspaperClippingsScreenState
             mainAxisSize: MainAxisSize.min,
             children: const [
               Text(
-                'Newspaper Clippings',
+                'Newspaper Clipping',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -583,7 +583,7 @@ class _NewspaperClippingsScreenState
                 ),
               ),
               Text(
-                'Print news clippings & media coverage',
+                'Print news media coverage archive and press releases',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
