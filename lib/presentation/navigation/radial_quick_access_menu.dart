@@ -47,11 +47,10 @@ class RadialQuickAccessMenu extends ConsumerStatefulWidget {
   final Offset? dragPosition;
   final ValueChanged<String> onSelect;
   final VoidCallback onClose;
+  final List<RadialMenuItem>? customItems;
 
   static const double kArcRadius = 112.0;
   static const double kTrackWidth = 72.0;
-
-  final List<RadialMenuItem>? customItems;
 
   const RadialQuickAccessMenu({
     super.key,
@@ -210,7 +209,7 @@ class RadialQuickAccessMenu extends ConsumerStatefulWidget {
 class _RadialQuickAccessMenuState extends ConsumerState<RadialQuickAccessMenu>
     with SingleTickerProviderStateMixin {
   late final AnimationController _animController;
-  late final Animation<double> _scaleAnimation;
+  late final Animation<double> _trackScaleAnimation;
   late final Animation<double> _fadeAnimation;
   late final Animation<double> _sparkAnimation;
 
@@ -222,25 +221,26 @@ class _RadialQuickAccessMenuState extends ConsumerState<RadialQuickAccessMenu>
     super.initState();
     _currentPointerPos = widget.dragPosition;
 
-    // Fast, responsive 240ms animation for zero lag
+    // Ultra-fluid 320ms spring blossom animation
     _animController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 240),
+      duration: const Duration(milliseconds: 320),
+      reverseDuration: const Duration(milliseconds: 180),
     );
 
-    _scaleAnimation = CurvedAnimation(
+    _trackScaleAnimation = CurvedAnimation(
       parent: _animController,
-      curve: Curves.easeOutCubic,
+      curve: const Interval(0.0, 0.75, curve: Curves.easeOutCubic),
     );
 
     _fadeAnimation = CurvedAnimation(
       parent: _animController,
-      curve: Curves.easeOut,
+      curve: const Interval(0.0, 0.45, curve: Curves.easeOut),
     );
 
     _sparkAnimation = CurvedAnimation(
       parent: _animController,
-      curve: Curves.easeOutCubic,
+      curve: const Interval(0.0, 0.60, curve: Curves.easeOut),
     );
 
     _animController.forward();
@@ -298,18 +298,26 @@ class _RadialQuickAccessMenuState extends ConsumerState<RadialQuickAccessMenu>
     }
   }
 
+  /// Calculates symmetrical fan launch progress for each badge
+  double _getItemBlossomProgress(int i, double animVal) {
+    // Symmetrical ripple: Peak (index 3) leads, followed by upper arcs, sides, and bottom legs
+    const delays = [0.20, 0.14, 0.08, 0.02, 0.08, 0.14, 0.20];
+    final delay = i < delays.length ? delays[i] : 0.08;
+    const span = 0.72;
+    final t = ((animVal - delay) / span).clamp(0.0, 1.0);
+    return Curves.easeOutBack.transform(t);
+  }
+
   /// Calculates magnetic attraction vector pulling badge towards the touch point
   Offset _getMagneticOffset(int index, Offset basePos) {
-    if (_currentPointerPos == null) return Offset.zero;
+    if (_currentPointerPos == null || _hoveredIndex != index) return Offset.zero;
     final delta = _currentPointerPos! - basePos;
     final dist = delta.distance;
 
-    // Active magnetic field radius: 60px
-    if (dist > 60.0 || dist < 0.5) return Offset.zero;
+    if (dist > 55.0 || dist < 0.5) return Offset.zero;
 
-    // Smooth quadratic ease-out pull falloff (max 12px)
-    final t = (1.0 - dist / 60.0);
-    final pull = 12.0 * t * t;
+    final t = (1.0 - dist / 55.0);
+    final pull = 10.0 * t * t;
     return (delta / dist) * pull;
   }
 
@@ -344,7 +352,7 @@ class _RadialQuickAccessMenuState extends ConsumerState<RadialQuickAccessMenu>
       child: Listener(
         behavior: HitTestBehavior.translucent,
         onPointerMove: (e) {
-          setState(() => _currentPointerPos = e.position);
+          _currentPointerPos = e.position;
           _updateHoverFromPosition(e.position);
         },
         onPointerUp: (e) {
@@ -356,116 +364,130 @@ class _RadialQuickAccessMenuState extends ConsumerState<RadialQuickAccessMenu>
         },
         onPointerCancel: (_) => _handleDismiss(),
         child: Stack(
-        children: [
-          // 1) Dark translucent backdrop scrim
-          Positioned.fill(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: _handleDismiss,
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: Container(
-                  color: Colors.black.withValues(alpha: 0.38),
+          children: [
+            // 1) Dark translucent backdrop scrim
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _handleDismiss,
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: Container(
+                    color: Colors.black.withValues(alpha: 0.38),
+                  ),
                 ),
               ),
             ),
-          ),
 
-          // 2) Synchronized Unified Assembly (Track + 7 Action Items)
-          // Scaled as a single unit from origin (cx, cy) so there is zero lag or blinking
-          AnimatedBuilder(
-            animation: _animController,
-            builder: (ctx, _) {
-              final scaleVal = _scaleAnimation.value;
-              final fadeVal = _fadeAnimation.value;
+            // 2) Synchronized Unified Assembly (Track + 7 Blossom Badges)
+            AnimatedBuilder(
+              animation: _animController,
+              builder: (ctx, _) {
+                final animVal = _animController.value;
+                final trackScale = _trackScaleAnimation.value;
+                final fadeVal = _fadeAnimation.value;
 
-              return Positioned.fill(
-                child: Opacity(
-                  opacity: fadeVal.clamp(0.0, 1.0),
-                  child: Transform.scale(
-                    scale: scaleVal,
-                    origin: Offset(cx, cy),
-                    alignment: Alignment.topLeft,
-                    child: Stack(
-                      children: [
-                        // A1) Soft diffused drop shadow behind the running track
-                        Positioned.fill(
-                          child: CustomPaint(
-                            painter: _RunningTrackShadowPainter(
-                              center: Offset(cx, cy),
-                              radius: RadialQuickAccessMenu.kArcRadius,
-                              trackWidth: RadialQuickAccessMenu.kTrackWidth,
-                            ),
-                          ),
-                        ),
-
-                        // A2) Glassmorphism Frosted Blur & Translucent Sheen
-                        Positioned.fill(
-                          child: ClipPath(
-                            clipper: _RunningTrackClipper(
-                              center: Offset(cx, cy),
-                              radius: RadialQuickAccessMenu.kArcRadius,
-                              trackWidth: RadialQuickAccessMenu.kTrackWidth,
-                            ),
-                            child: BackdropFilter(
-                              filter: ui.ImageFilter.blur(sigmaX: 18.0, sigmaY: 18.0),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Colors.white.withValues(alpha: 0.65),
-                                      Colors.white.withValues(alpha: 0.35),
-                                      const Color(0xFFE0F2FE).withValues(alpha: 0.22),
-                                    ],
-                                    stops: const [0.0, 0.60, 1.0],
+                return Positioned.fill(
+                  child: Stack(
+                    children: [
+                      // A) Glass Running Track Lane
+                      Positioned.fill(
+                        child: Opacity(
+                          opacity: fadeVal.clamp(0.0, 1.0),
+                          child: Transform.scale(
+                            scale: trackScale,
+                            origin: Offset(cx, cy),
+                            alignment: Alignment.topLeft,
+                            child: Stack(
+                              children: [
+                                // A1) Soft diffused drop shadow behind the running track
+                                Positioned.fill(
+                                  child: CustomPaint(
+                                    painter: _RunningTrackShadowPainter(
+                                      center: Offset(cx, cy),
+                                      radius: RadialQuickAccessMenu.kArcRadius,
+                                      trackWidth: RadialQuickAccessMenu.kTrackWidth,
+                                    ),
                                   ),
                                 ),
-                              ),
+
+                                // A2) Glassmorphism Frosted Blur & Translucent Sheen
+                                Positioned.fill(
+                                  child: ClipPath(
+                                    clipper: _RunningTrackClipper(
+                                      center: Offset(cx, cy),
+                                      radius: RadialQuickAccessMenu.kArcRadius,
+                                      trackWidth: RadialQuickAccessMenu.kTrackWidth,
+                                    ),
+                                    child: BackdropFilter(
+                                      filter: ui.ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            begin: Alignment.topCenter,
+                                            end: Alignment.bottomCenter,
+                                            colors: [
+                                              Colors.white.withValues(alpha: 0.65),
+                                              Colors.white.withValues(alpha: 0.35),
+                                              const Color(0xFFE0F2FE).withValues(alpha: 0.22),
+                                            ],
+                                            stops: const [0.0, 0.60, 1.0],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+
+                                // A3) Glass Specular Borders, Frosted Center Guideline & Dynamic Optic Glow
+                                Positioned.fill(
+                                  child: CustomPaint(
+                                    painter: _RunningTrackGlassPainter(
+                                      center: Offset(cx, cy),
+                                      radius: RadialQuickAccessMenu.kArcRadius,
+                                      trackWidth: RadialQuickAccessMenu.kTrackWidth,
+                                      sparkProgress: _sparkAnimation.value,
+                                      hoveredIndex: _hoveredIndex,
+                                      activeItems: widget.activeItems,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
+                      ),
 
-                        // A3) Glass Specular Borders, Frosted Center Guideline & Dynamic Optic Glow
-                        Positioned.fill(
-                          child: CustomPaint(
-                            painter: _RunningTrackGlassPainter(
-                              center: Offset(cx, cy),
-                              radius: RadialQuickAccessMenu.kArcRadius,
-                              trackWidth: RadialQuickAccessMenu.kTrackWidth,
-                              sparkProgress: _sparkAnimation.value,
-                              hoveredIndex: _hoveredIndex,
-                              activeItems: widget.activeItems,
-                            ),
-                          ),
-                        ),
+                      // B) 7 Staggered Radial Blossom Action Badges
+                      // Each badge rockets gracefully outward from the center button (cx, cy) to its track position
+                      ...List.generate(widget.activeItems.length, (i) {
+                        final item = widget.activeItems[i];
+                        final restingPos = item.getPosition(
+                          Offset(cx, cy),
+                          RadialQuickAccessMenu.kArcRadius,
+                        );
 
-                        // B) 7 Professional Action Symbols (App Theme Civic Blue with Magnetic Spring & Staggered Blossom)
-                        ...List.generate(widget.activeItems.length, (i) {
-                          final item = widget.activeItems[i];
-                          final basePos = item.getPosition(
-                            Offset(cx, cy),
-                            RadialQuickAccessMenu.kArcRadius,
-                          );
-                          final isHovered = _hoveredIndex == i;
-                          final magneticOffset = _getMagneticOffset(i, basePos);
+                        // Blossom progress along radial trajectory
+                        final blossomT = _getItemBlossomProgress(i, animVal);
+                        if (blossomT <= 0.001) return const SizedBox.shrink();
 
-                          return Positioned(
-                            left: basePos.dx - 44,
-                            top: basePos.dy - 44,
-                            width: 88,
-                            height: 88,
-                            child: TweenAnimationBuilder<Offset>(
-                              tween: Tween<Offset>(begin: Offset.zero, end: magneticOffset),
-                              duration: const Duration(milliseconds: 90),
-                              curve: Curves.easeOutCubic,
-                              builder: (context, animOffset, child) {
-                                return Transform.translate(
-                                  offset: animOffset,
-                                  child: child,
-                                );
-                              },
+                        final isHovered = _hoveredIndex == i;
+                        final magneticOffset = isHovered ? _getMagneticOffset(i, restingPos) : Offset.zero;
+
+                        // Interpolated trajectory from bolt center (cx, cy) to target (restingPos)
+                        final currentPos = Offset.lerp(Offset(cx, cy), restingPos, blossomT)! + magneticOffset;
+                        final itemScale = blossomT.clamp(0.0, 1.15);
+                        final itemOpacity = (blossomT * 1.6).clamp(0.0, 1.0);
+
+                        return Positioned(
+                          left: currentPos.dx - 44,
+                          top: currentPos.dy - 44,
+                          width: 88,
+                          height: 88,
+                          child: Opacity(
+                            opacity: itemOpacity,
+                            child: Transform.scale(
+                              scale: itemScale,
                               child: GestureDetector(
                                 behavior: HitTestBehavior.opaque,
                                 onTap: () => _triggerSelection(i),
@@ -473,56 +495,59 @@ class _RadialQuickAccessMenuState extends ConsumerState<RadialQuickAccessMenu>
                                   mainAxisSize: MainAxisSize.min,
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    // Action Circular Badge (Theme Civic Blue with Ripple Glow & Shimmer)
-                                    AnimatedContainer(
+                                    // Action Circular Badge
+                                    AnimatedScale(
                                       duration: const Duration(milliseconds: 140),
                                       curve: Curves.easeOutBack,
-                                      width: isHovered ? 54 : 44,
-                                      height: isHovered ? 54 : 44,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        gradient: LinearGradient(
-                                          colors: isHovered
-                                              ? const [Color(0xFF0284C7), Color(0xFF0EA5E9)] // Active luminous Civic Blue
-                                              : const [Color(0xFF0284C7), Color(0xFF0369A1)], // Theme Civic Blue
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                        ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: const Color(0xFF0284C7).withValues(alpha: isHovered ? 0.65 : 0.28),
-                                            blurRadius: isHovered ? 18 : 8,
-                                            spreadRadius: isHovered ? 3.0 : 0,
-                                            offset: isHovered ? const Offset(0, 4) : const Offset(0, 2),
+                                      scale: isHovered ? 1.18 : 1.0,
+                                      child: Container(
+                                        width: 44,
+                                        height: 44,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          gradient: LinearGradient(
+                                            colors: isHovered
+                                                ? const [Color(0xFF0284C7), Color(0xFF0EA5E9)]
+                                                : const [Color(0xFF0284C7), Color(0xFF0369A1)],
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
                                           ),
-                                          if (isHovered)
+                                          boxShadow: [
                                             BoxShadow(
-                                              color: const Color(0xFF38BDF8).withValues(alpha: 0.50),
-                                              blurRadius: 10,
-                                              spreadRadius: 1.0,
+                                              color: const Color(0xFF0284C7).withValues(alpha: isHovered ? 0.65 : 0.28),
+                                              blurRadius: isHovered ? 18 : 8,
+                                              spreadRadius: isHovered ? 3.0 : 0,
+                                              offset: isHovered ? const Offset(0, 4) : const Offset(0, 2),
                                             ),
-                                        ],
-                                        border: Border.all(
-                                          color: Colors.white.withValues(alpha: isHovered ? 1.0 : 0.88),
-                                          width: isHovered ? 2.8 : 1.8,
+                                            if (isHovered)
+                                              BoxShadow(
+                                                color: const Color(0xFF38BDF8).withValues(alpha: 0.50),
+                                                blurRadius: 10,
+                                                spreadRadius: 1.0,
+                                              ),
+                                          ],
+                                          border: Border.all(
+                                            color: Colors.white.withValues(alpha: isHovered ? 1.0 : 0.88),
+                                            width: isHovered ? 2.8 : 1.8,
+                                          ),
                                         ),
-                                      ),
-                                      child: isHovered
-                                          ? Icon(
-                                              item.icon,
-                                              color: Colors.white,
-                                              size: 27,
-                                            )
-                                              .animate(onPlay: (controller) => controller.repeat())
-                                              .shimmer(
-                                                duration: 1100.ms,
-                                                color: Colors.white.withValues(alpha: 0.55),
+                                        child: isHovered
+                                            ? Icon(
+                                                item.icon,
+                                                color: Colors.white,
+                                                size: 24,
                                               )
-                                          : Icon(
-                                              item.icon,
-                                              color: Colors.white,
-                                              size: 21,
-                                            ),
+                                                .animate(onPlay: (controller) => controller.repeat())
+                                                .shimmer(
+                                                  duration: 1100.ms,
+                                                  color: Colors.white.withValues(alpha: 0.55),
+                                                )
+                                            : Icon(
+                                                item.icon,
+                                                color: Colors.white,
+                                                size: 21,
+                                              ),
+                                      ),
                                     ),
                                     const SizedBox(height: 2),
 
@@ -571,34 +596,20 @@ class _RadialQuickAccessMenuState extends ConsumerState<RadialQuickAccessMenu>
                                   ],
                                 ),
                               ),
-                            )
-                                // Staggered radial blossom entrance
-                                .animate()
-                                .scale(
-                                  begin: const Offset(0.35, 0.35),
-                                  end: const Offset(1.0, 1.0),
-                                  delay: (i * 26).ms,
-                                  duration: 260.ms,
-                                  curve: Curves.easeOutBack,
-                                )
-                                .fadeIn(
-                                  delay: (i * 20).ms,
-                                  duration: 180.ms,
-                                ),
-                          );
-                        }),
-                      ],
-                    ),
+                            ),
+                          ),
+                        );
+                      }),
+                    ],
                   ),
-                ),
-              );
-            },
-          ),
-        ],
+                );
+              },
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 }
 
 Path _buildRunningTrackPath({
@@ -655,6 +666,8 @@ class _RunningTrackClipper extends CustomClipper<Path> {
   final Offset center;
   final double radius;
   final double trackWidth;
+  Path? _cachedPath;
+  double? _cachedBottomY;
 
   _RunningTrackClipper({
     required this.center,
@@ -665,13 +678,17 @@ class _RunningTrackClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
     final bottomY = math.max(size.height, center.dy + 120.0);
-    return _buildRunningTrackPath(
-      cx: center.dx,
-      cy: center.dy,
-      radius: radius,
-      trackWidth: trackWidth,
-      bottomY: bottomY,
-    );
+    if (_cachedPath == null || _cachedBottomY != bottomY) {
+      _cachedBottomY = bottomY;
+      _cachedPath = _buildRunningTrackPath(
+        cx: center.dx,
+        cy: center.dy,
+        radius: radius,
+        trackWidth: trackWidth,
+        bottomY: bottomY,
+      );
+    }
+    return _cachedPath!;
   }
 
   @override
@@ -686,6 +703,8 @@ class _RunningTrackShadowPainter extends CustomPainter {
   final Offset center;
   final double radius;
   final double trackWidth;
+  Path? _cachedPath;
+  double? _cachedBottomY;
 
   _RunningTrackShadowPainter({
     required this.center,
@@ -696,19 +715,22 @@ class _RunningTrackShadowPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final bottomY = math.max(size.height, center.dy + 120.0);
-    final trackPath = _buildRunningTrackPath(
-      cx: center.dx,
-      cy: center.dy,
-      radius: radius,
-      trackWidth: trackWidth,
-      bottomY: bottomY,
-    );
+    if (_cachedPath == null || _cachedBottomY != bottomY) {
+      _cachedBottomY = bottomY;
+      _cachedPath = _buildRunningTrackPath(
+        cx: center.dx,
+        cy: center.dy,
+        radius: radius,
+        trackWidth: trackWidth,
+        bottomY: bottomY,
+      );
+    }
 
-    // Deep, diffused ambient drop shadow behind the glass running track
+    // Diffused ambient drop shadow behind the glass running track
     canvas.drawShadow(
-      trackPath,
-      Colors.black.withValues(alpha: 0.20),
-      18,
+      _cachedPath!,
+      Colors.black.withValues(alpha: 0.18),
+      16,
       false,
     );
   }
@@ -863,6 +885,7 @@ class _RunningTrackGlassPainter extends CustomPainter {
         oldDelegate.radius != radius ||
         oldDelegate.trackWidth != trackWidth ||
         oldDelegate.center != center ||
-        oldDelegate.hoveredIndex != hoveredIndex;
+        oldDelegate.hoveredIndex != hoveredIndex ||
+        oldDelegate.activeItems != activeItems;
   }
 }

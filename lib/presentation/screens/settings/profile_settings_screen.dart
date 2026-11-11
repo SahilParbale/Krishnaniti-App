@@ -1799,7 +1799,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                   : ListView.separated(
                       padding: const EdgeInsets.all(14),
                       itemCount: filtered.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 8),
+                      separatorBuilder: (_, _) => const SizedBox(height: 8),
                       itemBuilder: (context, idx) {
                         final log = filtered[idx];
                         final dateStr = log['created_at'] != null
@@ -1990,7 +1990,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: _supportTickets.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 8),
+                      separatorBuilder: (_, _) => const SizedBox(height: 8),
                       itemBuilder: (ctx, i) {
                         final t = _supportTickets[i];
                         final dateStr = t['created_at'] != null
@@ -2111,9 +2111,9 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(
         label.toUpperCase(),

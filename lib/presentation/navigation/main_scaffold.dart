@@ -221,10 +221,6 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
           });
         }
       }
-    } else {
-      setState(() {
-        _currentDragPosition = event.position;
-      });
     }
   }
 
