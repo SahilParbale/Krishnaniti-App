@@ -1,6 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+class BottomBarItemData {
+  final IconData icon;
+  final String label;
+
+  const BottomBarItemData({
+    required this.icon,
+    required this.label,
+  });
+}
+
 class CurvedBottomBar extends StatefulWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
@@ -9,6 +19,7 @@ class CurvedBottomBar extends StatefulWidget {
   final ValueChanged<PointerMoveEvent>? onFabPointerMove;
   final ValueChanged<PointerUpEvent>? onFabPointerUp;
   final VoidCallback? onFabPointerCancel;
+  final List<BottomBarItemData>? customItems;
 
   const CurvedBottomBar({
     super.key,
@@ -19,6 +30,7 @@ class CurvedBottomBar extends StatefulWidget {
     this.onFabPointerMove,
     this.onFabPointerUp,
     this.onFabPointerCancel,
+    this.customItems,
   });
 
   @override
@@ -27,6 +39,23 @@ class CurvedBottomBar extends StatefulWidget {
 
 class _CurvedBottomBarState extends State<CurvedBottomBar> {
   bool _isFabPressed = false;
+
+  BottomBarItemData _getItem(int index) {
+    if (widget.customItems != null && index < widget.customItems!.length) {
+      return widget.customItems![index];
+    }
+    switch (index) {
+      case 0:
+        return const BottomBarItemData(icon: Icons.dashboard_rounded, label: 'Dashboard');
+      case 1:
+        return const BottomBarItemData(icon: Icons.grid_view_rounded, label: 'Requests');
+      case 2:
+        return const BottomBarItemData(icon: Icons.notifications_rounded, label: 'Letters');
+      case 3:
+      default:
+        return const BottomBarItemData(icon: Icons.person_rounded, label: 'Profile');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,42 +98,42 @@ class _CurvedBottomBarState extends State<CurvedBottomBar> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Tab 0: Dashboard
+                // Tab 0
                 Expanded(
                   child: _buildNavItem(
                     index: 0,
-                    icon: Icons.dashboard_rounded,
-                    label: 'Dashboard',
+                    icon: _getItem(0).icon,
+                    label: _getItem(0).label,
                   ),
                 ),
 
-                // Tab 1: Requests (4-square grid icon)
+                // Tab 1
                 Expanded(
                   child: _buildNavItem(
                     index: 1,
-                    icon: Icons.grid_view_rounded,
-                    label: 'Requests',
+                    icon: _getItem(1).icon,
+                    label: _getItem(1).label,
                   ),
                 ),
 
                 // Center gap for the FAB
                 const SizedBox(width: 76),
 
-                // Tab 2: Letters / Notifications (bell icon)
+                // Tab 2
                 Expanded(
                   child: _buildNavItem(
                     index: 2,
-                    icon: Icons.notifications_rounded,
-                    label: 'Letters',
+                    icon: _getItem(2).icon,
+                    label: _getItem(2).label,
                   ),
                 ),
 
-                // Tab 3: Profile (person silhouette)
+                // Tab 3: Fixed Profile / Settings
                 Expanded(
                   child: _buildNavItem(
                     index: 3,
-                    icon: Icons.person_rounded,
-                    label: 'Profile',
+                    icon: _getItem(3).icon,
+                    label: _getItem(3).label,
                   ),
                 ),
               ],
@@ -117,7 +146,6 @@ class _CurvedBottomBarState extends State<CurvedBottomBar> {
             child: Listener(
               onPointerDown: (e) {
                 setState(() => _isFabPressed = true);
-                HapticFeedback.heavyImpact();
                 widget.onFabPointerDown?.call(e);
               },
               onPointerMove: (e) {
@@ -143,12 +171,12 @@ class _CurvedBottomBarState extends State<CurvedBottomBar> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.12),
+                          color: Colors.black.withValues(alpha: 0.12),
                           blurRadius: 10,
                           offset: const Offset(0, 3),
                         ),
                         BoxShadow(
-                          color: const Color(0xFF0284C7).withOpacity(0.20),
+                          color: const Color(0xFF0284C7).withValues(alpha: 0.20),
                           blurRadius: 14,
                           offset: const Offset(0, 2),
                         ),
@@ -171,7 +199,7 @@ class _CurvedBottomBarState extends State<CurvedBottomBar> {
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF0284C7).withOpacity(0.35),
+                              color: const Color(0xFF0284C7).withValues(alpha: 0.35),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
@@ -211,7 +239,7 @@ class _CurvedBottomBarState extends State<CurvedBottomBar> {
           HapticFeedback.selectionClick();
           widget.onTap(index);
         },
-        splashColor: activeColor.withOpacity(0.08),
+        splashColor: activeColor.withValues(alpha: 0.08),
         highlightColor: Colors.transparent,
         borderRadius: BorderRadius.circular(16),
         child: Padding(
@@ -331,7 +359,7 @@ class _CurvedNotchPainter extends CustomPainter {
     path.close();
 
     // 1) Soft ambient shadow underneath the white bar
-    canvas.drawShadow(path, Colors.black.withOpacity(0.08), 10, false);
+    canvas.drawShadow(path, Colors.black.withValues(alpha: 0.08), 10, false);
 
     // 2) Fill bar with pure white
     final paint = Paint()

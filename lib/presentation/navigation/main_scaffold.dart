@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,7 +6,8 @@ import 'lazy_indexed_stack.dart';
 import 'curved_bottom_bar.dart';
 import 'radial_quick_access_menu.dart';
 import '../providers/navigation_provider.dart';
-import '../screens/complaints/new_complaint_screen.dart';
+import '../providers/custom_navigation_provider.dart';
+import '../providers/auth_provider.dart';
 
 // All 39 Screens
 import '../screens/dashboard/dashboard_screen.dart';
@@ -155,42 +157,85 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
   bool _isRadialOpen = false;
   Offset? _currentDragPosition;
   Offset _fabCenterOffset = Offset.zero;
+  Timer? _fabHoldTimer;
+  Offset? _fabDownPosition;
+
+  @override
+  void dispose() {
+    _fabHoldTimer?.cancel();
+    super.dispose();
+  }
 
   void _onTabChange(int index) {
-    ref.read(mainTabIndexProvider.notifier).setTab(index);
-    if (index >= 0 && index < 4) {
-      ref.read(activeScreenProvider.notifier).setScreen(screenKeys[index]);
+    if (index == 3) {
+      ref.read(activeScreenProvider.notifier).setScreen('profile_settings');
+      return;
+    }
+    final customBottom = ref.read(customBottomBarProvider);
+    if (index >= 0 && index < customBottom.length) {
+      final targetKey = customBottom[index];
+      ref.read(activeScreenProvider.notifier).setScreen(targetKey);
+      if (targetKey == 'dashboard') {
+        ref.read(mainTabIndexProvider.notifier).setTab(0);
+      }
     }
   }
 
+  void _navigateToDashboard() {
+    HapticFeedback.selectionClick();
+    ref.read(activeScreenProvider.notifier).setScreen('dashboard');
+    ref.read(mainTabIndexProvider.notifier).setTab(0);
+  }
+
   void _onFabPointerDown(PointerDownEvent event) {
+    _fabHoldTimer?.cancel();
     final media = MediaQuery.of(context);
     final cx = media.size.width / 2;
     final cy = media.size.height - media.padding.bottom - 63.0;
+    _fabCenterOffset = Offset(cx, cy);
+    _fabDownPosition = event.position;
 
-    setState(() {
-      _fabCenterOffset = Offset(cx, cy);
-      _currentDragPosition = event.position;
-      _isRadialOpen = true;
+    // Start 200ms hold timer to open the radial quick access menu
+    _fabHoldTimer = Timer(const Duration(milliseconds: 200), () {
+      if (mounted && _fabDownPosition != null && !_isRadialOpen) {
+        HapticFeedback.heavyImpact();
+        setState(() {
+          _isRadialOpen = true;
+          _currentDragPosition = _fabDownPosition;
+        });
+      }
     });
   }
 
   void _onFabPointerMove(PointerMoveEvent event) {
-    if (_isRadialOpen) {
+    if (!_isRadialOpen) {
+      if (_fabDownPosition != null) {
+        final dist = (event.position - _fabDownPosition!).distance;
+        // If finger moves more than 14px outward, immediately bloom the radial menu open
+        if (dist > 14.0) {
+          _fabHoldTimer?.cancel();
+          HapticFeedback.heavyImpact();
+          setState(() {
+            _isRadialOpen = true;
+            _currentDragPosition = event.position;
+          });
+        }
+      }
+    } else {
       setState(() {
         _currentDragPosition = event.position;
       });
     }
   }
 
-  int _findClosestItemIndex(Offset pos) {
+  int _findClosestItemIndex(Offset pos, List<RadialMenuItem> radialItems) {
     final centerDist = (pos - _fabCenterOffset).distance;
     if (centerDist < 38.0) return -1;
 
     int closestIdx = -1;
     double minDist = 999999.0;
-    for (int i = 0; i < RadialQuickAccessMenu.items.length; i++) {
-      final itemPos = RadialQuickAccessMenu.items[i].getPosition(
+    for (int i = 0; i < radialItems.length; i++) {
+      final itemPos = radialItems[i].getPosition(
         _fabCenterOffset,
         RadialQuickAccessMenu.kArcRadius,
       );
@@ -208,24 +253,39 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
   }
 
   void _onFabPointerUp(PointerUpEvent event) {
+    _fabHoldTimer?.cancel();
+
     if (_isRadialOpen) {
-      final idx = _findClosestItemIndex(event.position);
+      final customRadialKeys = ref.read(customQuickActionsProvider);
+      final radialConfigs = customRadialKeys.map((k) => getModuleConfig(k)).toList();
+      final radialItems = RadialQuickAccessMenu.buildItemsFromConfigs(radialConfigs);
+
+      final idx = _findClosestItemIndex(event.position, radialItems);
       if (idx != -1) {
-        final selectedItem = RadialQuickAccessMenu.items[idx];
+        final selectedItem = radialItems[idx];
         HapticFeedback.mediumImpact();
         _handleRadialSelect(selectedItem.id);
+        _fabDownPosition = null;
         return;
       }
 
-      // User removed their finger without selecting an item: close immediately by default
+      // User removed their finger without selecting an item: close immediately
       setState(() {
         _isRadialOpen = false;
         _currentDragPosition = null;
       });
+      _fabDownPosition = null;
+      return;
     }
+
+    // Finger lifted quickly without hold or drag (<200ms) -> Click/Tap action: Go to Dashboard!
+    _fabDownPosition = null;
+    _navigateToDashboard();
   }
 
   void _onFabPointerCancel() {
+    _fabHoldTimer?.cancel();
+    _fabDownPosition = null;
     if (_isRadialOpen) {
       setState(() {
         _isRadialOpen = false;
@@ -252,31 +312,10 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
       _currentDragPosition = null;
     });
 
-    switch (id) {
-      case 'works':
-        ref.read(activeScreenProvider.notifier).setScreen('work_history');
-        break;
-      case 'request':
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const NewComplaintScreen()),
-        );
-        break;
-      case 'letters':
-        _onTabChange(2);
-        break;
-      case 'voters':
-        ref.read(activeScreenProvider.notifier).setScreen('voters');
-        break;
-      case 'diary':
-        ref.read(activeScreenProvider.notifier).setScreen('diary');
-        break;
-      case 'visitors':
-        ref.read(activeScreenProvider.notifier).setScreen('visitors');
-        break;
-      case 'ai_content':
-        ref.read(activeScreenProvider.notifier).setScreen('ai_content');
-        break;
+    final screenKey = id == 'works' ? 'work_history' : (id == 'request' ? 'complaints' : id);
+    ref.read(activeScreenProvider.notifier).setScreen(screenKey);
+    if (screenKey == 'dashboard') {
+      ref.read(mainTabIndexProvider.notifier).setTab(0);
     }
   }
 
@@ -286,8 +325,45 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
     var index = screenKeys.indexOf(activeScreen);
     if (index == -1) index = 0;
 
-    final isMainTab = index < 4;
-    final bottomBarIndex = isMainTab ? index : 0;
+    final isMr = ref.watch(isMarathiProvider);
+    final customBottomKeys = ref.watch(customBottomBarProvider);
+    final customRadialKeys = ref.watch(customQuickActionsProvider);
+
+    // Build dynamic bottom bar items: 3 customizable + 1 fixed Profile
+    final bottomItems = [
+      BottomBarItemData(
+        icon: getModuleConfig(customBottomKeys[0]).icon,
+        label: isMr ? getModuleConfig(customBottomKeys[0]).titleMr : getModuleConfig(customBottomKeys[0]).titleEn,
+      ),
+      BottomBarItemData(
+        icon: getModuleConfig(customBottomKeys[1]).icon,
+        label: isMr ? getModuleConfig(customBottomKeys[1]).titleMr : getModuleConfig(customBottomKeys[1]).titleEn,
+      ),
+      BottomBarItemData(
+        icon: getModuleConfig(customBottomKeys[2]).icon,
+        label: isMr ? getModuleConfig(customBottomKeys[2]).titleMr : getModuleConfig(customBottomKeys[2]).titleEn,
+      ),
+      BottomBarItemData(
+        icon: Icons.person_rounded,
+        label: isMr ? 'प्रोफाईल' : 'Profile',
+      ),
+    ];
+
+    // Compute active tab index in bottom bar
+    int bottomBarIndex = -1;
+    if (activeScreen == customBottomKeys[0]) {
+      bottomBarIndex = 0;
+    } else if (activeScreen == customBottomKeys[1]) {
+      bottomBarIndex = 1;
+    } else if (activeScreen == customBottomKeys[2]) {
+      bottomBarIndex = 2;
+    } else if (activeScreen == 'profile_settings') {
+      bottomBarIndex = 3;
+    }
+
+    // Build 7 dynamic radial items
+    final radialConfigs = customRadialKeys.map((k) => getModuleConfig(k)).toList();
+    final radialItems = RadialQuickAccessMenu.buildItemsFromConfigs(radialConfigs);
 
     return PopScope(
       canPop: activeScreen == 'dashboard' && !_isRadialOpen,
@@ -312,17 +388,16 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
               index: index,
               builders: _builders,
             ),
-            bottomNavigationBar: isMainTab
-                ? CurvedBottomBar(
-                    currentIndex: bottomBarIndex,
-                    onTap: _onTabChange,
-                    onFabTap: _openRadialMenu,
-                    onFabPointerDown: _onFabPointerDown,
-                    onFabPointerMove: _onFabPointerMove,
-                    onFabPointerUp: _onFabPointerUp,
-                    onFabPointerCancel: _onFabPointerCancel,
-                  )
-                : null,
+            bottomNavigationBar: CurvedBottomBar(
+              currentIndex: bottomBarIndex,
+              onTap: _onTabChange,
+              onFabTap: _openRadialMenu,
+              onFabPointerDown: _onFabPointerDown,
+              onFabPointerMove: _onFabPointerMove,
+              onFabPointerUp: _onFabPointerUp,
+              onFabPointerCancel: _onFabPointerCancel,
+              customItems: bottomItems,
+            ),
           ),
 
           // Semicircular Gesture-Driven Radial Quick Access Overlay
@@ -331,6 +406,7 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
               centerOffset: _fabCenterOffset,
               dragPosition: _currentDragPosition,
               onSelect: _handleRadialSelect,
+              customItems: radialItems,
               onClose: () {
                 setState(() {
                   _isRadialOpen = false;

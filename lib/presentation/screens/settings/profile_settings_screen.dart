@@ -7,6 +7,7 @@ import '../../../core/constants/app_config.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/custom_navigation_provider.dart';
 
 class ProfileSettingsScreen extends ConsumerStatefulWidget {
   final VoidCallback? onBackToHome;
@@ -42,12 +43,6 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
   String _profileImageUrl = '';
   String _partyLogoUrl = '';
   Map<String, dynamic> _rawConfig = {};
-
-  // WhatsApp Bot state
-  bool _botAutoReply = true;
-  bool _botComplaints = true;
-  bool _botBroadcasts = true;
-  bool _botAiVoice = true;
 
   // SMS Gateway state
   String _selectedSmsProvider = 'Fast2SMS';
@@ -635,9 +630,9 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                         Tab(
                           child: Row(
                             children: [
-                              Icon(Icons.smart_toy_outlined, size: 14),
+                              Icon(Icons.tune_rounded, size: 14),
                               SizedBox(width: 5),
-                              Text('WhatsApp Bot'),
+                              Text('Bar Customization'),
                             ],
                           ),
                         ),
@@ -677,7 +672,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                     controller: _tabController,
                     children: [
                       _buildProfileTab(isDark),
-                      _buildBotTab(isDark),
+                      _buildBarCustomizationTab(isDark),
                       _buildSmsTab(isDark),
                       _buildSecurityTab(isDark),
                       _buildSupportTab(isDark),
@@ -977,189 +972,583 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Tab 2: WhatsApp Bot
+  // Tab 2: Navigation Bar & Quick Actions Customization
   // ─────────────────────────────────────────────────────────────
-  Widget _buildBotTab(bool isDark) {
+  Widget _buildBarCustomizationTab(bool isDark) {
+    final isMr = ref.watch(isMarathiProvider);
+    final bottomSlots = ref.watch(customBottomBarProvider);
+    final quickSlots = ref.watch(customQuickActionsProvider);
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 80),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 90),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Connection Status Card
+          // Banner Card
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF0284C7), Color(0xFF0369A1)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF0284C7).withValues(alpha: 0.25),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.20),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.tune_rounded, color: Colors.white, size: 24),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isMr ? 'नेव्हिगेशन आणि द्रुत क्रिया सानुकूलन' : 'Bar & Quick Actions Customization',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        isMr
+                            ? 'आपल्या दैनंदिन कामासाठी बॉटम बार आणि 7 द्रुत क्रिया पर्याय बदला.'
+                            : 'Personalize your bottom bar tabs and 7 radial gesture actions to fit your daily civic workflow.',
+                        style: const TextStyle(
+                          color: Color(0xFFE0F2FE),
+                          fontSize: 11.5,
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // ─────────────────────────────────────────────────────────────
+          // SECTION 1: BOTTOM NAVIGATION BAR (3 CUSTOMIZABLE + 1 FIXED)
+          // ─────────────────────────────────────────────────────────────
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isMr ? 'बॉटम नेव्हिगेशन बार (4 पर्याय)' : 'Bottom Navigation Bar (4 Tabs)',
+                    style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    isMr
+                        ? 'पहिले 3 टॅब बदला. चौथा सेटिंग्ज पर्याय कायम निश्चित आहे.'
+                        : 'First 3 tabs are customizable. Tab 4 (Settings) is fixed.',
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                  ),
+                ],
+              ),
+              TextButton.icon(
+                onPressed: () {
+                  ref.read(customBottomBarProvider.notifier).resetToDefaults();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(isMr ? 'बॉटम बार डीफॉल्टवर रीसेट केला.' : 'Bottom bar tabs reset to defaults.'),
+                      backgroundColor: const Color(0xFF0284C7),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.restore_rounded, size: 15, color: Color(0xFF0284C7)),
+                label: Text(isMr ? 'रीसेट' : 'Reset', style: const TextStyle(fontSize: 12, color: Color(0xFF0284C7))),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 8),
+
+          // 4 Bottom Bar Slots Preview
           Card(
             elevation: 0,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-              side: const BorderSide(color: Color(0xFFBAE6FD)),
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: isDark ? Colors.grey[800]! : const Color(0xFFE2E8F0)),
             ),
-            color: const Color(0xFFF0F9FF),
             child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Row(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+              child: Column(
                 children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF25D366).withOpacity(0.15),
-                      shape: BoxShape.circle,
+                  for (int slotIdx = 0; slotIdx < 3; slotIdx++) ...[
+                    _buildBottomBarSlotTile(
+                      slotIndex: slotIdx,
+                      moduleKey: bottomSlots[slotIdx],
+                      isMr: isMr,
                     ),
-                    child: const Icon(Icons.chat_rounded, color: Color(0xFF25D366), size: 24),
+                    if (slotIdx < 2) const Divider(height: 1, indent: 46),
+                  ],
+                  const Divider(height: 1, indent: 46),
+                  // Fixed Slot 3 (Settings)
+                  ListTile(
+                    dense: true,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    leading: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.person_rounded, color: Color(0xFF64748B), size: 20),
+                    ),
+                    title: Text(
+                      isMr ? 'प्रोफाईल सेटिंग्ज' : 'Profile Settings',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
+                    ),
+                    subtitle: Text(
+                      isMr ? 'टॅब 4 (कायम निश्चित पर्याय)' : 'Tab 4 (Permanently Fixed)',
+                      style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
+                    ),
+                    trailing: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.lock_rounded, size: 12, color: Color(0xFF64748B)),
+                          const SizedBox(width: 4),
+                          Text(
+                            isMr ? 'निश्चित' : 'Fixed',
+                            style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Row(
-                          children: [
-                            Text(
-                              'WhatsApp Bot Active',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.5, color: Color(0xFF0F172A)),
-                            ),
-                            SizedBox(width: 6),
-                            Icon(Icons.check_circle, color: Color(0xFF10B981), size: 16),
-                          ],
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 22),
+
+          // ─────────────────────────────────────────────────────────────
+          // SECTION 2: RADIAL QUICK ACCESS ACTIONS (7 SLOTS)
+          // ─────────────────────────────────────────────────────────────
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isMr ? 'द्रुत क्रिया मेनू (7 पर्याय)' : 'Radial Quick Access Actions (7 Slots)',
+                    style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    isMr
+                        ? 'मध्यवर्ती बटण दाबून धरल्यावर किंवा ओढल्यावर दिसणारे 7 पर्याय.'
+                        : 'The 7 gesture actions on the curved glass running track.',
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                  ),
+                ],
+              ),
+              TextButton.icon(
+                onPressed: () {
+                  ref.read(customQuickActionsProvider.notifier).resetToDefaults();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(isMr ? 'द्रुत क्रिया डीफॉल्टवर रीसेट केल्या.' : 'Quick actions reset to defaults.'),
+                      backgroundColor: const Color(0xFF0284C7),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.restore_rounded, size: 15, color: Color(0xFF0284C7)),
+                label: Text(isMr ? 'रीसेट' : 'Reset', style: const TextStyle(fontSize: 12, color: Color(0xFF0284C7))),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 8),
+
+          // 7 Radial Action Slots
+          Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: isDark ? Colors.grey[800]! : const Color(0xFFE2E8F0)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+              child: Column(
+                children: [
+                  for (int slotIdx = 0; slotIdx < 7; slotIdx++) ...[
+                    _buildQuickActionSlotTile(
+                      slotIndex: slotIdx,
+                      moduleKey: quickSlots[slotIdx],
+                      isMr: isMr,
+                    ),
+                    if (slotIdx < 6) const Divider(height: 1, indent: 46),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomBarSlotTile({
+    required int slotIndex,
+    required String moduleKey,
+    required bool isMr,
+  }) {
+    final config = getModuleConfig(moduleKey);
+
+    return ListTile(
+      dense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      leading: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: const Color(0xFFE0F2FE),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(config.icon, color: const Color(0xFF0284C7), size: 20),
+      ),
+      title: Text(
+        isMr ? config.titleMr : config.titleEn,
+        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+      ),
+      subtitle: Text(
+        'Tab ${slotIndex + 1} • ${config.category}',
+        style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+      ),
+      trailing: ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFF0F9FF),
+          foregroundColor: const Color(0xFF0284C7),
+          elevation: 0,
+          side: const BorderSide(color: Color(0xFFBAE6FD)),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          minimumSize: const Size(60, 30),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+        ),
+        onPressed: () {
+          _showModulePicker(
+            context: context,
+            title: isMr ? 'टॅब ${slotIndex + 1} साठी पर्याय निवडा' : 'Select Module for Tab ${slotIndex + 1}',
+            currentKey: moduleKey,
+            onSelected: (newKey) {
+              ref.read(customBottomBarProvider.notifier).setSlot(slotIndex, newKey);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    isMr
+                        ? 'टॅब ${slotIndex + 1} "${getModuleConfig(newKey).titleMr}" वर बदलला.'
+                        : 'Tab ${slotIndex + 1} updated to "${getModuleConfig(newKey).titleEn}".',
+                  ),
+                  backgroundColor: const Color(0xFF0284C7),
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            },
+          );
+        },
+        icon: const Icon(Icons.edit_rounded, size: 12),
+        label: Text(isMr ? 'बदला' : 'Change', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+      ),
+    );
+  }
+
+  Widget _buildQuickActionSlotTile({
+    required int slotIndex,
+    required String moduleKey,
+    required bool isMr,
+  }) {
+    final config = getModuleConfig(moduleKey);
+
+    final positionLabelsEn = [
+      'Slot 1 • Left Bottom Leg',
+      'Slot 2 • Left Arc (162°)',
+      'Slot 3 • Left Upper Arc (126°)',
+      'Slot 4 • Top Center Arc (90°)',
+      'Slot 5 • Right Upper Arc (54°)',
+      'Slot 6 • Right Arc (18°)',
+      'Slot 7 • Right Bottom Leg',
+    ];
+
+    final positionLabelsMr = [
+      'पर्याय 1 • डावे खालचे टोक',
+      'पर्याय 2 • डावा चाप (162°)',
+      'पर्याय 3 • डावा वरील चाप (126°)',
+      'पर्याय 4 • मध्य शिखर चाप (90°)',
+      'पर्याय 5 • उजवा वरील चाप (54°)',
+      'पर्याय 6 • उजवा चाप (18°)',
+      'पर्याय 7 • उजवे खालचे टोक',
+    ];
+
+    return ListTile(
+      dense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      leading: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: const Color(0xFFE0F2FE),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(config.icon, color: const Color(0xFF0284C7), size: 20),
+      ),
+      title: Text(
+        isMr ? config.titleMr : config.titleEn,
+        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+      ),
+      subtitle: Text(
+        isMr ? positionLabelsMr[slotIndex] : positionLabelsEn[slotIndex],
+        style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+      ),
+      trailing: ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFF0F9FF),
+          foregroundColor: const Color(0xFF0284C7),
+          elevation: 0,
+          side: const BorderSide(color: Color(0xFFBAE6FD)),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          minimumSize: const Size(60, 30),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+        ),
+        onPressed: () {
+          _showModulePicker(
+            context: context,
+            title: isMr
+                ? '${positionLabelsMr[slotIndex]} साठी पर्याय निवडा'
+                : 'Select Action for ${positionLabelsEn[slotIndex]}',
+            currentKey: moduleKey,
+            onSelected: (newKey) {
+              ref.read(customQuickActionsProvider.notifier).setSlot(slotIndex, newKey);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    isMr
+                        ? 'क्रिया ${slotIndex + 1} "${getModuleConfig(newKey).titleMr}" वर बदलली.'
+                        : 'Quick Action ${slotIndex + 1} updated to "${getModuleConfig(newKey).titleEn}".',
+                  ),
+                  backgroundColor: const Color(0xFF0284C7),
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            },
+          );
+        },
+        icon: const Icon(Icons.edit_rounded, size: 12),
+        label: Text(isMr ? 'बदला' : 'Change', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+      ),
+    );
+  }
+
+  void _showModulePicker({
+    required BuildContext context,
+    required String title,
+    required String currentKey,
+    required ValueChanged<String> onSelected,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        String query = '';
+        return StatefulBuilder(
+          builder: (modalCtx, setModalState) {
+            final isMr = ref.read(isMarathiProvider);
+            final filtered = kAllAvailableModules.where((item) {
+              if (query.isEmpty) return true;
+              final q = query.toLowerCase();
+              return item.titleEn.toLowerCase().contains(q) ||
+                  item.titleMr.toLowerCase().contains(q) ||
+                  item.category.toLowerCase().contains(q);
+            }).toList();
+
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.75,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: Column(
+                children: [
+                  // Drag Handle
+                  Container(
+                    margin: const EdgeInsets.only(top: 10, bottom: 6),
+                    width: 38,
+                    height: 4.5,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFCBD5E1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.tune_rounded, color: Color(0xFF0284C7), size: 22),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                        SizedBox(height: 2),
-                        Text(
-                          'Directly linked with Prabhag 12 Official Number (+91 98220 12345)',
-                          style: TextStyle(fontSize: 11.5, color: Color(0xFF0369A1)),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded, size: 20),
+                          onPressed: () => Navigator.pop(modalCtx),
                         ),
                       ],
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
 
-          const SizedBox(height: 14),
-
-          // Bot Server Specs
-          Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: isDark ? Colors.grey[800]! : const Color(0xFFE2E8F0)),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Integration Metadata', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold)),
-                  const Divider(height: 18),
-                  _buildMetaRow('Server Gateway', 'nagarsevak-managment-1.onrender.com'),
-                  _buildMetaRow('Socket Connection', 'Active (WebSocket Secure TLS)'),
-                  _buildMetaRow('Session Status', 'Authenticated · Online 24/7'),
-                  _buildMetaRow('Outbound Dispatch Mode', 'Meta Cloud Queue Manager'),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 14),
-
-          // Bot Automated Features
-          Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: isDark ? Colors.grey[800]! : const Color(0xFFE2E8F0)),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Automated Bot Features', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 6),
-                  SwitchListTile(
-                    title: const Text('Auto-reply Citizen Inquiries', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                    subtitle: const Text('Sends instant acknowledgment when citizen messages ward number', style: TextStyle(fontSize: 11)),
-                    value: _botAutoReply,
-                    activeColor: const Color(0xFF0284C7),
-                    contentPadding: EdgeInsets.zero,
-                    onChanged: (v) => setState(() => _botAutoReply = v),
-                  ),
-                  const Divider(height: 1),
-                  SwitchListTile(
-                    title: const Text('WhatsApp Complaint Registration', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                    subtitle: const Text('Automatically parse location & photos from citizen WhatsApp chats', style: TextStyle(fontSize: 11)),
-                    value: _botComplaints,
-                    activeColor: const Color(0xFF0284C7),
-                    contentPadding: EdgeInsets.zero,
-                    onChanged: (v) => setState(() => _botComplaints = v),
-                  ),
-                  const Divider(height: 1),
-                  SwitchListTile(
-                    title: const Text('Broadcast Dispatch Engine', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                    subtitle: const Text('Queue outbound ward bulletins & emergency road announcements', style: TextStyle(fontSize: 11)),
-                    value: _botBroadcasts,
-                    contentPadding: EdgeInsets.zero,
-                    onChanged: (v) => setState(() => _botBroadcasts = v),
-                  ),
-                  const Divider(height: 1),
-                  SwitchListTile(
-                    title: const Text('AI Voice Call Feedback Agent', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                    subtitle: const Text('Automated outbound Marathi voice calls for citizen feedback', style: TextStyle(fontSize: 11)),
-                    value: _botAiVoice,
-                    contentPadding: EdgeInsets.zero,
-                    onChanged: (v) => setState(() => _botAiVoice = v),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 14),
-
-          // Actions
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Bot session ping verified. Response: 200 OK (latency: 48ms).'),
-                        backgroundColor: Color(0xFF0284C7),
+                  // Search Bar
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    child: TextField(
+                      autofocus: false,
+                      decoration: InputDecoration(
+                        hintText: isMr ? 'पर्याय शोधा...' : 'Search page or module...',
+                        hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                        prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Color(0xFF64748B)),
+                        filled: true,
+                        fillColor: const Color(0xFFF1F5F9),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide.none,
+                        ),
                       ),
-                    );
-                  },
-                  icon: const Icon(Icons.bolt, size: 16),
-                  label: const Text('Test Connection'),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFFCBD5E1)),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
+                      onChanged: (v) {
+                        setModalState(() => query = v);
+                      },
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Restarting WhatsApp gateway session socket...'),
-                        backgroundColor: Color(0xFF0284C7),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.restart_alt, size: 16),
-                  label: const Text('Restart Session'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0284C7),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 10),
+
+                  const Divider(height: 12),
+
+                  // Module List
+                  Expanded(
+                    child: filtered.isEmpty
+                        ? Center(
+                            child: Text(
+                              isMr ? 'कोणतेही पर्याय आढळले नाहीत.' : 'No modules match your search.',
+                              style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                            ),
+                          )
+                        : ListView.separated(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            itemCount: filtered.length,
+                            separatorBuilder: (_, _) => const Divider(height: 1),
+                            itemBuilder: (ctx, idx) {
+                              final mod = filtered[idx];
+                              final isSelected = mod.key == currentKey;
+
+                              return Material(
+                                color: isSelected ? const Color(0xFFF0F9FF) : Colors.transparent,
+                                borderRadius: BorderRadius.circular(8),
+                                child: InkWell(
+                                  onTap: () {
+                                    Navigator.pop(modalCtx);
+                                    onSelected(mod.key);
+                                  },
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 38,
+                                          height: 38,
+                                          decoration: BoxDecoration(
+                                            color: isSelected
+                                                ? const Color(0xFF0284C7)
+                                                : const Color(0xFFE0F2FE),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Icon(
+                                            mod.icon,
+                                            color: isSelected ? Colors.white : const Color(0xFF0284C7),
+                                            size: 20,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                isMr ? mod.titleMr : mod.titleEn,
+                                                style: TextStyle(
+                                                  fontSize: 13.5,
+                                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                                                  color: isSelected ? const Color(0xFF0284C7) : const Color(0xFF1E293B),
+                                                ),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                '${isMr ? mod.titleEn : mod.titleMr} • ${mod.category}',
+                                                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        if (isSelected)
+                                          const Icon(Icons.check_circle_rounded, color: Color(0xFF0284C7), size: 20)
+                                        else
+                                          const Icon(Icons.chevron_right_rounded, color: Color(0xFFCBD5E1), size: 20),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
-        ],
-      ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -1692,18 +2081,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
     );
   }
 
-  Widget _buildMetaRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(width: 140, child: Text(label, style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)))),
-          Expanded(child: Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600))),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildPriorityChoice(String priority) {
     final isSelected = _supportPriority == priority;
