@@ -2,18 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/complaint_model.dart';
-import '../../../data/models/voter_model.dart';
 import '../../../data/models/staff_model.dart';
 import '../../../data/repositories/complaints_repository.dart';
-import '../../../data/repositories/voters_repository.dart';
 import '../../navigation/app_drawer.dart';
-import '../../providers/navigation_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../complaints/complaint_detail_screen.dart';
+import '../complaints/new_complaint_bottom_sheet.dart';
 import 'ward_problems_report_generator.dart';
 
+/// WardWiseProblem Screen matching EXACTLY the web page:
+/// Nagarsevak-Managment/src/pages/ward/WardWiseProblem.tsx
 class WardProblemsScreen extends ConsumerStatefulWidget {
   const WardProblemsScreen({super.key});
 
@@ -22,32 +21,40 @@ class WardProblemsScreen extends ConsumerStatefulWidget {
 }
 
 class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
-  // Primary Tabs: 'all', 'pending_active', 'resolved'
-  String _activeTab = 'all';
+  // View mode: 'grid' or 'report' matching WardWiseProblem.tsx
+  String _viewMode = 'grid';
 
-  // Filters
-  String _selectedStatus = 'All'; // 'All', 'Pending', 'Assigned', 'InProgress', 'Resolved'
-  String _selectedArea = 'All';
+  // Status Filter: 'All', 'Pending', 'Assigned', 'InProgress', 'Resolved'
+  String _filterStatus = 'All';
+
+  // Search & Filter State
   final TextEditingController _searchCtrl = TextEditingController();
+  final TextEditingController _areaSearchCtrl = TextEditingController();
+  final TextEditingController _dateSearchCtrl = TextEditingController();
 
-  bool _isLoading = true;
-  List<ComplaintModel> _allProblems = [];
+  bool _showAreaDropdown = false;
+  bool _showDateDropdown = false;
+
+  bool _loading = true;
+  List<ComplaintModel> _complaints = [];
   List<StaffModel> _staffList = [];
 
   @override
   void initState() {
     super.initState();
-    _loadData();
+    _fetchComplaints();
   }
 
   @override
   void dispose() {
     _searchCtrl.dispose();
+    _areaSearchCtrl.dispose();
+    _dateSearchCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _loadData() async {
-    setState(() => _isLoading = true);
+  Future<void> _fetchComplaints() async {
+    setState(() => _loading = true);
     try {
       final repo = ref.read(complaintsRepoProvider);
       final results = await Future.wait([
@@ -57,21 +64,21 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
 
       if (mounted) {
         setState(() {
-          _allProblems = results[0] as List<ComplaintModel>;
+          _complaints = results[0] as List<ComplaintModel>;
           _staffList = results[1] as List<StaffModel>;
-          _isLoading = false;
+          _loading = false;
         });
       }
     } catch (_) {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) setState(() => _loading = false);
     }
   }
 
-  // Dynamic unique areas with problem counts
-  List<Map<String, dynamic>> get _uniqueAreasWithCounts {
+  // Unique Areas with counts matching WardWiseProblem.tsx lines 222-227
+  List<Map<String, dynamic>> get _uniqueAreas {
     final Map<String, int> counts = {};
-    for (final p in _allProblems) {
-      final a = p.area?.trim();
+    for (final c in _complaints) {
+      final a = c.area?.trim();
       if (a != null && a.isNotEmpty) {
         counts[a] = (counts[a] ?? 0) + 1;
       }
@@ -81,457 +88,150 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
     return list;
   }
 
-  List<ComplaintModel> get _filteredProblems {
-    final query = _searchCtrl.text.trim().toLowerCase();
+  // Unique Dates with counts matching WardWiseProblem.tsx lines 230-237
+  List<Map<String, dynamic>> get _uniqueDates {
+    final Map<String, int> counts = {};
+    final Map<String, String> displayMap = {};
+    for (final c in _complaints) {
+      final dateStr = DateFormat('yyyy-MM-dd').format(c.createdAt);
+      counts[dateStr] = (counts[dateStr] ?? 0) + 1;
+      displayMap[dateStr] = DateFormat('MMM d, yyyy').format(c.createdAt);
+    }
+    final list = counts.entries.map((e) {
+      return {
+        'value': e.key,
+        'display': displayMap[e.key] ?? e.key,
+        'count': e.value,
+      };
+    }).toList();
+    list.sort((a, b) => b['value'].toString().compareTo(a['value'].toString()));
+    return list;
+  }
 
-    return _allProblems.where((p) {
-      // 1. Primary Tab filter
-      if (_activeTab == 'pending_active') {
-        if (p.isResolved || p.status.toLowerCase() == 'closed') return false;
-      } else if (_activeTab == 'resolved') {
-        if (!p.isResolved && p.status.toLowerCase() != 'closed') return false;
-      }
+  // Filtered complaints matching WardWiseProblem.tsx lines 240-251
+  List<ComplaintModel> get _filteredComplaints {
+    final search = _searchCtrl.text.trim().toLowerCase();
+    final areaSearch = _areaSearchCtrl.text.trim().toLowerCase();
+    final dateSearch = _dateSearchCtrl.text.trim().toLowerCase();
 
-      // 2. Status Chip filter
-      if (_selectedStatus != 'All') {
-        if (p.status.toLowerCase() != _selectedStatus.toLowerCase()) {
-          return false;
-        }
-      }
+    return _complaints.where((c) {
+      final matchesSearch = search.isEmpty ||
+          c.title.toLowerCase().contains(search) ||
+          c.description.toLowerCase().contains(search) ||
+          (c.citizenName?.toLowerCase().contains(search) ?? false);
 
-      // 3. Area filter
-      if (_selectedArea != 'All') {
-        final areaVal = p.area?.trim().toLowerCase() ?? '';
-        if (!areaVal.contains(_selectedArea.toLowerCase())) {
-          return false;
-        }
-      }
+      final matchesArea = areaSearch.isEmpty ||
+          (c.area != null && c.area!.toLowerCase().contains(areaSearch));
 
-      // 4. Keyword search
-      if (query.isNotEmpty) {
-        final titleMatch = p.title.toLowerCase().contains(query);
-        final descMatch = p.description.toLowerCase().contains(query);
-        final areaMatch = p.area?.toLowerCase().contains(query) ?? false;
-        final locMatch = p.location?.toLowerCase().contains(query) ?? false;
-        final citizenMatch = p.citizenName?.toLowerCase().contains(query) ?? false;
-        final staffMatch = p.assignedStaffName?.toLowerCase().contains(query) ?? false;
-        if (!titleMatch && !descMatch && !areaMatch && !locMatch && !citizenMatch && !staffMatch) {
-          return false;
-        }
-      }
+      final displayDate = DateFormat('MMM d, yyyy').format(c.createdAt).toLowerCase();
+      final matchesDate = dateSearch.isEmpty || displayDate.contains(dateSearch);
 
-      return true;
+      final statusMatch = _filterStatus == 'All' ||
+          c.status.toLowerCase() == _filterStatus.toLowerCase();
+
+      return statusMatch && matchesSearch && matchesArea && matchesDate;
     }).toList();
   }
 
-  Future<void> _makePhoneCall(String phone) async {
-    final clean = phone.replaceAll(RegExp(r'\D'), '');
-    if (clean.isEmpty) return;
-    final uri = Uri.parse('tel:$clean');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
+  Color _getStatusBg(String status) {
+    switch (status.toLowerCase()) {
+      case 'resolved':
+        return const Color(0xFFDCFCE7);
+      case 'closed':
+        return const Color(0xFFF3F4F6);
+      case 'pending':
+        return const Color(0xFFFEF2F2);
+      case 'assigned':
+        return const Color(0xFFEFF6FF);
+      case 'inprogress':
+        return const Color(0xFFFEF9C3);
+      default:
+        return const Color(0xFFF3F4F6);
     }
   }
 
-  Future<void> _openWhatsApp(String phone, String name, String title) async {
-    final clean = phone.replaceAll(RegExp(r'\D'), '');
-    if (clean.isEmpty) return;
-    final text = 'Namaskar $name ji, regarding ward civic problem "$title" registered with Nagarsevak Office.';
-    final uri = Uri.parse('https://wa.me/91$clean?text=${Uri.encodeComponent(text)}');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+  Color _getStatusTextColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'resolved':
+        return const Color(0xFF166534);
+      case 'closed':
+        return const Color(0xFF1F2937);
+      case 'pending':
+        return const Color(0xFFB91C1C);
+      case 'assigned':
+        return const Color(0xFF1D4ED8);
+      case 'inprogress':
+        return const Color(0xFFA16207);
+      default:
+        return const Color(0xFF1F2937);
     }
   }
 
-  // -------------------------------------------------------------
-  // NEW WARD PROBLEM BOTTOM SHEET
-  // -------------------------------------------------------------
-  void _showNewWardProblemSheet() {
-    final titleCtrl = TextEditingController();
-    final descCtrl = TextEditingController();
-    final areaCtrl = TextEditingController(text: 'Shivajinagar, Sector 3');
-    final locCtrl = TextEditingController();
-    final citizenNameCtrl = TextEditingController();
-    final citizenMobileCtrl = TextEditingController();
-    String? selectedVoterId;
-    String selectedCategory = 'SelfIdentified';
-    String? selectedStaffId;
-
-    final categories = [
-      'SelfIdentified',
-      'Road',
-      'Water',
-      'Drainage',
-      'StreetLight',
-      'Cleaning',
-      'Encroachment',
-      'Other',
-    ];
-
-    void openVoterLookup(Function(VoterModel) onSelected) {
-      final voterSearchCtrl = TextEditingController();
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (ctx) {
-          return StatefulBuilder(
-            builder: (sheetCtx, setSheetState) {
-              return Container(
-                height: MediaQuery.of(context).size.height * 0.85,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                ),
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Select Citizen / Voter', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                        IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: voterSearchCtrl,
-                      decoration: InputDecoration(
-                        hintText: 'Type voter name or EPIC ID...',
-                        prefixIcon: const Icon(Icons.search),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                      onChanged: (_) => setSheetState(() {}),
-                    ),
-                    const SizedBox(height: 12),
-                    Expanded(
-                      child: FutureBuilder<List<VoterModel>>(
-                        future: ref.read(votersRepoProvider).searchVoters(
-                              query: voterSearchCtrl.text.trim().isNotEmpty ? voterSearchCtrl.text.trim() : null,
-                              pageSize: 40,
-                            ),
-                        builder: (bCtx, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return const Center(child: CircularProgressIndicator());
-                          }
-                          final voters = snapshot.data ?? [];
-                          if (voters.isEmpty) {
-                            return const Center(child: Text('No voters found in database'));
-                          }
-                          return ListView.separated(
-                            itemCount: voters.length,
-                            separatorBuilder: (_, __) => const Divider(height: 1),
-                            itemBuilder: (lCtx, idx) {
-                              final v = voters[idx];
-                              return ListTile(
-                                contentPadding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                                leading: CircleAvatar(
-                                  backgroundColor: const Color(0xFFF0F9FF),
-                                  child: Text(
-                                    v.displayName.isNotEmpty ? v.displayName[0] : 'V',
-                                    style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                                title: Text(v.displayName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                                subtitle: Text('${v.epicNo.isNotEmpty ? "EPIC: ${v.epicNo} | " : ""}${v.address}', style: const TextStyle(fontSize: 12)),
-                                trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Color(0xFF0284C7)),
-                                onTap: () {
-                                  Navigator.pop(ctx);
-                                  onSelected(v);
-                                },
-                              );
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          );
-        },
-      );
+  Color _getStatusBorderColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'resolved':
+        return const Color(0xFFBBF7D0);
+      case 'closed':
+        return const Color(0xFFE5E7EB);
+      case 'pending':
+        return const Color(0xFFFEE2E2);
+      case 'assigned':
+        return const Color(0xFFDBEAFE);
+      case 'inprogress':
+        return const Color(0xFFFEF08A);
+      default:
+        return const Color(0xFFE5E7EB);
     }
+  }
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetCtx) {
-        return StatefulBuilder(
-          builder: (stCtx, setModalState) {
-            return Container(
-              height: MediaQuery.of(context).size.height * 0.90,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-              ),
-              padding: EdgeInsets.only(
-                top: 20,
-                left: 20,
-                right: 20,
-                bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: const [
-                            Icon(Icons.report_problem_outlined, color: Color(0xFF0284C7), size: 22),
-                            SizedBox(width: 8),
-                            Text(
-                              'Log Ward Problem / Issue',
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                            ),
-                          ],
-                        ),
-                        IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(sheetCtx)),
-                      ],
-                    ),
-                    const Text(
-                      'Record self-identified civic problems or area issues requiring municipal action',
-                      style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                    ),
-                    const Divider(height: 20),
+  String _getStatusText(String status, bool isMr) {
+    switch (status.toLowerCase()) {
+      case 'inprogress':
+        return isMr ? 'सुरू' : 'In Progress';
+      case 'pending':
+        return isMr ? 'प्रलंबित' : 'Pending';
+      case 'assigned':
+        return isMr ? 'नेमलेले' : 'Assigned';
+      case 'resolved':
+        return isMr ? 'निकाली' : 'Resolved';
+      default:
+        return isMr ? 'बंद' : 'Closed';
+    }
+  }
 
-                    // Problem Title
-                    const Text('Problem Title *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: titleCtrl,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                        hintText: 'e.g. Low water pressure, open drainage, dark streetlight...',
-                      ),
-                    ),
-                    const SizedBox(height: 14),
+  Color _getTypeBg(String type) {
+    if (type == 'Help') return const Color(0xFFFAF5FF);
+    if (type == 'SelfIdentified') return const Color(0xFFFFF7ED);
+    return const Color(0xFFF0F9FF);
+  }
 
-                    // Category
-                    const Text('Category / Type *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    DropdownButtonFormField<String>(
-                      initialValue: selectedCategory,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      ),
-                      items: categories.map((c) => DropdownMenuItem(value: c, child: Text(c == 'SelfIdentified' ? 'SelfIdentified (स्व-ओळखलेली)' : c))).toList(),
-                      onChanged: (val) {
-                        if (val != null) setModalState(() => selectedCategory = val);
-                      },
-                    ),
-                    const SizedBox(height: 14),
+  Color _getTypeTextColor(String type) {
+    if (type == 'Help') return const Color(0xFF7E22CE);
+    if (type == 'SelfIdentified') return const Color(0xFFC2410C);
+    return const Color(0xFF0369A1);
+  }
 
-                    // Detailed Description
-                    const Text('Detailed Description *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: descCtrl,
-                      maxLines: 3,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                        hintText: 'Exact issue description, severity, citizen impact...',
-                      ),
-                    ),
-                    const SizedBox(height: 14),
+  Color _getTypeBorderColor(String type) {
+    if (type == 'Help') return const Color(0xFFF3E8FF);
+    if (type == 'SelfIdentified') return const Color(0xFFFFEDD5);
+    return const Color(0xFFE0F2FE);
+  }
 
-                    // Area & Location
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Prabhag Area *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: areaCtrl,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                  hintText: 'e.g. Shivajinagar, Lane 4...',
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Landmark / Spot', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: locCtrl,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                  hintText: 'Near Mandir / Pole No...',
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Citizen / Spotter linkage
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Citizen / Area Spotter Name', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: citizenNameCtrl,
-                                decoration: InputDecoration(
-                                  hintText: 'Enter name or select voter...',
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        InkWell(
-                          onTap: () {
-                            openVoterLookup((voter) {
-                              setModalState(() {
-                                citizenNameCtrl.text = voter.displayName;
-                                if (voter.mobile != null && voter.mobile!.isNotEmpty) {
-                                  citizenMobileCtrl.text = voter.mobile!;
-                                }
-                                if (voter.address.isNotEmpty) {
-                                  areaCtrl.text = voter.address;
-                                }
-                                selectedVoterId = voter.id;
-                              });
-                            });
-                          },
-                          borderRadius: BorderRadius.circular(10),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFE0F2FE),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: const Color(0xFFBAE6FD)),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: const [
-                                Icon(Icons.person_search_rounded, size: 18, color: Color(0xFF0284C7)),
-                                SizedBox(width: 4),
-                                Text('Voters', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Citizen Mobile
-                    const Text('Citizen Mobile Number', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: citizenMobileCtrl,
-                      keyboardType: TextInputType.phone,
-                      decoration: InputDecoration(
-                        hintText: '10-digit mobile number...',
-                        prefixIcon: const Icon(Icons.phone_outlined, size: 18),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Assign Staff Officer
-                    if (_staffList.isNotEmpty) ...[
-                      const Text('Assign Field Coordinator / Staff', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                      const SizedBox(height: 6),
-                      DropdownButtonFormField<String>(
-                        initialValue: selectedStaffId,
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        ),
-                        hint: const Text('Select staff member to assign...'),
-                        items: _staffList.map((s) => DropdownMenuItem(value: s.id, child: Text('${s.name} (${s.role})'))).toList(),
-                        onChanged: (val) => setModalState(() => selectedStaffId = val),
-                      ),
-                      const SizedBox(height: 14),
-                    ],
-
-                    const SizedBox(height: 24),
-
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0284C7),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        onPressed: () async {
-                          if (titleCtrl.text.trim().isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Please enter problem title')),
-                            );
-                            return;
-                          }
-                          Navigator.pop(sheetCtx);
-                          final created = await ref.read(complaintsRepoProvider).createWardProblem(
-                                title: titleCtrl.text.trim(),
-                                description: descCtrl.text.trim(),
-                                category: selectedCategory,
-                                area: areaCtrl.text.trim(),
-                                location: locCtrl.text.trim(),
-                                citizenName: citizenNameCtrl.text.trim().isNotEmpty ? citizenNameCtrl.text.trim() : null,
-                                citizenMobile: citizenMobileCtrl.text.trim().isNotEmpty ? citizenMobileCtrl.text.trim() : null,
-                                voterId: selectedVoterId,
-                                assignedTo: selectedStaffId,
-                              );
-                          setState(() {
-                            _allProblems.insert(0, created);
-                          });
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Ward problem logged successfully!'),
-                                backgroundColor: Color(0xFF16A34A),
-                              ),
-                            );
-                          }
-                        },
-                        child: const Text('Log Problem', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
+  void _openNewWardProblemModal() {
+    NewComplaintBottomSheet.show(
+      context,
+      initialTab: 'Complaints',
+    ).then((val) {
+      if (val == true) {
+        _fetchComplaints();
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final isMr = ref.watch(isMarathiProvider);
-    final displayed = _filteredProblems;
-
-    final pendingCount = _allProblems.where((p) => p.isPending || p.status.toLowerCase() == 'assigned' || p.isInProgress).length;
-    final resolvedCount = _allProblems.where((p) => p.isResolved || p.status.toLowerCase() == 'closed').length;
+    final filtered = _filteredComplaints;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -556,248 +256,412 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
             ),
           ),
           titleSpacing: 0,
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: const [
-              Text(
-                'Ward Problems',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 16.5,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                  letterSpacing: -0.2,
-                ),
-              ),
-              Text(
-                'Chronic civic issues, garbage spots and bottlenecks',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w400,
-                  color: Color(0xFFE0F2FE),
-                ),
-              ),
-            ],
+          title: Text(
+            isMr ? 'प्रभागातील समस्या' : 'Ward Problems',
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
           ),
-          actions: const [],
-        ),
-        body: _isLoading
-            ? const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)))
-            : Column(
+          actions: [
+            // View Mode Toggle Button: Grid / Report Table
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  // 1) PRIMARY TABS
-                  Container(
-                    color: Colors.white,
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            _buildPrimaryTab(
-                              id: 'all',
-                              label: isMr ? 'सर्व समस्या' : 'All Problems',
-                              count: _allProblems.length,
-                              isActive: _activeTab == 'all',
-                            ),
-                            _buildPrimaryTab(
-                              id: 'pending_active',
-                              label: isMr ? 'प्रलंबित / सुरू' : 'Active / Pending',
-                              count: pendingCount,
-                              isActive: _activeTab == 'pending_active',
-                            ),
-                            _buildPrimaryTab(
-                              id: 'resolved',
-                              label: isMr ? 'निकाली' : 'Resolved',
-                              count: resolvedCount,
-                              isActive: _activeTab == 'resolved',
-                            ),
-                          ],
-                        ),
-                        const Divider(height: 1, thickness: 1, color: Color(0xFFE2E8F0)),
-                      ],
+                  IconButton(
+                    icon: Icon(
+                      Icons.grid_view_rounded,
+                      size: 18,
+                      color: _viewMode == 'grid' ? Colors.white : Colors.white60,
                     ),
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    tooltip: isMr ? 'ग्रिड दृश्य' : 'Grid View',
+                    onPressed: () => setState(() => _viewMode = 'grid'),
                   ),
-
-                  // 2) SEARCH & AREA FILTERS BAR
-                  Container(
-                    color: Colors.white,
-                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Container(
-                                height: 44,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF1F5F9),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.search_rounded, color: Color(0xFF94A3B8), size: 20),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: TextField(
-                                        controller: _searchCtrl,
-                                        onChanged: (_) => setState(() {}),
-                                        style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
-                                        decoration: InputDecoration(
-                                          hintText: isMr ? 'समस्या, परिसर किंवा नागरिक शोधा...' : 'Search problem, area, citizen...',
-                                          hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                                          border: InputBorder.none,
-                                          isDense: true,
-                                          contentPadding: EdgeInsets.zero,
+                  IconButton(
+                    icon: Icon(
+                      Icons.table_chart_outlined,
+                      size: 18,
+                      color: _viewMode == 'report' ? Colors.white : Colors.white60,
+                    ),
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    tooltip: isMr ? 'अहवाल तक्ता' : 'Report Table',
+                    onPressed: () => setState(() => _viewMode = 'report'),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.picture_as_pdf_outlined, color: Colors.white, size: 22),
+              tooltip: isMr ? 'PDF अहवाल' : 'Download Report',
+              onPressed: () {
+                WardProblemsReportGenerator.generateAndPrintReport(
+                  problems: filtered,
+                  areaFilter: _areaSearchCtrl.text.isNotEmpty ? _areaSearchCtrl.text : 'All Areas',
+                  statusFilter: _filterStatus,
+                );
+              },
+            ),
+          ],
+        ),
+        body: _loading
+            ? const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)))
+            : RefreshIndicator(
+                onRefresh: _fetchComplaints,
+                color: const Color(0xFF0284C7),
+                child: ListView(
+                  padding: EdgeInsets.zero,
+                  children: [
+                    // Sticky Header Section matching WardWiseProblem.tsx lines 305-356
+                    Container(
+                      color: const Color(0xFFF8FAFC),
+                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    isMr ? 'प्रभागातील समस्या' : 'Ward Problems',
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF0F172A),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        isMr ? 'तक्रारी व नागरिकांच्या अडचणी' : 'Grievances & civic issues',
+                                        style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFE0F2FE),
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(color: const Color(0xFFBAE6FD)),
+                                        ),
+                                        child: Text(
+                                          '${isMr ? "सापडल्या" : "Found"}: ${filtered.length}',
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF0284C7),
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                    if (_searchCtrl.text.isNotEmpty)
-                                      GestureDetector(
-                                        onTap: () {
+                                    ],
+                                  ),
+                                ],
+                              ),
+
+                              // New Request Button matching WardWiseProblem.tsx line 348
+                              ElevatedButton.icon(
+                                onPressed: _openNewWardProblemModal,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF0284C7),
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                                icon: const Icon(Icons.add, size: 18),
+                                label: Text(
+                                  isMr ? 'नवीन तक्रार' : 'New Request',
+                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Search and Filters Card matching WardWiseProblem.tsx lines 358-472
+                    Container(
+                      margin: const EdgeInsets.fromLTRB(16, 6, 16, 12),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.02),
+                            blurRadius: 4,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          // 1) General Search Input
+                          Container(
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFFCBD5E1)),
+                            ),
+                            child: TextField(
+                              controller: _searchCtrl,
+                              onChanged: (_) => setState(() {}),
+                              style: const TextStyle(fontSize: 13),
+                              decoration: InputDecoration(
+                                hintText: isMr ? 'समस्या किंवा नागरिक शोधा...' : 'Search by title, description or citizen...',
+                                hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                                prefixIcon: const Icon(Icons.search, size: 19, color: Color(0xFF94A3B8)),
+                                suffixIcon: _searchCtrl.text.isNotEmpty
+                                    ? IconButton(
+                                        icon: const Icon(Icons.close, size: 16, color: Color(0xFF64748B)),
+                                        onPressed: () {
                                           _searchCtrl.clear();
                                           setState(() {});
                                         },
-                                        child: const Icon(Icons.cancel, color: Color(0xFF94A3B8), size: 18),
+                                      )
+                                    : null,
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+
+                          // 2) Row with Area Search & Date Search (with Dropdowns)
+                          Row(
+                            children: [
+                              // Area Search with Dropdown matching WardWiseProblem.tsx lines 374-409
+                              Expanded(
+                                child: Stack(
+                                  children: [
+                                    Container(
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF8FAFC),
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(color: const Color(0xFFCBD5E1)),
                                       ),
+                                      child: TextField(
+                                        controller: _areaSearchCtrl,
+                                        onTap: () => setState(() => _showAreaDropdown = true),
+                                        onChanged: (_) => setState(() => _showAreaDropdown = true),
+                                        style: const TextStyle(fontSize: 12.5),
+                                        decoration: InputDecoration(
+                                          hintText: isMr ? 'परिसर शोधा...' : 'Search area...',
+                                          hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                                          prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF94A3B8)),
+                                          suffixIcon: _areaSearchCtrl.text.isNotEmpty
+                                              ? IconButton(
+                                                  icon: const Icon(Icons.close, size: 14, color: Color(0xFF64748B)),
+                                                  onPressed: () {
+                                                    _areaSearchCtrl.clear();
+                                                    setState(() => _showAreaDropdown = false);
+                                                  },
+                                                )
+                                              : null,
+                                          border: InputBorder.none,
+                                          contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                                        ),
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            InkWell(
-                              onTap: () => ref.read(activeScreenProvider.notifier).setScreen('ward_map'),
-                              borderRadius: BorderRadius.circular(10),
-                              child: Container(
-                                height: 44,
-                                padding: const EdgeInsets.symmetric(horizontal: 10),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF0F9FF),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: const Color(0xFFBAE6FD)),
+                              const SizedBox(width: 8),
+
+                              // Date Search with Dropdown matching WardWiseProblem.tsx lines 412-447
+                              Expanded(
+                                child: Container(
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF8FAFC),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: const Color(0xFFCBD5E1)),
+                                  ),
+                                  child: TextField(
+                                    controller: _dateSearchCtrl,
+                                    onTap: () => setState(() => _showDateDropdown = true),
+                                    onChanged: (_) => setState(() => _showDateDropdown = true),
+                                    style: const TextStyle(fontSize: 12.5),
+                                    decoration: InputDecoration(
+                                      hintText: isMr ? 'तारीख फिल्टर...' : 'Filter by date...',
+                                      hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                                      prefixIcon: const Icon(Icons.calendar_today_outlined, size: 17, color: Color(0xFF94A3B8)),
+                                      suffixIcon: _dateSearchCtrl.text.isNotEmpty
+                                          ? IconButton(
+                                              icon: const Icon(Icons.close, size: 14, color: Color(0xFF64748B)),
+                                              onPressed: () {
+                                                _dateSearchCtrl.clear();
+                                                setState(() => _showDateDropdown = false);
+                                              },
+                                            )
+                                          : null,
+                                      border: InputBorder.none,
+                                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                                    ),
+                                  ),
                                 ),
-                                child: const Icon(Icons.map_outlined, size: 20, color: Color(0xFF0284C7)),
                               ),
-                            ),
-                            const SizedBox(width: 6),
-                            InkWell(
-                              onTap: () {
-                                WardProblemsReportGenerator.generateAndPrintReport(
-                                  problems: displayed,
-                                  areaFilter: _selectedArea,
-                                  statusFilter: _selectedStatus,
-                                );
-                              },
-                              borderRadius: BorderRadius.circular(10),
-                              child: Container(
-                                height: 44,
-                                padding: const EdgeInsets.symmetric(horizontal: 10),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF1F5F9),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                                ),
-                                child: const Icon(Icons.picture_as_pdf_outlined, size: 20, color: Color(0xFF0284C7)),
+                            ],
+                          ),
+
+                          // Area Dropdown Box if open
+                          if (_showAreaDropdown && _uniqueAreas.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Container(
+                              constraints: const BoxConstraints(maxHeight: 180),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: const Color(0xFFE2E8F0)),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.08),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: ListView(
+                                shrinkWrap: true,
+                                children: _uniqueAreas
+                                    .where((a) =>
+                                        _areaSearchCtrl.text.isEmpty ||
+                                        a['name'].toString().toLowerCase().contains(_areaSearchCtrl.text.toLowerCase()))
+                                    .map((area) {
+                                  return ListTile(
+                                    dense: true,
+                                    visualDensity: VisualDensity.compact,
+                                    title: Text(area['name'] as String, style: const TextStyle(fontSize: 12.5)),
+                                    trailing: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF1F5F9),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Text(
+                                        '${area['count']}',
+                                        style: const TextStyle(fontSize: 11, color: Color(0xFF475569), fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    onTap: () {
+                                      setState(() {
+                                        _areaSearchCtrl.text = area['name'] as String;
+                                        _showAreaDropdown = false;
+                                      });
+                                    },
+                                  );
+                                }).toList(),
                               ),
                             ),
                           ],
-                        ),
 
-                        const SizedBox(height: 10),
-
-                        // Areas Horizontal Pill Bar
-                        SizedBox(
-                          height: 34,
-                          child: ListView(
-                            scrollDirection: Axis.horizontal,
-                            children: [
-                              _buildAreaPill('All', isMr ? 'सर्व परिसर' : 'All Areas', _allProblems.length),
-                              const SizedBox(width: 6),
-                              ..._uniqueAreasWithCounts.map((a) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(right: 6),
-                                  child: _buildAreaPill(
-                                    a['name'] as String,
-                                    a['name'] as String,
-                                    a['count'] as int,
+                          // Date Dropdown Box if open
+                          if (_showDateDropdown && _uniqueDates.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Container(
+                              constraints: const BoxConstraints(maxHeight: 180),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: const Color(0xFFE2E8F0)),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.08),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
                                   ),
-                                );
-                              }),
-                            ],
-                          ),
-                        ),
+                                ],
+                              ),
+                              child: ListView(
+                                shrinkWrap: true,
+                                children: _uniqueDates
+                                    .where((d) =>
+                                        _dateSearchCtrl.text.isEmpty ||
+                                        d['display'].toString().toLowerCase().contains(_dateSearchCtrl.text.toLowerCase()))
+                                    .map((d) {
+                                  return ListTile(
+                                    dense: true,
+                                    visualDensity: VisualDensity.compact,
+                                    title: Text(d['display'] as String, style: const TextStyle(fontSize: 12.5)),
+                                    trailing: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF1F5F9),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Text(
+                                        '${d['count']}',
+                                        style: const TextStyle(fontSize: 11, color: Color(0xFF475569), fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    onTap: () {
+                                      setState(() {
+                                        _dateSearchCtrl.text = d['display'] as String;
+                                        _showDateDropdown = false;
+                                      });
+                                    },
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                          ],
 
-                        const SizedBox(height: 8),
+                          const SizedBox(height: 12),
 
-                        // Status Filter Chips
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: [
-                              _buildStatusChip('All', isMr ? 'सर्व' : 'All'),
-                              _buildStatusChip('Pending', isMr ? 'प्रलंबित' : 'Pending'),
-                              _buildStatusChip('Assigned', isMr ? 'नेमलेले' : 'Assigned'),
-                              _buildStatusChip('InProgress', isMr ? 'सुरू' : 'In Progress'),
-                              _buildStatusChip('Resolved', isMr ? 'निकाली' : 'Resolved'),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const Divider(height: 1, thickness: 1, color: Color(0xFFE2E8F0)),
-
-                  // 3) PROBLEMS LIST
-                  Expanded(
-                    child: displayed.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                          // 3) Horizontal Status Pills matching WardWiseProblem.tsx lines 451-471
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
                               children: [
-                                const Icon(Icons.check_circle_outline_rounded, size: 54, color: Color(0xFF94A3B8)),
-                                const SizedBox(height: 12),
-                                Text(
-                                  isMr ? 'कोणतीही समस्या आढळली नाही' : 'No ward problems found',
-                                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
-                                ),
-                                const SizedBox(height: 6),
-                                TextButton(
-                                  onPressed: () {
-                                    _searchCtrl.clear();
-                                    setState(() {
-                                      _selectedArea = 'All';
-                                      _selectedStatus = 'All';
-                                    });
-                                  },
-                                  child: const Text('Reset All Filters'),
-                                ),
+                                _buildStatusPill('All', isMr ? 'सर्व' : 'All'),
+                                _buildStatusPill('Pending', isMr ? 'प्रलंबित' : 'Pending'),
+                                _buildStatusPill('Assigned', isMr ? 'नेमलेले' : 'Assigned'),
+                                _buildStatusPill('InProgress', isMr ? 'सुरू' : 'In Progress'),
+                                _buildStatusPill('Resolved', isMr ? 'निकाली' : 'Resolved'),
                               ],
                             ),
-                          )
-                        : ListView.separated(
-                            padding: const EdgeInsets.all(16),
-                            itemCount: displayed.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 12),
-                            itemBuilder: (ctx, idx) {
-                              final problem = displayed[idx];
-                              return _buildProblemCard(isMr, problem);
-                            },
                           ),
-                  ),
-                ],
+                        ],
+                      ),
+                    ),
+
+                    // Main Content: Report Table or Cards Grid
+                    if (_viewMode == 'report') ...[
+                      _buildReportTableView(isMr, filtered),
+                    ] else ...[
+                      _buildCardsGridView(isMr, filtered),
+                    ],
+
+                    const SizedBox(height: 80),
+                  ],
+                ),
               ),
         floatingActionButton: FloatingActionButton.extended(
           backgroundColor: const Color(0xFF0284C7),
           foregroundColor: Colors.white,
-          elevation: 3,
-          onPressed: _showNewWardProblemSheet,
+          elevation: 4,
+          onPressed: _openNewWardProblemModal,
           icon: const Icon(Icons.add_rounded, size: 22),
           label: Text(
-            isMr ? 'नवीन समस्या नोंदवा' : 'Log Problem',
+            isMr ? 'नवीन तक्रार नोंदवा' : 'New Problem',
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
@@ -805,338 +669,443 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
     );
   }
 
-  Widget _buildPrimaryTab({
-    required String id,
-    required String label,
-    required int count,
-    required bool isActive,
-  }) {
-    return Expanded(
-      child: InkWell(
-        onTap: () => setState(() => _activeTab = id),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 13),
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: isActive ? const Color(0xFF0284C7) : Colors.transparent,
-                width: 2.5,
-              ),
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 13.5,
-                  fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
-                  color: isActive ? const Color(0xFF0284C7) : const Color(0xFF64748B),
-                ),
-              ),
-              const SizedBox(width: 5),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: isActive ? const Color(0xFFE0F2FE) : const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  '$count',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: isActive ? const Color(0xFF0284C7) : const Color(0xFF64748B),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAreaPill(String id, String label, int count) {
-    final isSel = _selectedArea.toLowerCase() == id.toLowerCase();
-    return GestureDetector(
-      onTap: () => setState(() => _selectedArea = id),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSel ? const Color(0xFF0284C7) : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSel ? const Color(0xFF0284C7) : const Color(0xFFCBD5E1),
-          ),
-        ),
-        child: Center(
-          child: Text(
-            '$label ($count)',
-            style: TextStyle(
-              fontSize: 11.5,
-              fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
-              color: isSel ? Colors.white : const Color(0xFF334155),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusChip(String status, String label) {
-    final isSel = _selectedStatus.toLowerCase() == status.toLowerCase();
+  Widget _buildStatusPill(String status, String label) {
+    final isSelected = _filterStatus.toLowerCase() == status.toLowerCase();
     return Padding(
       padding: const EdgeInsets.only(right: 6),
-      child: ChoiceChip(
-        label: Text(label),
-        selected: isSel,
-        selectedColor: const Color(0xFF0284C7),
-        labelStyle: TextStyle(
-          color: isSel ? Colors.white : const Color(0xFF475569),
-          fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
-          fontSize: 12,
+      child: InkWell(
+        onTap: () => setState(() => _filterStatus = status),
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFF0284C7) : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isSelected ? const Color(0xFF0284C7) : const Color(0xFFCBD5E1),
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+              color: isSelected ? Colors.white : const Color(0xFF475569),
+            ),
+          ),
         ),
-        visualDensity: VisualDensity.compact,
-        backgroundColor: Colors.white,
-        side: BorderSide(color: isSel ? const Color(0xFF0284C7) : const Color(0xFFE2E8F0)),
-        onSelected: (_) => setState(() => _selectedStatus = status),
       ),
     );
   }
 
-  Widget _buildProblemCard(bool isMr, ComplaintModel problem) {
-    // Colors matching WardWiseProblem.tsx
-    Color statusBg;
-    Color statusText;
-    if (problem.isResolved) {
-      statusBg = const Color(0xFFDCFCE7);
-      statusText = const Color(0xFF16A34A);
-    } else if (problem.isInProgress) {
-      statusBg = const Color(0xFFFEF3C7);
-      statusText = const Color(0xFFD97706);
-    } else if (problem.isAssigned) {
-      statusBg = const Color(0xFFDBEAFE);
-      statusText = const Color(0xFF2563EB);
-    } else {
-      statusBg = const Color(0xFFFEE2E2);
-      statusText = const Color(0xFFDC2626);
-    }
-
-    final isSelf = problem.category.toLowerCase() == 'selfidentified';
-
-    return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ComplaintDetailScreen(
-              complaint: problem,
-            ),
-          ),
-        ).then((_) => _loadData());
-      },
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
+  // Cards Grid View matching WardWiseProblem.tsx lines 559-634
+  Widget _buildCardsGridView(bool isMr, List<ComplaintModel> items) {
+    if (items.isEmpty) {
+      return Container(
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE2E8F0), style: BorderStyle.solid),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.inbox_outlined, size: 48, color: Color(0xFF94A3B8)),
+            const SizedBox(height: 12),
+            Text(
+              isMr ? 'कोणतीही समस्या आढळली नाही' : 'No requests found for this filter',
+              style: const TextStyle(fontSize: 14, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: _openNewWardProblemModal,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0284C7),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              icon: const Icon(Icons.add, size: 16),
+              label: Text(isMr ? 'नवीन तक्रार नोंदवा' : 'New Request'),
             ),
           ],
         ),
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Row 1: Status badge + Category badge + Arrow
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
-                      decoration: BoxDecoration(
-                        color: statusBg,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        problem.status.toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w800,
-                          color: statusText,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
-                      decoration: BoxDecoration(
-                        color: isSelf ? const Color(0xFFFFF7ED) : const Color(0xFFF0F9FF),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(
-                          color: isSelf ? const Color(0xFFFFEDD5) : const Color(0xFFBAE6FD),
-                        ),
-                      ),
-                      child: Text(
-                        isSelf ? (isMr ? 'स्व-ओळखलेली' : 'Self-Identified') : problem.category,
-                        style: TextStyle(
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w700,
-                          color: isSelf ? const Color(0xFFEA580C) : const Color(0xFF0284C7),
-                        ),
-                      ),
-                    ),
-                  ],
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: ListView.separated(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: items.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        itemBuilder: (ctx, idx) {
+          final c = items[idx];
+          return InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ComplaintDetailScreen(complaint: c),
                 ),
-                const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Color(0xFF94A3B8)),
-              ],
-            ),
-
-            const SizedBox(height: 10),
-
-            // Title
-            Text(
-              problem.title,
-              style: const TextStyle(
-                fontSize: 15.5,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF0F172A),
-                height: 1.25,
+              ).then((_) => _fetchComplaints());
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
               ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-
-            const SizedBox(height: 6),
-
-            // Description
-            Text(
-              problem.description,
-              style: const TextStyle(
-                fontSize: 12.5,
-                color: Color(0xFF64748B),
-                height: 1.4,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-
-            const SizedBox(height: 10),
-
-            // Assigned Staff Badge (if assigned)
-            if (problem.assignedStaffName != null && problem.assignedStaffName!.isNotEmpty) ...[
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEFF6FF),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFDBEAFE)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.engineering_outlined, size: 14, color: Color(0xFF2563EB)),
-                    const SizedBox(width: 5),
-                    Text(
-                      'Assigned: ${problem.assignedStaffName}',
-                      style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8)),
-                    ),
-                    if (problem.assignedStaffMobile != null && problem.assignedStaffMobile!.isNotEmpty) ...[
-                      const SizedBox(width: 6),
-                      InkWell(
-                        onTap: () => _makePhoneCall(problem.assignedStaffMobile!),
-                        child: const Icon(Icons.call, size: 13, color: Color(0xFF2563EB)),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
-
-            // Citizen / Spotter Badge (if present)
-            if (problem.citizenName != null && problem.citizenName!.isNotEmpty) ...[
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.person_outline_rounded, size: 14, color: Color(0xFF64748B)),
-                    const SizedBox(width: 5),
-                    Text(
-                      'Reported by: ${problem.citizenName}',
-                      style: const TextStyle(fontSize: 11.5, color: Color(0xFF334155), fontWeight: FontWeight.w600),
-                    ),
-                    if (problem.citizenMobile != null && problem.citizenMobile!.isNotEmpty) ...[
-                      const SizedBox(width: 8),
-                      InkWell(
-                        onTap: () => _makePhoneCall(problem.citizenMobile!),
-                        child: const Icon(Icons.call, size: 13, color: Color(0xFF0284C7)),
-                      ),
-                      const SizedBox(width: 6),
-                      InkWell(
-                        onTap: () => _openWhatsApp(problem.citizenMobile!, problem.citizenName!, problem.title),
-                        child: const Icon(Icons.chat_bubble_outline_rounded, size: 13, color: Color(0xFF16A34A)),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
-
-            const Divider(height: 12, color: Color(0xFFF1F5F9)),
-
-            // Footer: Date & Area/Location
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.access_time_rounded, size: 13, color: Color(0xFF94A3B8)),
-                    const SizedBox(width: 4),
-                    Text(
-                      DateFormat('dd MMM, hh:mm a').format(problem.createdAt),
-                      style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
-                    ),
-                  ],
-                ),
-                if (problem.area != null && problem.area!.isNotEmpty)
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Top Row: Status badge and Type Badge matching lines 567-580
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Icon(Icons.location_on_outlined, size: 13, color: Color(0xFF0284C7)),
-                      const SizedBox(width: 3),
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 160),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: _getStatusBg(c.status),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: _getStatusBorderColor(c.status)),
+                        ),
                         child: Text(
-                          problem.area!,
-                          style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF0284C7)),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          _getStatusText(c.status, isMr),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: _getStatusTextColor(c.status),
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: _getTypeBg(c.category),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: _getTypeBorderColor(c.category)),
+                        ),
+                        child: Text(
+                          c.category == 'SelfIdentified'
+                              ? (isMr ? 'स्व-ओळखलेली' : 'SelfIdentified')
+                              : c.category,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: _getTypeTextColor(c.category),
+                          ),
                         ),
                       ),
                     ],
                   ),
+                  const SizedBox(height: 10),
+
+                  // Staff Assigned Tag matching lines 582-587
+                  if (c.assignedStaffName != null && c.status.toLowerCase() == 'assigned') ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      margin: const EdgeInsets.only(bottom: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: const Color(0xFFDBEAFE)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.person_outline, size: 14, color: Color(0xFF1D4ED8)),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Assigned: ${c.assignedStaffName}${c.assignedStaffMobile != null && c.assignedStaffMobile!.isNotEmpty ? " | ${c.assignedStaffMobile}" : ""}',
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF1D4ED8)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  // Citizen / Submitter Info matching lines 589-596
+                  if (c.citizenName != null && c.citizenName!.isNotEmpty) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      margin: const EdgeInsets.only(bottom: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.person_outline, size: 13, color: Color(0xFF475569)),
+                          const SizedBox(width: 4),
+                          Text(
+                            c.citizenName!,
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                          ),
+                          if (c.citizenMobile != null && c.citizenMobile!.isNotEmpty) ...[
+                            Text(
+                              ' | ${c.citizenMobile}',
+                              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  // Title matching line 599
+                  Text(
+                    c.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+
+                  // Description matching line 602
+                  Text(
+                    c.description,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
+                  const SizedBox(height: 10),
+
+                  // Bottom Row: Date & Location matching lines 606-619
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.calendar_today_outlined, size: 13, color: Color(0xFF64748B)),
+                          const SizedBox(width: 4),
+                          Text(
+                            DateFormat('MMM d, h:mm a').format(c.createdAt),
+                            style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                          ),
+                        ],
+                      ),
+                      if (c.area != null || c.location != null) ...[
+                        Flexible(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.location_on_outlined, size: 14, color: Color(0xFF64748B)),
+                              const SizedBox(width: 3),
+                              Flexible(
+                                child: Text(
+                                  c.area != null && c.location != null
+                                      ? '${c.area!}, ${c.location!}'
+                                      : (c.area ?? c.location ?? ''),
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // Report Table View matching WardWiseProblem.tsx lines 475-557
+  Widget _buildReportTableView(bool isMr, List<ComplaintModel> items) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Table Header Bar with Download Button
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${isMr ? "अहवाल तक्ता" : "Report View"} (${items.length})',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    WardProblemsReportGenerator.generateAndPrintReport(
+                      problems: items,
+                      areaFilter: _areaSearchCtrl.text.isNotEmpty ? _areaSearchCtrl.text : 'All Areas',
+                      statusFilter: _filterStatus,
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF0F9FF),
+                    foregroundColor: const Color(0xFF0284C7),
+                    elevation: 0,
+                    side: const BorderSide(color: Color(0xFFBAE6FD)),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  icon: const Icon(Icons.download_rounded, size: 16),
+                  label: Text(
+                    isMr ? 'PDF अहवाल' : 'Download PDF',
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
+                ),
               ],
             ),
-          ],
-        ),
+          ),
+          const Divider(height: 1, thickness: 1, color: Color(0xFFE2E8F0)),
+
+          // Horizontally Scrollable Data Table matching exactly columns from line 493
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              headingRowColor: WidgetStateProperty.all(const Color(0xFFF8FAFC)),
+              columnSpacing: 20,
+              columns: [
+                DataColumn(label: Text(isMr ? 'क्र.' : 'Sr No', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                DataColumn(label: Text(isMr ? 'परिसर' : 'Area', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                DataColumn(label: Text(isMr ? 'शीर्षक व प्रकार' : 'Title & Type', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                DataColumn(label: Text(isMr ? 'स्थिती' : 'Status', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                DataColumn(label: Text(isMr ? 'नागरिक माहिती' : 'Citizen Info', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                DataColumn(label: Text(isMr ? 'तारीख' : 'Date', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              ],
+              rows: items.asMap().entries.map((entry) {
+                final idx = entry.key;
+                final c = entry.value;
+                return DataRow(
+                  onSelectChanged: (_) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ComplaintDetailScreen(complaint: c),
+                      ),
+                    ).then((_) => _fetchComplaints());
+                  },
+                  cells: [
+                    DataCell(Text('${idx + 1}', style: const TextStyle(fontSize: 12))),
+                    DataCell(
+                      SizedBox(
+                        width: 130,
+                        child: Text(
+                          c.area ?? c.location ?? 'Ward 12',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ),
+                    DataCell(
+                      SizedBox(
+                        width: 170,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              c.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              c.description,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    DataCell(
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: _getStatusBg(c.status),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: _getStatusBorderColor(c.status)),
+                        ),
+                        child: Text(
+                          _getStatusText(c.status, isMr),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: _getStatusTextColor(c.status),
+                          ),
+                        ),
+                      ),
+                    ),
+                    DataCell(
+                      SizedBox(
+                        width: 140,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              c.citizenName ?? '--',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                            ),
+                            if (c.citizenMobile != null && c.citizenMobile!.isNotEmpty)
+                              Text(c.citizenMobile!, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                          ],
+                        ),
+                      ),
+                    ),
+                    DataCell(
+                      Text(
+                        DateFormat('MMM d, yyyy').format(c.createdAt),
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
-
