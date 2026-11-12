@@ -27,8 +27,8 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
   bool _isLoading = true;
   List<GbRegisterEntryModel> _allEntries = [];
 
-  final List<String> _meetingTypes = ['All', 'GB', 'Standing Committee', 'Ward Committee', 'Special GB'];
-  final List<String> _statusList = ['All', 'Raised', 'In Discussion', 'Action Taken', 'Rejected'];
+  final List<String> _meetingTypes = ['All', 'GB', 'Standing Committee', 'Ward Committee', 'Special GB', 'Other'];
+  final List<String> _statusList = ['All', 'Raised', 'In Discussion', 'Resolved', 'Action Taken'];
 
   @override
   void initState() {
@@ -89,17 +89,18 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
   }
 
   void _showAddModal() {
+    final isMr = ref.read(isMarathiProvider);
     final subjectCtrl = TextEditingController();
     final descCtrl = TextEditingController();
-    final deptCtrl = TextEditingController(text: 'Water Supply Department');
-    final areaCtrl = TextEditingController(text: 'Ward 12');
+    final deptCtrl = TextEditingController();
+    final areaCtrl = TextEditingController();
     final dateCtrl = TextEditingController(text: DateFormat('yyyy-MM-dd').format(DateTime.now()));
     final benCtrl = TextEditingController();
-    final resCtrl = TextEditingController();
     final respCtrl = TextEditingController();
-    final tagsCtrl = TextEditingController();
 
-    String meetingType = _selectedMeetingType != 'All' ? _selectedMeetingType : 'GB';
+    String meetingType = (_selectedMeetingType != 'All' && _meetingTypes.contains(_selectedMeetingType))
+        ? _selectedMeetingType
+        : 'GB';
     String status = 'Raised';
     bool isGeneratingAi = false;
 
@@ -113,9 +114,13 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
             void autoDraftDescription() {
               if (subjectCtrl.text.trim().isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Please enter a subject title first to auto-draft description'),
-                    backgroundColor: Color(0xFFCA8A04),
+                  SnackBar(
+                    content: Text(
+                      isMr
+                          ? 'वर्णन तयार करण्यासाठी आधी विषय प्रविष्ट करा'
+                          : 'Please enter a subject title first to auto-draft description',
+                    ),
+                    backgroundColor: const Color(0xFFCA8A04),
                   ),
                 );
                 return;
@@ -123,10 +128,9 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
 
               setModalState(() => isGeneratingAi = true);
               Future.delayed(const Duration(milliseconds: 350), () {
-                final isMr = ref.read(isMarathiProvider);
                 final subject = subjectCtrl.text.trim();
-                final dept = deptCtrl.text.trim();
-                final area = areaCtrl.text.trim();
+                final dept = deptCtrl.text.trim().isNotEmpty ? deptCtrl.text.trim() : (isMr ? 'संबंधित विभाग' : 'Department');
+                final area = areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : (isMr ? 'प्रभाग' : 'Ward');
 
                 String generated;
                 if (isMr) {
@@ -142,6 +146,38 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                   isGeneratingAi = false;
                 });
               });
+            }
+
+            Future<void> pickDate() async {
+              DateTime initial;
+              try {
+                initial = DateTime.parse(dateCtrl.text.trim());
+              } catch (_) {
+                initial = DateTime.now();
+              }
+              final picked = await showDatePicker(
+                context: sheetCtx,
+                initialDate: initial,
+                firstDate: DateTime(2020),
+                lastDate: DateTime(2035),
+                builder: (context, child) {
+                  return Theme(
+                    data: Theme.of(context).copyWith(
+                      colorScheme: const ColorScheme.light(
+                        primary: Color(0xFF0284C7),
+                        onPrimary: Colors.white,
+                        onSurface: Color(0xFF0F172A),
+                      ),
+                    ),
+                    child: child!,
+                  );
+                },
+              );
+              if (picked != null) {
+                setModalState(() {
+                  dateCtrl.text = DateFormat('yyyy-MM-dd').format(picked);
+                });
+              }
             }
 
             return Container(
@@ -163,9 +199,9 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Record Assembly Motion (GB Register)',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                        Text(
+                          isMr ? 'नवीन GB नोंद (महासभा नोंदवही)' : 'Record Assembly Motion (GB Register)',
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                         ),
                         IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(sheetCtx)),
                       ],
@@ -173,28 +209,28 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                     const Divider(),
                     const SizedBox(height: 12),
 
-                    // Meeting Type & Date
+                    // 1. Meeting Date & Meeting Type
                     Row(
                       children: [
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Meeting Type *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              Text(
+                                isMr ? 'बैठक तारीख *' : 'Meeting Date *',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
                               const SizedBox(height: 6),
-                              DropdownButtonFormField<String>(
-                                initialValue: meetingType,
+                              TextField(
+                                controller: dateCtrl,
+                                readOnly: true,
+                                onTap: pickDate,
                                 decoration: InputDecoration(
+                                  hintText: 'YYYY-MM-DD',
+                                  prefixIcon: const Icon(Icons.calendar_today_outlined, size: 18),
                                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                                 ),
-                                items: _meetingTypes
-                                    .where((t) => t != 'All')
-                                    .map((t) => DropdownMenuItem(value: t, child: Text(t, style: const TextStyle(fontSize: 13))))
-                                    .toList(),
-                                onChanged: (val) {
-                                  if (val != null) setModalState(() => meetingType = val);
-                                },
                               ),
                             ],
                           ),
@@ -204,15 +240,30 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Meeting Date *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              Text(
+                                isMr ? 'बैठक प्रकार *' : 'Meeting Type *',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
                               const SizedBox(height: 6),
-                              TextField(
-                                controller: dateCtrl,
+                              DropdownButtonFormField<String>(
+                                initialValue: meetingType,
                                 decoration: InputDecoration(
-                                  hintText: 'YYYY-MM-DD',
-                                  prefixIcon: const Icon(Icons.calendar_today_outlined, size: 18),
                                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                                 ),
+                                items: _meetingTypes
+                                    .where((t) => t != 'All')
+                                    .map((t) => DropdownMenuItem(
+                                          value: t,
+                                          child: Text(
+                                            isMr ? _getMeetingTypeLabelMr(t) : t,
+                                            style: const TextStyle(fontSize: 13),
+                                          ),
+                                        ))
+                                    .toList(),
+                                onChanged: (val) {
+                                  if (val != null) setModalState(() => meetingType = val);
+                                },
                               ),
                             ],
                           ),
@@ -221,23 +272,32 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                     ),
                     const SizedBox(height: 14),
 
-                    // Subject
-                    const Text('Subject / Question Title *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    // 2. Subject / Issue
+                    Text(
+                      isMr ? 'विषय / मुद्दा *' : 'Subject / Issue *',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
                     const SizedBox(height: 6),
                     TextField(
                       controller: subjectCtrl,
                       decoration: InputDecoration(
-                        hintText: 'e.g. Sanctioning of 24x7 Water Supply Mainline',
+                        hintText: isMr
+                            ? 'उदा. प्रभाग १२ मध्ये पाणी पुरवठ्याची समस्या'
+                            : 'e.g. Water shortage in Ward 12',
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                       ),
                     ),
                     const SizedBox(height: 14),
 
-                    // Description with AI Auto-Draft
+                    // 3. Description with AI Auto-Draft
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Motion Description & Details *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        Text(
+                          isMr ? 'वर्णन' : 'Description',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
                         InkWell(
                           onTap: isGeneratingAi ? null : autoDraftDescription,
                           borderRadius: BorderRadius.circular(8),
@@ -275,26 +335,33 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                       controller: descCtrl,
                       maxLines: 4,
                       decoration: InputDecoration(
-                        hintText: 'Enter complete motion speech, demands, affected citizen concerns...',
+                        hintText: isMr
+                            ? 'मंडलेल्या मुद्द्याचे सविस्तर वर्णन...'
+                            : 'Detailed description of the issue raised...',
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        contentPadding: const EdgeInsets.all(12),
                       ),
                     ),
                     const SizedBox(height: 14),
 
-                    // Department & Area
+                    // 4. Area & Beneficiaries
                     Row(
                       children: [
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Department *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              Text(
+                                isMr ? 'क्षेत्र / भाग' : 'Area',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
                               const SizedBox(height: 6),
                               TextField(
-                                controller: deptCtrl,
+                                controller: areaCtrl,
                                 decoration: InputDecoration(
-                                  hintText: 'e.g. Roads & Civil',
+                                  hintText: isMr ? 'उदा. प्रभाग १२ किंवा कॉलनी' : 'e.g. Ward 12 or Colony Name',
                                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                                 ),
                               ),
                             ],
@@ -305,13 +372,17 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Area / Ward *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              Text(
+                                isMr ? 'लोकांना फायदा (लाभार्थी)' : 'People Benefited',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
                               const SizedBox(height: 6),
                               TextField(
-                                controller: areaCtrl,
+                                controller: benCtrl,
                                 decoration: InputDecoration(
-                                  hintText: 'e.g. Shaniwar Peth',
+                                  hintText: isMr ? 'उदा. ५००+ नागरिक' : 'e.g. 500+ residents',
                                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                                 ),
                               ),
                             ],
@@ -321,14 +392,38 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                     ),
                     const SizedBox(height: 14),
 
-                    // Status & Beneficiaries
+                    // 5. Department & Outcome / Status
                     Row(
                       children: [
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Status *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              Text(
+                                isMr ? 'विभाग' : 'Department',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
+                              const SizedBox(height: 6),
+                              TextField(
+                                controller: deptCtrl,
+                                decoration: InputDecoration(
+                                  hintText: isMr ? 'उदा. पाणी पुरवठा' : 'e.g. Water Supply',
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                isMr ? 'निकाल / स्थिती *' : 'Outcome / Status *',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
                               const SizedBox(height: 6),
                               DropdownButtonFormField<String>(
                                 initialValue: status,
@@ -338,7 +433,13 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                                 ),
                                 items: _statusList
                                     .where((s) => s != 'All')
-                                    .map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(fontSize: 13))))
+                                    .map((s) => DropdownMenuItem(
+                                          value: s,
+                                          child: Text(
+                                            isMr ? _getStatusLabelMr(s) : s,
+                                            style: const TextStyle(fontSize: 13),
+                                          ),
+                                        ))
                                     .toList(),
                                 onChanged: (val) {
                                   if (val != null) setModalState(() => status = val);
@@ -347,65 +448,30 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                             ],
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Beneficiaries', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: benCtrl,
-                                decoration: InputDecoration(
-                                  hintText: 'e.g. 12,000 Citizens',
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 14),
 
-                    // Resolution No
-                    const Text('Resolution Ref No (Optional)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: resCtrl,
-                      decoration: InputDecoration(
-                        hintText: 'e.g. PMC/GB/RES/2024/412',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
+                    // 6. Administrative Response
+                    Text(
+                      isMr ? 'प्रशासकीय उत्तर' : 'Administrative Response',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                     ),
-                    const SizedBox(height: 14),
-
-                    // Official Response
-                    const Text('Administration Floor Reply (Optional)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                     const SizedBox(height: 6),
                     TextField(
                       controller: respCtrl,
-                      maxLines: 2,
+                      maxLines: 3,
                       decoration: InputDecoration(
-                        hintText: 'Enter administration verbal or written confirmation...',
+                        hintText: isMr
+                            ? 'प्रशासनाकडून मिळालेले उत्तर...'
+                            : 'Response received from administration...',
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Tags
-                    const Text('Tags (comma separated)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: tagsCtrl,
-                      decoration: InputDecoration(
-                        hintText: 'e.g. Water, Pipeline, PMC GB',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        contentPadding: const EdgeInsets.all(12),
                       ),
                     ),
                     const SizedBox(height: 24),
 
-                    // Submit Button
+                    // Submit Button (Existing button - wired directly)
                     SizedBox(
                       width: double.infinity,
                       height: 48,
@@ -418,16 +484,12 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                         onPressed: () async {
                           if (subjectCtrl.text.trim().isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Please enter a subject')),
+                              SnackBar(
+                                content: Text(isMr ? 'कृपया विषय प्रविष्ट करा' : 'Please enter a subject'),
+                              ),
                             );
                             return;
                           }
-
-                          final tags = tagsCtrl.text
-                              .split(',')
-                              .map((t) => t.trim())
-                              .where((t) => t.isNotEmpty)
-                              .toList();
 
                           final newEntry = GbRegisterEntryModel(
                             id: 'gb-${DateTime.now().millisecondsSinceEpoch}',
@@ -436,16 +498,14 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                                 ? dateCtrl.text.trim()
                                 : DateFormat('yyyy-MM-dd').format(DateTime.now()),
                             subject: subjectCtrl.text.trim(),
-                            description: descCtrl.text.trim().isNotEmpty
-                                ? descCtrl.text.trim()
-                                : subjectCtrl.text.trim(),
+                            description: descCtrl.text.trim(),
                             department: deptCtrl.text.trim().isNotEmpty ? deptCtrl.text.trim() : 'General Administration',
                             area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : 'Ward 12',
                             status: status,
                             beneficiaries: benCtrl.text.trim().isNotEmpty ? benCtrl.text.trim() : null,
-                            resolutionNo: resCtrl.text.trim().isNotEmpty ? resCtrl.text.trim() : null,
                             response: respCtrl.text.trim().isNotEmpty ? respCtrl.text.trim() : null,
-                            tags: tags,
+                            resolutionNo: null,
+                            tags: const [],
                             createdAt: DateTime.now().toIso8601String(),
                           );
 
@@ -456,14 +516,19 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                           if (sheetCtx.mounted) Navigator.pop(sheetCtx);
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Assembly record registered successfully!'),
-                                backgroundColor: Color(0xFF16A34A),
+                              SnackBar(
+                                content: Text(
+                                  isMr ? 'नोंद यशस्वीरित्या जतन केली!' : 'Entry registered successfully!',
+                                ),
+                                backgroundColor: const Color(0xFF16A34A),
                               ),
                             );
                           }
                         },
-                        child: const Text('Save Motion to Register', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                        child: Text(
+                          isMr ? 'नोंद जतन करा' : 'Save Entry',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
                       ),
                     ),
                   ],
@@ -1278,6 +1343,8 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
         return 'प्रभाग समिती';
       case 'special gb':
         return 'विशेष महासभा';
+      case 'other':
+        return 'इतर';
       default:
         return type;
     }
@@ -1287,7 +1354,9 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
     switch (status.toLowerCase()) {
       case 'action taken':
       case 'sanctioned':
-        return 'कार्यवाही झाली';
+        return 'कारवाई केली';
+      case 'resolved':
+        return 'सोडवला';
       case 'in discussion':
         return 'चर्चेत';
       case 'rejected':

@@ -106,6 +106,8 @@ class GbRegisterEntryModel {
       case 'action_taken':
       case 'sanctioned':
         return const Color(0xFF16A34A);
+      case 'resolved':
+        return const Color(0xFF059669);
       case 'in discussion':
       case 'in_discussion':
         return const Color(0xFF0284C7);
@@ -123,6 +125,8 @@ class GbRegisterEntryModel {
       case 'action_taken':
       case 'sanctioned':
         return const Color(0xFFF0FDF4);
+      case 'resolved':
+        return const Color(0xFFECFDF5);
       case 'in discussion':
       case 'in_discussion':
         return const Color(0xFFEFF6FF);
@@ -140,6 +144,8 @@ class GbRegisterEntryModel {
       case 'action_taken':
       case 'sanctioned':
         return const Color(0xFFBBF7D0);
+      case 'resolved':
+        return const Color(0xFFA7F3D0);
       case 'in discussion':
       case 'in_discussion':
         return const Color(0xFFBFDBFE);
@@ -157,6 +163,8 @@ class GbRegisterEntryModel {
       case 'action_taken':
       case 'sanctioned':
         return 'Action Taken';
+      case 'resolved':
+        return 'Resolved';
       case 'in discussion':
       case 'in_discussion':
         return 'In Discussion';
@@ -174,6 +182,8 @@ class GbRegisterEntryModel {
       case 'action_taken':
       case 'sanctioned':
         return 'कार्यवाही झाली';
+      case 'resolved':
+        return 'सोडवला';
       case 'in discussion':
       case 'in_discussion':
         return 'चर्चेत';
@@ -197,6 +207,8 @@ class GbRegisterEntryModel {
         return 'Ward Committee';
       case 'special gb':
         return 'Special GB';
+      case 'other':
+        return 'Other';
       default:
         return meetingType;
     }
@@ -214,6 +226,8 @@ class GbRegisterEntryModel {
         return 'प्रभाग समिती';
       case 'special gb':
         return 'विशेष महासभा';
+      case 'other':
+        return 'इतर';
       default:
         return meetingType;
     }
