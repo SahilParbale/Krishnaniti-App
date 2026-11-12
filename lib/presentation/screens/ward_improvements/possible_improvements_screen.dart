@@ -525,65 +525,42 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                     Container(
                       color: const Color(0xFFF8FAFC),
                       padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.center,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          Row(
                             children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    isMr ? 'संभाव्य सुधारणा' : 'Possible Improvements',
-                                    style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF0F172A),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFE0F2FE),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: const Color(0xFFBAE6FD)),
-                                    ),
-                                    child: Text(
-                                      '${isMr ? "उपलब्ध" : "Found"}: ${filtered.length}',
-                                      style: const TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF0284C7),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 2),
                               Text(
-                                isMr ? 'नागरिकांच्या सूचना व पायाभूत सुविधांचे प्रस्ताव' : 'Citizen proposals, ideas & future project plans',
-                                style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                                isMr ? 'संभाव्य सुधारणा' : 'Possible Improvements',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF0F172A),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE0F2FE),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: const Color(0xFFBAE6FD)),
+                                ),
+                                child: Text(
+                                  '${isMr ? "उपलब्ध" : "Found"}: ${filtered.length}',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF0284C7),
+                                  ),
+                                ),
                               ),
                             ],
                           ),
-
-                          // Propose New Button matching line 273
-                          ElevatedButton.icon(
-                            onPressed: _openAddModal,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF0284C7),
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            ),
-                            icon: const Icon(Icons.add, size: 18),
-                            label: Text(
-                              isMr ? 'प्रस्तावित करा' : 'Propose New',
-                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                            ),
+                          const SizedBox(height: 2),
+                          Text(
+                            isMr ? 'नागरिकांच्या सूचना व पायाभूत सुविधांचे प्रस्ताव' : 'Citizen proposals, ideas & future project plans',
+                            style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                           ),
                         ],
                       ),

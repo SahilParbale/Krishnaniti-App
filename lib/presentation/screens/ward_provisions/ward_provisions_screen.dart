@@ -34,7 +34,7 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
   Future<void> _loadProvisions() async {
     setState(() => _loading = true);
     final repo = ref.read(wardProvisionsRepoProvider);
-    final data = await repo.getProvisions(_year);
+    final data = await repo.getProvisions(year: _year);
     if (mounted) {
       setState(() {
         _provisions = data;
@@ -657,44 +657,21 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.center,
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    isMr ? 'प्रभागनिहाय तरतूद' : 'Ward Wise Provision',
-                                    style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF0F172A),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    isMr ? 'वार्षिक बजेट तरतुदी आणि निधी वाटप' : 'Yearly municipal provisions & capital development allocations',
-                                    style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                                  ),
-                                ],
+                              Text(
+                                isMr ? 'प्रभागनिहाय तरतूद' : 'Ward Wise Provision',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF0F172A),
+                                ),
                               ),
-
-                              // Add Request Button matching line 198
-                              ElevatedButton.icon(
-                                onPressed: _openAddModal,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF0284C7),
-                                  foregroundColor: Colors.white,
-                                  elevation: 0,
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
-                                icon: const Icon(Icons.add, size: 18),
-                                label: Text(
-                                  isMr ? 'नवीन तरतूद' : 'Add Request',
-                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                                ),
+                              const SizedBox(height: 2),
+                              Text(
+                                isMr ? 'वार्षिक बजेट तरतुदी आणि निधी वाटप' : 'Yearly municipal provisions & capital development allocations',
+                                style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                               ),
                             ],
                           ),

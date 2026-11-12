@@ -561,65 +561,42 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.center,
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              Row(
                                 children: [
-                                  Row(
-                                    children: [
-                                      Text(
-                                        isMr ? 'कामांचा इतिहास' : 'Work History',
-                                        style: const TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                          color: Color(0xFF0F172A),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFE0F2FE),
-                                          borderRadius: BorderRadius.circular(12),
-                                          border: Border.all(color: const Color(0xFFBAE6FD)),
-                                        ),
-                                        child: Text(
-                                          '${isMr ? "सापडली" : "Found"}: ${filtered.length}',
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.bold,
-                                            color: Color(0xFF0284C7),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 2),
                                   Text(
-                                    isMr ? 'प्रभागात पूर्ण झालेली व सुरू असलेली विकासकामे' : 'Historical archive of completed works & projects',
-                                    style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                                    isMr ? 'कामांचा इतिहास' : 'Work History',
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF0F172A),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFE0F2FE),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: const Color(0xFFBAE6FD)),
+                                    ),
+                                    child: Text(
+                                      '${isMr ? "सापडली" : "Found"}: ${filtered.length}',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF0284C7),
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
-
-                              // Add Work Button matching line 341
-                              ElevatedButton.icon(
-                                onPressed: _openAddWorkModal,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF0284C7),
-                                  foregroundColor: Colors.white,
-                                  elevation: 0,
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
-                                icon: const Icon(Icons.add, size: 18),
-                                label: Text(
-                                  isMr ? 'नवीन काम' : 'Add Work',
-                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                                ),
+                              const SizedBox(height: 2),
+                              Text(
+                                isMr ? 'प्रभागात पूर्ण झालेली व सुरू असलेली विकासकामे' : 'Historical archive of completed works & projects',
+                                style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                               ),
                             ],
                           ),

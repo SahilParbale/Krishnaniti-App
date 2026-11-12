@@ -328,65 +328,42 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.center,
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              Text(
+                                isMr ? 'प्रभागातील समस्या' : 'Ward Problems',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF0F172A),
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Row(
                                 children: [
                                   Text(
-                                    isMr ? 'प्रभागातील समस्या' : 'Ward Problems',
-                                    style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF0F172A),
+                                    isMr ? 'तक्रारी व नागरिकांच्या अडचणी' : 'Grievances & civic issues',
+                                    style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFE0F2FE),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: const Color(0xFFBAE6FD)),
+                                    ),
+                                    child: Text(
+                                      '${isMr ? "सापडल्या" : "Found"}: ${filtered.length}',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF0284C7),
+                                      ),
                                     ),
                                   ),
-                                  const SizedBox(height: 2),
-                                  Row(
-                                    children: [
-                                      Text(
-                                        isMr ? 'तक्रारी व नागरिकांच्या अडचणी' : 'Grievances & civic issues',
-                                        style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFE0F2FE),
-                                          borderRadius: BorderRadius.circular(12),
-                                          border: Border.all(color: const Color(0xFFBAE6FD)),
-                                        ),
-                                        child: Text(
-                                          '${isMr ? "सापडल्या" : "Found"}: ${filtered.length}',
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.bold,
-                                            color: Color(0xFF0284C7),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
                                 ],
-                              ),
-
-                              // New Request Button matching WardWiseProblem.tsx line 348
-                              ElevatedButton.icon(
-                                onPressed: _openNewWardProblemModal,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF0284C7),
-                                  foregroundColor: Colors.white,
-                                  elevation: 0,
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
-                                icon: const Icon(Icons.add, size: 18),
-                                label: Text(
-                                  isMr ? 'नवीन तक्रार' : 'New Request',
-                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                                ),
                               ),
                             ],
                           ),
