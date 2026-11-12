@@ -6,7 +6,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/localization/app_strings.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../data/models/complaint_model.dart';
 import '../../../data/models/staff_model.dart';
 import '../../../data/repositories/complaints_repository.dart';
@@ -26,7 +25,6 @@ class ComplaintDetailScreen extends ConsumerStatefulWidget {
 
 class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
   late ComplaintModel _complaint;
-  bool _isLoading = false;
   List<StaffModel> _staffList = [];
   String? _assignedStaffId;
 

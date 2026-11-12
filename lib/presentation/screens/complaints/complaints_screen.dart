@@ -3,12 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../../core/localization/app_strings.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../data/models/complaint_model.dart';
 import '../../../data/repositories/complaints_repository.dart';
 import '../../providers/auth_provider.dart';
-import 'new_complaint_screen.dart';
+import 'new_complaint_bottom_sheet.dart';
 import 'complaint_detail_screen.dart';
 import '../../navigation/app_drawer.dart';
 
@@ -62,6 +60,8 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
       assignedTo: 'staff-1',
       assignedStaffName: 'Sunil Shinde (Electrical JE)',
       assignedStaffMobile: '9822012345',
+      addedByStaffId: 'staff-1',
+      addedByStaffName: 'Sunil Shinde',
       createdAt: DateTime.now().subtract(const Duration(hours: 3)),
       progressUpdates: [
         ComplaintProgressUpdate(
@@ -86,6 +86,8 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
       assignedTo: 'staff-2',
       assignedStaffName: 'Santosh Gaikwad (Sanitation Sup.)',
       assignedStaffMobile: '9822023456',
+      addedByStaffId: 'staff-2',
+      addedByStaffName: 'Santosh Gaikwad',
       createdAt: DateTime.now().subtract(const Duration(hours: 14)),
       progressUpdates: [
         ComplaintProgressUpdate(
@@ -156,6 +158,8 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
       assignedTo: 'staff-2',
       assignedStaffName: 'Santosh Gaikwad (Sanitation Sup.)',
       assignedStaffMobile: '9822023456',
+      addedByStaffId: 'staff-2',
+      addedByStaffName: 'Santosh Gaikwad',
       createdAt: DateTime.now().subtract(const Duration(days: 3)),
       progressUpdates: [
         ComplaintProgressUpdate(
@@ -180,6 +184,8 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
       assignedTo: 'staff-1',
       assignedStaffName: 'Sunil Shinde (Electrical JE)',
       assignedStaffMobile: '9822012345',
+      addedByStaffId: 'staff-1',
+      addedByStaffName: 'Sunil Shinde',
       createdAt: DateTime.now().subtract(const Duration(days: 4)),
     ),
   ];
@@ -389,51 +395,6 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
       }
     }
     return areas.toList();
-  }
-
-  // Update Status directly in memory & database
-  Future<void> _updateStatus(ComplaintModel complaint, String newStatus) async {
-    try {
-      await ref.read(complaintsRepoProvider).updateStatus(complaint.id, newStatus);
-    } catch (_) {}
-
-    setState(() {
-      final updater = (ComplaintModel c) {
-        if (c.id == complaint.id) {
-          return ComplaintModel(
-            id: c.id,
-            title: c.title,
-            description: c.description,
-            category: c.category,
-            status: newStatus,
-            ward: c.ward,
-            area: c.area,
-            location: c.location,
-            citizenName: c.citizenName,
-            citizenMobile: c.citizenMobile,
-            assignedStaffName: c.assignedStaffName,
-            photos: c.photos,
-            createdAt: c.createdAt,
-            tenantId: c.tenantId,
-          );
-        }
-        return c;
-      };
-
-      _areaComplaints = _areaComplaints.map(updater).toList();
-      _personalRequests = _personalRequests.map(updater).toList();
-    });
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Updated ${complaint.id} status to $newStatus'),
-          backgroundColor: const Color(0xFF0284C7),
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    }
   }
 
   // Open Full Complaint Details Page matching ComplaintDetail.tsx
@@ -779,8 +740,32 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                isMr ? 'वेगळा फिल्टर किंवा शोध शब्द वापरून पहा' : 'Try clearing filters or search query',
+                                isMr ? 'नवीन तक्रार अथवा विनंती नोंदवा' : 'Try clearing filters or register a new request',
                                 style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B)),
+                              ),
+                              const SizedBox(height: 14),
+                              ElevatedButton.icon(
+                                onPressed: () async {
+                                  final created = await NewComplaintBottomSheet.show(
+                                    context,
+                                    initialTab: _activeTab,
+                                  );
+                                  if (created == true) {
+                                    _fetchComplaints();
+                                  }
+                                },
+                                icon: const Icon(Icons.add_rounded, size: 18),
+                                label: Text(
+                                  _activeTab == 'Complaints'
+                                      ? (isMr ? 'नवीन तक्रार नोंदवा' : 'Add New Complaint')
+                                      : (isMr ? 'नवीन वैयक्तिक विनंती' : 'Add Personal Request'),
+                                  style: const TextStyle(fontWeight: FontWeight.w700),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF0284C7),
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
                               ),
                             ],
                           ),
@@ -806,14 +791,12 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
           ],
         ),
 
-        // Floating Action Button (+ New Request) matching Nagarsevak-Managment
+        // Floating Action Button (+ New Request Bottom Pop up) matching Nagarsevak-Managment
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () async {
-            final created = await Navigator.push(
+            final created = await NewComplaintBottomSheet.show(
               context,
-              MaterialPageRoute(
-                builder: (_) => const NewComplaintScreen(),
-              ),
+              initialTab: _activeTab,
             );
             if (created == true) {
               _fetchComplaints();
@@ -824,7 +807,9 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
           elevation: 4,
           icon: const Icon(Icons.add_rounded, size: 22),
           label: Text(
-            isMr ? 'नवीन तक्रार' : 'New Request',
+            _activeTab == 'Complaints'
+                ? (isMr ? 'नवीन तक्रार' : 'New Complaint')
+                : (isMr ? 'नवीन विनंती' : 'New Personal Request'),
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
           ),
         ),
@@ -1241,6 +1226,34 @@ class _ComplaintCard extends StatelessWidget {
                 const SizedBox(height: 10),
               ],
 
+              // Added By Staff Badge (matching Nagarsevak-Managment ComplaintList.tsx line 730)
+              if (complaint.addedByStaffName != null && complaint.addedByStaffName!.isNotEmpty) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.person_pin_rounded, size: 13, color: Color(0xFF475569)),
+                      const SizedBox(width: 5),
+                      Text(
+                        '${isMr ? "नोंदणीकर्ता:" : "Added By:"} ${complaint.addedByStaffName}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF334155),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+
               // Staff Assigned Badge
               if (complaint.assignedStaffName != null && complaint.assignedStaffName!.isNotEmpty) ...[
                 Container(
@@ -1335,354 +1348,4 @@ class _ComplaintCard extends StatelessWidget {
   }
 }
 
-/// Rich Complaint Detail Modal Bottom Sheet matching ComplaintDetail.tsx
-class _ComplaintDetailModal extends StatelessWidget {
-  final ComplaintModel complaint;
-  final bool isMr;
-  final ValueChanged<String> onUpdateStatus;
 
-  const _ComplaintDetailModal({
-    required this.complaint,
-    required this.isMr,
-    required this.onUpdateStatus,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
-      child: SafeArea(
-        top: false,
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Top Center Drag Bar
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFCBD5E1),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-
-              // Header Row: Complaint Token ID & Status
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        complaint.id,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF0F172A),
-                          letterSpacing: -0.2,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Category: ${complaint.category}',
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
-                      ),
-                    ],
-                  ),
-                  _StatusBadgeLarge(status: complaint.status),
-                ],
-              ),
-
-              const Divider(height: 24, thickness: 1, color: Color(0xFFF1F5F9)),
-
-              // Title & Description
-              Text(
-                complaint.title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF0F172A),
-                  height: 1.25,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                complaint.description.isNotEmpty ? complaint.description : 'No detailed description provided.',
-                style: const TextStyle(
-                  fontSize: 13.5,
-                  color: Color(0xFF475569),
-                  height: 1.35,
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Citizen Contact Card
-              if (complaint.citizenName != null && complaint.citizenName!.isNotEmpty) ...[
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.account_circle_outlined, size: 20, color: Color(0xFF0284C7)),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  complaint.citizenName!,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700,
-                                    color: Color(0xFF0F172A),
-                                  ),
-                                ),
-                                if (complaint.citizenMobile != null)
-                                  Text(
-                                    complaint.citizenMobile!,
-                                    style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (complaint.citizenMobile != null && complaint.citizenMobile!.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: () async {
-                                  final uri = Uri.parse('tel:${complaint.citizenMobile}');
-                                  if (await canLaunchUrl(uri)) await launchUrl(uri);
-                                },
-                                icon: const Icon(Icons.phone_rounded, size: 16, color: Color(0xFF16A34A)),
-                                label: const Text('Call Citizen', style: TextStyle(color: Color(0xFF16A34A), fontWeight: FontWeight.w700)),
-                                style: OutlinedButton.styleFrom(
-                                  side: const BorderSide(color: Color(0xFF86EFAC)),
-                                  backgroundColor: const Color(0xFFF0FDF4),
-                                  padding: const EdgeInsets.symmetric(vertical: 8),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: () async {
-                                  final clean = complaint.citizenMobile!.replaceAll(RegExp(r'\D'), '');
-                                  final text = Uri.encodeComponent(
-                                      'Namaskar, regarding your civic request "${complaint.title}" (#${complaint.id}), our office has updated the status.');
-                                  final uri = Uri.parse('https://wa.me/91$clean?text=$text');
-                                  if (await canLaunchUrl(uri)) {
-                                    await launchUrl(uri, mode: LaunchMode.externalApplication);
-                                  }
-                                },
-                                icon: const Icon(Icons.chat_rounded, size: 16, color: Color(0xFF059669)),
-                                label: const Text('WhatsApp', style: TextStyle(color: Color(0xFF059669), fontWeight: FontWeight.w700)),
-                                style: OutlinedButton.styleFrom(
-                                  side: const BorderSide(color: Color(0xFF6EE7B7)),
-                                  backgroundColor: const Color(0xFFECFDF5),
-                                  padding: const EdgeInsets.symmetric(vertical: 8),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-
-              // Location & Timestamp Card
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF0284C7)),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        complaint.location ?? complaint.area ?? 'Ward 12 Prabhag Area',
-                        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-                      ),
-                    ),
-                    Text(
-                      DateFormat('MMM d, yyyy').format(complaint.createdAt),
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 18),
-
-              // Status Change Action Bar matching Nagarsevak-Managment
-              const Text(
-                'Update Status',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: _StatusActionButton(
-                      label: 'Pending',
-                      color: const Color(0xFFDC2626),
-                      bgColor: const Color(0xFFFEF2F2),
-                      isActive: complaint.status.toLowerCase() == 'pending',
-                      onTap: () => onUpdateStatus('Pending'),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _StatusActionButton(
-                      label: 'In Progress',
-                      color: const Color(0xFFD97706),
-                      bgColor: const Color(0xFFFFFBEB),
-                      isActive: complaint.status.toLowerCase() == 'inprogress',
-                      onTap: () => onUpdateStatus('InProgress'),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _StatusActionButton(
-                      label: 'Resolved',
-                      color: const Color(0xFF16A34A),
-                      bgColor: const Color(0xFFF0FDF4),
-                      isActive: complaint.status.toLowerCase() == 'resolved',
-                      onTap: () => onUpdateStatus('Resolved'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Large Status Badge for Detail Modal
-class _StatusBadgeLarge extends StatelessWidget {
-  final String status;
-
-  const _StatusBadgeLarge({required this.status});
-
-  @override
-  Widget build(BuildContext context) {
-    Color bg;
-    Color border;
-    Color text;
-    String label;
-
-    switch (status.toLowerCase()) {
-      case 'resolved':
-      case 'closed':
-        bg = const Color(0xFFF0FDF4);
-        border = const Color(0xFFBBF7D0);
-        text = const Color(0xFF16A34A);
-        label = 'Resolved';
-        break;
-      case 'inprogress':
-        bg = const Color(0xFFFFFBEB);
-        border = const Color(0xFFFDE68A);
-        text = const Color(0xFFD97706);
-        label = 'In Progress';
-        break;
-      case 'assigned':
-        bg = const Color(0xFFF0F9FF);
-        border = const Color(0xFFBAE6FD);
-        text = const Color(0xFF0284C7);
-        label = 'Assigned';
-        break;
-      default:
-        bg = const Color(0xFFFEF2F2);
-        border = const Color(0xFFFECACA);
-        text = const Color(0xFFDC2626);
-        label = 'Pending';
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: border),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: text),
-      ),
-    );
-  }
-}
-
-/// Status Action Button inside Detail Sheet
-class _StatusActionButton extends StatelessWidget {
-  final String label;
-  final Color color;
-  final Color bgColor;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  const _StatusActionButton({
-    required this.label,
-    required this.color,
-    required this.bgColor,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 9),
-        decoration: BoxDecoration(
-          color: isActive ? color : bgColor,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color, width: 1.2),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: isActive ? Colors.white : color,
-          ),
-        ),
-      ),
-    );
-  }
-}

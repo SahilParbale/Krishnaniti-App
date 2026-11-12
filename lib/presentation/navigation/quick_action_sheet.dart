@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import '../providers/navigation_provider.dart';
-import '../screens/complaints/new_complaint_screen.dart';
+import '../screens/complaints/new_complaint_bottom_sheet.dart';
+import '../screens/letters/new_letter_bottom_sheet.dart';
 
 class QuickActionSheet extends ConsumerWidget {
   const QuickActionSheet({super.key});
@@ -28,10 +29,7 @@ class QuickActionSheet extends ConsumerWidget {
         gradient: const [Color(0xFF0284C7), Color(0xFF0369A1)],
         onTap: () {
           Navigator.pop(context);
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const NewComplaintScreen()),
-          );
+          NewComplaintBottomSheet.show(context);
         },
       ),
       _QuickActionItem(
@@ -41,8 +39,7 @@ class QuickActionSheet extends ConsumerWidget {
         gradient: const [Color(0xFF6366F1), Color(0xFF4F46E5)],
         onTap: () {
           Navigator.pop(context);
-          ref.read(mainTabIndexProvider.notifier).setTab(2);
-          ref.read(activeScreenProvider.notifier).setScreen('letters');
+          NewLetterBottomSheet.show(context);
         },
       ),
       _QuickActionItem(
