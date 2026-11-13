@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../core/constants/app_config.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../navigation/app_drawer.dart';
+import '../../navigation/app_bar_leading_nav_button.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/custom_navigation_provider.dart';
 
@@ -565,12 +566,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
         foregroundColor: Colors.white,
         elevation: 0,
         titleSpacing: 0,
-        leading: Builder(
-          builder: (ctx) => IconButton(
-            icon: const Icon(Icons.menu_rounded, color: Colors.white),
-            onPressed: () => Scaffold.of(ctx).openDrawer(),
-          ),
-        ),
+        leading: const AppBarLeadingNavButton(),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,

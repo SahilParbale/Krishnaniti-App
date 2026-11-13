@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../data/models/ward_budget_model.dart';
 import '../../../data/repositories/ward_budget_repository.dart';
 import '../../navigation/app_drawer.dart';
+import '../../navigation/app_bar_leading_nav_button.dart';
 import '../../providers/auth_provider.dart';
 import 'ward_budget_detail_screen.dart';
 import 'ward_budget_report_generator.dart';
@@ -448,13 +449,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
           backgroundColor: const Color(0xFF0284C7),
           elevation: 0,
           scrolledUnderElevation: 0,
-          leading: Builder(
-            builder: (ctx) => IconButton(
-              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: 'Open Menu Drawer',
-              onPressed: () => Scaffold.of(ctx).openDrawer(),
-            ),
-          ),
+          leading: const AppBarLeadingNavButton(),
           titleSpacing: 0,
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

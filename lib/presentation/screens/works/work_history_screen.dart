@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../data/models/work_history_model.dart';
 import '../../../data/repositories/work_history_repository.dart';
 import '../../navigation/app_drawer.dart';
+import '../../navigation/app_bar_leading_nav_button.dart';
 import '../../providers/auth_provider.dart';
 import 'ahwal_report_generator.dart';
 import 'work_detail_screen.dart';
@@ -482,13 +483,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
           backgroundColor: const Color(0xFF0284C7),
           elevation: 0,
           scrolledUnderElevation: 0,
-          leading: Builder(
-            builder: (ctx) => IconButton(
-              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: 'Open Menu Drawer',
-              onPressed: () => Scaffold.of(ctx).openDrawer(),
-            ),
-          ),
+          leading: const AppBarLeadingNavButton(),
           titleSpacing: 0,
           title: Text(
             isMr ? 'कामांचा इतिहास' : 'Work History',

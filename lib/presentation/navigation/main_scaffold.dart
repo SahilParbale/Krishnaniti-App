@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'lazy_indexed_stack.dart';
+import 'lazy_screen_slider.dart';
 import 'curved_bottom_bar.dart';
 import 'radial_quick_access_menu.dart';
 import '../providers/navigation_provider.dart';
@@ -167,6 +168,7 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
   }
 
   void _onTabChange(int index) {
+    HapticFeedback.selectionClick();
     if (index == 3) {
       ref.read(activeScreenProvider.notifier).setScreen('profile_settings');
       return;
@@ -366,8 +368,11 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
     final radialConfigs = customRadialKeys.map((k) => getModuleConfig(k)).toList();
     final radialItems = RadialQuickAccessMenu.buildItemsFromConfigs(radialConfigs);
 
+    final canPop = ref.watch(canPopProvider);
+    final isGoingBack = ref.watch(isGoingBackProvider);
+
     return PopScope(
-      canPop: activeScreen == 'dashboard' && !_isRadialOpen,
+      canPop: !canPop && !_isRadialOpen,
       onPopInvokedWithResult: (didPop, _) {
         if (_isRadialOpen) {
           setState(() {
@@ -377,17 +382,25 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
           return;
         }
         if (!didPop) {
-          ref.read(activeScreenProvider.notifier).setScreen('dashboard');
-          ref.read(mainTabIndexProvider.notifier).setTab(0);
+          final popped = ref.read(activeScreenProvider.notifier).popScreen();
+          if (!popped) {
+            ref.read(activeScreenProvider.notifier).resetToDashboard();
+            ref.read(mainTabIndexProvider.notifier).setTab(0);
+          }
         }
       },
       child: Stack(
         children: [
           Scaffold(
             backgroundColor: const Color(0xFFF8FAFC),
-            body: LazyIndexedStack(
+            body: LazyScreenSlider(
               index: index,
               builders: _builders,
+              isGoingBack: isGoingBack,
+              canPop: canPop,
+              onPop: () {
+                ref.read(activeScreenProvider.notifier).popScreen();
+              },
             ),
             bottomNavigationBar: CurvedBottomBar(
               currentIndex: bottomBarIndex,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/navigation_provider.dart';
 
@@ -36,6 +37,7 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
   }
 
   void _toggleGroup(String groupId) {
+    HapticFeedback.selectionClick();
     setState(() {
       _openGroups[groupId] = !(_openGroups[groupId] ?? false);
     });
@@ -49,6 +51,7 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
     required String description,
     required List<String> highlights,
   }) {
+    HapticFeedback.lightImpact();
     // Automatically collapse/close the sidebar drawer immediately so the target page is visible
     Navigator.of(context).pop();
 
@@ -58,7 +61,7 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
 
     final key = resolveScreenKey(title) ?? resolveScreenKey(category) ?? resolveScreenKey(subtitle);
     if (key != null) {
-      ref.read(activeScreenProvider.notifier).setScreen(key);
+      ref.read(activeScreenProvider.notifier).pushScreen(key);
       if (key == 'dashboard') ref.read(mainTabIndexProvider.notifier).setTab(0);
       if (key == 'complaints') ref.read(mainTabIndexProvider.notifier).setTab(1);
       if (key == 'letters') ref.read(mainTabIndexProvider.notifier).setTab(2);
@@ -174,6 +177,17 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
+                          ),
+                          const SizedBox(width: 6),
+                          IconButton(
+                            icon: const Icon(Icons.close_rounded, color: Colors.white70, size: 20),
+                            tooltip: 'Close Drawer',
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            onPressed: () {
+                              HapticFeedback.selectionClick();
+                              Navigator.of(context).pop();
+                            },
                           ),
                         ],
                       ),
@@ -887,7 +901,10 @@ class _DrawerSubItem extends ConsumerWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: onTap,
+          onTap: () {
+            HapticFeedback.lightImpact();
+            onTap();
+          },
           borderRadius: BorderRadius.circular(8),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6.5),
@@ -952,7 +969,10 @@ class _DrawerSingleItem extends ConsumerWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: onTap,
+          onTap: () {
+            HapticFeedback.lightImpact();
+            onTap();
+          },
           borderRadius: BorderRadius.circular(8),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7.5),

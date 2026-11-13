@@ -1,3 +1,4 @@
+import '../../navigation/app_bar_leading_nav_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -535,13 +536,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
         backgroundColor: const Color(0xFF0284C7),
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: Builder(
-          builder: (ctx) => IconButton(
-            icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-            tooltip: 'Open Menu Drawer',
-            onPressed: () => Scaffold.of(ctx).openDrawer(),
-          ),
-        ),
+        leading: const AppBarLeadingNavButton(),
         titleSpacing: 0,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

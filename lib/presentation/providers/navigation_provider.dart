@@ -1,15 +1,74 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class ActiveScreenNotifier extends Notifier<String> {
+  final List<String> _history = ['dashboard'];
+  bool _isGoingBack = false;
+
   @override
   String build() => 'dashboard';
 
-  void setScreen(String screenKey) {
+  List<String> get history => List.unmodifiable(_history);
+  bool get isGoingBack => _isGoingBack;
+  bool get canPop => _history.length > 1 && state != 'dashboard';
+
+  void pushScreen(String screenKey) {
+    if (state == screenKey) return;
+    _isGoingBack = false;
+    if (screenKey == 'dashboard') {
+      _history.clear();
+      _history.add('dashboard');
+    } else {
+      _history.remove(screenKey);
+      _history.add(screenKey);
+    }
     state = screenKey;
+  }
+
+  void setScreen(String screenKey) {
+    pushScreen(screenKey);
+  }
+
+  bool popScreen() {
+    if (_history.length > 1) {
+      _isGoingBack = true;
+      _history.removeLast();
+      final previous = _history.last;
+      state = previous;
+      return true;
+    } else if (state != 'dashboard') {
+      _isGoingBack = true;
+      _history.clear();
+      _history.add('dashboard');
+      state = 'dashboard';
+      return true;
+    }
+    return false;
+  }
+
+  void resetToDashboard() {
+    _isGoingBack = true;
+    _history.clear();
+    _history.add('dashboard');
+    state = 'dashboard';
   }
 }
 
 final activeScreenProvider = NotifierProvider<ActiveScreenNotifier, String>(ActiveScreenNotifier.new);
+
+final canPopProvider = Provider<bool>((ref) {
+  final active = ref.watch(activeScreenProvider);
+  return ref.read(activeScreenProvider.notifier).canPop;
+});
+
+final isGoingBackProvider = Provider<bool>((ref) {
+  ref.watch(activeScreenProvider);
+  return ref.read(activeScreenProvider.notifier).isGoingBack;
+});
+
+final navigationHistoryProvider = Provider<List<String>>((ref) {
+  ref.watch(activeScreenProvider);
+  return ref.read(activeScreenProvider.notifier).history;
+});
 
 class MainTabNotifier extends Notifier<int> {
   @override
