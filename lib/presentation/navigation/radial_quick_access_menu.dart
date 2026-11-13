@@ -285,10 +285,10 @@ class _RadialQuickAccessMenuState extends ConsumerState<RadialQuickAccessMenu>
       }
     }
 
-    // Activate item if finger is within 50px of item center
-    if (minDist <= 50.0 && closestIdx != -1) {
+    // Activate item if finger is within 56px of item center
+    if (minDist <= 56.0 && closestIdx != -1) {
       if (_hoveredIndex != closestIdx) {
-        HapticFeedback.selectionClick();
+        HapticFeedback.mediumImpact();
         setState(() => _hoveredIndex = closestIdx);
       }
     } else {
@@ -499,7 +499,7 @@ class _RadialQuickAccessMenuState extends ConsumerState<RadialQuickAccessMenu>
                                     AnimatedScale(
                                       duration: const Duration(milliseconds: 140),
                                       curve: Curves.easeOutBack,
-                                      scale: isHovered ? 1.18 : 1.0,
+                                      scale: isHovered ? 1.25 : 1.0,
                                       child: Container(
                                         width: 44,
                                         height: 44,
@@ -507,28 +507,28 @@ class _RadialQuickAccessMenuState extends ConsumerState<RadialQuickAccessMenu>
                                           shape: BoxShape.circle,
                                           gradient: LinearGradient(
                                             colors: isHovered
-                                                ? const [Color(0xFF0284C7), Color(0xFF0EA5E9)]
+                                                ? const [Color(0xFF38BDF8), Color(0xFF0284C7)]
                                                 : const [Color(0xFF0284C7), Color(0xFF0369A1)],
                                             begin: Alignment.topLeft,
                                             end: Alignment.bottomRight,
                                           ),
                                           boxShadow: [
                                             BoxShadow(
-                                              color: const Color(0xFF0284C7).withValues(alpha: isHovered ? 0.65 : 0.28),
-                                              blurRadius: isHovered ? 18 : 8,
-                                              spreadRadius: isHovered ? 3.0 : 0,
+                                              color: const Color(0xFF0284C7).withValues(alpha: isHovered ? 0.75 : 0.28),
+                                              blurRadius: isHovered ? 22 : 8,
+                                              spreadRadius: isHovered ? 4.0 : 0,
                                               offset: isHovered ? const Offset(0, 4) : const Offset(0, 2),
                                             ),
                                             if (isHovered)
                                               BoxShadow(
-                                                color: const Color(0xFF38BDF8).withValues(alpha: 0.50),
-                                                blurRadius: 10,
-                                                spreadRadius: 1.0,
+                                                color: const Color(0xFF38BDF8).withValues(alpha: 0.85),
+                                                blurRadius: 18,
+                                                spreadRadius: 3.0,
                                               ),
                                           ],
                                           border: Border.all(
-                                            color: Colors.white.withValues(alpha: isHovered ? 1.0 : 0.88),
-                                            width: isHovered ? 2.8 : 1.8,
+                                            color: isHovered ? Colors.white : Colors.white.withValues(alpha: 0.88),
+                                            width: isHovered ? 3.2 : 1.8,
                                           ),
                                         ),
                                         child: isHovered

@@ -198,7 +198,7 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
     // Start 180ms hold timer to open the radial quick access menu
     _fabHoldTimer = Timer(const Duration(milliseconds: 180), () {
       if (mounted && _fabDownPosition != null && !_isRadialOpen) {
-        HapticFeedback.mediumImpact();
+        HapticFeedback.heavyImpact();
         setState(() {
           _isRadialOpen = true;
           _currentDragPosition = _fabDownPosition;
@@ -214,13 +214,18 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
         // If finger moves more than 14px outward, immediately bloom the radial menu open
         if (dist > 14.0) {
           _fabHoldTimer?.cancel();
-          HapticFeedback.mediumImpact();
+          HapticFeedback.heavyImpact();
           setState(() {
             _isRadialOpen = true;
             _currentDragPosition = event.position;
           });
         }
       }
+    } else {
+      // Forward drag movements through to the radial overlay!
+      setState(() {
+        _currentDragPosition = event.position;
+      });
     }
   }
 

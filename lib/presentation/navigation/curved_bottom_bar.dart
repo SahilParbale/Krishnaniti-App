@@ -144,9 +144,10 @@ class _CurvedBottomBarState extends State<CurvedBottomBar> {
           Positioned(
             top: 0,
             child: Listener(
+              behavior: HitTestBehavior.opaque,
               onPointerDown: (e) {
                 setState(() => _isFabPressed = true);
-                HapticFeedback.lightImpact();
+                HapticFeedback.heavyImpact();
                 widget.onFabPointerDown?.call(e);
               },
               onPointerMove: (e) {
