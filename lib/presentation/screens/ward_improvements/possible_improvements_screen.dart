@@ -537,62 +537,34 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
             ),
           ),
           titleSpacing: 0,
-          title: Text(
-            isMr ? 'संभाव्य सुधारणा' : 'Possible Improvements',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                isMr ? 'संभाव्य सुधारणा' : 'Possible Improvements',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 16.5,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: -0.2,
+                ),
+              ),
+              Text(
+                isMr ? 'नागरिकांच्या सूचना व पायाभूत सुविधांचे प्रस्ताव' : 'Citizen proposals, ideas & future project plans',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFFE0F2FE),
+                ),
+              ),
+            ],
           ),
-          actions: [
-            // View Mode Toggle Button: Grid / Report Table
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: Icon(
-                      Icons.grid_view_rounded,
-                      size: 18,
-                      color: _viewMode == 'grid' ? Colors.white : Colors.white60,
-                    ),
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    tooltip: isMr ? 'ग्रिड दृश्य' : 'Grid View',
-                    onPressed: () => setState(() => _viewMode = 'grid'),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      Icons.table_chart_outlined,
-                      size: 18,
-                      color: _viewMode == 'report' ? Colors.white : Colors.white60,
-                    ),
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    tooltip: isMr ? 'अहवाल तक्ता' : 'Report Table',
-                    onPressed: () => setState(() => _viewMode = 'report'),
-                  ),
-                ],
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.picture_as_pdf_outlined, color: Colors.white, size: 22),
-              tooltip: isMr ? 'PDF अहवाल' : 'Download Report',
-              onPressed: () {
-                ImprovementReportGenerator.generateAndPrintImprovementReport(
-                  improvements: filtered,
-                  areaFilter: _areaSearchCtrl.text.isNotEmpty ? _areaSearchCtrl.text : 'All Areas',
-                  statusFilter: _statusFilter,
-                );
-              },
-            ),
-          ],
+          actions: const [],
         ),
         body: _loading
             ? const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)))
@@ -600,53 +572,8 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                 onRefresh: _fetchData,
                 color: const Color(0xFF0284C7),
                 child: ListView(
-                  padding: EdgeInsets.zero,
+                  padding: const EdgeInsets.only(top: 10),
                   children: [
-                    // Sticky Header Section matching PossibleImprovements.tsx lines 226-280
-                    Container(
-                      color: const Color(0xFFF8FAFC),
-                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                isMr ? 'संभाव्य सुधारणा' : 'Possible Improvements',
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF0F172A),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFE0F2FE),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: const Color(0xFFBAE6FD)),
-                                ),
-                                child: Text(
-                                  '${isMr ? "उपलब्ध" : "Found"}: ${filtered.length}',
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF0284C7),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            isMr ? 'नागरिकांच्या सूचना व पायाभूत सुविधांचे प्रस्ताव' : 'Citizen proposals, ideas & future project plans',
-                            style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                          ),
-                        ],
-                      ),
-                    ),
-
                     // Filters Card matching PossibleImprovements.tsx lines 282-383
                     Container(
                       margin: const EdgeInsets.fromLTRB(16, 6, 16, 12),
@@ -887,6 +814,104 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                                 _buildStatusPill('Complete', isMr ? 'पूर्ण' : 'Complete'),
                               ],
                             ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Secondary Tools: Count, View Mode & PDF Export
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE0F2FE),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: const Color(0xFFBAE6FD)),
+                            ),
+                            child: Text(
+                              '${isMr ? "उपलब्ध सुधारणा" : "Total Items"}: ${filtered.length}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0284C7),
+                              ),
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              // View Mode Toggle (Grid / Report Table)
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    InkWell(
+                                      onTap: () => setState(() => _viewMode = 'grid'),
+                                      borderRadius: const BorderRadius.horizontal(left: Radius.circular(7)),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                                        decoration: BoxDecoration(
+                                          color: _viewMode == 'grid' ? const Color(0xFF0284C7) : Colors.transparent,
+                                          borderRadius: const BorderRadius.horizontal(left: Radius.circular(7)),
+                                        ),
+                                        child: Icon(
+                                          Icons.grid_view_rounded,
+                                          size: 17,
+                                          color: _viewMode == 'grid' ? Colors.white : const Color(0xFF64748B),
+                                        ),
+                                      ),
+                                    ),
+                                    InkWell(
+                                      onTap: () => setState(() => _viewMode = 'report'),
+                                      borderRadius: const BorderRadius.horizontal(right: Radius.circular(7)),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                                        decoration: BoxDecoration(
+                                          color: _viewMode == 'report' ? const Color(0xFF0284C7) : Colors.transparent,
+                                          borderRadius: const BorderRadius.horizontal(right: Radius.circular(7)),
+                                        ),
+                                        child: Icon(
+                                          Icons.table_chart_outlined,
+                                          size: 17,
+                                          color: _viewMode == 'report' ? Colors.white : const Color(0xFF64748B),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              // PDF Export Button
+                              OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  minimumSize: Size.zero,
+                                  side: const BorderSide(color: Color(0xFFCBD5E1)),
+                                  backgroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                icon: const Icon(Icons.picture_as_pdf_outlined, size: 16, color: Color(0xFFDC2626)),
+                                label: Text(
+                                  isMr ? 'PDF अहवाल' : 'PDF',
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+                                ),
+                                onPressed: () {
+                                  ImprovementReportGenerator.generateAndPrintImprovementReport(
+                                    improvements: filtered,
+                                    areaFilter: _areaSearchCtrl.text.isNotEmpty ? _areaSearchCtrl.text : 'All Areas',
+                                    statusFilter: _statusFilter,
+                                  );
+                                },
+                              ),
+                            ],
                           ),
                         ],
                       ),

@@ -259,62 +259,34 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
             ),
           ),
           titleSpacing: 0,
-          title: Text(
-            isMr ? 'प्रभागातील समस्या' : 'Ward Problems',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                isMr ? 'प्रभागातील समस्या' : 'Ward Problems',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 16.5,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: -0.2,
+                ),
+              ),
+              Text(
+                isMr ? 'तक्रारी व नागरिकांच्या अडचणी' : 'Grievances & civic issues',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFFE0F2FE),
+                ),
+              ),
+            ],
           ),
-          actions: [
-            // View Mode Toggle Button: Grid / Report Table
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: Icon(
-                      Icons.grid_view_rounded,
-                      size: 18,
-                      color: _viewMode == 'grid' ? Colors.white : Colors.white60,
-                    ),
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    tooltip: isMr ? 'ग्रिड दृश्य' : 'Grid View',
-                    onPressed: () => setState(() => _viewMode = 'grid'),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      Icons.table_chart_outlined,
-                      size: 18,
-                      color: _viewMode == 'report' ? Colors.white : Colors.white60,
-                    ),
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    tooltip: isMr ? 'अहवाल तक्ता' : 'Report Table',
-                    onPressed: () => setState(() => _viewMode = 'report'),
-                  ),
-                ],
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.picture_as_pdf_outlined, color: Colors.white, size: 22),
-              tooltip: isMr ? 'PDF अहवाल' : 'Download Report',
-              onPressed: () {
-                WardProblemsReportGenerator.generateAndPrintReport(
-                  problems: filtered,
-                  areaFilter: _areaSearchCtrl.text.isNotEmpty ? _areaSearchCtrl.text : 'All Areas',
-                  statusFilter: _filterStatus,
-                );
-              },
-            ),
-          ],
+          actions: const [],
         ),
         body: _loading
             ? const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)))
@@ -322,58 +294,8 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                 onRefresh: _fetchComplaints,
                 color: const Color(0xFF0284C7),
                 child: ListView(
-                  padding: EdgeInsets.zero,
+                  padding: const EdgeInsets.only(top: 10),
                   children: [
-                    // Sticky Header Section matching WardWiseProblem.tsx lines 305-356
-                    Container(
-                      color: const Color(0xFFF8FAFC),
-                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                isMr ? 'प्रभागातील समस्या' : 'Ward Problems',
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF0F172A),
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Row(
-                                children: [
-                                  Text(
-                                    isMr ? 'तक्रारी व नागरिकांच्या अडचणी' : 'Grievances & civic issues',
-                                    style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFE0F2FE),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: const Color(0xFFBAE6FD)),
-                                    ),
-                                    child: Text(
-                                      '${isMr ? "सापडल्या" : "Found"}: ${filtered.length}',
-                                      style: const TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF0284C7),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-
                     // Search and Filters Card matching WardWiseProblem.tsx lines 358-472
                     Container(
                       margin: const EdgeInsets.fromLTRB(16, 6, 16, 12),
@@ -618,6 +540,104 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                                 _buildStatusPill('Resolved', isMr ? 'निकाली' : 'Resolved'),
                               ],
                             ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Secondary Tools: Count, View Mode & PDF Export
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE0F2FE),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: const Color(0xFFBAE6FD)),
+                            ),
+                            child: Text(
+                              '${isMr ? "एकूण समस्या" : "Total Issues"}: ${filtered.length}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0284C7),
+                              ),
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              // View Mode Toggle (Grid / Report Table)
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    InkWell(
+                                      onTap: () => setState(() => _viewMode = 'grid'),
+                                      borderRadius: const BorderRadius.horizontal(left: Radius.circular(7)),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                                        decoration: BoxDecoration(
+                                          color: _viewMode == 'grid' ? const Color(0xFF0284C7) : Colors.transparent,
+                                          borderRadius: const BorderRadius.horizontal(left: Radius.circular(7)),
+                                        ),
+                                        child: Icon(
+                                          Icons.grid_view_rounded,
+                                          size: 17,
+                                          color: _viewMode == 'grid' ? Colors.white : const Color(0xFF64748B),
+                                        ),
+                                      ),
+                                    ),
+                                    InkWell(
+                                      onTap: () => setState(() => _viewMode = 'report'),
+                                      borderRadius: const BorderRadius.horizontal(right: Radius.circular(7)),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                                        decoration: BoxDecoration(
+                                          color: _viewMode == 'report' ? const Color(0xFF0284C7) : Colors.transparent,
+                                          borderRadius: const BorderRadius.horizontal(right: Radius.circular(7)),
+                                        ),
+                                        child: Icon(
+                                          Icons.table_chart_outlined,
+                                          size: 17,
+                                          color: _viewMode == 'report' ? Colors.white : const Color(0xFF64748B),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              // PDF Export Button
+                              OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  minimumSize: Size.zero,
+                                  side: const BorderSide(color: Color(0xFFCBD5E1)),
+                                  backgroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                icon: const Icon(Icons.picture_as_pdf_outlined, size: 16, color: Color(0xFFDC2626)),
+                                label: Text(
+                                  isMr ? 'PDF अहवाल' : 'PDF',
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+                                ),
+                                onPressed: () {
+                                  WardProblemsReportGenerator.generateAndPrintReport(
+                                    problems: filtered,
+                                    areaFilter: _areaSearchCtrl.text.isNotEmpty ? _areaSearchCtrl.text : 'All Areas',
+                                    statusFilter: _filterStatus,
+                                  );
+                                },
+                              ),
+                            ],
                           ),
                         ],
                       ),

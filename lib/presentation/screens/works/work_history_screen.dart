@@ -567,61 +567,34 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
             ),
           ),
           titleSpacing: 0,
-          title: Text(
-            isMr ? 'कामांचा इतिहास' : 'Work History',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                isMr ? 'कामांचा इतिहास' : 'Work History',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 16.5,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: -0.2,
+                ),
+              ),
+              Text(
+                isMr ? 'विकासकामे व प्रगती अहवाल' : 'Civic development works & progress',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFFE0F2FE),
+                ),
+              ),
+            ],
           ),
-          actions: [
-            // View Mode Toggle Button: Grid / Report Table
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: Icon(
-                      Icons.grid_view_rounded,
-                      size: 18,
-                      color: _viewMode == 'grid' ? Colors.white : Colors.white60,
-                    ),
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    tooltip: isMr ? 'ग्रिड दृश्य' : 'Grid View',
-                    onPressed: () => setState(() => _viewMode = 'grid'),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      Icons.table_chart_outlined,
-                      size: 18,
-                      color: _viewMode == 'report' ? Colors.white : Colors.white60,
-                    ),
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    tooltip: isMr ? 'अहवाल तक्ता' : 'Report Table',
-                    onPressed: () => setState(() => _viewMode = 'report'),
-                  ),
-                ],
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.picture_as_pdf_outlined, color: Colors.white, size: 22),
-              tooltip: isMr ? 'PDF अहवाल' : 'Download Report',
-              onPressed: () {
-                WorkReportGenerator.generateAndPrintWorkReport(
-                  works: filtered,
-                  areaFilter: _areaSearchCtrl.text.isNotEmpty ? _areaSearchCtrl.text : 'All Areas',
-                );
-              },
-            ),
-          ],
+          actions: const [],
         ),
         body: _loading
             ? const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)))
@@ -629,57 +602,14 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                 onRefresh: _fetchData,
                 color: const Color(0xFF0284C7),
                 child: ListView(
-                  padding: EdgeInsets.zero,
+                  padding: const EdgeInsets.only(top: 10),
                   children: [
-                    // Sticky Header Section matching WorkHistory.tsx lines 281-346
-                    Container(
-                      color: const Color(0xFFF8FAFC),
-                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+                    // Action Bar matching WorkHistory.tsx
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    isMr ? 'कामांचा इतिहास' : 'Work History',
-                                    style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF0F172A),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFE0F2FE),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: const Color(0xFFBAE6FD)),
-                                    ),
-                                    child: Text(
-                                      '${isMr ? "सापडली" : "Found"}: ${filtered.length}',
-                                      style: const TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF0284C7),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                isMr ? 'प्रभागात पूर्ण झालेली व सुरू असलेली विकासकामे' : 'Historical archive of completed works & projects',
-                                style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-
-                          // Ahwal Action Bar matching lines 317-329 & 348-375
                           if (!_selectionMode) ...[
                             Row(
                               children: [
@@ -716,6 +646,52 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                                     ),
                                     icon: const Icon(Icons.description_outlined, size: 16, color: Color(0xFF0284C7)),
                                     label: Text(isMr ? 'अहवाल तयार करा' : 'Generate Ahwal', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                // View Mode Toggle
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: const Color(0xFFCBD5E1)),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      InkWell(
+                                        onTap: () => setState(() => _viewMode = 'grid'),
+                                        borderRadius: const BorderRadius.horizontal(left: Radius.circular(9)),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+                                          decoration: BoxDecoration(
+                                            color: _viewMode == 'grid' ? const Color(0xFF0284C7) : Colors.transparent,
+                                            borderRadius: const BorderRadius.horizontal(left: Radius.circular(9)),
+                                          ),
+                                          child: Icon(
+                                            Icons.grid_view_rounded,
+                                            size: 17,
+                                            color: _viewMode == 'grid' ? Colors.white : const Color(0xFF64748B),
+                                          ),
+                                        ),
+                                      ),
+                                      InkWell(
+                                        onTap: () => setState(() => _viewMode = 'report'),
+                                        borderRadius: const BorderRadius.horizontal(right: Radius.circular(9)),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+                                          decoration: BoxDecoration(
+                                            color: _viewMode == 'report' ? const Color(0xFF0284C7) : Colors.transparent,
+                                            borderRadius: const BorderRadius.horizontal(right: Radius.circular(9)),
+                                          ),
+                                          child: Icon(
+                                            Icons.table_chart_outlined,
+                                            size: 17,
+                                            color: _viewMode == 'report' ? Colors.white : const Color(0xFF64748B),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],

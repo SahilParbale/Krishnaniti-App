@@ -787,26 +787,34 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
             ),
           ),
           titleSpacing: 0,
-          title: Text(
-            isMr ? 'प्रभागनिहाय तरतूद' : 'Ward Wise Provision',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                isMr ? 'प्रभागनिहाय तरतूद' : 'Ward Wise Provision',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 16.5,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: -0.2,
+                ),
+              ),
+              Text(
+                isMr ? 'वार्षिक बजेट तरतुदी आणि निधी वाटप' : 'Yearly municipal provisions & capital development allocations',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFFE0F2FE),
+                ),
+              ),
+            ],
           ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.picture_as_pdf_outlined, color: Colors.white, size: 22),
-              tooltip: isMr ? 'PDF अहवाल' : 'Download PDF',
-              onPressed: () {
-                WardProvisionReportGenerator.generateAndPrintProvisionReport(
-                  provisions: _provisions,
-                  year: _year,
-                );
-              },
-            ),
-          ],
+          actions: const [],
         ),
         body: _loading
             ? const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)))
@@ -816,94 +824,68 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                 child: ListView(
                   padding: EdgeInsets.zero,
                   children: [
-                    // Sticky Header Section matching WardProvisions.tsx lines 157-206
+                    // FY Selector & PDF Download Bar
                     Container(
                       color: const Color(0xFFF8FAFC),
                       padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Row(
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                isMr ? 'प्रभागनिहाय तरतूद' : 'Ward Wise Provision',
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF0F172A),
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                isMr ? 'वार्षिक बजेट तरतुदी आणि निधी वाटप' : 'Yearly municipal provisions & capital development allocations',
-                                style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-
-                          // FY Selector & PDF Download Bar matching lines 173-190
-                          Row(
-                            children: [
-                              // FY Selector
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: const Color(0xFFCBD5E1)),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.calendar_today_outlined, size: 14, color: Color(0xFF64748B)),
-                                    const SizedBox(width: 6),
-                                    DropdownButton<String>(
-                                      value: _year,
-                                      underline: const SizedBox(),
-                                      icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 18),
-                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
-                                      items: const [
-                                        DropdownMenuItem(value: '2024-2025', child: Text('FY 2024-2025')),
-                                        DropdownMenuItem(value: '2023-2024', child: Text('FY 2023-2024')),
-                                      ],
-                                      onChanged: (val) {
-                                        if (val != null) {
-                                          setState(() => _year = val);
-                                          _loadProvisions();
-                                        }
-                                      },
-                                    ),
+                          // FY Selector
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFFCBD5E1)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.calendar_today_outlined, size: 14, color: Color(0xFF64748B)),
+                                const SizedBox(width: 6),
+                                DropdownButton<String>(
+                                  value: _year,
+                                  underline: const SizedBox(),
+                                  icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 18),
+                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+                                  items: const [
+                                    DropdownMenuItem(value: '2024-2025', child: Text('FY 2024-2025')),
+                                    DropdownMenuItem(value: '2023-2024', child: Text('FY 2023-2024')),
                                   ],
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-
-                              // Download Report
-                              Expanded(
-                                child: OutlinedButton.icon(
-                                  onPressed: () {
-                                    WardProvisionReportGenerator.generateAndPrintProvisionReport(
-                                      provisions: _provisions,
-                                      year: _year,
-                                    );
+                                  onChanged: (val) {
+                                    if (val != null) {
+                                      setState(() => _year = val);
+                                      _loadProvisions();
+                                    }
                                   },
-                                  style: OutlinedButton.styleFrom(
-                                    backgroundColor: const Color(0xFFF0F9FF),
-                                    foregroundColor: const Color(0xFF0284C7),
-                                    side: const BorderSide(color: Color(0xFFBAE6FD)),
-                                    padding: const EdgeInsets.symmetric(vertical: 10),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  ),
-                                  icon: const Icon(Icons.download_rounded, size: 16),
-                                  label: Text(
-                                    isMr ? 'PDF अहवाल' : 'Download PDF',
-                                    style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
-                                  ),
                                 ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+
+                          // Download Report
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                WardProvisionReportGenerator.generateAndPrintProvisionReport(
+                                  provisions: _provisions,
+                                  year: _year,
+                                );
+                              },
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: const Color(0xFFF0F9FF),
+                                foregroundColor: const Color(0xFF0284C7),
+                                side: const BorderSide(color: Color(0xFFBAE6FD)),
+                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                               ),
-                            ],
+                              icon: const Icon(Icons.download_rounded, size: 16),
+                              label: Text(
+                                isMr ? 'PDF अहवाल' : 'Download PDF',
+                                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
+                              ),
+                            ),
                           ),
                         ],
                       ),
