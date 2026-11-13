@@ -646,7 +646,10 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
             builder: (ctx) => IconButton(
               icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
               tooltip: 'Open Menu Drawer',
-              onPressed: () => Scaffold.of(ctx).openDrawer(),
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                Scaffold.of(ctx).openDrawer();
+              },
             ),
           ),
           titleSpacing: 0,
