@@ -9,7 +9,6 @@ import '../../providers/auth_provider.dart';
 import 'new_complaint_bottom_sheet.dart';
 import 'complaint_detail_screen.dart';
 import '../../navigation/app_drawer.dart';
-import '../../navigation/app_bar_leading_nav_button.dart';
 
 class ComplaintsScreen extends ConsumerStatefulWidget {
   final VoidCallback? onBackToHome;
@@ -440,7 +439,16 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
           backgroundColor: const Color(0xFF0284C7),
           elevation: 0,
           scrolledUnderElevation: 0,
-          leading: const AppBarLeadingNavButton(),
+          leading: Builder(
+            builder: (ctx) => IconButton(
+              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+              tooltip: 'Open Menu Drawer',
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                Scaffold.of(ctx).openDrawer();
+              },
+            ),
+          ),
           titleSpacing: 0,
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,4 +1,3 @@
-import '../../navigation/app_bar_leading_nav_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -271,7 +270,16 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
           backgroundColor: const Color(0xFF0284C7),
           elevation: 0,
           scrolledUnderElevation: 0,
-          leading: const AppBarLeadingNavButton(),
+          leading: Builder(
+            builder: (ctx) => IconButton(
+              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+              tooltip: 'Open Menu Drawer',
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                Scaffold.of(ctx).openDrawer();
+              },
+            ),
+          ),
           titleSpacing: 0,
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

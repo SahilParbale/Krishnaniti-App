@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -6,7 +7,6 @@ import 'package:intl/intl.dart';
 import '../../../core/constants/app_config.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../navigation/app_drawer.dart';
-import '../../navigation/app_bar_leading_nav_button.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/custom_navigation_provider.dart';
 
@@ -566,7 +566,16 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
         foregroundColor: Colors.white,
         elevation: 0,
         titleSpacing: 0,
-        leading: const AppBarLeadingNavButton(),
+        leading: Builder(
+            builder: (ctx) => IconButton(
+              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+              tooltip: 'Open Menu Drawer',
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                Scaffold.of(ctx).openDrawer();
+              },
+            ),
+          ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,

@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -6,7 +7,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/voter_model.dart';
 import '../../../data/repositories/voters_repository.dart';
 import '../../navigation/app_drawer.dart';
-import '../../navigation/app_bar_leading_nav_button.dart';
 import 'voter_profile_screen.dart';
 import 'voter_slip_generator.dart';
 
@@ -404,7 +404,16 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
         backgroundColor: const Color(0xFF0284C7),
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: const AppBarLeadingNavButton(),
+        leading: Builder(
+            builder: (ctx) => IconButton(
+              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+              tooltip: 'Open Menu Drawer',
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                Scaffold.of(ctx).openDrawer();
+              },
+            ),
+          ),
         titleSpacing: 0,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import '../../../data/models/improvement_model.dart';
 import '../../../data/repositories/improvements_repository.dart';
 import '../../navigation/app_drawer.dart';
-import '../../navigation/app_bar_leading_nav_button.dart';
 import '../../providers/auth_provider.dart';
 import 'improvement_detail_screen.dart';
 import 'improvement_report_generator.dart';
@@ -449,7 +448,16 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
           backgroundColor: const Color(0xFF0284C7),
           elevation: 0,
           scrolledUnderElevation: 0,
-          leading: const AppBarLeadingNavButton(),
+          leading: Builder(
+            builder: (ctx) => IconButton(
+              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+              tooltip: 'Open Menu Drawer',
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                Scaffold.of(ctx).openDrawer();
+              },
+            ),
+          ),
           titleSpacing: 0,
           title: Text(
             isMr ? 'संभाव्य सुधारणा' : 'Possible Improvements',

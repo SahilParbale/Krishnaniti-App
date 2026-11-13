@@ -397,9 +397,19 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
               index: index,
               builders: _builders,
               isGoingBack: isGoingBack,
-              canPop: canPop,
-              onPop: () {
-                ref.read(activeScreenProvider.notifier).popScreen();
+              onSwipeRight: () {
+                // Swipe Right -> Go back to previous screen or dashboard
+                final popped = ref.read(activeScreenProvider.notifier).popScreen();
+                if (!popped && index != 0) {
+                  ref.read(activeScreenProvider.notifier).resetToDashboard();
+                  ref.read(mainTabIndexProvider.notifier).setTab(0);
+                }
+              },
+              onSwipeLeft: () {
+                // Swipe Left -> Next screen in tab bar or sequence
+                if (index < screenKeys.length - 1) {
+                  ref.read(activeScreenProvider.notifier).setScreen(screenKeys[index + 1]);
+                }
               },
             ),
             bottomNavigationBar: CurvedBottomBar(

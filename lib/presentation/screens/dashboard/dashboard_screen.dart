@@ -7,7 +7,6 @@ import '../../../data/repositories/voters_repository.dart';
 import '../../../data/repositories/letters_repository.dart';
 import '../complaints/new_complaint_screen.dart';
 import '../../navigation/app_drawer.dart';
-import '../../navigation/app_bar_leading_nav_button.dart';
 import '../../providers/navigation_provider.dart';
 
 final lettersRepoProvider = Provider((ref) => LettersRepository());
@@ -449,7 +448,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
           backgroundColor: const Color(0xFF0284C7),
           elevation: 0,
           scrolledUnderElevation: 0,
-          leading: const AppBarLeadingNavButton(),
+          leading: Builder(
+            builder: (ctx) => IconButton(
+              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+              tooltip: 'Open Menu Drawer',
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                Scaffold.of(ctx).openDrawer();
+              },
+            ),
+          ),
           titleSpacing: 0,
           title: Row(
             children: [

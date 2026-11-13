@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import '../../../data/models/ward_provision_model.dart';
 import '../../../data/repositories/ward_provisions_repository.dart';
 import '../../navigation/app_drawer.dart';
-import '../../navigation/app_bar_leading_nav_button.dart';
 import '../../providers/auth_provider.dart';
 import 'ward_provision_report_generator.dart';
 
@@ -614,7 +613,16 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
           backgroundColor: const Color(0xFF0284C7),
           elevation: 0,
           scrolledUnderElevation: 0,
-          leading: const AppBarLeadingNavButton(),
+          leading: Builder(
+            builder: (ctx) => IconButton(
+              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+              tooltip: 'Open Menu Drawer',
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                Scaffold.of(ctx).openDrawer();
+              },
+            ),
+          ),
           titleSpacing: 0,
           title: Text(
             isMr ? 'प्रभागनिहाय तरतूद' : 'Ward Wise Provision',
