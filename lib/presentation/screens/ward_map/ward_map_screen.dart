@@ -123,8 +123,49 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
     );
   }
 
+  Widget _fieldLabel(String text, {bool isRequired = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 5),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            text,
+            style: const TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF334155),
+            ),
+          ),
+          if (isRequired)
+            const Text(' *', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  InputDecoration _inputDec({String? hint, Widget? prefixIcon}) {
+    return InputDecoration(
+      hintText: hint,
+      prefixIcon: prefixIcon,
+      hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+      ),
+    );
+  }
+
   // Add custom geo-tag point modal
   void _showAddPointModal() {
+    final isMr = ref.read(isMarathiProvider);
     final titleCtrl = TextEditingController();
     final addrCtrl = TextEditingController();
     final descCtrl = TextEditingController();
@@ -142,129 +183,213 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 20,
+                    offset: Offset(0, -4),
+                  ),
+                ],
               ),
-              padding: EdgeInsets.only(
-                top: 20,
-                left: 20,
-                right: 20,
-                bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+              child: Column(
+                children: [
+                  // Drag Handle
+                  Center(
+                    child: Container(
+                      width: 44,
+                      height: 5,
+                      margin: const EdgeInsets.only(top: 10, bottom: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                  ),
+
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Tag New Ward Location / Spot',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                        ),
-                        IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(sheetCtx)),
-                      ],
-                    ),
-                    const Divider(),
-                    const SizedBox(height: 12),
-                    const Text('Location Title *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: titleCtrl,
-                      decoration: InputDecoration(
-                        hintText: 'e.g. New Community Hall, EVM Polling Booth...',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    const Text('Category *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    DropdownButtonFormField<String>(
-                      initialValue: cat,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      ),
-                      items: const [
-                        DropdownMenuItem(value: 'Booth', child: Text('Polling Booth / मतदान केंद्र')),
-                        DropdownMenuItem(value: 'CivilWorks', child: Text('Civil Works / विकासकामे')),
-                        DropdownMenuItem(value: 'Amenity', child: Text('Civic Amenity / नागरी सुविधा')),
-                        DropdownMenuItem(value: 'ProblemSpot', child: Text('Problem Spot / समस्या ठिकाण')),
-                        DropdownMenuItem(value: 'Office', child: Text('Ward Office / कार्यालय')),
-                      ],
-                      onChanged: (val) {
-                        if (val != null) setModalState(() => cat = val);
-                      },
-                    ),
-                    const SizedBox(height: 14),
-                    const Text('Address / Landmark *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: addrCtrl,
-                      decoration: InputDecoration(
-                        hintText: 'e.g. Near Ganpati Mandir, Lane 4, Prabhag 12...',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    const Text('Description / Scope', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: descCtrl,
-                      maxLines: 2,
-                      decoration: InputDecoration(
-                        hintText: 'Infrastructure scope, voter capacity, or details...',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0284C7),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        onPressed: () async {
-                          if (titleCtrl.text.trim().isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Please enter location title')),
-                            );
-                            return;
-                          }
-                          final newPoint = WardMapPointModel(
-                            id: 'pt-${DateTime.now().millisecondsSinceEpoch}',
-                            title: titleCtrl.text.trim(),
-                            category: cat,
-                            address: addrCtrl.text.trim(),
-                            latitude: 18.5020 + (_allPoints.length * 0.0008),
-                            longitude: 73.8430 + (_allPoints.length * 0.0008),
-                            description: descCtrl.text.trim(),
-                            relativeX: 0.45 + ((_allPoints.length % 5) * 0.06),
-                            relativeY: 0.40 + ((_allPoints.length % 4) * 0.08),
-                            status: 'Verified Spot',
-                          );
-
-                          Navigator.pop(sheetCtx);
-                          final added = await ref.read(wardMapRepoProvider).addWardPoint(newPoint);
-                          setState(() {
-                            _allPoints.insert(0, added);
-                            _selectedPoint = added;
-                          });
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Location geo-tagged on Ward Map!'),
-                                backgroundColor: Color(0xFF16A34A),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                            );
-                          }
-                        },
-                        child: const Text('Save Geo-Tag', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      ),
+                              child: const Icon(
+                                Icons.pin_drop_rounded,
+                                color: Color(0xFF0284C7),
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  isMr ? 'नवीन ठिकाण नोंदवा' : 'Tag New Ward Location',
+                                  style: const TextStyle(
+                                    fontSize: 17.5,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF0F172A),
+                                  ),
+                                ),
+                                Text(
+                                  isMr ? 'प्रभागातील ठिकाण, केंद्र किंवा काम टॅग करा' : 'Tag location, booth or civic spot',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF64748B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                          onPressed: () => Navigator.pop(sheetCtx),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  const Divider(height: 1),
+
+                  // Content
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.all(16),
+                      children: [
+                        // Location Title & Category Side-by-side
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _fieldLabel(isMr ? 'ठिकाणाचे नाव' : 'Location Title', isRequired: true),
+                                  TextField(
+                                    controller: titleCtrl,
+                                    decoration: _inputDec(
+                                      hint: isMr ? 'उदा. समाज मंदिर, ईव्हीएम केंद्र...' : 'e.g. Community Hall, Booth...',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              flex: 2,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _fieldLabel(isMr ? 'वर्गवारी' : 'Category', isRequired: true),
+                                  DropdownButtonFormField<String>(
+                                    initialValue: cat,
+                                    decoration: _inputDec(),
+                                    items: [
+                                      DropdownMenuItem(value: 'Booth', child: Text(isMr ? 'मतदान केंद्र' : 'Booth')),
+                                      DropdownMenuItem(value: 'CivilWorks', child: Text(isMr ? 'विकासकाम' : 'Civil Works')),
+                                      DropdownMenuItem(value: 'Amenity', child: Text(isMr ? 'सुविधा' : 'Amenity')),
+                                      DropdownMenuItem(value: 'ProblemSpot', child: Text(isMr ? 'समस्या ठिकाण' : 'Problem Spot')),
+                                      DropdownMenuItem(value: 'Office', child: Text(isMr ? 'कार्यालय' : 'Office')),
+                                    ],
+                                    onChanged: (val) {
+                                      if (val != null) setModalState(() => cat = val);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Address / Landmark
+                        _fieldLabel(isMr ? 'पत्ता / लँडमार्क' : 'Address / Landmark', isRequired: true),
+                        TextField(
+                          controller: addrCtrl,
+                          decoration: _inputDec(
+                            hint: isMr ? 'उदा. गणपती मंदिराशेजारी, गल्ली क्र. ४...' : 'e.g. Near Ganpati Mandir, Lane 4, Prabhag 12...',
+                            prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF64748B)),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Description / Scope
+                        _fieldLabel(isMr ? 'तपशील / व्याप्ती' : 'Description / Scope'),
+                        TextField(
+                          controller: descCtrl,
+                          maxLines: 3,
+                          decoration: _inputDec(
+                            hint: isMr ? 'काबाचे स्वरूप, मतदार क्षमता किंवा इतर तपशील...' : 'Infrastructure scope, voter capacity, or details...',
+                          ),
+                        ),
+                        const SizedBox(height: 22),
+
+                        // Submit Button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0284C7),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              elevation: 0,
+                            ),
+                            icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
+                            label: Text(
+                              isMr ? 'ठिकाण सेव्ह करा' : 'Save Geo-Tag',
+                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                            ),
+                            onPressed: () async {
+                              if (titleCtrl.text.trim().isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(isMr ? 'कृपया ठिकाणाचे नाव प्रविष्ट करा' : 'Please enter location title')),
+                                );
+                                return;
+                              }
+                              final newPoint = WardMapPointModel(
+                                id: 'pt-${DateTime.now().millisecondsSinceEpoch}',
+                                title: titleCtrl.text.trim(),
+                                category: cat,
+                                address: addrCtrl.text.trim(),
+                                latitude: 18.5020 + (_allPoints.length * 0.0008),
+                                longitude: 73.8430 + (_allPoints.length * 0.0008),
+                                description: descCtrl.text.trim(),
+                                relativeX: 0.45 + ((_allPoints.length % 5) * 0.06),
+                                relativeY: 0.40 + ((_allPoints.length % 4) * 0.08),
+                                status: 'Verified Spot',
+                              );
+
+                              Navigator.pop(sheetCtx);
+                              final added = await ref.read(wardMapRepoProvider).addWardPoint(newPoint);
+                              setState(() {
+                                _allPoints.insert(0, added);
+                                _selectedPoint = added;
+                              });
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(isMr ? 'प्रभाग नकाशावर ठिकाण यशस्वीरित्या जोडले गेले!' : 'Location geo-tagged on Ward Map!'),
+                                    backgroundColor: const Color(0xFF16A34A),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             );
           },

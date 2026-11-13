@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../../../core/localization/app_strings.dart';
 import '../../../data/models/diary_task_model.dart';
 import '../../../data/repositories/diary_tasks_repository.dart';
 import '../../providers/auth_provider.dart';

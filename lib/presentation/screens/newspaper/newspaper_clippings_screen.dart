@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/newspaper_clipping_model.dart';
 import '../../../data/repositories/newspaper_clippings_repository.dart';
 import '../../navigation/app_drawer.dart';
+import '../../providers/auth_provider.dart';
 import 'newspaper_clipping_detail_screen.dart';
 import 'newspaper_report_generator.dart';
 
@@ -182,6 +183,7 @@ class _NewspaperClippingsScreenState
   }
 
   void _showAddClippingModal() {
+    final isMr = ref.read(isMarathiProvider);
     final titleMrCtrl = TextEditingController();
     final titleEnCtrl = TextEditingController();
     final descMrCtrl = TextEditingController();
@@ -194,6 +196,46 @@ class _NewspaperClippingsScreenState
     String sentiment = _activeSentiment == 'negative' ? 'negative' : 'positive';
     String dateStr = DateTime.now().toString().substring(0, 10);
 
+    InputDecoration inputDec({String? hint, String? prefixText}) {
+      return InputDecoration(
+        hintText: hint,
+        prefixText: prefixText,
+        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+        prefixStyle: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        filled: true,
+        fillColor: Colors.white,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1.0),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+        ),
+      );
+    }
+
+    Widget fieldLabel(String text, {bool isRequired = false}) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 5.0),
+        child: RichText(
+          text: TextSpan(
+            text: text,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+            children: isRequired
+                ? const [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                    ),
+                  ]
+                : [],
+          ),
+        ),
+      );
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -205,328 +247,307 @@ class _NewspaperClippingsScreenState
               height: MediaQuery.of(context).size.height * 0.90,
               decoration: const BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 20,
+                    offset: Offset(0, -4),
+                  ),
+                ],
+              ),
+              padding: EdgeInsets.only(
+                top: 8,
+                left: 20,
+                right: 20,
+                bottom: MediaQuery.of(modalCtx).viewInsets.bottom + 20,
               ),
               child: Column(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF0284C7),
-                      borderRadius:
-                          BorderRadius.vertical(top: Radius.circular(20)),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: const [
-                            Icon(Icons.add_photo_alternate_outlined,
-                                color: Colors.white),
-                            SizedBox(width: 8),
-                            Text(
-                              'Add Newspaper Clipping',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close_rounded,
-                              color: Colors.white),
-                          onPressed: () => Navigator.pop(ctx),
-                        ),
-                      ],
+                  // Top Drag Handle
+                  Center(
+                    child: Container(
+                      width: 44,
+                      height: 5,
+                      margin: const EdgeInsets.only(top: 6, bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
                     ),
                   ),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.newspaper_rounded, color: Color(0xFF0284C7), size: 20),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          isMr ? 'वृत्तपत्र कात्रण जोडा' : 'Add Newspaper Clipping',
+                          style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                        onPressed: () => Navigator.pop(ctx),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
                   Expanded(
-                    child: ListView(
-                      padding: const EdgeInsets.all(16),
-                      children: [
-                        // Sentiment Type
-                        const Text('Coverage Type',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 13)),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () =>
-                                    setModalState(() => sentiment = 'positive'),
-                                child: Container(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 9),
-                                  decoration: BoxDecoration(
-                                    color: sentiment == 'positive'
-                                        ? const Color(0xFF16A34A)
-                                        : const Color(0xFFF1F5F9),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: sentiment == 'positive'
-                                          ? const Color(0xFF16A34A)
-                                          : const Color(0xFFCBD5E1),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Coverage Type & Newspaper side-by-side
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    fieldLabel(isMr ? 'बातमी स्वरूप' : 'Coverage Type'),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: GestureDetector(
+                                            onTap: () => setModalState(() => sentiment = 'positive'),
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(vertical: 10),
+                                              decoration: BoxDecoration(
+                                                color: sentiment == 'positive' ? const Color(0xFF16A34A) : const Color(0xFFF1F5F9),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              alignment: Alignment.center,
+                                              child: Text(
+                                                isMr ? 'सकारात्मक' : 'Positive',
+                                                style: TextStyle(
+                                                  color: sentiment == 'positive' ? Colors.white : const Color(0xFF334155),
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Expanded(
+                                          child: GestureDetector(
+                                            onTap: () => setModalState(() => sentiment = 'negative'),
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(vertical: 10),
+                                              decoration: BoxDecoration(
+                                                color: sentiment == 'negative' ? const Color(0xFFDC2626) : const Color(0xFFF1F5F9),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              alignment: Alignment.center,
+                                              child: Text(
+                                                isMr ? 'समस्या' : 'Issue',
+                                                style: TextStyle(
+                                                  color: sentiment == 'negative' ? Colors.white : const Color(0xFF334155),
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    'Positive',
-                                    style: TextStyle(
-                                      color: sentiment == 'positive'
-                                          ? Colors.white
-                                          : const Color(0xFF334155),
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                    ),
-                                  ),
+                                  ],
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () =>
-                                    setModalState(() => sentiment = 'negative'),
-                                child: Container(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 9),
-                                  decoration: BoxDecoration(
-                                    color: sentiment == 'negative'
-                                        ? const Color(0xFFDC2626)
-                                        : const Color(0xFFF1F5F9),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: sentiment == 'negative'
-                                          ? const Color(0xFFDC2626)
-                                          : const Color(0xFFCBD5E1),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    fieldLabel(isMr ? 'वृत्तपत्र' : 'Newspaper', isRequired: true),
+                                    DropdownButtonFormField<String>(
+                                      initialValue: newspaper,
+                                      decoration: inputDec(),
+                                      items: _newspapers
+                                          .where((n) => n != 'All')
+                                          .map((p) => DropdownMenuItem(value: p, child: Text(p)))
+                                          .toList(),
+                                      onChanged: (val) {
+                                        if (val != null) {
+                                          setModalState(() => newspaper = val);
+                                        }
+                                      },
                                     ),
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    'Negative / Civic Issue',
-                                    style: TextStyle(
-                                      color: sentiment == 'negative'
-                                          ? Colors.white
-                                          : const Color(0xFF334155),
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Headline Marathi & Headline English side-by-side
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    fieldLabel(isMr ? 'शीर्षक (मराठी)' : 'Headline (Marathi)', isRequired: true),
+                                    TextField(
+                                      controller: titleMrCtrl,
+                                      decoration: inputDec(hint: isMr ? 'उदा. प्रभाग १२ मध्ये रस्त्याचे डांबरीकरण...' : 'e.g. Road repairs...'),
                                     ),
-                                  ),
+                                  ],
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 14),
-
-                        // Newspaper Dropdown
-                        const Text('Newspaper',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 13)),
-                        const SizedBox(height: 6),
-                        DropdownButtonFormField<String>(
-                          initialValue: newspaper,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 10),
-                          ),
-                          items: _newspapers
-                              .where((n) => n != 'All')
-                              .map((p) => DropdownMenuItem(
-                                  value: p, child: Text(p)))
-                              .toList(),
-                          onChanged: (val) {
-                            if (val != null) {
-                              setModalState(() => newspaper = val);
-                            }
-                          },
-                        ),
-                        const SizedBox(height: 14),
-
-                        // Headline Marathi
-                        const Text('Headline (Marathi / Local)',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 13)),
-                        const SizedBox(height: 6),
-                        TextField(
-                          controller: titleMrCtrl,
-                          decoration: const InputDecoration(
-                            hintText: 'e.g., Road resurfacing in Ward 12...',
-                            border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 10),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-
-                        // Headline English
-                        const Text('Headline (English)',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 13)),
-                        const SizedBox(height: 6),
-                        TextField(
-                          controller: titleEnCtrl,
-                          decoration: const InputDecoration(
-                            hintText: 'e.g. Major development fund sanctioned...',
-                            border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 10),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-
-                        // Description Marathi
-                        const Text('Description',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 13)),
-                        const SizedBox(height: 6),
-                        TextField(
-                          controller: descMrCtrl,
-                          maxLines: 3,
-                          decoration: const InputDecoration(
-                            hintText: 'Enter article summary here...',
-                            border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.all(12),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-
-                        // Civic Action Taken
-                        const Text('Civic Action Taken',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 13)),
-                        const SizedBox(height: 6),
-                        TextField(
-                          controller: actionCtrl,
-                          maxLines: 2,
-                          decoration: const InputDecoration(
-                            hintText: 'Action taken by Nagarsevak after news publication...',
-                            border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.all(12),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-
-                        // Image URL & Page
-                        TextField(
-                          controller: imageCtrl,
-                          decoration: const InputDecoration(
-                            labelText: 'Image / Clipping URL (Optional)',
-                            hintText: 'https://images.unsplash.com/...',
-                            border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 10),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: pageCtrl,
-                                decoration: const InputDecoration(
-                                  labelText: 'Page & Edition',
-                                  border: OutlineInputBorder(),
-                                  contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 10),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    fieldLabel(isMr ? 'शीर्षक (इंग्रजी)' : 'Headline (English)'),
+                                    TextField(
+                                      controller: titleEnCtrl,
+                                      decoration: inputDec(hint: 'e.g. Major development fund...'),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: TextField(
-                                controller: journalistCtrl,
-                                decoration: const InputDecoration(
-                                  labelText: 'Journalist / Byline',
-                                  border: OutlineInputBorder(),
-                                  contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 10),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Page & Edition and Journalist side-by-side
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    fieldLabel(isMr ? 'पान व आवृत्ती' : 'Page & Edition'),
+                                    TextField(
+                                      controller: pageCtrl,
+                                      decoration: inputDec(hint: 'Page 3 • Pune Metro'),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0284C7),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10)),
-                          ),
-                          icon: const Icon(Icons.check_circle_outline_rounded),
-                          label: const Text(
-                            'Save Clipping',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 14),
-                          ),
-                          onPressed: () async {
-                            final mrText = titleMrCtrl.text.trim();
-                            final enText = titleEnCtrl.text.trim();
-                            if (mrText.isEmpty && enText.isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content:
-                                        Text('Please enter headline for clipping.')),
-                              );
-                              return;
-                            }
-
-                            final newClip = NewspaperClippingModel(
-                              id: 'clip_${DateTime.now().millisecondsSinceEpoch}',
-                              title: enText.isNotEmpty ? enText : mrText,
-                              titleMarathi: mrText.isNotEmpty ? mrText : enText,
-                              newspaper: newspaper,
-                              date: dateStr,
-                              sentiment: sentiment,
-                              imageUrl: imageCtrl.text.trim().isNotEmpty
-                                  ? imageCtrl.text.trim()
-                                  : 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&q=80&w=800',
-                              pageNumber: pageCtrl.text.trim().isNotEmpty
-                                  ? pageCtrl.text.trim()
-                                  : 'Page 3',
-                              description: descEnCtrl.text.trim().isNotEmpty
-                                  ? descEnCtrl.text.trim()
-                                  : descMrCtrl.text.trim(),
-                              descriptionMarathi:
-                                  descMrCtrl.text.trim().isNotEmpty
-                                      ? descMrCtrl.text.trim()
-                                      : descEnCtrl.text.trim(),
-                              actionTaken: actionCtrl.text.trim().isNotEmpty
-                                  ? actionCtrl.text.trim()
-                                  : 'Conducted site inspection with PMC municipal engineers and resolved the issue.',
-                              journalistName: journalistCtrl.text.trim().isNotEmpty
-                                  ? journalistCtrl.text.trim()
-                                  : null,
-                            );
-
-                            final repo = ref.read(newspaperClippingsRepoProvider);
-                            await repo.addClipping(newClip);
-                            if (modalCtx.mounted) {
-                              Navigator.pop(modalCtx);
-                            }
-                            _loadData();
-
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                      'Newspaper clipping added successfully!'),
-                                  backgroundColor: Color(0xFF0284C7),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    fieldLabel(isMr ? 'पत्रकार / प्रतिनिधी' : 'Journalist / Byline'),
+                                    TextField(
+                                      controller: journalistCtrl,
+                                      decoration: inputDec(hint: 'e.g. Sachin More'),
+                                    ),
+                                  ],
                                 ),
-                              );
-                            }
-                          },
-                        ),
-                        const SizedBox(height: 24),
-                      ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Image URL
+                          fieldLabel(isMr ? 'कात्रण फोटो URL' : 'Image / Clipping URL (Optional)'),
+                          TextField(
+                            controller: imageCtrl,
+                            decoration: inputDec(hint: 'https://images.unsplash.com/...'),
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Civic Action Taken
+                          fieldLabel(isMr ? 'नगरसेवकांकडून झालेली तत्काळ कारवाई' : 'Civic Action Taken by Corporator'),
+                          TextField(
+                            controller: actionCtrl,
+                            maxLines: 2,
+                            decoration: inputDec(hint: isMr ? 'वृत्त प्रसिद्ध झाल्यानंतर घेतलेली तत्काळ दखल व कारवाई...' : 'Action taken after publication...'),
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Description
+                          fieldLabel(isMr ? 'वृत्ताचा गोषवारा / तपशील' : 'Description / Article Summary'),
+                          TextField(
+                            controller: descMrCtrl,
+                            maxLines: 2,
+                            decoration: inputDec(hint: isMr ? 'बातम्यांचे थोडक्यात विश्लेषण...' : 'Enter article summary here...'),
+                          ),
+                          const SizedBox(height: 20),
+
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0284C7),
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              onPressed: () async {
+                                final mrText = titleMrCtrl.text.trim();
+                                final enText = titleEnCtrl.text.trim();
+                                if (mrText.isEmpty && enText.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(isMr ? 'कृपया बातमीचे शीर्षक प्रविष्ट करा' : 'Please enter headline for clipping.')),
+                                  );
+                                  return;
+                                }
+
+                                final newClip = NewspaperClippingModel(
+                                  id: 'clip_${DateTime.now().millisecondsSinceEpoch}',
+                                  title: enText.isNotEmpty ? enText : mrText,
+                                  titleMarathi: mrText.isNotEmpty ? mrText : enText,
+                                  newspaper: newspaper,
+                                  date: dateStr,
+                                  sentiment: sentiment,
+                                  imageUrl: imageCtrl.text.trim().isNotEmpty
+                                      ? imageCtrl.text.trim()
+                                      : 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&q=80&w=800',
+                                  pageNumber: pageCtrl.text.trim().isNotEmpty ? pageCtrl.text.trim() : 'Page 3',
+                                  description: descEnCtrl.text.trim().isNotEmpty ? descEnCtrl.text.trim() : descMrCtrl.text.trim(),
+                                  descriptionMarathi: descMrCtrl.text.trim().isNotEmpty ? descMrCtrl.text.trim() : descEnCtrl.text.trim(),
+                                  actionTaken: actionCtrl.text.trim().isNotEmpty
+                                      ? actionCtrl.text.trim()
+                                      : 'Conducted site inspection with PMC municipal engineers and resolved the issue.',
+                                  journalistName: journalistCtrl.text.trim().isNotEmpty ? journalistCtrl.text.trim() : null,
+                                );
+
+                                final repo = ref.read(newspaperClippingsRepoProvider);
+                                await repo.addClipping(newClip);
+                                if (modalCtx.mounted) {
+                                  Navigator.pop(modalCtx);
+                                }
+                                _loadData();
+
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(isMr ? 'कात्रण यशस्वीरित्या जोडले!' : 'Newspaper clipping added successfully!'),
+                                      backgroundColor: const Color(0xFF16A34A),
+                                    ),
+                                  );
+                                }
+                              },
+                              child: Text(
+                                isMr ? 'कात्रण जतन करा' : 'Save Clipping',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                      ),
                     ),
                   ),
                 ],

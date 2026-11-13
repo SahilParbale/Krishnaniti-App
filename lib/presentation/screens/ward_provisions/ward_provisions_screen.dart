@@ -22,9 +22,6 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
   bool _loading = true;
   List<WardProvisionModel> _provisions = [];
 
-  // Delete modal confirmation target
-  WardProvisionModel? _deleteTarget;
-
   @override
   void initState() {
     super.initState();
@@ -116,8 +113,61 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
     }
   }
 
+  Widget _fieldLabel(String text, {bool isRequired = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: RichText(
+        text: TextSpan(
+          text: text,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF334155),
+          ),
+          children: isRequired
+              ? const [
+                  TextSpan(
+                    text: ' *',
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ]
+              : [],
+        ),
+      ),
+    );
+  }
+
+  InputDecoration _inputDec({String? hintText, Widget? prefixIcon, Widget? suffixIcon, String? prefixText}) {
+    return InputDecoration(
+      hintText: hintText,
+      prefixText: prefixText,
+      hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+      prefixIcon: prefixIcon,
+      suffixIcon: suffixIcon,
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+      ),
+    );
+  }
+
   // Add Provision Request Modal matching WardProvisions.tsx lines 347-456
   void _openAddModal() {
+    final isMr = ref.read(isMarathiProvider);
     final titleCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     final reqAmtCtrl = TextEditingController();
@@ -139,234 +189,277 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 20,
+                    offset: Offset(0, -4),
+                  ),
+                ],
               ),
-              padding: EdgeInsets.only(
-                top: 20,
-                left: 20,
-                right: 20,
-                bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+              child: Column(
+                children: [
+                  // Drag Handle
+                  Center(
+                    child: Container(
+                      width: 44,
+                      height: 5,
+                      margin: const EdgeInsets.only(top: 10, bottom: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                  ),
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Add Provision Request',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                        ),
-                        IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(sheetCtx)),
-                      ],
-                    ),
-                    const Divider(height: 20),
-
-                    // Title
-                    const Text('Provision Proposal Title *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: titleCtrl,
-                      decoration: InputDecoration(
-                        hintText: 'Enter project name / provision title...',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Requested Amount & Date
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Requested Amount (₹) *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: reqAmtCtrl,
-                                keyboardType: TextInputType.number,
-                                decoration: InputDecoration(
-                                  prefixText: '₹ ',
-                                  hintText: 'e.g. 2500000',
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(7),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
                               ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Requested Date *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: dateCtrl,
-                                decoration: InputDecoration(
-                                  hintText: 'YYYY-MM-DD',
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
+                              child: const Icon(
+                                Icons.account_balance_wallet_rounded,
+                                color: Color(0xFF0284C7),
+                                size: 20,
                               ),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              isMr ? 'नवीन तरतूद मागणी जोडा' : 'Add Provision Request',
+                              style: const TextStyle(
+                                fontSize: 17.5,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
+                          ],
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                          onPressed: () => Navigator.pop(sheetCtx),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 14),
-
-                    // Category & Area
-                    Row(
+                  ),
+                  const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.all(16),
                       children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Category *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: catCtrl,
-                                decoration: InputDecoration(
-                                  hintText: 'e.g. Roads, Water, Health',
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
-                              ),
-                            ],
+                        // Title
+                        _fieldLabel(isMr ? 'प्रस्तावित कामाचे नाव / शीर्षक' : 'Provision Proposal Title', isRequired: true),
+                        TextField(
+                          controller: titleCtrl,
+                          decoration: _inputDec(
+                            hintText: isMr ? 'प्रकल्प / कामाचे नाव प्रविष्ट करा...' : 'Enter project name / provision title...',
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Area / Locality *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: areaCtrl,
-                                decoration: InputDecoration(
-                                  hintText: 'Enter Area / Ward Sector',
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
+                        const SizedBox(height: 14),
 
-                    // Financial Year & Letter Reference
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Financial Year', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 6),
-                              DropdownButtonFormField<String>(
-                                value: finYear,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                ),
-                                items: const [
-                                  DropdownMenuItem(value: '2024-2025', child: Text('FY 2024-2025')),
-                                  DropdownMenuItem(value: '2023-2024', child: Text('FY 2023-2024')),
+                        // Requested Amount & Date side-by-side
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _fieldLabel(isMr ? 'मागणी केलेली रक्कम (₹)' : 'Requested Amount (₹)', isRequired: true),
+                                  TextField(
+                                    controller: reqAmtCtrl,
+                                    keyboardType: TextInputType.number,
+                                    decoration: _inputDec(
+                                      prefixText: '₹ ',
+                                      hintText: 'e.g. 2500000',
+                                    ),
+                                  ),
                                 ],
-                                onChanged: (val) {
-                                  if (val != null) setModalState(() => finYear = val);
-                                },
                               ),
-                            ],
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _fieldLabel(isMr ? 'मागणी तारीख' : 'Requested Date', isRequired: true),
+                                  TextField(
+                                    controller: dateCtrl,
+                                    decoration: _inputDec(
+                                      hintText: 'YYYY-MM-DD',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Category & Area side-by-side
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _fieldLabel(isMr ? 'श्रेणी / विभाग' : 'Category', isRequired: true),
+                                  TextField(
+                                    controller: catCtrl,
+                                    decoration: _inputDec(
+                                      hintText: isMr ? 'उदा. रस्ते, पाणी, आरोग्य' : 'e.g. Roads, Water, Health',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _fieldLabel(isMr ? 'परिसर / प्रभाग भाग' : 'Area / Locality', isRequired: true),
+                                  TextField(
+                                    controller: areaCtrl,
+                                    decoration: _inputDec(
+                                      hintText: isMr ? 'उदा. शनिवार पेठ' : 'Enter Area / Ward Sector',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Financial Year & Letter Reference side-by-side
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _fieldLabel(isMr ? 'आर्थिक वर्ष' : 'Financial Year'),
+                                  DropdownButtonFormField<String>(
+                                    value: finYear,
+                                    decoration: _inputDec(),
+                                    items: const [
+                                      DropdownMenuItem(value: '2024-2025', child: Text('FY 2024-2025', style: TextStyle(fontSize: 13))),
+                                      DropdownMenuItem(value: '2023-2024', child: Text('FY 2023-2024', style: TextStyle(fontSize: 13))),
+                                    ],
+                                    onChanged: (val) {
+                                      if (val != null) setModalState(() => finYear = val);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _fieldLabel(isMr ? 'पत्र संदर्भ क्र.' : 'Letter Ref No', isRequired: true),
+                                  TextField(
+                                    controller: refCtrl,
+                                    decoration: _inputDec(
+                                      hintText: 'e.g. PMC/RDS/1042',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Description
+                        _fieldLabel(isMr ? 'सविस्तर स्वरूप / औचित्य' : 'Detailed Scope / Justification'),
+                        TextField(
+                          controller: descCtrl,
+                          maxLines: 3,
+                          decoration: _inputDec(
+                            hintText: isMr ? 'नागरी गरजेचा थोडक्यात तपशील...' : 'Brief details about the civic requirement...',
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Letter Ref No *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: refCtrl,
-                                decoration: InputDecoration(
-                                  hintText: 'e.g. PMC/RDS/1042',
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
-                              ),
-                            ],
+                        const SizedBox(height: 24),
+
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0284C7),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              elevation: 0,
+                            ),
+                            icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
+                            label: Text(
+                              isMr ? 'तरतूद मागणी जतन करा' : 'Save Provision Request',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                            onPressed: () async {
+                              if (titleCtrl.text.trim().isEmpty) {
+                                ScaffoldMessenger.of(sheetCtx).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      isMr ? 'कृपया कामाचे नाव प्रविष्ट करा.' : 'Please enter proposal title',
+                                    ),
+                                  ),
+                                );
+                                return;
+                              }
+
+                              final newProv = WardProvisionModel(
+                                id: 'prov-${DateTime.now().millisecondsSinceEpoch}',
+                                title: titleCtrl.text.trim(),
+                                description: descCtrl.text.trim(),
+                                requestedAmount: double.tryParse(reqAmtCtrl.text.trim()) ?? 0,
+                                sanctionedAmount: null,
+                                requestedDate: dateCtrl.text.trim(),
+                                sanctionedDate: null,
+                                status: 'Pending',
+                                financialYear: finYear,
+                                category: catCtrl.text.trim().isNotEmpty ? catCtrl.text.trim() : 'General',
+                                area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : 'Ward 12',
+                                letterReference: refCtrl.text.trim().isNotEmpty ? refCtrl.text.trim() : 'PMC/GEN/001',
+                              );
+
+                              final repo = ref.read(wardProvisionsRepoProvider);
+                              await repo.addProvision(newProv);
+                              await _loadProvisions();
+
+                              if (sheetCtx.mounted) Navigator.pop(sheetCtx);
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      isMr
+                                          ? 'तरतूद मागणी यशस्वीरित्या जोडली गेली!'
+                                          : 'Provision request added successfully!',
+                                    ),
+                                    backgroundColor: const Color(0xFF16A34A),
+                                  ),
+                                );
+                              }
+                            },
                           ),
                         ),
+                        const SizedBox(height: 24),
                       ],
                     ),
-                    const SizedBox(height: 14),
-
-                    // Description
-                    const Text('Detailed Scope / Justification', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: descCtrl,
-                      maxLines: 3,
-                      decoration: InputDecoration(
-                        hintText: 'Brief details about the civic requirement...',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0284C7),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                        onPressed: () async {
-                          if (titleCtrl.text.trim().isEmpty) {
-                            ScaffoldMessenger.of(sheetCtx).showSnackBar(
-                              const SnackBar(content: Text('Please enter proposal title')),
-                            );
-                            return;
-                          }
-
-                          final newProv = WardProvisionModel(
-                            id: 'prov-${DateTime.now().millisecondsSinceEpoch}',
-                            title: titleCtrl.text.trim(),
-                            description: descCtrl.text.trim(),
-                            requestedAmount: double.tryParse(reqAmtCtrl.text.trim()) ?? 0,
-                            sanctionedAmount: null,
-                            requestedDate: dateCtrl.text.trim(),
-                            sanctionedDate: null,
-                            status: 'Pending',
-                            financialYear: finYear,
-                            category: catCtrl.text.trim().isNotEmpty ? catCtrl.text.trim() : 'General',
-                            area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : 'Ward 12',
-                            letterReference: refCtrl.text.trim().isNotEmpty ? refCtrl.text.trim() : 'PMC/GEN/001',
-                          );
-
-                          final repo = ref.read(wardProvisionsRepoProvider);
-                          await repo.addProvision(newProv);
-                          await _loadProvisions();
-
-                          if (sheetCtx.mounted) Navigator.pop(sheetCtx);
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Provision request added successfully!'),
-                                backgroundColor: Color(0xFF16A34A),
-                              ),
-                            );
-                          }
-                        },
-                        child: const Text('Save Provision Request', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             );
           },
@@ -377,6 +470,7 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
 
   // Update Sanction Modal matching WardProvisions.tsx lines 460-540
   void _openUpdateModal(WardProvisionModel item) {
+    final isMr = ref.read(isMarathiProvider);
     final sancAmtCtrl = TextEditingController(text: (item.sanctionedAmount ?? item.requestedAmount).toStringAsFixed(0));
     final areaCtrl = TextEditingController(text: item.area);
     final sancDateCtrl = TextEditingController(text: item.sanctionedDate ?? DateFormat('yyyy-MM-dd').format(DateTime.now()));
@@ -394,159 +488,228 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 20,
+                    offset: Offset(0, -4),
+                  ),
+                ],
               ),
-              padding: EdgeInsets.only(
-                top: 20,
-                left: 20,
-                right: 20,
-                bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+              child: Column(
+                children: [
+                  // Drag Handle
+                  Center(
+                    child: Container(
+                      width: 44,
+                      height: 5,
+                      margin: const EdgeInsets.only(top: 10, bottom: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                  ),
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Update Sanction Details',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(7),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.verified_rounded,
+                                color: Color(0xFF0284C7),
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              isMr ? 'मंजुरी तपशील अद्यतनित करा' : 'Update Sanction Details',
+                              style: const TextStyle(
+                                fontSize: 17.5,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
+                          ],
                         ),
-                        IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(sheetCtx)),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                          onPressed: () => Navigator.pop(sheetCtx),
+                        ),
                       ],
                     ),
-                    const Divider(height: 16),
+                  ),
+                  const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.all(16),
+                      children: [
+                        // Project overview card
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                isMr ? 'प्रकल्प / काम' : 'PROJECT',
+                                style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8)),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(item.title, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${isMr ? "मागणी रक्कम" : "Requested"}: ${_formatCurrency(item.requestedAmount)}',
+                                style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 14),
 
-                    // Project overview card matching line 471
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('PROJECT', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
-                          const SizedBox(height: 3),
-                          Text(item.title, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                          const SizedBox(height: 4),
-                          Text('Requested: ${_formatCurrency(item.requestedAmount)}', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Sanctioned Amount
-                    const Text('Sanctioned Amount (₹) *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: sancAmtCtrl,
-                      keyboardType: TextInputType.number,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
-                      decoration: InputDecoration(
-                        prefixText: '₹ ',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Area
-                    const Text('Area / Ward Sector *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: areaCtrl,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Sanctioned Date
-                    const Text('Sanctioned Date *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: sancDateCtrl,
-                      decoration: InputDecoration(
-                        hintText: 'YYYY-MM-DD',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Status Choices matching lines 511-526
-                    const Text('Approval Status', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 8),
-                    GridView.count(
-                      crossAxisCount: 2,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      mainAxisSpacing: 8,
-                      crossAxisSpacing: 8,
-                      childAspectRatio: 2.8,
-                      children: ['Approved', 'Partially Approved', 'Pending', 'Rejected'].map((s) {
-                        final isSel = status == s;
-                        return InkWell(
-                          onTap: () => setModalState(() => status = s),
-                          borderRadius: BorderRadius.circular(8),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: isSel ? const Color(0xFF0284C7) : Colors.white,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: isSel ? const Color(0xFF0284C7) : const Color(0xFFCBD5E1)),
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              s,
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: isSel ? Colors.white : const Color(0xFF334155),
+                        // Sanctioned Amount & Sanctioned Date side-by-side
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _fieldLabel(isMr ? 'मंजूर रक्कम (₹)' : 'Sanctioned Amount (₹)', isRequired: true),
+                                  TextField(
+                                    controller: sancAmtCtrl,
+                                    keyboardType: TextInputType.number,
+                                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
+                                    decoration: _inputDec(
+                                      prefixText: '₹ ',
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 24),
-
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0284C7),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _fieldLabel(isMr ? 'मंजूर तारीख' : 'Sanctioned Date', isRequired: true),
+                                  TextField(
+                                    controller: sancDateCtrl,
+                                    decoration: _inputDec(
+                                      hintText: 'YYYY-MM-DD',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                        onPressed: () async {
-                          final updated = item.copyWith(
-                            sanctionedAmount: double.tryParse(sancAmtCtrl.text.trim()),
-                            area: areaCtrl.text.trim(),
-                            sanctionedDate: sancDateCtrl.text.trim(),
-                            status: status,
-                          );
+                        const SizedBox(height: 14),
 
-                          final repo = ref.read(wardProvisionsRepoProvider);
-                          await repo.updateProvision(updated);
-                          await _loadProvisions();
+                        // Area
+                        _fieldLabel(isMr ? 'परिसर / प्रभाग भाग' : 'Area / Ward Sector', isRequired: true),
+                        TextField(
+                          controller: areaCtrl,
+                          decoration: _inputDec(),
+                        ),
+                        const SizedBox(height: 14),
 
-                          if (sheetCtx.mounted) Navigator.pop(sheetCtx);
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Sanction details updated successfully!'),
-                                backgroundColor: Color(0xFF16A34A),
+                        // Status Choices
+                        _fieldLabel(isMr ? 'मंजुरी स्थिती' : 'Approval Status', isRequired: true),
+                        GridView.count(
+                          crossAxisCount: 2,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          mainAxisSpacing: 8,
+                          crossAxisSpacing: 8,
+                          childAspectRatio: 2.8,
+                          children: ['Approved', 'Partially Approved', 'Pending', 'Rejected'].map((s) {
+                            final isSel = status == s;
+                            return InkWell(
+                              onTap: () => setModalState(() => status = s),
+                              borderRadius: BorderRadius.circular(8),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: isSel ? const Color(0xFF0284C7) : Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: isSel ? const Color(0xFF0284C7) : const Color(0xFFCBD5E1)),
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  _getStatusText(s, isMr),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: isSel ? Colors.white : const Color(0xFF334155),
+                                  ),
+                                ),
                               ),
                             );
-                          }
-                        },
-                        child: const Text('Update Sanction', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                      ),
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 24),
+
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0284C7),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              elevation: 0,
+                            ),
+                            icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
+                            label: Text(
+                              isMr ? 'मंजुरी अद्यतनित करा' : 'Update Sanction',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                            onPressed: () async {
+                              final updated = item.copyWith(
+                                sanctionedAmount: double.tryParse(sancAmtCtrl.text.trim()),
+                                area: areaCtrl.text.trim(),
+                                sanctionedDate: sancDateCtrl.text.trim(),
+                                status: status,
+                              );
+
+                              final repo = ref.read(wardProvisionsRepoProvider);
+                              await repo.updateProvision(updated);
+                              await _loadProvisions();
+
+                              if (sheetCtx.mounted) Navigator.pop(sheetCtx);
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      isMr
+                                          ? 'मंजुरी तपशील यशस्वीरित्या अद्यतनित केले!'
+                                          : 'Sanction details updated successfully!',
+                                    ),
+                                    backgroundColor: const Color(0xFF16A34A),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             );
           },

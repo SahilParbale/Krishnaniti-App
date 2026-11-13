@@ -199,6 +199,7 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
 
   // Add Improvement Modal matching lines 524-642
   void _openAddModal() {
+    final isMr = ref.read(isMarathiProvider);
     final titleCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     final locCtrl = TextEditingController();
@@ -206,6 +207,46 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
     final dateCtrl = TextEditingController(text: DateFormat('yyyy-MM-dd').format(DateTime.now().add(const Duration(days: 90))));
     final benCtrl = TextEditingController();
     String status = 'Pending';
+
+    InputDecoration inputDec({String? hint, String? prefixText}) {
+      return InputDecoration(
+        hintText: hint,
+        prefixText: prefixText,
+        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+        prefixStyle: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        filled: true,
+        fillColor: Colors.white,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1.0),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+        ),
+      );
+    }
+
+    Widget fieldLabel(String text, {bool isRequired = false}) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 5.0),
+        child: RichText(
+          text: TextSpan(
+            text: text,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+            children: isRequired
+                ? const [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                    ),
+                  ]
+                : [],
+          ),
+        ),
+      );
+    }
 
     showModalBottomSheet(
       context: context,
@@ -215,211 +256,248 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
         return StatefulBuilder(
           builder: (stCtx, setModalState) {
             return Container(
-              height: MediaQuery.of(context).size.height * 0.90,
+              height: MediaQuery.of(context).size.height * 0.88,
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 20,
+                    offset: Offset(0, -4),
+                  ),
+                ],
               ),
               padding: EdgeInsets.only(
-                top: 20,
+                top: 8,
                 left: 20,
                 right: 20,
                 bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
               ),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Propose Possible Improvement',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              child: Column(
+                children: [
+                  // Top Drag Handle
+                  Center(
+                    child: Container(
+                      width: 44,
+                      height: 5,
+                      margin: const EdgeInsets.only(top: 6, bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(sheetCtx)),
-                      ],
-                    ),
-                    const Divider(height: 20),
-
-                    // Improvement Title
-                    const Text('Title / Proposed Work *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: titleCtrl,
-                      decoration: InputDecoration(
-                        hintText: 'e.g. Pedestrian skywalk, Open gym, Traffic signal...',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        child: const Icon(Icons.lightbulb_rounded, color: Color(0xFF0284C7), size: 20),
                       ),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Description
-                    const Text('Detailed Description *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: descCtrl,
-                      maxLines: 3,
-                      decoration: InputDecoration(
-                        hintText: 'Why is this improvement needed? How will it help constituents?',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          isMr ? 'संभाव्य प्रभाग सुधारणा प्रस्ताव' : 'Propose Ward Improvement',
+                          style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Location & Area
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                        onPressed: () => Navigator.pop(sheetCtx),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Title & Status side-by-side
+                          Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Specific Spot / Location *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: locCtrl,
-                                decoration: InputDecoration(
-                                  hintText: 'Chowk, Road crossing...',
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                              Expanded(
+                                flex: 6,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    fieldLabel(isMr ? 'सुधारणा कामाचे नाव' : 'Title / Proposed Work', isRequired: true),
+                                    TextField(
+                                      controller: titleCtrl,
+                                      decoration: inputDec(hint: isMr ? 'उदा. पादचारी पूल, ओपन जिम...' : 'e.g. Pedestrian skywalk, Open gym...'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                flex: 4,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    fieldLabel(isMr ? 'स्थिती' : 'Status'),
+                                    DropdownButtonFormField<String>(
+                                      initialValue: status,
+                                      decoration: inputDec(),
+                                      items: [
+                                        DropdownMenuItem(value: 'Pending', child: Text(isMr ? 'प्रलंबित' : 'Pending')),
+                                        DropdownMenuItem(value: 'Planned', child: Text(isMr ? 'नियोजित' : 'Planned')),
+                                        DropdownMenuItem(value: 'In Progress', child: Text(isMr ? 'सुरू' : 'In Progress')),
+                                        DropdownMenuItem(value: 'Complete', child: Text(isMr ? 'पूर्ण' : 'Complete')),
+                                      ],
+                                      onChanged: (val) {
+                                        if (val != null) setModalState(() => status = val);
+                                      },
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
+                          const SizedBox(height: 12),
+
+                          // Location & Prabhag Area side-by-side
+                          Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Prabhag Area', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: areaCtrl,
-                                decoration: InputDecoration(
-                                  hintText: 'Sector 5, Shivaji Nagar...',
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    fieldLabel(isMr ? 'निश्चित ठिकाण / चौक' : 'Specific Spot / Location', isRequired: true),
+                                    TextField(
+                                      controller: locCtrl,
+                                      decoration: inputDec(hint: isMr ? 'उदा. चौक, रस्ता क्रॉसिंग...' : 'e.g. Chowk, Crossing...'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    fieldLabel(isMr ? 'प्रभाग परिसर' : 'Prabhag Area'),
+                                    TextField(
+                                      controller: areaCtrl,
+                                      decoration: inputDec(hint: isMr ? 'उदा. सेक्टर ५, शिवाजी नगर...' : 'e.g. Sector 5, Shivaji Nagar...'),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
+                          const SizedBox(height: 12),
 
-                    // Status Dropdown
-                    const Text('Status', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    DropdownButtonFormField<String>(
-                      value: status,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          // Target Date & Beneficiaries side-by-side
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    fieldLabel(isMr ? 'अपेक्षित पूर्णता दिनांक' : 'Expected Target Date'),
+                                    TextField(
+                                      controller: dateCtrl,
+                                      decoration: inputDec(hint: 'YYYY-MM-DD'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    fieldLabel(isMr ? 'अंदाजे लाभार्थी नागरिक' : 'Estimated Beneficiaries'),
+                                    TextField(
+                                      controller: benCtrl,
+                                      keyboardType: TextInputType.number,
+                                      decoration: inputDec(hint: 'e.g. 15000'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Description
+                          fieldLabel(isMr ? 'तपशीलवार माहिती व आवश्यकता' : 'Detailed Description', isRequired: true),
+                          TextField(
+                            controller: descCtrl,
+                            maxLines: 3,
+                            decoration: inputDec(hint: isMr ? 'ही सुधारणा का आवश्यक आहे? नागरिकांना काय फायदा होईल?' : 'Why is this improvement needed? How will it help?'),
+                          ),
+                          const SizedBox(height: 20),
+
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0284C7),
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              onPressed: () async {
+                                if (titleCtrl.text.trim().isEmpty) {
+                                  ScaffoldMessenger.of(sheetCtx).showSnackBar(
+                                    SnackBar(content: Text(isMr ? 'कृपया सुधारणा कामाचे नाव प्रविष्ट करा' : 'Please enter improvement title')),
+                                  );
+                                  return;
+                                }
+
+                                final newImp = ImprovementModel(
+                                  id: 'imp-${DateTime.now().millisecondsSinceEpoch}',
+                                  title: titleCtrl.text.trim(),
+                                  description: descCtrl.text.trim().isNotEmpty
+                                      ? descCtrl.text.trim()
+                                      : 'Proposed infrastructural improvement for Prabhag 12.',
+                                  location: locCtrl.text.trim().isNotEmpty ? locCtrl.text.trim() : 'Ward 12',
+                                  area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : 'Ward 12',
+                                  status: status,
+                                  votes: 1,
+                                  completionDate: dateCtrl.text.trim(),
+                                  peopleBenefited: int.tryParse(benCtrl.text.trim()),
+                                  createdAt: DateTime.now().toIso8601String(),
+                                );
+
+                                final repo = ref.read(improvementsRepoProvider);
+                                await repo.addImprovement(newImp);
+                                await _fetchData();
+
+                                if (sheetCtx.mounted) Navigator.pop(sheetCtx);
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(isMr ? 'सुधारणा प्रस्ताव यशस्वीरित्या सादर केला!' : 'Improvement proposed successfully!'),
+                                      backgroundColor: const Color(0xFF16A34A),
+                                    ),
+                                  );
+                                }
+                              },
+                              child: Text(
+                                isMr ? 'प्रस्ताव सादर करा' : 'Submit Proposal',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                        ],
                       ),
-                      items: const [
-                        DropdownMenuItem(value: 'Pending', child: Text('Pending (प्रलंबित विचार)')),
-                        DropdownMenuItem(value: 'Planned', child: Text('Planned (नियोजित)')),
-                        DropdownMenuItem(value: 'In Progress', child: Text('In Progress (सुरू)')),
-                        DropdownMenuItem(value: 'Complete', child: Text('Complete (पूर्ण)')),
-                      ],
-                      onChanged: (val) {
-                        if (val != null) setModalState(() => status = val);
-                      },
                     ),
-                    const SizedBox(height: 14),
-
-                    // Target Date & Benefited People
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Expected Target Date', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: dateCtrl,
-                                decoration: InputDecoration(
-                                  hintText: 'YYYY-MM-DD',
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Estimated Beneficiaries', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: benCtrl,
-                                keyboardType: TextInputType.number,
-                                decoration: InputDecoration(
-                                  hintText: 'e.g. 15000',
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0284C7),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                        onPressed: () async {
-                          if (titleCtrl.text.trim().isEmpty) {
-                            ScaffoldMessenger.of(sheetCtx).showSnackBar(
-                              const SnackBar(content: Text('Please enter improvement title')),
-                            );
-                            return;
-                          }
-
-                          final newImp = ImprovementModel(
-                            id: 'imp-${DateTime.now().millisecondsSinceEpoch}',
-                            title: titleCtrl.text.trim(),
-                            description: descCtrl.text.trim().isNotEmpty
-                                ? descCtrl.text.trim()
-                                : 'Proposed infrastructural improvement for Prabhag 12.',
-                            location: locCtrl.text.trim().isNotEmpty ? locCtrl.text.trim() : 'Ward 12',
-                            area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : 'Ward 12',
-                            status: status,
-                            votes: 1,
-                            completionDate: dateCtrl.text.trim(),
-                            peopleBenefited: int.tryParse(benCtrl.text.trim()),
-                            createdAt: DateTime.now().toIso8601String(),
-                          );
-
-                          final repo = ref.read(improvementsRepoProvider);
-                          await repo.addImprovement(newImp);
-                          await _fetchData();
-
-                          if (sheetCtx.mounted) Navigator.pop(sheetCtx);
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Improvement proposed successfully!'),
-                                backgroundColor: Color(0xFF16A34A),
-                              ),
-                            );
-                          }
-                        },
-                        child: const Text('Submit Proposal', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             );
           },

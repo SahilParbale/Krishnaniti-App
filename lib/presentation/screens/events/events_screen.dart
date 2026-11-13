@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../data/models/event_model.dart';
 import '../../../data/repositories/events_repository.dart';
 import '../../navigation/app_drawer.dart';
+import '../../providers/auth_provider.dart';
 import 'event_detail_screen.dart';
 import 'event_invite_modal.dart';
 import 'event_report_generator.dart';
@@ -78,6 +79,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
   }
 
   void _showCreateEventDialog() {
+    final isMr = ref.read(isMarathiProvider);
     final titleCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     final locCtrl = TextEditingController();
@@ -86,6 +88,46 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
     TimeOfDay selectedTime = const TimeOfDay(hour: 10, minute: 0);
     EventType selectedType = EventType.publicMeeting;
     String targetAudience = 'All Citizens';
+
+    InputDecoration inputDec({String? hint, String? prefixText}) {
+      return InputDecoration(
+        hintText: hint,
+        prefixText: prefixText,
+        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+        prefixStyle: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        filled: true,
+        fillColor: Colors.white,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1.0),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+        ),
+      );
+    }
+
+    Widget fieldLabel(String text, {bool isRequired = false}) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 5.0),
+        child: RichText(
+          text: TextSpan(
+            text: text,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+            children: isRequired
+                ? const [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                    ),
+                  ]
+                : [],
+          ),
+        ),
+      );
+    }
 
     showModalBottomSheet(
       context: context,
@@ -98,10 +140,17 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 20,
+                  offset: Offset(0, -4),
+                ),
+              ],
             ),
             padding: EdgeInsets.fromLTRB(
               20,
-              12,
+              8,
               20,
               MediaQuery.of(ctx).viewInsets.bottom + 20,
             ),
@@ -109,23 +158,24 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Top Drag Handle
                   Center(
                     child: Container(
-                      width: 40,
-                      height: 4,
+                      width: 44,
+                      height: 5,
+                      margin: const EdgeInsets.only(top: 6, bottom: 12),
                       decoration: BoxDecoration(
                         color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(2),
+                        borderRadius: BorderRadius.circular(3),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 14),
                   Row(
                     children: [
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE0F2FE),
+                          color: const Color(0xFF0284C7).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Icon(
@@ -134,99 +184,82 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                           size: 20,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      const Expanded(
+                      const SizedBox(width: 10),
+                      Expanded(
                         child: Text(
-                          'Create New Event',
-                          style: TextStyle(
-                            fontSize: 16,
+                          isMr ? 'नवीन कार्यक्रम तयार करा' : 'Create New Event',
+                          style: const TextStyle(
+                            fontSize: 17.5,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF0F172A),
                           ),
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close_rounded),
+                        icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
                         onPressed: () => Navigator.pop(ctx),
                       ),
                     ],
                   ),
-                  const Divider(height: 20, color: Color(0xFFE2E8F0)),
+                  const Divider(height: 16, color: Color(0xFFE2E8F0)),
+                  const SizedBox(height: 6),
 
                   // Title
-                  const Text(
-                    'Event Title*',
-                    style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
-                  ),
-                  const SizedBox(height: 6),
+                  fieldLabel(isMr ? 'कार्यक्रमाचे नाव / शीर्षक' : 'Event Title', isRequired: true),
                   TextField(
                     controller: titleCtrl,
-                    decoration: InputDecoration(
-                      hintText: 'e.g., Ward 12 Citizen Meeting',
-                      hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                      filled: true,
-                      fillColor: const Color(0xFFF8FAFC),
-                      contentPadding: const EdgeInsets.all(12),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                    decoration: inputDec(
+                      hint: isMr ? 'उदा. प्रभाग १२ नागरिक सभा' : 'e.g., Ward 12 Citizen Meeting',
                     ),
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
 
                   // Description with AI Button
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Description*',
-                        style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
-                      ),
+                      fieldLabel(isMr ? 'तपशील / वर्णन' : 'Description', isRequired: true),
                       InkWell(
                         onTap: () {
                           if (titleCtrl.text.isNotEmpty) {
-                            descCtrl.text =
-                                'You are cordially invited to attend the event organized for the citizens of Ward 12. Please join us on time.';
+                            descCtrl.text = isMr
+                                ? 'प्रभाग १२ मधील नागरिकांसाठी आयोजित कार्यक्रमात सहभागी होण्यासाठी हे निमंत्रण. कृपया वेळेवर उपस्थित राहावे.'
+                                : 'You are cordially invited to attend the event organized for the citizens of Ward 12. Please join us on time.';
                             setModalState(() {});
                           }
                         },
                         child: Row(
-                          children: const [
-                            Icon(Icons.auto_awesome_rounded, size: 14, color: Color(0xFF0284C7)),
-                            SizedBox(width: 4),
+                          children: [
+                            const Icon(Icons.auto_awesome_rounded, size: 14, color: Color(0xFF0284C7)),
+                            const SizedBox(width: 4),
                             Text(
-                              'AI Draft Assistant',
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
+                              isMr ? 'AI मसुदा सहाय्यक' : 'AI Draft Assistant',
+                              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                             ),
                           ],
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
                   TextField(
                     controller: descCtrl,
                     maxLines: 3,
-                    decoration: InputDecoration(
-                      hintText: 'Detailed event description...',
-                      hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                      filled: true,
-                      fillColor: const Color(0xFFF8FAFC),
-                      contentPadding: const EdgeInsets.all(12),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                    decoration: inputDec(
+                      hint: isMr ? 'कार्यक्रमाचा सविस्तर तपशील...' : 'Detailed event description...',
                     ),
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
 
-                  // Date & Time pickers
+                  // Side-by-side: Date & Time pickers
                   Row(
                     children: [
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Date', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 6),
+                            fieldLabel(isMr ? 'तारीख' : 'Date', isRequired: true),
                             InkWell(
                               onTap: () async {
                                 final picked = await showDatePicker(
@@ -240,19 +273,19 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                                 }
                               },
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFF8FAFC),
+                                  color: Colors.white,
                                   borderRadius: BorderRadius.circular(10),
                                   border: Border.all(color: const Color(0xFFCBD5E1)),
                                 ),
                                 child: Row(
                                   children: [
-                                    const Icon(Icons.calendar_today_rounded, size: 14, color: Color(0xFF0284C7)),
-                                    const SizedBox(width: 6),
+                                    const Icon(Icons.calendar_today_rounded, size: 16, color: Color(0xFF0284C7)),
+                                    const SizedBox(width: 8),
                                     Text(
                                       DateFormat('dd/MM/yyyy').format(selectedDate),
-                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
                                     ),
                                   ],
                                 ),
@@ -261,13 +294,12 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Time', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 6),
+                            fieldLabel(isMr ? 'वेळ' : 'Time', isRequired: true),
                             InkWell(
                               onTap: () async {
                                 final picked = await showTimePicker(
@@ -279,19 +311,19 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                                 }
                               },
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFF8FAFC),
+                                  color: Colors.white,
                                   borderRadius: BorderRadius.circular(10),
                                   border: Border.all(color: const Color(0xFFCBD5E1)),
                                 ),
                                 child: Row(
                                   children: [
-                                    const Icon(Icons.access_time_rounded, size: 14, color: Color(0xFF0284C7)),
-                                    const SizedBox(width: 6),
+                                    const Icon(Icons.access_time_rounded, size: 16, color: Color(0xFF0284C7)),
+                                    const SizedBox(width: 8),
                                     Text(
                                       selectedTime.format(ctx),
-                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
                                     ),
                                   ],
                                 ),
@@ -303,48 +335,38 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                     ],
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
 
-                  // Location & Area
+                  // Side-by-side: Location & Area
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        flex: 2,
+                        flex: 6,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Location / Venue*', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 6),
+                            fieldLabel(isMr ? 'स्थान / हॉल' : 'Location / Venue', isRequired: true),
                             TextField(
                               controller: locCtrl,
-                              decoration: InputDecoration(
-                                hintText: 'e.g., Community Hall',
-                                hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
-                                filled: true,
-                                fillColor: const Color(0xFFF8FAFC),
-                                contentPadding: const EdgeInsets.all(10),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                              decoration: inputDec(
+                                hint: isMr ? 'उदा. समाज मंदिर सभागृह' : 'e.g., Community Hall',
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 12),
                       Expanded(
+                        flex: 5,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Area / Ward Section', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 6),
+                            fieldLabel(isMr ? 'परिसर / प्रभाग' : 'Area / Locality'),
                             TextField(
                               controller: areaCtrl,
-                              decoration: InputDecoration(
-                                hintText: 'e.g., Shaniwar Peth',
-                                hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
-                                filled: true,
-                                fillColor: const Color(0xFFF8FAFC),
-                                contentPadding: const EdgeInsets.all(10),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                              decoration: inputDec(
+                                hint: isMr ? 'उदा. शनिवार पेठ' : 'e.g., Shaniwar Peth',
                               ),
                             ),
                           ],
@@ -353,42 +375,32 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                     ],
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
 
                   // Event Type Dropdown
-                  const Text('Event Type', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFFCBD5E1)),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<EventType>(
-                        value: selectedType,
-                        isExpanded: true,
-                        items: EventType.values.map((t) {
-                          return DropdownMenuItem(
-                            value: t,
-                            child: Row(
-                              children: [
-                                Icon(t.icon, size: 14, color: t.color),
-                                const SizedBox(width: 6),
-                                Text(t.titleMr, style: const TextStyle(fontSize: 12.5)),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (val) {
-                          if (val != null) setModalState(() => selectedType = val);
-                        },
-                      ),
-                    ),
+                  fieldLabel(isMr ? 'कार्यक्रमाचा प्रकार' : 'Event Type', isRequired: true),
+                  DropdownButtonFormField<EventType>(
+                    initialValue: selectedType,
+                    decoration: inputDec(),
+                    isExpanded: true,
+                    items: EventType.values.map((t) {
+                      return DropdownMenuItem(
+                        value: t,
+                        child: Row(
+                          children: [
+                            Icon(t.icon, size: 16, color: t.color),
+                            const SizedBox(width: 8),
+                            Text(isMr ? t.titleMr : t.id, style: const TextStyle(fontSize: 13)),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) setModalState(() => selectedType = val);
+                    },
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
 
                   // Submit Button
                   SizedBox(
@@ -423,9 +435,9 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                         if (mounted) {
                           _loadEvents();
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('New event created successfully!'),
-                              backgroundColor: Color(0xFF16A34A),
+                            SnackBar(
+                              content: Text(isMr ? 'नवीन कार्यक्रम यशस्वीरित्या तयार केला!' : 'New event created successfully!'),
+                              backgroundColor: const Color(0xFF16A34A),
                             ),
                           );
                         }
@@ -433,10 +445,20 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF0284C7),
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         elevation: 0,
                       ),
-                      child: const Text('Create Event', style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.event_available_rounded, size: 18),
+                          const SizedBox(width: 8),
+                          Text(
+                            isMr ? 'कार्यक्रम तयार करा' : 'Create Event',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],

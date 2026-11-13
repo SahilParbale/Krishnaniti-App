@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../data/models/team_model.dart';
 import '../../../data/repositories/team_repository.dart';
+import '../../providers/auth_provider.dart';
 
 class TeamMemberProfileScreen extends ConsumerStatefulWidget {
   final TeamMemberModel member;
@@ -75,11 +76,63 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
   }
 
   void _showAssignTaskModal() {
+    final isMr = ref.read(isMarathiProvider);
     final titleCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     final locCtrl = TextEditingController();
     String priority = 'Medium';
     DateTime dueDate = DateTime.now().add(const Duration(days: 2));
+
+    Widget fieldLabel(String text, {bool isRequired = false}) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: RichText(
+          text: TextSpan(
+            text: text,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF334155),
+            ),
+            children: isRequired
+                ? const [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ]
+                : [],
+          ),
+        ),
+      );
+    }
+
+    InputDecoration inputDec({String? hintText, Widget? prefixIcon, Widget? suffixIcon}) {
+      return InputDecoration(
+        hintText: hintText,
+        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+        prefixIcon: prefixIcon,
+        suffixIcon: suffixIcon,
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+        ),
+      );
+    }
 
     showModalBottomSheet(
       context: context,
@@ -87,219 +140,276 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setModalState) {
-          return Padding(
-            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-            child: Container(
-              padding: const EdgeInsets.all(22),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF0284C7).withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(Icons.assignment_add, color: Color(0xFF0284C7), size: 20),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Assign New Task', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                              Text('Assign task to ${_member.displayName}', style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600)),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Task Title
-                    const Text('Task Title*', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 5),
-                    TextField(
-                      controller: titleCtrl,
-                      decoration: InputDecoration(
-                        hintText: 'e.g. Shaniwar Peth drainage inspection',
-                        hintStyle: TextStyle(fontSize: 12.5, color: Colors.grey.shade400),
-                        isDense: true,
-                        filled: true,
-                        fillColor: const Color(0xFFF8FAFC),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Description
-                    const Text('Description', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 5),
-                    TextField(
-                      controller: descCtrl,
-                      maxLines: 2,
-                      decoration: InputDecoration(
-                        hintText: 'Work details, citizen grievance or instructions...',
-                        hintStyle: TextStyle(fontSize: 12.5, color: Colors.grey.shade400),
-                        isDense: true,
-                        filled: true,
-                        fillColor: const Color(0xFFF8FAFC),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Priority & Due Date Row
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Priority', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
-                              const SizedBox(height: 5),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF8FAFC),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: Colors.grey.shade300),
-                                ),
-                                child: DropdownButtonHideUnderline(
-                                  child: DropdownButton<String>(
-                                    value: priority,
-                                    isExpanded: true,
-                                    items: const [
-                                      DropdownMenuItem(value: 'Low', child: Text('Low', style: TextStyle(fontSize: 12))),
-                                      DropdownMenuItem(value: 'Medium', child: Text('Medium', style: TextStyle(fontSize: 12))),
-                                      DropdownMenuItem(value: 'High', child: Text('High', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.redAccent))),
-                                    ],
-                                    onChanged: (val) {
-                                      if (val != null) setModalState(() => priority = val);
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Due Date', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
-                              const SizedBox(height: 5),
-                              InkWell(
-                                onTap: () async {
-                                  final picked = await showDatePicker(
-                                    context: context,
-                                    initialDate: dueDate,
-                                    firstDate: DateTime.now(),
-                                    lastDate: DateTime.now().add(const Duration(days: 90)),
-                                  );
-                                  if (picked != null) setModalState(() => dueDate = picked);
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF8FAFC),
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: Colors.grey.shade300),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.calendar_today, size: 14, color: Color(0xFF0284C7)),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        DateFormat('dd MMM yyyy').format(dueDate),
-                                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Location
-                    const Text('Location / Area', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 5),
-                    TextField(
-                      controller: locCtrl,
-                      decoration: InputDecoration(
-                        hintText: 'e.g. Shaniwar Peth, Lane 2',
-                        hintStyle: TextStyle(fontSize: 12.5, color: Colors.grey.shade400),
-                        isDense: true,
-                        filled: true,
-                        fillColor: const Color(0xFFF8FAFC),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-
-                    // Submit Button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          if (titleCtrl.text.trim().isEmpty) return;
-                          final newTask = TeamTaskModel(
-                            id: 'tsk-${DateTime.now().millisecondsSinceEpoch}',
-                            staffId: _member.id,
-                            title: titleCtrl.text.trim(),
-                            description: descCtrl.text.trim().isNotEmpty ? descCtrl.text.trim() : null,
-                            priority: priority,
-                            status: 'Pending',
-                            dueDate: dueDate,
-                            location: locCtrl.text.trim().isNotEmpty ? locCtrl.text.trim() : _member.area,
-                            createdAt: DateTime.now(),
-                          );
-
-                          final repo = ref.read(teamRepoProvider);
-                          await repo.assignTask(_member.id, newTask);
-                          if (!mounted) return;
-                          Navigator.pop(ctx);
-                          _loadTasks();
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Task assigned successfully!'), backgroundColor: Color(0xFF16A34A)),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0284C7),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                        child: const Text('Assign Task', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                      ),
-                    ),
-                  ],
+          return Container(
+            height: MediaQuery.of(context).size.height * 0.85,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 20,
+                  offset: Offset(0, -4),
                 ),
-              ),
+              ],
+            ),
+            child: Column(
+              children: [
+                // Drag Handle
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 5,
+                    margin: const EdgeInsets.only(top: 10, bottom: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                ),
+                // Header
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(7),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.assignment_add, color: Color(0xFF0284C7), size: 20),
+                          ),
+                          const SizedBox(width: 10),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                isMr ? 'नवीन काम सोपवा' : 'Assign New Task',
+                                style: const TextStyle(
+                                  fontSize: 17.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF0F172A),
+                                ),
+                              ),
+                              Text(
+                                '${_member.displayName} (${_member.role})',
+                                style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      // Task Title & Location side-by-side
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 6,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'कामाचे नाव / शीर्षक' : 'Task Title', isRequired: true),
+                                TextField(
+                                  controller: titleCtrl,
+                                  decoration: inputDec(
+                                    hintText: isMr ? 'उदा. ड्रेनेज लाईन पाहणी' : 'e.g. Drainage inspection',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            flex: 4,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'स्थान / परिसर' : 'Location / Area'),
+                                TextField(
+                                  controller: locCtrl,
+                                  decoration: inputDec(
+                                    hintText: isMr ? 'उदा. शनिवार पेठ, लेन २' : 'e.g. Shaniwar Peth',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Priority & Due Date side-by-side
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'प्राधान्य' : 'Priority'),
+                                DropdownButtonFormField<String>(
+                                  value: priority,
+                                  decoration: inputDec(),
+                                  isExpanded: true,
+                                  items: [
+                                    DropdownMenuItem(value: 'Low', child: Text(isMr ? 'कमी (Low)' : 'Low')),
+                                    DropdownMenuItem(value: 'Medium', child: Text(isMr ? 'मध्यम (Medium)' : 'Medium')),
+                                    DropdownMenuItem(
+                                      value: 'High',
+                                      child: Text(
+                                        isMr ? 'तातडीचे (High)' : 'High',
+                                        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent),
+                                      ),
+                                    ),
+                                  ],
+                                  onChanged: (val) {
+                                    if (val != null) setModalState(() => priority = val);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'पूर्ण करण्याची तारीख' : 'Due Date'),
+                                InkWell(
+                                  onTap: () async {
+                                    final picked = await showDatePicker(
+                                      context: context,
+                                      initialDate: dueDate,
+                                      firstDate: DateTime.now(),
+                                      lastDate: DateTime.now().add(const Duration(days: 90)),
+                                    );
+                                    if (picked != null) setModalState(() => dueDate = picked);
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: const Color(0xFFCBD5E1)),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.calendar_today, size: 14, color: Color(0xFF0284C7)),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          DateFormat('dd MMM yyyy').format(dueDate),
+                                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Description
+                      fieldLabel(isMr ? 'कामाचा तपशील / सूचना' : 'Description & Instructions'),
+                      TextField(
+                        controller: descCtrl,
+                        maxLines: 3,
+                        decoration: inputDec(
+                          hintText: isMr
+                              ? 'कामाचा सविस्तर तपशील, नागरिकांची तक्रार किंवा विशेष सूचना...'
+                              : 'Work details, citizen grievance or instructions...',
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Submit Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0284C7),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            elevation: 0,
+                          ),
+                          icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
+                          label: Text(
+                            isMr ? 'काम सोपवा' : 'Assign Task',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                          ),
+                          onPressed: () async {
+                            if (titleCtrl.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    isMr
+                                        ? 'कृपया कामाचे नाव प्रविष्ट करा.'
+                                        : 'Please enter task title.',
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
+                            final newTask = TeamTaskModel(
+                              id: 'tsk-${DateTime.now().millisecondsSinceEpoch}',
+                              staffId: _member.id,
+                              title: titleCtrl.text.trim(),
+                              description: descCtrl.text.trim().isNotEmpty ? descCtrl.text.trim() : null,
+                              priority: priority,
+                              status: 'Pending',
+                              dueDate: dueDate,
+                              location: locCtrl.text.trim().isNotEmpty ? locCtrl.text.trim() : _member.area,
+                              createdAt: DateTime.now(),
+                            );
+
+                            final repo = ref.read(teamRepoProvider);
+                            await repo.assignTask(_member.id, newTask);
+                            if (ctx.mounted) {
+                              Navigator.pop(ctx);
+                            }
+                            _loadTasks();
+
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    isMr
+                                        ? 'काम यशस्वीरित्या सोपवले गेले!'
+                                        : 'Task assigned successfully!',
+                                  ),
+                                  backgroundColor: const Color(0xFF16A34A),
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                ),
+              ],
             ),
           );
         },

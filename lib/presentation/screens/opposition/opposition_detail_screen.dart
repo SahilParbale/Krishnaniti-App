@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/opposition_model.dart';
 import '../../../data/repositories/opposition_repository.dart';
+import '../../providers/auth_provider.dart';
 
 class OppositionDetailScreen extends ConsumerStatefulWidget {
   final OppositionMemberModel member;
@@ -82,10 +83,62 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
     }
   }
 
+  Widget _fieldLabel(String text, {bool isRequired = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: RichText(
+        text: TextSpan(
+          text: text,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF334155),
+          ),
+          children: isRequired
+              ? const [
+                  TextSpan(
+                    text: ' *',
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ]
+              : [],
+        ),
+      ),
+    );
+  }
+
+  InputDecoration _inputDec({String? hintText, Widget? prefixIcon, Widget? suffixIcon}) {
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+      prefixIcon: prefixIcon,
+      suffixIcon: suffixIcon,
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+      ),
+    );
+  }
+
   // ===========================================================================
   // LOG CAMPAIGN ACTIVITY MODAL
   // ===========================================================================
   void _showAddActivityModal() {
+    final isMr = ref.read(isMarathiProvider);
     final titleCtrl = TextEditingController();
     final locCtrl = TextEditingController(text: _member.area ?? '');
     final descCtrl = TextEditingController();
@@ -97,162 +150,227 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) => Container(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 20,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-          ),
+          height: MediaQuery.of(context).size.height * 0.85,
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 20,
+                offset: Offset(0, -4),
+              ),
+            ],
           ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFCBD5E1),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+          child: Column(
+            children: [
+              // Drag Handle
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 5,
+                  margin: const EdgeInsets.only(top: 10, bottom: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(3),
                   ),
                 ),
-                const SizedBox(height: 16),
-                const Row(
+              ),
+              // Header
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(Icons.event_note_rounded, color: Color(0xFF0284C7), size: 22),
-                    SizedBox(width: 8),
-                    Text(
-                      'Record Campaign Activity',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(7),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.event_note_rounded,
+                            color: Color(0xFF0284C7),
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          isMr ? 'प्रचार उपक्रमाची नोंद करा' : 'Record Campaign Activity',
+                          style: const TextStyle(
+                            fontSize: 17.5,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                      onPressed: () => Navigator.pop(ctx),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-
-                // Date Picker Button
-                InkWell(
-                  onTap: () async {
-                    final picked = await showDatePicker(
-                      context: ctx,
-                      initialDate: selectedDate,
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime(2030),
-                    );
-                    if (picked != null) {
-                      setModalState(() => selectedDate = picked);
-                    }
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFFCBD5E1)),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              ),
+              const Divider(height: 1, color: Color(0xFFE2E8F0)),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    // Date & Activity Title side-by-side
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Date: ${DateFormat('yyyy-MM-dd').format(selectedDate)}',
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                        Expanded(
+                          flex: 4,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _fieldLabel(isMr ? 'तारीख' : 'Activity Date', isRequired: true),
+                              InkWell(
+                                onTap: () async {
+                                  final picked = await showDatePicker(
+                                    context: ctx,
+                                    initialDate: selectedDate,
+                                    firstDate: DateTime(2020),
+                                    lastDate: DateTime(2030),
+                                  );
+                                  if (picked != null) {
+                                    setModalState(() => selectedDate = picked);
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: const Color(0xFFCBD5E1)),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        DateFormat('yyyy-MM-dd').format(selectedDate),
+                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                                      ),
+                                      const Icon(Icons.calendar_today_rounded, size: 16, color: Color(0xFF0284C7)),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        const Icon(Icons.calendar_today_rounded, size: 16, color: Color(0xFF0284C7)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 6,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _fieldLabel(isMr ? 'उपक्रमाचे नाव / शीर्षक' : 'Activity Title', isRequired: true),
+                              TextField(
+                                controller: titleCtrl,
+                                decoration: _inputDec(
+                                  hintText: isMr ? 'उदा. जनआक्रोश मोर्चा, शिबीर' : 'e.g. Citizen Rights March',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
-                  ),
-                ),
-                const SizedBox(height: 12),
+                    const SizedBox(height: 14),
 
-                // Title
-                TextField(
-                  controller: titleCtrl,
-                  decoration: InputDecoration(
-                    labelText: 'Activity Name / Title *',
-                    hintText: 'e.g. Citizen Rights March, Health Camp',
-                    filled: true,
-                    fillColor: const Color(0xFFF8FAFC),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Location
-                TextField(
-                  controller: locCtrl,
-                  decoration: InputDecoration(
-                    labelText: 'Location / Vicinity',
-                    hintText: 'e.g. Sector 3 Chowk',
-                    filled: true,
-                    fillColor: const Color(0xFFF8FAFC),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Description
-                TextField(
-                  controller: descCtrl,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    labelText: 'Activity Description & Notes',
-                    hintText: 'Nature of activity, key demands, and political impact...',
-                    filled: true,
-                    fillColor: const Color(0xFFF8FAFC),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Submit Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      if (titleCtrl.text.trim().isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Please enter activity title.')),
-                        );
-                        return;
-                      }
-
-                      final newAct = OppositionActivityModel(
-                        id: 'act-${DateTime.now().millisecondsSinceEpoch}',
-                        date: DateFormat('yyyy-MM-dd').format(selectedDate),
-                        title: titleCtrl.text.trim(),
-                        description: descCtrl.text.trim(),
-                        location: locCtrl.text.trim(),
-                      );
-
-                      final repo = ref.read(oppositionRepoProvider);
-                      await repo.addActivity(_member.id, newAct);
-                      if (!mounted) return;
-                      Navigator.pop(ctx);
-                      _refreshMember();
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Activity recorded successfully!'),
-                          backgroundColor: Color(0xFF16A34A),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0284C7),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    // Location / Vicinity
+                    _fieldLabel(isMr ? 'स्थान / परिसर' : 'Location / Vicinity'),
+                    TextField(
+                      controller: locCtrl,
+                      decoration: _inputDec(
+                        hintText: isMr ? 'उदा. सेक्टर ३ चौक, मुख्य रस्ता' : 'e.g. Sector 3 Chowk',
+                      ),
                     ),
-                    child: const Text('Save Activity', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                  ),
+                    const SizedBox(height: 14),
+
+                    // Description & Notes
+                    _fieldLabel(isMr ? 'तपशील व निरीक्षणे' : 'Activity Description & Notes'),
+                    TextField(
+                      controller: descCtrl,
+                      maxLines: 3,
+                      decoration: _inputDec(
+                        hintText: isMr ? 'उपक्रमाचे स्वरूप, प्रमुख मागण्या व प्रभाव...' : 'Nature of activity, key demands, and political impact...',
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Submit Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0284C7),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          elevation: 0,
+                        ),
+                        icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
+                        label: Text(
+                          isMr ? 'उपक्रम जतन करा' : 'Save Activity',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                        onPressed: () async {
+                          if (titleCtrl.text.trim().isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  isMr
+                                      ? 'कृपया उपक्रमाचे नाव प्रविष्ट करा.'
+                                      : 'Please enter activity title.',
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+
+                          final newAct = OppositionActivityModel(
+                            id: 'act-${DateTime.now().millisecondsSinceEpoch}',
+                            date: DateFormat('yyyy-MM-dd').format(selectedDate),
+                            title: titleCtrl.text.trim(),
+                            description: descCtrl.text.trim(),
+                            location: locCtrl.text.trim(),
+                          );
+
+                          final repo = ref.read(oppositionRepoProvider);
+                          await repo.addActivity(_member.id, newAct);
+                          if (ctx.mounted) {
+                            Navigator.pop(ctx);
+                          }
+                          _refreshMember();
+
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  isMr
+                                      ? 'उपक्रम यशस्वीरित्या नोंदवला गेला!'
+                                      : 'Activity recorded successfully!',
+                                ),
+                                backgroundColor: const Color(0xFF16A34A),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -263,6 +381,7 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
   // ADD / EDIT CONTROVERSY / NEGATIVE STORY MODAL
   // ===========================================================================
   void _showNegativeStoryModal({OppositionNegativeStoryModel? storyToEdit}) {
+    final isMr = ref.read(isMarathiProvider);
     final titleCtrl = TextEditingController(text: storyToEdit?.title ?? '');
     final sourceCtrl = TextEditingController(text: storyToEdit?.source ?? '');
     final descCtrl = TextEditingController(text: storyToEdit?.description ?? '');
@@ -275,193 +394,287 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) => Container(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 20,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-          ),
+          height: MediaQuery.of(context).size.height * 0.90,
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 20,
+                offset: Offset(0, -4),
+              ),
+            ],
           ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFCBD5E1),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+          child: Column(
+            children: [
+              // Drag Handle
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 5,
+                  margin: const EdgeInsets.only(top: 10, bottom: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(3),
                   ),
                 ),
-                const SizedBox(height: 16),
-                Row(
+              ),
+              // Header
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Icon(Icons.warning_amber_rounded, color: Color(0xFFDC2626), size: 22),
-                    const SizedBox(width: 8),
-                    Text(
-                      storyToEdit == null ? 'Record Controversy / Incident' : 'Edit Controversy / Incident',
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Date Picker Button
-                InkWell(
-                  onTap: () async {
-                    final picked = await showDatePicker(
-                      context: ctx,
-                      initialDate: selectedDate,
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime(2030),
-                    );
-                    if (picked != null) {
-                      setModalState(() => selectedDate = picked);
-                    }
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFFCBD5E1)),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Incident Date: ${DateFormat('yyyy-MM-dd').format(selectedDate)}',
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
-                        ),
-                        const Icon(Icons.calendar_today_rounded, size: 16, color: Color(0xFFDC2626)),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Title
-                TextField(
-                  controller: titleCtrl,
-                  decoration: InputDecoration(
-                    labelText: 'Incident / Controversy Title *',
-                    hintText: 'e.g. Illegal construction, tender irregularities',
-                    filled: true,
-                    fillColor: const Color(0xFFF8FAFC),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Severity Selector
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Severity / Impact',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
-                    ),
-                    const SizedBox(height: 6),
                     Row(
                       children: [
-                        _buildSeverityOption('High', 'High', const Color(0xFFDC2626), severity, (val) => setModalState(() => severity = val)),
-                        const SizedBox(width: 8),
-                        _buildSeverityOption('Medium', 'Medium', const Color(0xFFD97706), severity, (val) => setModalState(() => severity = val)),
-                        const SizedBox(width: 8),
-                        _buildSeverityOption('Low', 'Low', const Color(0xFF0284C7), severity, (val) => setModalState(() => severity = val)),
+                        Container(
+                          padding: const EdgeInsets.all(7),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFDC2626).withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.warning_amber_rounded,
+                            color: Color(0xFFDC2626),
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          storyToEdit == null
+                              ? (isMr ? 'वादग्रस्त घटना / प्रकरण नोंदवा' : 'Record Controversy / Incident')
+                              : (isMr ? 'वादग्रस्त प्रकरण संपादित करा' : 'Edit Controversy / Incident'),
+                          style: const TextStyle(
+                            fontSize: 17.5,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
                       ],
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                      onPressed: () => Navigator.pop(ctx),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-
-                // Source
-                TextField(
-                  controller: sourceCtrl,
-                  decoration: InputDecoration(
-                    labelText: 'Source / Evidence Reference',
-                    hintText: 'e.g. News clipping, video link or complaint copy',
-                    filled: true,
-                    fillColor: const Color(0xFFF8FAFC),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Description
-                TextField(
-                  controller: descCtrl,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    labelText: 'Controversy Details *',
-                    hintText: 'Details, allegations, voter reaction, and strategy notes...',
-                    filled: true,
-                    fillColor: const Color(0xFFF8FAFC),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Submit Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      if (titleCtrl.text.trim().isEmpty || descCtrl.text.trim().isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Please enter title and details.')),
-                        );
-                        return;
-                      }
-
-                      final story = OppositionNegativeStoryModel(
-                        id: storyToEdit?.id ?? 'story-${DateTime.now().millisecondsSinceEpoch}',
-                        date: DateFormat('yyyy-MM-dd').format(selectedDate),
-                        title: titleCtrl.text.trim(),
-                        severity: severity,
-                        source: sourceCtrl.text.trim(),
-                        description: descCtrl.text.trim(),
-                      );
-
-                      final repo = ref.read(oppositionRepoProvider);
-                      if (storyToEdit == null) {
-                        await repo.addNegativeStory(_member.id, story);
-                      } else {
-                        await repo.updateNegativeStory(_member.id, story);
-                      }
-
-                      if (!mounted) return;
-                      Navigator.pop(ctx);
-                      _refreshMember();
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(storyToEdit == null ? 'Controversy recorded successfully!' : 'Controversy updated!'),
-                          backgroundColor: const Color(0xFF16A34A),
+              ),
+              const Divider(height: 1, color: Color(0xFFE2E8F0)),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    // Incident Date & Source / Evidence Reference side-by-side
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          flex: 4,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _fieldLabel(isMr ? 'घटनेची तारीख' : 'Incident Date', isRequired: true),
+                              InkWell(
+                                onTap: () async {
+                                  final picked = await showDatePicker(
+                                    context: ctx,
+                                    initialDate: selectedDate,
+                                    firstDate: DateTime(2020),
+                                    lastDate: DateTime(2030),
+                                  );
+                                  if (picked != null) {
+                                    setModalState(() => selectedDate = picked);
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: const Color(0xFFCBD5E1)),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        DateFormat('yyyy-MM-dd').format(selectedDate),
+                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                                      ),
+                                      const Icon(Icons.calendar_today_rounded, size: 16, color: Color(0xFFDC2626)),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFDC2626),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 6,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _fieldLabel(isMr ? 'स्रोत / पुरावा संदर्भ' : 'Source / Reference'),
+                              TextField(
+                                controller: sourceCtrl,
+                                decoration: _inputDec(
+                                  hintText: isMr ? 'उदा. बातमी, व्हिडिओ लिंक' : 'e.g. News clipping, video link',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    child: Text(
-                      storyToEdit == null ? 'Record Incident' : 'Save Changes',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    const SizedBox(height: 14),
+
+                    // Incident Title & Severity side-by-side
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          flex: 5,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _fieldLabel(isMr ? 'प्रकरणाचे शीर्षक' : 'Controversy Title', isRequired: true),
+                              TextField(
+                                controller: titleCtrl,
+                                decoration: _inputDec(
+                                  hintText: isMr ? 'उदा. बेकायदेशीर बांधकाम...' : 'e.g. Tender irregularities...',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 5,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _fieldLabel(isMr ? 'तीव्रता / प्रभाव' : 'Severity / Impact', isRequired: true),
+                              Row(
+                                children: [
+                                  _buildSeverityOption(
+                                    isMr ? 'उच्च' : 'High',
+                                    'High',
+                                    const Color(0xFFDC2626),
+                                    severity,
+                                    (val) => setModalState(() => severity = val),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  _buildSeverityOption(
+                                    isMr ? 'मध्यम' : 'Med',
+                                    'Medium',
+                                    const Color(0xFFD97706),
+                                    severity,
+                                    (val) => setModalState(() => severity = val),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  _buildSeverityOption(
+                                    isMr ? 'कमी' : 'Low',
+                                    'Low',
+                                    const Color(0xFF0284C7),
+                                    severity,
+                                    (val) => setModalState(() => severity = val),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
+                    const SizedBox(height: 14),
+
+                    // Description
+                    _fieldLabel(isMr ? 'प्रकरणाचा तपशील' : 'Controversy Details', isRequired: true),
+                    TextField(
+                      controller: descCtrl,
+                      maxLines: 3,
+                      decoration: _inputDec(
+                        hintText: isMr ? 'आरोप, स्थानिक मतदारांची प्रतिक्रिया व राजकीय रणनीती...' : 'Details, allegations, voter reaction, and strategy notes...',
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Submit Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFDC2626),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          elevation: 0,
+                        ),
+                        icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
+                        label: Text(
+                          storyToEdit == null
+                              ? (isMr ? 'प्रकरण नोंदवा' : 'Record Incident')
+                              : (isMr ? 'बदल जतन करा' : 'Save Changes'),
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                        onPressed: () async {
+                          if (titleCtrl.text.trim().isEmpty || descCtrl.text.trim().isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  isMr
+                                      ? 'कृपया शीर्षक आणि तपशील प्रविष्ट करा.'
+                                      : 'Please enter title and details.',
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+
+                          final story = OppositionNegativeStoryModel(
+                            id: storyToEdit?.id ?? 'story-${DateTime.now().millisecondsSinceEpoch}',
+                            date: DateFormat('yyyy-MM-dd').format(selectedDate),
+                            title: titleCtrl.text.trim(),
+                            severity: severity,
+                            source: sourceCtrl.text.trim(),
+                            description: descCtrl.text.trim(),
+                          );
+
+                          final repo = ref.read(oppositionRepoProvider);
+                          if (storyToEdit == null) {
+                            await repo.addNegativeStory(_member.id, story);
+                          } else {
+                            await repo.updateNegativeStory(_member.id, story);
+                          }
+
+                          if (ctx.mounted) {
+                            Navigator.pop(ctx);
+                          }
+                          _refreshMember();
+
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  storyToEdit == null
+                                      ? (isMr ? 'प्रकरण यशस्वीरित्या नोंदवले गेले!' : 'Controversy recorded successfully!')
+                                      : (isMr ? 'तपशील अद्यतनित केले!' : 'Controversy updated!'),
+                                ),
+                                backgroundColor: const Color(0xFF16A34A),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -498,6 +711,7 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
   // ADD TEAM MEMBER TO CANDIDATE MODAL
   // ===========================================================================
   void _showAddTeamMemberModal() {
+    final isMr = ref.read(isMarathiProvider);
     final repo = ref.read(oppositionRepoProvider);
     final unassigned = repo.getUnassignedWorkers();
     int activeTab = 0; // 0 = Link Existing, 1 = Quick Create
@@ -514,121 +728,150 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) => Container(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 20,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-          ),
+          height: MediaQuery.of(context).size.height * 0.85,
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 20,
+                offset: Offset(0, -4),
+              ),
+            ],
           ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFCBD5E1),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+          child: Column(
+            children: [
+              // Drag Handle
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 5,
+                  margin: const EdgeInsets.only(top: 10, bottom: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(3),
                   ),
                 ),
-                const SizedBox(height: 16),
-                Row(
+              ),
+              // Header
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Icon(Icons.group_add_rounded, color: Color(0xFF0284C7), size: 22),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Add Cadre for ${_member.name}',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                      ),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(7),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.group_add_rounded,
+                            color: Color(0xFF0284C7),
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          isMr ? 'कार्यकर्ता जोडा (${_member.name})' : 'Add Cadre for ${_member.name}',
+                          style: const TextStyle(
+                            fontSize: 16.5,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                      onPressed: () => Navigator.pop(ctx),
                     ),
                   ],
                 ),
-                const SizedBox(height: 14),
-
-                // Tabs: Link Existing vs Create New
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: InkWell(
-                          onTap: () => setModalState(() => activeTab = 0),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: activeTab == 0 ? Colors.white : Colors.transparent,
-                              borderRadius: BorderRadius.circular(8),
-                              boxShadow: activeTab == 0 ? [const BoxShadow(color: Colors.black12, blurRadius: 2)] : null,
-                            ),
-                            child: const Text('Link Existing', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: InkWell(
-                          onTap: () => setModalState(() => activeTab = 1),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: activeTab == 1 ? Colors.white : Colors.transparent,
-                              borderRadius: BorderRadius.circular(8),
-                              boxShadow: activeTab == 1 ? [const BoxShadow(color: Colors.black12, blurRadius: 2)] : null,
-                            ),
-                            child: const Text('Create New', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                if (activeTab == 0) ...[
-                  // Tab 0: Link Existing
-                  if (unassigned.isEmpty)
+              ),
+              const Divider(height: 1, color: Color(0xFFE2E8F0)),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    // Tabs: Link Existing vs Create New
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
+                        color: const Color(0xFFF1F5F9),
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
                       ),
-                      child: const Center(
-                        child: Text(
-                          'No unlinked cadre available.\nPlease use "Create New" tab.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                        ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: InkWell(
+                              onTap: () => setModalState(() => activeTab = 0),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: activeTab == 0 ? Colors.white : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(8),
+                                  boxShadow: activeTab == 0 ? [const BoxShadow(color: Colors.black12, blurRadius: 2)] : null,
+                                ),
+                                child: Text(
+                                  isMr ? 'विद्यमान जोडा' : 'Link Existing',
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: InkWell(
+                              onTap: () => setModalState(() => activeTab = 1),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: activeTab == 1 ? Colors.white : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(8),
+                                  boxShadow: activeTab == 1 ? [const BoxShadow(color: Colors.black12, blurRadius: 2)] : null,
+                                ),
+                                child: Text(
+                                  isMr ? 'नवीन तयार करा' : 'Create New',
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    )
-                  else ...[
-                    const Text('Select Opposition Cadre:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFFCBD5E1)),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
+                    ),
+                    const SizedBox(height: 16),
+
+                    if (activeTab == 0) ...[
+                      // Tab 0: Link Existing
+                      if (unassigned.isEmpty)
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Center(
+                            child: Text(
+                              isMr
+                                  ? 'कोणताही असंबद्ध कार्यकर्ता उपलब्ध नाही.\nकृपया "नवीन तयार करा" टॅब वापरा.'
+                                  : 'No unlinked cadre available.\nPlease use "Create New" tab.',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                            ),
+                          ),
+                        )
+                      else ...[
+                        _fieldLabel(isMr ? 'विरोधी कार्यकर्ता निवडा' : 'Select Opposition Cadre', isRequired: true),
+                        DropdownButtonFormField<String>(
                           value: selectedWorkerId,
+                          decoration: _inputDec(),
                           isExpanded: true,
                           items: unassigned.map((w) {
                             return DropdownMenuItem<String>(
@@ -643,119 +886,194 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                             if (val != null) setModalState(() => selectedWorkerId = val);
                           },
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: selectedWorkerId == null
-                            ? null
-                            : () async {
-                                await repo.linkWorkerToCandidate(selectedWorkerId!, _member.id);
-                                if (!mounted) return;
-                                Navigator.pop(ctx);
-                                _refreshMember();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Cadre linked to team successfully!'), backgroundColor: Color(0xFF16A34A)),
-                                );
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0284C7),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0284C7),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              elevation: 0,
+                            ),
+                            icon: const Icon(Icons.link_rounded, size: 20),
+                            label: Text(
+                              isMr ? 'कार्यकर्ता जोडा' : 'Link Cadre',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                            onPressed: selectedWorkerId == null
+                                ? null
+                                : () async {
+                                    await repo.linkWorkerToCandidate(selectedWorkerId!, _member.id);
+                                    if (ctx.mounted) {
+                                      Navigator.pop(ctx);
+                                    }
+                                    _refreshMember();
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            isMr
+                                                ? 'कार्यकर्ता यशस्वीरित्या जोडला गेला!'
+                                                : 'Cadre linked to team successfully!',
+                                          ),
+                                          backgroundColor: const Color(0xFF16A34A),
+                                        ),
+                                      );
+                                    }
+                                  },
+                          ),
                         ),
-                        child: const Text('Link Cadre', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ],
+                    ] else ...[
+                      // Tab 1: Create New Worker
+                      // Full Name & Mobile Number side-by-side
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _fieldLabel(isMr ? 'पूर्ण नाव' : 'Cadre Full Name', isRequired: true),
+                                TextField(
+                                  controller: nameCtrl,
+                                  decoration: _inputDec(
+                                    hintText: isMr ? 'उदा. सचिन पवार' : 'e.g. Sachin Pawar',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _fieldLabel(isMr ? 'मोबाईल नंबर' : 'Mobile Number'),
+                                TextField(
+                                  controller: phoneCtrl,
+                                  keyboardType: TextInputType.phone,
+                                  decoration: _inputDec(
+                                    hintText: '98220xxxxx',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
+                      const SizedBox(height: 14),
+
+                      // Role & Work Area side-by-side
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _fieldLabel(isMr ? 'पद / हुद्दा' : 'Role / Designation'),
+                                TextField(
+                                  controller: roleCtrl,
+                                  decoration: _inputDec(
+                                    hintText: isMr ? 'उदा. बूथ कार्यकर्ता' : 'e.g. Booth Cadre',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _fieldLabel(isMr ? 'कार्यक्षेत्र' : 'Work Area'),
+                                TextField(
+                                  controller: areaCtrl,
+                                  decoration: _inputDec(
+                                    hintText: isMr ? 'उदा. प्रभाग १२' : 'e.g. Ward 12',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0284C7),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            elevation: 0,
+                          ),
+                          icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
+                          label: Text(
+                            isMr ? 'कार्यकर्ता तयार करा' : 'Create Cadre',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                          ),
+                          onPressed: () async {
+                            if (nameCtrl.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    isMr
+                                        ? 'कृपया कार्यकर्त्याचे नाव प्रविष्ट करा.'
+                                        : 'Please enter cadre name.',
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
+
+                            final newWorker = OppositionMemberModel(
+                              id: 'opp-wrk-${DateTime.now().millisecondsSinceEpoch}',
+                              name: nameCtrl.text.trim(),
+                              mobile: phoneCtrl.text.trim().isNotEmpty ? phoneCtrl.text.trim() : null,
+                              party: _member.party,
+                              role: roleCtrl.text.trim().isNotEmpty ? roleCtrl.text.trim() : 'Cadre',
+                              area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : _member.area,
+                              isCandidate: false,
+                              candidateId: _member.id,
+                              createdAt: DateTime.now(),
+                            );
+
+                            await repo.addMember(newWorker);
+                            if (ctx.mounted) {
+                              Navigator.pop(ctx);
+                            }
+                            _refreshMember();
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    isMr
+                                        ? 'नवीन कार्यकर्ता तयार करून यशस्वीरित्या जोडला!'
+                                        : 'New cadre created and linked successfully!',
+                                  ),
+                                  backgroundColor: const Color(0xFF16A34A),
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 24),
                   ],
-                ] else ...[
-                  // Tab 1: Create New Worker
-                  TextField(
-                    controller: nameCtrl,
-                    decoration: InputDecoration(
-                      labelText: 'Cadre Full Name *',
-                      filled: true,
-                      fillColor: const Color(0xFFF8FAFC),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: phoneCtrl,
-                    keyboardType: TextInputType.phone,
-                    decoration: InputDecoration(
-                      labelText: 'Mobile Number',
-                      filled: true,
-                      fillColor: const Color(0xFFF8FAFC),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: roleCtrl,
-                    decoration: InputDecoration(
-                      labelText: 'Role / Designation',
-                      filled: true,
-                      fillColor: const Color(0xFFF8FAFC),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: areaCtrl,
-                    decoration: InputDecoration(
-                      labelText: 'Work Area',
-                      filled: true,
-                      fillColor: const Color(0xFFF8FAFC),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        if (nameCtrl.text.trim().isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Please enter cadre name.')),
-                          );
-                          return;
-                        }
-
-                        final newWorker = OppositionMemberModel(
-                          id: 'opp-wrk-${DateTime.now().millisecondsSinceEpoch}',
-                          name: nameCtrl.text.trim(),
-                          mobile: phoneCtrl.text.trim().isNotEmpty ? phoneCtrl.text.trim() : null,
-                          party: _member.party,
-                          role: roleCtrl.text.trim().isNotEmpty ? roleCtrl.text.trim() : 'Cadre',
-                          area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : _member.area,
-                          isCandidate: false,
-                          candidateId: _member.id,
-                          createdAt: DateTime.now(),
-                        );
-
-                        await repo.addMember(newWorker);
-                        if (!mounted) return;
-                        Navigator.pop(ctx);
-                        _refreshMember();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('New cadre created and linked successfully!'), backgroundColor: Color(0xFF16A34A)),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0284C7),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                      child: const Text('Create Cadre', style: TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                ],
-              ],
-            ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

@@ -180,359 +180,390 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
               }
             }
 
+            InputDecoration inputDec({required String hintText, IconData? prefixIcon}) {
+              return InputDecoration(
+                hintText: hintText,
+                hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                prefixIcon: prefixIcon != null ? Icon(prefixIcon, size: 18, color: const Color(0xFF64748B)) : null,
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+                ),
+              );
+            }
+
+            Widget fieldLabel(String label, {bool isRequired = false}) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      label,
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                    ),
+                    if (isRequired) ...[
+                      const SizedBox(width: 2),
+                      const Text('*', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                    ],
+                  ],
+                ),
+              );
+            }
+
             return Container(
               height: MediaQuery.of(context).size.height * 0.92,
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(color: Colors.black26, blurRadius: 20, offset: Offset(0, -4)),
+                ],
               ),
-              padding: EdgeInsets.only(
-                top: 20,
-                left: 20,
-                right: 20,
-                bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+              child: Column(
+                children: [
+                  // Downward Dismiss Drag Handle
+                  Center(
+                    child: Container(
+                      width: 44,
+                      height: 5,
+                      margin: const EdgeInsets.only(top: 10, bottom: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                  ),
+
+                  // Header with Title and Close Button
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    decoration: const BoxDecoration(
+                      border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+                    ),
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           isMr ? 'नवीन GB नोंद (महासभा नोंदवही)' : 'Record Assembly Motion (GB Register)',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                        ),
-                        IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(sheetCtx)),
-                      ],
-                    ),
-                    const Divider(),
-                    const SizedBox(height: 12),
-
-                    // 1. Meeting Date & Meeting Type
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                isMr ? 'बैठक तारीख *' : 'Meeting Date *',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                              ),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: dateCtrl,
-                                readOnly: true,
-                                onTap: pickDate,
-                                decoration: InputDecoration(
-                                  hintText: 'YYYY-MM-DD',
-                                  prefixIcon: const Icon(Icons.calendar_today_outlined, size: 18),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                                ),
-                              ),
-                            ],
+                          style: const TextStyle(
+                            fontSize: 17.5,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0F172A),
+                            letterSpacing: -0.2,
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                isMr ? 'बैठक प्रकार *' : 'Meeting Type *',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                              ),
-                              const SizedBox(height: 6),
-                              DropdownButtonFormField<String>(
-                                initialValue: meetingType,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                                ),
-                                items: _meetingTypes
-                                    .where((t) => t != 'All')
-                                    .map((t) => DropdownMenuItem(
-                                          value: t,
-                                          child: Text(
-                                            isMr ? _getMeetingTypeLabelMr(t) : t,
-                                            style: const TextStyle(fontSize: 13),
-                                          ),
-                                        ))
-                                    .toList(),
-                                onChanged: (val) {
-                                  if (val != null) setModalState(() => meetingType = val);
-                                },
-                              ),
-                            ],
-                          ),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                          onPressed: () => Navigator.pop(sheetCtx),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 14),
+                  ),
 
-                    // 2. Subject / Issue
-                    Text(
-                      isMr ? 'विषय / मुद्दा *' : 'Subject / Issue *',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                    ),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: subjectCtrl,
-                      decoration: InputDecoration(
-                        hintText: isMr
-                            ? 'उदा. प्रभाग १२ मध्ये पाणी पुरवठ्याची समस्या'
-                            : 'e.g. Water shortage in Ward 12',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  // Scrollable Body
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.only(
+                        top: 14,
+                        left: 18,
+                        right: 18,
+                        bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 24,
                       ),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // 3. Description with AI Auto-Draft
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          isMr ? 'वर्णन' : 'Description',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                        ),
-                        InkWell(
-                          onTap: isGeneratingAi ? null : autoDraftDescription,
-                          borderRadius: BorderRadius.circular(8),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFEFF6FF),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: const Color(0xFFBFDBFE)),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (isGeneratingAi)
-                                  const SizedBox(
-                                    width: 12,
-                                    height: 12,
-                                    child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0284C7)),
-                                  )
-                                else
-                                  const Icon(Icons.auto_awesome, size: 14, color: Color(0xFF0284C7)),
-                                const SizedBox(width: 4),
-                                const Text(
-                                  'AI Auto-Draft',
-                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 1. Meeting Date & Meeting Type (Side-by-Side)
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    fieldLabel(isMr ? 'बैठक तारीख' : 'Meeting Date', isRequired: true),
+                                    TextField(
+                                      controller: dateCtrl,
+                                      readOnly: true,
+                                      onTap: pickDate,
+                                      decoration: inputDec(
+                                        hintText: 'YYYY-MM-DD',
+                                        prefixIcon: Icons.calendar_today_outlined,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    fieldLabel(isMr ? 'बैठक प्रकार' : 'Meeting Type', isRequired: true),
+                                    DropdownButtonFormField<String>(
+                                      initialValue: meetingType,
+                                      isExpanded: true,
+                                      style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
+                                      decoration: inputDec(hintText: 'Select Type'),
+                                      items: _meetingTypes
+                                          .where((t) => t != 'All')
+                                          .map((t) => DropdownMenuItem(
+                                                value: t,
+                                                child: Text(
+                                                  isMr ? _getMeetingTypeLabelMr(t) : t,
+                                                  style: const TextStyle(fontSize: 13),
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ))
+                                          .toList(),
+                                      onChanged: (val) {
+                                        if (val != null) setModalState(() => meetingType = val);
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+
+                          // 2. Subject / Issue (Full Width)
+                          fieldLabel(isMr ? 'विषय / मुद्दा' : 'Subject / Issue', isRequired: true),
+                          TextField(
+                            controller: subjectCtrl,
+                            decoration: inputDec(
+                              hintText: isMr
+                                  ? 'उदा. प्रभाग १२ मध्ये पाणी पुरवठ्याची समस्या'
+                                  : 'e.g. Water shortage in Ward 12',
+                              prefixIcon: Icons.title_rounded,
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: descCtrl,
-                      maxLines: 4,
-                      decoration: InputDecoration(
-                        hintText: isMr
-                            ? 'मंडलेल्या मुद्द्याचे सविस्तर वर्णन...'
-                            : 'Detailed description of the issue raised...',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                        contentPadding: const EdgeInsets.all(12),
+                          const SizedBox(height: 14),
+
+                          // 3. Description with AI Auto-Draft (Full Width)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              fieldLabel(isMr ? 'वर्णन' : 'Description'),
+                              InkWell(
+                                onTap: isGeneratingAi ? null : autoDraftDescription,
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFEFF6FF),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: const Color(0xFFBFDBFE)),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (isGeneratingAi)
+                                        const SizedBox(
+                                          width: 12,
+                                          height: 12,
+                                          child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0284C7)),
+                                        )
+                                      else
+                                        const Icon(Icons.auto_awesome, size: 14, color: Color(0xFF0284C7)),
+                                      const SizedBox(width: 4),
+                                      const Text(
+                                        'AI Auto-Draft',
+                                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          TextField(
+                            controller: descCtrl,
+                            maxLines: 3,
+                            decoration: inputDec(
+                              hintText: isMr
+                                  ? 'मंडलेल्या मुद्द्याचे सविस्तर वर्णन...'
+                                  : 'Detailed description of the issue raised...',
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+
+                          // 4. Area & Beneficiaries (Side-by-Side)
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    fieldLabel(isMr ? 'क्षेत्र / भाग' : 'Area'),
+                                    TextField(
+                                      controller: areaCtrl,
+                                      decoration: inputDec(
+                                        hintText: isMr ? 'उदा. प्रभाग १२' : 'e.g. Ward 12',
+                                        prefixIcon: Icons.map_outlined,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    fieldLabel(isMr ? 'लाभार्थी' : 'People Benefited'),
+                                    TextField(
+                                      controller: benCtrl,
+                                      decoration: inputDec(
+                                        hintText: isMr ? 'उदा. ५००+ नागरिक' : 'e.g. 500+ residents',
+                                        prefixIcon: Icons.people_outline_rounded,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+
+                          // 5. Department & Outcome / Status (Side-by-Side)
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    fieldLabel(isMr ? 'विभाग' : 'Department'),
+                                    TextField(
+                                      controller: deptCtrl,
+                                      decoration: inputDec(
+                                        hintText: isMr ? 'उदा. पाणी पुरवठा' : 'e.g. Water Supply',
+                                        prefixIcon: Icons.business_outlined,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    fieldLabel(isMr ? 'निकाल / स्थिती' : 'Outcome / Status', isRequired: true),
+                                    DropdownButtonFormField<String>(
+                                      initialValue: status,
+                                      isExpanded: true,
+                                      style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
+                                      decoration: inputDec(hintText: 'Select Status'),
+                                      items: _statusList
+                                          .where((s) => s != 'All')
+                                          .map((s) => DropdownMenuItem(
+                                                value: s,
+                                                child: Text(
+                                                  isMr ? _getStatusLabelMr(s) : s,
+                                                  style: const TextStyle(fontSize: 13),
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ))
+                                          .toList(),
+                                      onChanged: (val) {
+                                        if (val != null) setModalState(() => status = val);
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+
+                          // 6. Administrative Response (Full Width)
+                          fieldLabel(isMr ? 'प्रशासकीय उत्तर' : 'Administrative Response'),
+                          TextField(
+                            controller: respCtrl,
+                            maxLines: 2,
+                            decoration: inputDec(
+                              hintText: isMr
+                                  ? 'प्रशासनाकडून मिळालेले उत्तर...'
+                                  : 'Response received from administration...',
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Submit Button (Existing button - wired directly)
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0284C7),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              icon: const Icon(Icons.assignment_turned_in_rounded, size: 18),
+                              onPressed: () async {
+                                if (subjectCtrl.text.trim().isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(isMr ? 'कृपया विषय प्रविष्ट करा' : 'Please enter a subject'),
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                final newEntry = GbRegisterEntryModel(
+                                  id: 'gb-${DateTime.now().millisecondsSinceEpoch}',
+                                  meetingType: meetingType,
+                                  meetingDate: dateCtrl.text.trim().isNotEmpty
+                                      ? dateCtrl.text.trim()
+                                      : DateFormat('yyyy-MM-dd').format(DateTime.now()),
+                                  subject: subjectCtrl.text.trim(),
+                                  description: descCtrl.text.trim(),
+                                  department: deptCtrl.text.trim().isNotEmpty ? deptCtrl.text.trim() : 'General Administration',
+                                  area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : 'Ward 12',
+                                  status: status,
+                                  beneficiaries: benCtrl.text.trim().isNotEmpty ? benCtrl.text.trim() : null,
+                                  response: respCtrl.text.trim().isNotEmpty ? respCtrl.text.trim() : null,
+                                  resolutionNo: null,
+                                  tags: const [],
+                                  createdAt: DateTime.now().toIso8601String(),
+                                );
+
+                                final repo = ref.read(gbRegisterRepoProvider);
+                                await repo.addEntry(newEntry);
+                                await _loadData();
+
+                                if (sheetCtx.mounted) Navigator.pop(sheetCtx);
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        isMr ? 'नोंद यशस्वीरित्या जतन केली!' : 'Entry registered successfully!',
+                                      ),
+                                      backgroundColor: const Color(0xFF16A34A),
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                }
+                              },
+                              label: Text(
+                                isMr ? 'नोंद जतन करा' : 'Save Entry',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 14),
-
-                    // 4. Area & Beneficiaries
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                isMr ? 'क्षेत्र / भाग' : 'Area',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                              ),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: areaCtrl,
-                                decoration: InputDecoration(
-                                  hintText: isMr ? 'उदा. प्रभाग १२ किंवा कॉलनी' : 'e.g. Ward 12 or Colony Name',
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                isMr ? 'लोकांना फायदा (लाभार्थी)' : 'People Benefited',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                              ),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: benCtrl,
-                                decoration: InputDecoration(
-                                  hintText: isMr ? 'उदा. ५००+ नागरिक' : 'e.g. 500+ residents',
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-
-                    // 5. Department & Outcome / Status
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                isMr ? 'विभाग' : 'Department',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                              ),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: deptCtrl,
-                                decoration: InputDecoration(
-                                  hintText: isMr ? 'उदा. पाणी पुरवठा' : 'e.g. Water Supply',
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                isMr ? 'निकाल / स्थिती *' : 'Outcome / Status *',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                              ),
-                              const SizedBox(height: 6),
-                              DropdownButtonFormField<String>(
-                                initialValue: status,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                                ),
-                                items: _statusList
-                                    .where((s) => s != 'All')
-                                    .map((s) => DropdownMenuItem(
-                                          value: s,
-                                          child: Text(
-                                            isMr ? _getStatusLabelMr(s) : s,
-                                            style: const TextStyle(fontSize: 13),
-                                          ),
-                                        ))
-                                    .toList(),
-                                onChanged: (val) {
-                                  if (val != null) setModalState(() => status = val);
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-
-                    // 6. Administrative Response
-                    Text(
-                      isMr ? 'प्रशासकीय उत्तर' : 'Administrative Response',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                    ),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: respCtrl,
-                      maxLines: 3,
-                      decoration: InputDecoration(
-                        hintText: isMr
-                            ? 'प्रशासनाकडून मिळालेले उत्तर...'
-                            : 'Response received from administration...',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                        contentPadding: const EdgeInsets.all(12),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Submit Button (Existing button - wired directly)
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0284C7),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                        onPressed: () async {
-                          if (subjectCtrl.text.trim().isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(isMr ? 'कृपया विषय प्रविष्ट करा' : 'Please enter a subject'),
-                              ),
-                            );
-                            return;
-                          }
-
-                          final newEntry = GbRegisterEntryModel(
-                            id: 'gb-${DateTime.now().millisecondsSinceEpoch}',
-                            meetingType: meetingType,
-                            meetingDate: dateCtrl.text.trim().isNotEmpty
-                                ? dateCtrl.text.trim()
-                                : DateFormat('yyyy-MM-dd').format(DateTime.now()),
-                            subject: subjectCtrl.text.trim(),
-                            description: descCtrl.text.trim(),
-                            department: deptCtrl.text.trim().isNotEmpty ? deptCtrl.text.trim() : 'General Administration',
-                            area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : 'Ward 12',
-                            status: status,
-                            beneficiaries: benCtrl.text.trim().isNotEmpty ? benCtrl.text.trim() : null,
-                            response: respCtrl.text.trim().isNotEmpty ? respCtrl.text.trim() : null,
-                            resolutionNo: null,
-                            tags: const [],
-                            createdAt: DateTime.now().toIso8601String(),
-                          );
-
-                          final repo = ref.read(gbRegisterRepoProvider);
-                          await repo.addEntry(newEntry);
-                          await _loadData();
-
-                          if (sheetCtx.mounted) Navigator.pop(sheetCtx);
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  isMr ? 'नोंद यशस्वीरित्या जतन केली!' : 'Entry registered successfully!',
-                                ),
-                                backgroundColor: const Color(0xFF16A34A),
-                              ),
-                            );
-                          }
-                        },
-                        child: Text(
-                          isMr ? 'नोंद जतन करा' : 'Save Entry',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             );
           },

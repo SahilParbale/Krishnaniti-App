@@ -112,6 +112,7 @@ class _ImprovementDetailScreenState extends ConsumerState<ImprovementDetailScree
   }
 
   void _showEditModal() {
+    final isMr = ref.read(isMarathiProvider);
     final titleCtrl = TextEditingController(text: _currentImp.title);
     final descCtrl = TextEditingController(text: _currentImp.description);
     final locCtrl = TextEditingController(text: _currentImp.location);
@@ -121,6 +122,46 @@ class _ImprovementDetailScreenState extends ConsumerState<ImprovementDetailScree
         text: _currentImp.estimatedBudget != null ? _currentImp.estimatedBudget!.toInt().toString() : '');
     final dateCtrl = TextEditingController(text: _currentImp.completionDate ?? '');
     String status = _currentImp.status;
+
+    InputDecoration inputDec({String? hint, String? prefixText}) {
+      return InputDecoration(
+        hintText: hint,
+        prefixText: prefixText,
+        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+        prefixStyle: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        filled: true,
+        fillColor: Colors.white,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1.0),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+        ),
+      );
+    }
+
+    Widget fieldLabel(String text, {bool isRequired = false}) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 5.0),
+        child: RichText(
+          text: TextSpan(
+            text: text,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+            children: isRequired
+                ? const [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                    ),
+                  ]
+                : [],
+          ),
+        ),
+      );
+    }
 
     showModalBottomSheet(
       context: context,
@@ -134,212 +175,241 @@ class _ImprovementDetailScreenState extends ConsumerState<ImprovementDetailScree
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 20,
+                    offset: Offset(0, -4),
+                  ),
+                ],
               ),
               padding: EdgeInsets.only(
-                top: 20,
+                top: 8,
                 left: 20,
                 right: 20,
                 bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
               ),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Edit Civic Improvement',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                        ),
-                        IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(sheetCtx)),
-                      ],
-                    ),
-                    const Divider(),
-                    const SizedBox(height: 12),
-                    const Text('Proposal Title *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: titleCtrl,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              child: Column(
+                children: [
+                  // Top Drag Handle
+                  Center(
+                    child: Container(
+                      width: 44,
+                      height: 5,
+                      margin: const EdgeInsets.only(top: 6, bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(3),
                       ),
                     ),
-                    const SizedBox(height: 14),
-                    const Text('Detailed Scope / Description', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: descCtrl,
-                      maxLines: 3,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.edit_note_rounded, color: Color(0xFF0284C7), size: 20),
                       ),
-                    ),
-                    const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          isMr ? 'सुधारणा प्रस्ताव संपादन' : 'Edit Civic Improvement',
+                          style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                        onPressed: () => Navigator.pop(sheetCtx),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Title & Status side-by-side
+                          Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Location', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: locCtrl,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                              Expanded(
+                                flex: 6,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    fieldLabel(isMr ? 'प्रस्तावित कामाचे नाव' : 'Proposal Title', isRequired: true),
+                                    TextField(
+                                      controller: titleCtrl,
+                                      decoration: inputDec(hint: isMr ? 'उदा. पादचारी पूल, ओपन जिम...' : 'e.g. Pedestrian skywalk...'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                flex: 4,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    fieldLabel(isMr ? 'स्थिती' : 'Status'),
+                                    DropdownButtonFormField<String>(
+                                      initialValue: status,
+                                      decoration: inputDec(),
+                                      items: [
+                                        DropdownMenuItem(value: 'Pending', child: Text(isMr ? 'प्रलंबित' : 'Pending')),
+                                        DropdownMenuItem(value: 'Planned', child: Text(isMr ? 'नियोजित' : 'Planned')),
+                                        DropdownMenuItem(value: 'In Progress', child: Text(isMr ? 'सुरू' : 'In Progress')),
+                                        DropdownMenuItem(value: 'Complete', child: Text(isMr ? 'पूर्ण' : 'Complete')),
+                                      ],
+                                      onChanged: (val) {
+                                        if (val != null) setModalState(() => status = val);
+                                      },
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Area / Locality', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: areaCtrl,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Status', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 6),
-                              DropdownButtonFormField<String>(
-                                initialValue: status,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-                                ),
-                                items: const [
-                                  DropdownMenuItem(value: 'Pending', child: Text('Pending')),
-                                  DropdownMenuItem(value: 'Planned', child: Text('Planned')),
-                                  DropdownMenuItem(value: 'In Progress', child: Text('In Progress')),
-                                  DropdownMenuItem(value: 'Complete', child: Text('Complete')),
-                                ],
-                                onChanged: (val) {
-                                  if (val != null) setModalState(() => status = val);
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Target Date', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: dateCtrl,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                  hintText: 'YYYY-MM-DD',
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Estimated Citizens Benefited',
-                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: benCtrl,
-                                keyboardType: TextInputType.number,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                  hintText: 'e.g. 10000',
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Estimated Budget (₹)',
-                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: budgetCtrl,
-                                keyboardType: TextInputType.number,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                  hintText: 'e.g. 2500000',
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0284C7),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                        onPressed: () async {
-                          final updated = _currentImp.copyWith(
-                            title: titleCtrl.text.trim(),
-                            description: descCtrl.text.trim(),
-                            location: locCtrl.text.trim(),
-                            area: areaCtrl.text.trim(),
-                            status: status,
-                            completionDate: dateCtrl.text.trim().isNotEmpty ? dateCtrl.text.trim() : null,
-                            peopleBenefited: int.tryParse(benCtrl.text.trim()),
-                            estimatedBudget: double.tryParse(budgetCtrl.text.trim()),
-                          );
+                          const SizedBox(height: 12),
 
-                          final repo = ref.read(improvementsRepoProvider);
-                          await repo.updateImprovement(updated);
-                          if (sheetCtx.mounted) Navigator.pop(sheetCtx);
-                          if (mounted) {
-                            setState(() => _currentImp = updated);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Proposal updated successfully'),
-                                backgroundColor: Color(0xFF16A34A),
+                          // Location & Area side-by-side
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    fieldLabel(isMr ? 'ठिकाण' : 'Location'),
+                                    TextField(
+                                      controller: locCtrl,
+                                      decoration: inputDec(hint: isMr ? 'उदा. मुख्य चौक...' : 'e.g. Main Chowk...'),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            );
-                          }
-                        },
-                        child: const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.bold)),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    fieldLabel(isMr ? 'परिसर / प्रभाग' : 'Area / Locality'),
+                                    TextField(
+                                      controller: areaCtrl,
+                                      decoration: inputDec(hint: isMr ? 'उदा. सेक्टर ५...' : 'e.g. Sector 5...'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Target Date & Benefited side-by-side
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    fieldLabel(isMr ? 'अपेक्षित दिनांक' : 'Target Date'),
+                                    TextField(
+                                      controller: dateCtrl,
+                                      decoration: inputDec(hint: 'YYYY-MM-DD'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    fieldLabel(isMr ? 'अंदाजे लाभार्थी' : 'Estimated Benefited'),
+                                    TextField(
+                                      controller: benCtrl,
+                                      keyboardType: TextInputType.number,
+                                      decoration: inputDec(hint: '10000'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Estimated Budget
+                          fieldLabel(isMr ? 'अंदाजे बजेट (₹)' : 'Estimated Budget (₹)'),
+                          TextField(
+                            controller: budgetCtrl,
+                            keyboardType: TextInputType.number,
+                            decoration: inputDec(prefixText: '₹ ', hint: '2500000'),
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Description
+                          fieldLabel(isMr ? 'तपशीलवार माहिती व स्वरूप' : 'Detailed Scope / Description'),
+                          TextField(
+                            controller: descCtrl,
+                            maxLines: 3,
+                            decoration: inputDec(hint: isMr ? 'सुधारणा कामाचा उद्देश व स्वरूप...' : 'Describe purpose and scope...'),
+                          ),
+                          const SizedBox(height: 20),
+
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0284C7),
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              onPressed: () async {
+                                final updated = _currentImp.copyWith(
+                                  title: titleCtrl.text.trim(),
+                                  description: descCtrl.text.trim(),
+                                  location: locCtrl.text.trim(),
+                                  area: areaCtrl.text.trim(),
+                                  status: status,
+                                  completionDate: dateCtrl.text.trim().isNotEmpty ? dateCtrl.text.trim() : null,
+                                  peopleBenefited: int.tryParse(benCtrl.text.trim()),
+                                  estimatedBudget: double.tryParse(budgetCtrl.text.trim()),
+                                );
+
+                                final repo = ref.read(improvementsRepoProvider);
+                                await repo.updateImprovement(updated);
+                                if (sheetCtx.mounted) Navigator.pop(sheetCtx);
+                                if (mounted) {
+                                  setState(() => _currentImp = updated);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(isMr ? 'प्रस्ताव यशस्वीरित्या अद्यतनित केला!' : 'Proposal updated successfully'),
+                                      backgroundColor: const Color(0xFF16A34A),
+                                    ),
+                                  );
+                                }
+                              },
+                              child: Text(
+                                isMr ? 'बदल जतन करा' : 'Save Changes',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                        ],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             );
           },

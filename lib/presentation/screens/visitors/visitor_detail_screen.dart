@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/visitor_model.dart';
 import '../../../data/repositories/visitors_repository.dart';
@@ -106,6 +105,7 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
   }
 
   void _showEditSheet() {
+    final isMr = ref.read(isMarathiProvider);
     final nameCtrl = TextEditingController(text: _visitor.name);
     final mobileCtrl = TextEditingController(text: _visitor.mobile);
     final areaCtrl = TextEditingController(text: _visitor.area ?? '');
@@ -116,6 +116,46 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
     final eventTimeCtrl = TextEditingController(text: _visitor.eventTime ?? '');
 
     String selectedPurpose = _visitor.purpose;
+
+    InputDecoration inputDec({String? hint, String? prefixText}) {
+      return InputDecoration(
+        hintText: hint,
+        prefixText: prefixText,
+        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+        prefixStyle: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        filled: true,
+        fillColor: Colors.white,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1.0),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+        ),
+      );
+    }
+
+    Widget fieldLabel(String text, {bool isRequired = false}) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 5.0),
+        child: RichText(
+          text: TextSpan(
+            text: text,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+            children: isRequired
+                ? const [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                    ),
+                  ]
+                : [],
+          ),
+        ),
+      );
+    }
 
     showModalBottomSheet(
       context: context,
@@ -131,24 +171,50 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 20,
+                  offset: Offset(0, -4),
+                ),
+              ],
             ),
             padding: EdgeInsets.only(
               bottom: MediaQuery.of(context).viewInsets.bottom,
             ),
             child: Column(
               children: [
+                // Top Drag Handle
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 5,
+                    margin: const EdgeInsets.only(top: 10, bottom: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                ),
                 // Header
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  decoration: const BoxDecoration(
-                    border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Edit Visitor Details',
-                        style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.edit_note_rounded, color: Color(0xFF0284C7), size: 20),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          isMr ? 'अभ्यागत माहिती संपादित करा' : 'Edit Visitor Details',
+                          style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                        ),
                       ),
                       IconButton(
                         onPressed: () => Navigator.pop(ctx),
@@ -157,6 +223,7 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
                     ],
                   ),
                 ),
+                const Divider(height: 1, color: Color(0xFFE2E8F0)),
 
                 // Form
                 Expanded(
@@ -165,83 +232,121 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Visitor Full Name *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                        const SizedBox(height: 6),
+                        fieldLabel(isMr ? 'अभ्यागताचे पूर्ण नाव' : 'Visitor Full Name', isRequired: true),
                         TextField(
                           controller: nameCtrl,
-                          decoration: InputDecoration(
-                            hintText: 'e.g. Ramesh Patil',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
+                          decoration: inputDec(hint: isMr ? 'उदा. रमेश पाटील' : 'e.g. Ramesh Patil'),
                         ),
 
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 14),
 
-                        const Text('Contact Mobile Number', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                        const SizedBox(height: 6),
-                        TextField(
-                          controller: mobileCtrl,
-                          keyboardType: TextInputType.phone,
-                          decoration: InputDecoration(
-                            prefixText: '+91 ',
-                            hintText: '9876543210',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        const Text('Purpose / Reason for Visit *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                        const SizedBox(height: 6),
-                        DropdownButtonFormField<String>(
-                          value: ['Complaint', 'Meeting', 'Greeting', 'Donation', 'Help', 'Other'].contains(selectedPurpose) ? selectedPurpose : 'Meeting',
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                          items: const [
-                            DropdownMenuItem(value: 'Complaint', child: Text('Complaint (तक्रार)')),
-                            DropdownMenuItem(value: 'Meeting', child: Text('Meeting (भेट / चर्चा)')),
-                            DropdownMenuItem(value: 'Greeting', child: Text('Greeting / Invite (निमंत्रण / सत्कार)')),
-                            DropdownMenuItem(value: 'Help', child: Text('Help / Relief (वैयक्तिक मदत)')),
-                            DropdownMenuItem(value: 'Donation', child: Text('Donation (देणगी / निधी)')),
-                            DropdownMenuItem(value: 'Other', child: Text('Other (इतर)')),
+                        // Side-by-side: Contact Mobile & Purpose Dropdown
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              flex: 5,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  fieldLabel(isMr ? 'मोबाईल (+91)' : 'Mobile (+91)'),
+                                  TextField(
+                                    controller: mobileCtrl,
+                                    keyboardType: TextInputType.phone,
+                                    decoration: inputDec(
+                                      prefixText: '+91 ',
+                                      hint: '9876543210',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              flex: 6,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  fieldLabel(isMr ? 'भेटीचे कारण / स्वरूप' : 'Visit Purpose', isRequired: true),
+                                  DropdownButtonFormField<String>(
+                                    initialValue: ['Complaint', 'Meeting', 'Greeting', 'Donation', 'Help', 'Other'].contains(selectedPurpose) ? selectedPurpose : 'Meeting',
+                                    decoration: inputDec(),
+                                    items: [
+                                      DropdownMenuItem(value: 'Complaint', child: Text(isMr ? 'तक्रार (Complaint)' : 'Complaint')),
+                                      DropdownMenuItem(value: 'Meeting', child: Text(isMr ? 'भेट / चर्चा (Meeting)' : 'Meeting')),
+                                      DropdownMenuItem(value: 'Greeting', child: Text(isMr ? 'निमंत्रण / सत्कार' : 'Greeting / Invite')),
+                                      DropdownMenuItem(value: 'Help', child: Text(isMr ? 'वैयक्तिक मदत (Help)' : 'Help / Relief')),
+                                      DropdownMenuItem(value: 'Donation', child: Text(isMr ? 'देणगी / निधी (Donation)' : 'Donation')),
+                                      DropdownMenuItem(value: 'Other', child: Text(isMr ? 'इतर (Other)' : 'Other')),
+                                    ],
+                                    onChanged: (val) {
+                                      if (val != null) setModalState(() => selectedPurpose = val);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
-                          onChanged: (val) {
-                            if (val != null) setModalState(() => selectedPurpose = val);
-                          },
                         ),
 
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 14),
 
-                        Text(
-                          isGreeting ? 'Event Venue / Address' : 'Area / Locality',
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
-                        ),
-                        const SizedBox(height: 6),
-                        TextField(
-                          controller: areaCtrl,
-                          decoration: InputDecoration(
-                            hintText: isGreeting ? 'e.g. Shivaji Chowk Community Hall' : 'e.g. Lane 4, Sector 2',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
+                        // Side-by-side: Area / Locality (or Venue) & Reference / Leader
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  fieldLabel(
+                                    isGreeting
+                                        ? (isMr ? 'कार्यक्रमाचे ठिकाण / पत्ता' : 'Event Venue / Address')
+                                        : (isMr ? 'क्षेत्र / परिसर' : 'Area / Locality'),
+                                  ),
+                                  TextField(
+                                    controller: areaCtrl,
+                                    decoration: inputDec(
+                                      hint: isGreeting
+                                          ? (isMr ? 'उदा. शिवाजी चौक सभागृह' : 'e.g. Shivaji Chowk Hall')
+                                          : (isMr ? 'उदा. गल्ली क्र. ४, प्रभाग १२' : 'e.g. Lane 4, Ward 12'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  fieldLabel(isMr ? 'संदर्भ / नेता (ऐच्छिक)' : 'Reference / Leader'),
+                                  TextField(
+                                    controller: refCtrl,
+                                    decoration: inputDec(
+                                      hint: isMr ? 'उदा. सुनील शिंदे' : 'e.g. Sunil Shinde',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
 
                         if (isGreeting) ...[
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 14),
+                          // Side-by-side: Event Date & Event Time
                           Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text('Event Date', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                                    const SizedBox(height: 6),
+                                    fieldLabel(isMr ? 'कार्यक्रमाची तारीख' : 'Event Date'),
                                     TextField(
                                       controller: eventDateCtrl,
-                                      decoration: InputDecoration(
-                                        hintText: 'YYYY-MM-DD',
-                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                      ),
+                                      decoration: inputDec(hint: 'YYYY-MM-DD'),
                                     ),
                                   ],
                                 ),
@@ -251,14 +356,10 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text('Event Time', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                                    const SizedBox(height: 6),
+                                    fieldLabel(isMr ? 'कार्यक्रमाची वेळ' : 'Event Time'),
                                     TextField(
                                       controller: eventTimeCtrl,
-                                      decoration: InputDecoration(
-                                        hintText: 'e.g. 18:30',
-                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                      ),
+                                      decoration: inputDec(hint: 'उदा. 18:30'),
                                     ),
                                   ],
                                 ),
@@ -268,42 +369,27 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
                         ],
 
                         if (isDonation) ...[
-                          const SizedBox(height: 16),
-                          const Text('Requested Amount (₹)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 14),
+                          fieldLabel(isMr ? 'अपेक्षित रक्कम (₹)' : 'Requested Amount (₹)'),
                           TextField(
                             controller: amountCtrl,
                             keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
+                            decoration: inputDec(
                               prefixText: '₹ ',
-                              hintText: '5000',
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                              hint: '5000',
                             ),
                           ),
                         ],
 
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 14),
 
-                        const Text('Reference / Leader Name (Optional)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                        const SizedBox(height: 6),
-                        TextField(
-                          controller: refCtrl,
-                          decoration: InputDecoration(
-                            hintText: 'e.g. Sunil Shinde (JE)',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        const Text('Discussion Notes & Remarks', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                        const SizedBox(height: 6),
+                        // Discussion Remarks
+                        fieldLabel(isMr ? 'चर्चा नोंदी व शेरा' : 'Discussion Notes & Remarks'),
                         TextField(
                           controller: remarksCtrl,
                           maxLines: 3,
-                          decoration: InputDecoration(
-                            hintText: 'Discussion summary, citizen grievance details...',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          decoration: inputDec(
+                            hint: isMr ? 'चर्चेचा गोषवारा, तक्रार तपशील...' : 'Discussion summary, citizen grievance details...',
                           ),
                         ),
 
@@ -311,12 +397,13 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
 
                         SizedBox(
                           width: double.infinity,
+                          height: 48,
                           child: ElevatedButton(
                             onPressed: () async {
                               final name = nameCtrl.text.trim();
                               if (name.isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Please enter visitor name')),
+                                  SnackBar(content: Text(isMr ? 'कृपया अभ्यागताचे नाव प्रविष्ट करा' : 'Please enter visitor name')),
                                 );
                                 return;
                               }
@@ -355,9 +442,9 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
                                 widget.onVisitorUpdated?.call();
                                 if (mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Visitor updated successfully'),
-                                      backgroundColor: Color(0xFF0F766E),
+                                    SnackBar(
+                                      content: Text(isMr ? 'अभ्यागत माहिती यशस्वीरित्या अद्यतनित केली!' : 'Visitor updated successfully'),
+                                      backgroundColor: const Color(0xFF0F766E),
                                     ),
                                   );
                                 }

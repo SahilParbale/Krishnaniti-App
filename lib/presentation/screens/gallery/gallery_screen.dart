@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../data/models/gallery_model.dart';
 import '../../../data/repositories/gallery_repository.dart';
+import '../../providers/auth_provider.dart';
 import '../../navigation/app_drawer.dart';
 import 'gallery_detail_screen.dart';
 import 'gallery_report_generator.dart';
@@ -65,6 +66,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
   }
 
   void _showAddPhotoDialog() {
+    final isMr = ref.read(isMarathiProvider);
     final titleCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     final locCtrl = TextEditingController(text: 'Shaniwar Peth, Pune');
@@ -73,6 +75,57 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
     );
     DateTime selectedDate = DateTime.now();
     GalleryCategory selectedCat = GalleryCategory.event;
+
+    Widget fieldLabel(String text, {bool isRequired = false}) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: RichText(
+          text: TextSpan(
+            text: text,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF334155),
+            ),
+            children: isRequired
+                ? const [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ]
+                : [],
+          ),
+        ),
+      );
+    }
+
+    InputDecoration inputDec({String? hintText, Widget? prefixIcon, Widget? suffixIcon}) {
+      return InputDecoration(
+        hintText: hintText,
+        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+        prefixIcon: prefixIcon,
+        suffixIcon: suffixIcon,
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+        ),
+      );
+    }
 
     showModalBottomSheet(
       context: context,
@@ -85,97 +138,100 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 20,
+                  offset: Offset(0, -4),
+                ),
+              ],
             ),
-            padding: EdgeInsets.fromLTRB(
-              20,
-              12,
-              20,
-              MediaQuery.of(ctx).viewInsets.bottom + 20,
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
+            child: Column(
+              children: [
+                // Drag Handle
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 5,
+                    margin: const EdgeInsets.only(top: 10, bottom: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(3),
                     ),
                   ),
-                  const SizedBox(height: 14),
-                  Row(
+                ),
+                // Header
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE0F2FE),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(
-                          Icons.add_photo_alternate_rounded,
-                          color: Color(0xFF0284C7),
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      const Expanded(
-                        child: Text(
-                          'Add New Photo',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF0F172A),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(7),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.add_photo_alternate_rounded,
+                              color: Color(0xFF0284C7),
+                              size: 20,
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: 10),
+                          Text(
+                            isMr ? 'नवीन फोटो जोडा' : 'Add New Photo',
+                            style: const TextStyle(
+                              fontSize: 17.5,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                        ],
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close_rounded),
+                        icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
                         onPressed: () => Navigator.pop(ctx),
                       ),
                     ],
                   ),
-                  const Divider(height: 20, color: Color(0xFFE2E8F0)),
-
-                  // Title
-                  const Text('Title*', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 6),
-                  TextField(
-                    controller: titleCtrl,
-                    decoration: InputDecoration(
-                      hintText: 'e.g., Ward Development Inspection 2024',
-                      hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                      filled: true,
-                      fillColor: const Color(0xFFF8FAFC),
-                      contentPadding: const EdgeInsets.all(12),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // Category & Date
-                  Row(
+                ),
+                const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.all(16),
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Category', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF8FAFC),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: const Color(0xFFCBD5E1)),
-                              ),
-                              child: DropdownButtonHideUnderline(
-                                child: DropdownButton<GalleryCategory>(
+                      // Title & Category side-by-side
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 6,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'फोटोचे नाव / शीर्षक' : 'Photo Title', isRequired: true),
+                                TextField(
+                                  controller: titleCtrl,
+                                  decoration: inputDec(
+                                    hintText: isMr ? 'उदा. प्रभाग विकास पाहणी २०२४' : 'e.g. Ward Development 2024',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            flex: 4,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'श्रेणी' : 'Category'),
+                                DropdownButtonFormField<GalleryCategory>(
                                   value: selectedCat,
+                                  decoration: inputDec(),
                                   isExpanded: true,
                                   items: GalleryCategory.values.map((c) {
                                     return DropdownMenuItem(
@@ -184,7 +240,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                                         children: [
                                           Icon(c.icon, size: 14, color: c.color),
                                           const SizedBox(width: 6),
-                                          Text(c.titleMr, style: const TextStyle(fontSize: 12)),
+                                          Text(isMr ? c.titleMr : c.titleEn, style: const TextStyle(fontSize: 12)),
                                         ],
                                       ),
                                     );
@@ -193,164 +249,162 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                                     if (val != null) setModalState(() => selectedCat = val);
                                   },
                                 ),
-                              ),
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Date', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 6),
-                            InkWell(
-                              onTap: () async {
-                                final picked = await showDatePicker(
-                                  context: ctx,
-                                  initialDate: selectedDate,
-                                  firstDate: DateTime(2020),
-                                  lastDate: DateTime.now(),
-                                );
-                                if (picked != null) {
-                                  setModalState(() => selectedDate = picked);
-                                }
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF8FAFC),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: const Color(0xFFCBD5E1)),
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.calendar_today_rounded, size: 14, color: Color(0xFF0284C7)),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      DateFormat('dd/MM/yyyy').format(selectedDate),
-                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      const SizedBox(height: 14),
+
+                      // Date & Location side-by-side
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'तारीख' : 'Date'),
+                                InkWell(
+                                  onTap: () async {
+                                    final picked = await showDatePicker(
+                                      context: ctx,
+                                      initialDate: selectedDate,
+                                      firstDate: DateTime(2020),
+                                      lastDate: DateTime.now(),
+                                    );
+                                    if (picked != null) {
+                                      setModalState(() => selectedDate = picked);
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: const Color(0xFFCBD5E1)),
                                     ),
-                                  ],
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.calendar_today_rounded, size: 14, color: Color(0xFF0284C7)),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          DateFormat('dd/MM/yyyy').format(selectedDate),
+                                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
-                          ],
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'स्थान / परिसर' : 'Location'),
+                                TextField(
+                                  controller: locCtrl,
+                                  decoration: inputDec(
+                                    hintText: isMr ? 'उदा. शनिवार पेठ, पुणे' : 'e.g. Shaniwar Peth, Pune',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Image URL
+                      fieldLabel(isMr ? 'फोटो URL' : 'Image URL', isRequired: true),
+                      TextField(
+                        controller: urlCtrl,
+                        decoration: inputDec(
+                          hintText: 'https://images.unsplash.com/...',
                         ),
                       ),
+                      const SizedBox(height: 14),
+
+                      // Description
+                      fieldLabel(isMr ? 'तपशील / वर्णन' : 'Description'),
+                      TextField(
+                        controller: descCtrl,
+                        maxLines: 3,
+                        decoration: inputDec(
+                          hintText: isMr ? 'फोटो किंवा कार्यक्रमाविषयी थोडक्यात माहिती...' : 'Brief details about this photo or event...',
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Submit Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                            if (titleCtrl.text.trim().isEmpty) return;
+                            final newItem = GalleryItemModel(
+                              id: 'gal-${DateTime.now().millisecondsSinceEpoch}',
+                              title: titleCtrl.text.trim(),
+                              titleMr: titleCtrl.text.trim(),
+                              category: selectedCat,
+                              imageUrl: urlCtrl.text.trim().isNotEmpty
+                                  ? urlCtrl.text.trim()
+                                  : 'https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=800&q=80',
+                              description: descCtrl.text.trim().isNotEmpty
+                                  ? descCtrl.text.trim()
+                                  : 'Ward 12 public development program.',
+                              descriptionMr: descCtrl.text.trim().isNotEmpty
+                              ? descCtrl.text.trim()
+                              : 'Ward 12 public development program.',
+                              date: selectedDate,
+                              location: locCtrl.text.trim().isNotEmpty ? locCtrl.text.trim() : 'Ward 12, Pune',
+                              tags: ['Ward Development', selectedCat.titleEn],
+                              isFavorite: false,
+                              viewsCount: 1,
+                              createdAt: DateTime.now(),
+                            );
+
+                            final repo = ref.read(galleryRepoProvider);
+                            await repo.addGalleryItem(newItem);
+                            if (ctx.mounted) {
+                              Navigator.pop(ctx);
+                            }
+                            if (mounted) {
+                              _loadGallery();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    isMr
+                                        ? 'फोटो गॅलरीमध्ये यशस्वीरित्या जोडला गेला!'
+                                        : 'Photo added to gallery successfully!',
+                                  ),
+                                  backgroundColor: const Color(0xFF16A34A),
+                                ),
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0284C7),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            elevation: 0,
+                          ),
+                          icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
+                          label: Text(
+                            isMr ? 'गॅलरीत जोडा' : 'Add to Gallery',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
                     ],
                   ),
-
-                  const SizedBox(height: 12),
-
-                  // Image URL
-                  const Text('Image URL*', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 6),
-                  TextField(
-                    controller: urlCtrl,
-                    decoration: InputDecoration(
-                      hintText: 'https://images.unsplash.com/...',
-                      hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
-                      filled: true,
-                      fillColor: const Color(0xFFF8FAFC),
-                      contentPadding: const EdgeInsets.all(12),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // Location
-                  const Text('Location', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 6),
-                  TextField(
-                    controller: locCtrl,
-                    decoration: InputDecoration(
-                      hintText: 'e.g., Shaniwar Peth, Pune',
-                      hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
-                      filled: true,
-                      fillColor: const Color(0xFFF8FAFC),
-                      contentPadding: const EdgeInsets.all(12),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // Description
-                  const Text('Description', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 6),
-                  TextField(
-                    controller: descCtrl,
-                    maxLines: 3,
-                    decoration: InputDecoration(
-                      hintText: 'Brief details about this photo or event...',
-                      hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
-                      filled: true,
-                      fillColor: const Color(0xFFF8FAFC),
-                      contentPadding: const EdgeInsets.all(12),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Submit Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        if (titleCtrl.text.trim().isEmpty) return;
-                        final newItem = GalleryItemModel(
-                          id: 'gal-${DateTime.now().millisecondsSinceEpoch}',
-                          title: titleCtrl.text.trim(),
-                          titleMr: titleCtrl.text.trim(),
-                          category: selectedCat,
-                          imageUrl: urlCtrl.text.trim().isNotEmpty
-                              ? urlCtrl.text.trim()
-                              : 'https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=800&q=80',
-                          description: descCtrl.text.trim().isNotEmpty
-                              ? descCtrl.text.trim()
-                              : 'Ward 12 public development program.',
-                          descriptionMr: descCtrl.text.trim().isNotEmpty
-                              ? descCtrl.text.trim()
-                              : 'Ward 12 public development program.',
-                          date: selectedDate,
-                          location: locCtrl.text.trim().isNotEmpty ? locCtrl.text.trim() : 'Ward 12, Pune',
-                          tags: ['Ward Development', selectedCat.titleEn],
-                          isFavorite: false,
-                          viewsCount: 1,
-                          createdAt: DateTime.now(),
-                        );
-
-                        final repo = ref.read(galleryRepoProvider);
-                        await repo.addGalleryItem(newItem);
-                        if (ctx.mounted) {
-                          Navigator.pop(ctx);
-                        }
-                        if (mounted) {
-                          _loadGallery();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Photo added to gallery successfully!'),
-                              backgroundColor: Color(0xFF16A34A),
-                            ),
-                          );
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0284C7),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        elevation: 0,
-                      ),
-                      child: const Text('Add to Gallery', style: TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           );
         },

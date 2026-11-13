@@ -748,9 +748,13 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                     ],
                   ),
                   const Divider(height: 20),
-                  _buildTextField('Full Name (English)', _nameEnglishCtrl, 'e.g. Rahul Patil'),
-                  const SizedBox(height: 10),
-                  _buildTextField('Full Name (Marathi)', _nameMarathiCtrl, 'उदा. राहुल पाटील'),
+                  Row(
+                    children: [
+                      Expanded(child: _buildTextField('Full Name (English)', _nameEnglishCtrl, 'e.g. Rahul Patil')),
+                      const SizedBox(width: 10),
+                      Expanded(child: _buildTextField('Full Name (Marathi)', _nameMarathiCtrl, 'उदा. राहुल पाटील')),
+                    ],
+                  ),
                   const SizedBox(height: 10),
                   Row(
                     children: [
@@ -2064,17 +2068,26 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
-        const SizedBox(height: 4),
+        Text(label, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+        const SizedBox(height: 5),
         TextField(
           controller: ctrl,
           keyboardType: isPhone ? TextInputType.phone : (isEmail ? TextInputType.emailAddress : TextInputType.text),
           style: const TextStyle(fontSize: 13),
           decoration: InputDecoration(
             hintText: hint,
-            isDense: true,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+            ),
           ),
         ),
       ],

@@ -83,11 +83,52 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
   }
 
   void _showAddModal() {
+    final isMr = ref.read(isMarathiProvider);
     final catCtrl = TextEditingController();
-    final areaCtrl = TextEditingController(text: 'Ward 12');
+    final areaCtrl = TextEditingController();
     final allocCtrl = TextEditingController();
     final utilCtrl = TextEditingController(text: '0');
     String fy = _selectedYear != 'All' ? _selectedYear : '2024-2025';
+
+    InputDecoration inputDec({String? hint, String? prefixText}) {
+      return InputDecoration(
+        hintText: hint,
+        prefixText: prefixText,
+        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+        prefixStyle: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        filled: true,
+        fillColor: Colors.white,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1.0),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+        ),
+      );
+    }
+
+    Widget fieldLabel(String text, {bool isRequired = false}) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 5.0),
+        child: RichText(
+          text: TextSpan(
+            text: text,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+            children: isRequired
+                ? const [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                    ),
+                  ]
+                : [],
+          ),
+        ),
+      );
+    }
 
     showModalBottomSheet(
       context: context,
@@ -97,13 +138,20 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
         return StatefulBuilder(
           builder: (stCtx, setModalState) {
             return Container(
-              height: MediaQuery.of(context).size.height * 0.85,
+              height: MediaQuery.of(context).size.height * 0.88,
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 20,
+                    offset: Offset(0, -4),
+                  ),
+                ],
               ),
               padding: EdgeInsets.only(
-                top: 20,
+                top: 8,
                 left: 20,
                 right: 20,
                 bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
@@ -112,92 +160,132 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'New Budget Allocation',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                    // Top Drag Handle
+                    Center(
+                      child: Container(
+                        width: 44,
+                        height: 5,
+                        margin: const EdgeInsets.only(top: 6, bottom: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(3),
                         ),
-                        IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(sheetCtx)),
+                      ),
+                    ),
+                    // Header
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.account_balance_wallet_outlined, color: Color(0xFF0284C7), size: 20),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            isMr ? 'नवीन बजेट तरतूद' : 'New Budget Allocation',
+                            style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                          onPressed: () => Navigator.pop(sheetCtx),
+                        ),
                       ],
                     ),
-                    const Divider(),
-                    const SizedBox(height: 12),
-
-                    // Financial Year
-                    const Text('Financial Year *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    const Divider(height: 16, color: Color(0xFFE2E8F0)),
                     const SizedBox(height: 6),
-                    DropdownButtonFormField<String>(
-                      initialValue: fy,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                      ),
-                      items: const [
-                        DropdownMenuItem(value: '2024-2025', child: Text('FY 2024-2025')),
-                        DropdownMenuItem(value: '2023-2024', child: Text('FY 2023-2024')),
-                        DropdownMenuItem(value: '2022-2023', child: Text('FY 2022-2023')),
+
+                    // Side-by-side: Financial Year & Category Head
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          flex: 5,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              fieldLabel(isMr ? 'आर्थिक वर्ष' : 'Financial Year', isRequired: true),
+                              DropdownButtonFormField<String>(
+                                initialValue: fy,
+                                decoration: inputDec(),
+                                items: const [
+                                  DropdownMenuItem(value: '2024-2025', child: Text('2024-2025')),
+                                  DropdownMenuItem(value: '2023-2024', child: Text('2023-2024')),
+                                  DropdownMenuItem(value: '2022-2023', child: Text('2022-2023')),
+                                ],
+                                onChanged: (val) {
+                                  if (val != null) setModalState(() => fy = val);
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 6,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              fieldLabel(isMr ? 'वर्गवारी / बजेट शीर्ष' : 'Category Head', isRequired: true),
+                              TextField(
+                                controller: catCtrl,
+                                decoration: inputDec(hint: isMr ? 'उदा. रस्ते देखभाल' : 'e.g. Road Maintenance'),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
-                      onChanged: (val) {
-                        if (val != null) setModalState(() => fy = val);
-                      },
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Category / Head
-                    const Text('Category / Budget Head *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: catCtrl,
-                      decoration: InputDecoration(
-                        hintText: 'e.g. Road Resurfacing, Water Pipelines',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
                     ),
                     const SizedBox(height: 14),
 
                     // Area / Location
-                    const Text('Area / Location *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
+                    fieldLabel(isMr ? 'क्षेत्र / ठिकाण' : 'Area / Location'),
                     TextField(
                       controller: areaCtrl,
-                      decoration: InputDecoration(
-                        hintText: 'e.g. Shaniwar Peth, Bajirao Road',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
+                      decoration: inputDec(hint: isMr ? 'उदा. शिवाजी नगर' : 'e.g. Shivaji Nagar'),
                     ),
                     const SizedBox(height: 14),
 
-                    // Total Allocation Amount
-                    const Text('Total Allocation Amount (₹) *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: allocCtrl,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        prefixText: '₹ ',
-                        hintText: 'e.g. 5000000',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Initial Utilized Amount
-                    const Text('Initial Utilized Amount (₹)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: utilCtrl,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        prefixText: '₹ ',
-                        hintText: '0',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
+                    // Side-by-side: Total Allocation Amount (₹) & Initial Utilized Amount (₹)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              fieldLabel(isMr ? 'एकूण तरतूद रक्कम (₹)' : 'Total Allocation (₹)', isRequired: true),
+                              TextField(
+                                controller: allocCtrl,
+                                keyboardType: TextInputType.number,
+                                decoration: inputDec(hint: '0', prefixText: '₹ '),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              fieldLabel(isMr ? 'सुरुवातीचा खर्च निधी (₹)' : 'Initial Utilized (₹)'),
+                              TextField(
+                                controller: utilCtrl,
+                                keyboardType: TextInputType.number,
+                                decoration: inputDec(hint: '0', prefixText: '₹ '),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 24),
 
-                    // Submit
+                    // Submit Button (Existing button - wired directly)
                     SizedBox(
                       width: double.infinity,
                       height: 48,
@@ -205,19 +293,24 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF0284C7),
                           foregroundColor: Colors.white,
+                          elevation: 0,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                         onPressed: () async {
                           if (catCtrl.text.trim().isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Please enter category head')),
+                              SnackBar(
+                                content: Text(isMr ? 'कृपया वर्गवारी / बजेट शीर्ष प्रविष्ट करा' : 'Please enter category head'),
+                              ),
                             );
                             return;
                           }
                           final alloc = double.tryParse(allocCtrl.text.trim());
                           if (alloc == null || alloc <= 0) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Please enter a valid total allocation amount')),
+                              SnackBar(
+                                content: Text(isMr ? 'कृपया वैध एकूण तरतूद रक्कम प्रविष्ट करा' : 'Please enter a valid total allocation amount'),
+                              ),
                             );
                             return;
                           }
@@ -242,14 +335,26 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                           if (sheetCtx.mounted) Navigator.pop(sheetCtx);
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Budget allocation added successfully!'),
-                                backgroundColor: Color(0xFF16A34A),
+                              SnackBar(
+                                content: Text(
+                                  isMr ? 'बजेट तरतूद यशस्वीरित्या जोडली गेली!' : 'Budget allocation added successfully!',
+                                ),
+                                backgroundColor: const Color(0xFF16A34A),
                               ),
                             );
                           }
                         },
-                        child: const Text('Save Budget Allocation', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.save_rounded, size: 18),
+                            const SizedBox(width: 8),
+                            Text(
+                              isMr ? 'तरतूद जतन करा' : 'Save Allocation',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -263,8 +368,29 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
   }
 
   void _showQuickUpdateModal(WardBudgetModel item) {
+    final isMr = ref.read(isMarathiProvider);
     final utilCtrl = TextEditingController(text: item.utilizedAmount.toInt().toString());
     final numFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹ ', decimalDigits: 0);
+
+    InputDecoration inputDec({String? hint, String? prefixText}) {
+      return InputDecoration(
+        hintText: hint,
+        prefixText: prefixText,
+        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+        prefixStyle: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        filled: true,
+        fillColor: Colors.white,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1.0),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+        ),
+      );
+    }
 
     showModalBottomSheet(
       context: context,
@@ -273,7 +399,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
       builder: (sheetCtx) {
         return Container(
           padding: EdgeInsets.only(
-            top: 20,
+            top: 8,
             left: 20,
             right: 20,
             bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
@@ -281,23 +407,55 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 20,
+                offset: Offset(0, -4),
+              ),
+            ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Update Expenditure',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              // Top Drag Handle
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 5,
+                  margin: const EdgeInsets.only(top: 6, bottom: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(3),
                   ),
-                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(sheetCtx)),
+                ),
+              ),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.edit_note_rounded, color: Color(0xFF0284C7), size: 20),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      isMr ? 'खर्च अपडेट करा' : 'Update Expenditure',
+                      style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                    onPressed: () => Navigator.pop(sheetCtx),
+                  ),
                 ],
               ),
-              const Divider(),
-              const SizedBox(height: 10),
+              const Divider(height: 16, color: Color(0xFFE2E8F0)),
+              const SizedBox(height: 6),
 
               // Head info box
               Container(
@@ -314,41 +472,56 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                     Text(item.category, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                     const SizedBox(height: 4),
                     Text(
-                      'Total Sanctioned: ${numFormat.format(item.totalAllocation)} | Area: ${item.area}',
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                      '${isMr ? "सध्याचा खर्च झालेला निधी" : "Current Utilized Amount"}: ${numFormat.format(item.utilizedAmount)}',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0284C7)),
+                    ),
+                    Text(
+                      '${isMr ? "एकूण मंजूर" : "Total Sanctioned"}: ${numFormat.format(item.totalAllocation)} | ${isMr ? "क्षेत्र" : "Area"}: ${item.area}',
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 14),
 
-              const Text('New Cumulative Utilized Amount (₹) *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-              const SizedBox(height: 6),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 5.0),
+                child: RichText(
+                  text: TextSpan(
+                    text: isMr ? 'नवीन एकूण खर्च (₹)' : 'New Total Utilized Amount (₹)',
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                    children: const [
+                      TextSpan(
+                        text: ' *',
+                        style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               TextField(
                 controller: utilCtrl,
                 keyboardType: TextInputType.number,
                 autofocus: true,
-                decoration: InputDecoration(
-                  prefixText: '₹ ',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                ),
+                decoration: inputDec(prefixText: '₹ '),
               ),
               const SizedBox(height: 20),
 
               SizedBox(
                 width: double.infinity,
-                height: 46,
+                height: 48,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF0284C7),
                     foregroundColor: Colors.white,
+                    elevation: 0,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                   onPressed: () async {
                     final newUtil = double.tryParse(utilCtrl.text.trim());
                     if (newUtil == null || newUtil < 0) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please enter a valid amount')),
+                        SnackBar(content: Text(isMr ? 'कृपया वैध रक्कम प्रविष्ट करा' : 'Please enter a valid amount')),
                       );
                       return;
                     }
@@ -360,14 +533,14 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                     if (sheetCtx.mounted) Navigator.pop(sheetCtx);
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Expenditure updated successfully!'),
-                          backgroundColor: Color(0xFF16A34A),
+                        SnackBar(
+                          content: Text(isMr ? 'खर्च यशस्वीरित्या अपडेट केला!' : 'Expenditure updated successfully!'),
+                          backgroundColor: const Color(0xFF16A34A),
                         ),
                       );
                     }
                   },
-                  child: const Text('Save Updated Expenditure', style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: Text(isMr ? 'अपडेट करा' : 'Update', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                 ),
               ),
             ],

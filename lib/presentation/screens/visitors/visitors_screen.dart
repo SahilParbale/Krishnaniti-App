@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/visitor_model.dart';
 import '../../../data/models/voter_model.dart';
@@ -124,6 +123,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
   }
 
   void _openAddVisitorModal() {
+    final isMr = ref.read(isMarathiProvider);
     final nameCtrl = TextEditingController();
     final mobileCtrl = TextEditingController();
     final areaCtrl = TextEditingController();
@@ -134,6 +134,47 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
     final eventTimeCtrl = TextEditingController();
 
     String selectedPurpose = 'Meeting';
+
+    InputDecoration inputDec({String? hint, String? prefixText, Widget? prefixIcon}) {
+      return InputDecoration(
+        hintText: hint,
+        prefixText: prefixText,
+        prefixIcon: prefixIcon,
+        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+        prefixStyle: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        filled: true,
+        fillColor: Colors.white,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1.0),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+        ),
+      );
+    }
+
+    Widget fieldLabel(String text, {bool isRequired = false}) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 5.0),
+        child: RichText(
+          text: TextSpan(
+            text: text,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+            children: isRequired
+                ? const [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                    ),
+                  ]
+                : [],
+          ),
+        ),
+      );
+    }
 
     showModalBottomSheet(
       context: context,
@@ -149,27 +190,53 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 20,
+                  offset: Offset(0, -4),
+                ),
+              ],
             ),
             padding: EdgeInsets.only(
               bottom: MediaQuery.of(context).viewInsets.bottom,
             ),
             child: Column(
               children: [
+                // Top Drag Handle
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 5,
+                    margin: const EdgeInsets.only(top: 10, bottom: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                ),
                 // Header
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  decoration: const BoxDecoration(
-                    border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Log New Visitor',
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF0F172A),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.people_alt_outlined, color: Color(0xFF0284C7), size: 20),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          isMr ? 'नवीन अभ्यागत नोंद' : 'Log New Visitor',
+                          style: const TextStyle(
+                            fontSize: 17.5,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0F172A),
+                          ),
                         ),
                       ),
                       IconButton(
@@ -179,6 +246,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                     ],
                   ),
                 ),
+                const Divider(height: 1, color: Color(0xFFE2E8F0)),
 
                 // Form
                 Expanded(
@@ -188,17 +256,14 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Name & Voter Lookup
-                        const Text('Visitor Full Name *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                        const SizedBox(height: 6),
+                        fieldLabel(isMr ? 'अभ्यागताचे पूर्ण नाव' : 'Visitor Full Name', isRequired: true),
                         Row(
                           children: [
                             Expanded(
                               child: TextField(
                                 controller: nameCtrl,
-                                decoration: InputDecoration(
-                                  hintText: 'Enter citizen / visitor name',
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                decoration: inputDec(
+                                  hint: isMr ? 'नागरिकाचे नाव प्रविष्ट करा' : 'Enter citizen / visitor name',
                                 ),
                               ),
                             ),
@@ -218,17 +283,17 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                               },
                               borderRadius: BorderRadius.circular(10),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFF0F9FF),
                                   borderRadius: BorderRadius.circular(10),
                                   border: Border.all(color: const Color(0xFFBAE6FD)),
                                 ),
                                 child: Row(
-                                  children: const [
-                                    Icon(Icons.how_to_reg_outlined, size: 18, color: Color(0xFF0284C7)),
-                                    SizedBox(width: 4),
-                                    Text('Voters', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
+                                  children: [
+                                    const Icon(Icons.how_to_reg_outlined, size: 18, color: Color(0xFF0284C7)),
+                                    const SizedBox(width: 4),
+                                    Text(isMr ? 'मतदार' : 'Voters', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
                                   ],
                                 ),
                               ),
@@ -236,80 +301,115 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                           ],
                         ),
 
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 14),
 
-                        // Contact Mobile
-                        const Text('Contact Mobile Number', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                        const SizedBox(height: 6),
-                        TextField(
-                          controller: mobileCtrl,
-                          keyboardType: TextInputType.phone,
-                          decoration: InputDecoration(
-                            prefixText: '+91 ',
-                            hintText: '9876543210',
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Purpose Dropdown
-                        const Text('Purpose / Reason for Visit *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                        const SizedBox(height: 6),
-                        DropdownButtonFormField<String>(
-                          value: selectedPurpose,
-                          decoration: InputDecoration(
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                          items: const [
-                            DropdownMenuItem(value: 'Complaint', child: Text('Complaint (तक्रार)')),
-                            DropdownMenuItem(value: 'Meeting', child: Text('Meeting (भेट / चर्चा)')),
-                            DropdownMenuItem(value: 'Greeting', child: Text('Greeting / Invite (निमंत्रण / सत्कार)')),
-                            DropdownMenuItem(value: 'Help', child: Text('Help / Relief (वैयक्तिक मदत)')),
-                            DropdownMenuItem(value: 'Donation', child: Text('Donation (देणगी / निधी)')),
-                            DropdownMenuItem(value: 'Other', child: Text('Other (इतर)')),
+                        // Side-by-side: Contact Mobile & Purpose Dropdown
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              flex: 5,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  fieldLabel(isMr ? 'मोबाईल (+91)' : 'Mobile (+91)'),
+                                  TextField(
+                                    controller: mobileCtrl,
+                                    keyboardType: TextInputType.phone,
+                                    decoration: inputDec(
+                                      prefixText: '+91 ',
+                                      hint: '9876543210',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              flex: 6,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  fieldLabel(isMr ? 'भेटीचे कारण / स्वरूप' : 'Visit Purpose', isRequired: true),
+                                  DropdownButtonFormField<String>(
+                                    initialValue: selectedPurpose,
+                                    decoration: inputDec(),
+                                    items: [
+                                      DropdownMenuItem(value: 'Complaint', child: Text(isMr ? 'तक्रार (Complaint)' : 'Complaint')),
+                                      DropdownMenuItem(value: 'Meeting', child: Text(isMr ? 'भेट / चर्चा (Meeting)' : 'Meeting')),
+                                      DropdownMenuItem(value: 'Greeting', child: Text(isMr ? 'निमंत्रण / सत्कार' : 'Greeting / Invite')),
+                                      DropdownMenuItem(value: 'Help', child: Text(isMr ? 'वैयक्तिक मदत (Help)' : 'Help / Relief')),
+                                      DropdownMenuItem(value: 'Donation', child: Text(isMr ? 'देणगी / निधी (Donation)' : 'Donation')),
+                                      DropdownMenuItem(value: 'Other', child: Text(isMr ? 'इतर (Other)' : 'Other')),
+                                    ],
+                                    onChanged: (val) {
+                                      if (val != null) setModalState(() => selectedPurpose = val);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
-                          onChanged: (val) {
-                            if (val != null) setModalState(() => selectedPurpose = val);
-                          },
                         ),
 
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 14),
 
-                        // Area / Locality or Event Venue
-                        Text(
-                          isGreeting ? 'Event Venue / Address' : 'Area / Locality',
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
-                        ),
-                        const SizedBox(height: 6),
-                        TextField(
-                          controller: areaCtrl,
-                          decoration: InputDecoration(
-                            hintText: isGreeting ? 'e.g. Shivaji Chowk Community Hall' : 'e.g. Lane 4, Sector 2',
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
+                        // Side-by-side: Area / Locality (or Venue) & Reference / Leader
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  fieldLabel(
+                                    isGreeting
+                                        ? (isMr ? 'कार्यक्रमाचे ठिकाण / पत्ता' : 'Event Venue / Address')
+                                        : (isMr ? 'क्षेत्र / परिसर' : 'Area / Locality'),
+                                  ),
+                                  TextField(
+                                    controller: areaCtrl,
+                                    decoration: inputDec(
+                                      hint: isGreeting
+                                          ? (isMr ? 'उदा. शिवाजी चौक सभागृह' : 'e.g. Shivaji Chowk Hall')
+                                          : (isMr ? 'उदा. गल्ली क्र. ४, प्रभाग १२' : 'e.g. Lane 4, Ward 12'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  fieldLabel(isMr ? 'संदर्भ / नेता (ऐच्छिक)' : 'Reference / Leader'),
+                                  TextField(
+                                    controller: refCtrl,
+                                    decoration: inputDec(
+                                      hint: isMr ? 'उदा. सुनील शिंदे / स्वतः' : 'e.g. Sunil Shinde / Self',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
 
                         if (isGreeting) ...[
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 14),
+                          // Side-by-side: Event Date & Event Time
                           Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text('Event Date', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                                    const SizedBox(height: 6),
+                                    fieldLabel(isMr ? 'कार्यक्रमाची तारीख' : 'Event Date'),
                                     TextField(
                                       controller: eventDateCtrl,
-                                      decoration: InputDecoration(
-                                        hintText: 'YYYY-MM-DD',
-                                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                      ),
+                                      decoration: inputDec(hint: 'YYYY-MM-DD'),
                                     ),
                                   ],
                                 ),
@@ -319,15 +419,10 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text('Event Time', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                                    const SizedBox(height: 6),
+                                    fieldLabel(isMr ? 'कार्यक्रमाची वेळ' : 'Event Time'),
                                     TextField(
                                       controller: eventTimeCtrl,
-                                      decoration: InputDecoration(
-                                        hintText: 'e.g. 18:30',
-                                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                      ),
+                                      decoration: inputDec(hint: 'उदा. 18:30'),
                                     ),
                                   ],
                                 ),
@@ -337,61 +432,42 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                         ],
 
                         if (isDonation) ...[
-                          const SizedBox(height: 16),
-                          const Text('Requested Assistance Amount (₹)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 14),
+                          fieldLabel(isMr ? 'अपेक्षित मदत / देणगी रक्कम (₹)' : 'Requested Amount (₹)'),
                           TextField(
                             controller: amountCtrl,
                             keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
+                            decoration: inputDec(
                               prefixText: '₹ ',
-                              hintText: '5000',
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                              hint: '5000',
                             ),
                           ),
                         ],
 
-                        const SizedBox(height: 16),
-
-                        // Reference
-                        const Text('Reference / Leader (Optional)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                        const SizedBox(height: 6),
-                        TextField(
-                          controller: refCtrl,
-                          decoration: InputDecoration(
-                            hintText: 'e.g. Sunil Shinde (JE) / Self',
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 14),
 
                         // Discussion Remarks
-                        const Text('Discussion Notes & Remarks', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                        const SizedBox(height: 6),
+                        fieldLabel(isMr ? 'चर्चा नोंदी व शेरा' : 'Discussion Notes & Remarks'),
                         TextField(
                           controller: remarksCtrl,
                           maxLines: 3,
-                          decoration: InputDecoration(
-                            hintText: 'Brief summary of problem, petition, or conversation...',
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          decoration: inputDec(
+                            hint: isMr ? 'समस्या किंवा संभाषणाचा संक्षिप्त गोषवारा...' : 'Brief summary of problem, petition, or conversation...',
                           ),
                         ),
 
                         const SizedBox(height: 24),
 
-                        // Save Button
+                        // Save Button (Existing button - wired directly)
                         SizedBox(
                           width: double.infinity,
+                          height: 48,
                           child: ElevatedButton(
                             onPressed: () async {
                               final name = nameCtrl.text.trim();
                               if (name.isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Please enter visitor name')),
+                                  SnackBar(content: Text(isMr ? 'कृपया अभ्यागताचे नाव प्रविष्ट करा' : 'Please enter visitor name')),
                                 );
                                 return;
                               }
@@ -420,9 +496,9 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                                 await repo.addVisitor(newVisitor);
                                 if (mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Visitor checked in successfully!'),
-                                      backgroundColor: Color(0xFF0F766E),
+                                    SnackBar(
+                                      content: Text(isMr ? 'अभ्यागत नोंद यशस्वीरित्या जतन केली!' : 'Visitor checked in successfully!'),
+                                      backgroundColor: const Color(0xFF0F766E),
                                     ),
                                   );
                                 }
@@ -431,10 +507,20 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF0284C7),
                               foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              elevation: 0,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
-                            child: const Text('Check-In Visitor', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.check_circle_outline_rounded, size: 18),
+                                const SizedBox(width: 8),
+                                Text(
+                                  isMr ? 'अभ्यागत नोंद जतन करा' : 'Check-In Visitor',
+                                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
@@ -450,6 +536,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
   }
 
   void _openVoterLookup(Function(VoterModel voter) onSelected) {
+    final isMr = ref.read(isMarathiProvider);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -463,24 +550,71 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 20,
+                    offset: Offset(0, -4),
+                  ),
+                ],
               ),
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.only(top: 8, left: 20, right: 20, bottom: 20),
               child: Column(
                 children: [
+                  // Top Drag Handle
+                  Center(
+                    child: Container(
+                      width: 44,
+                      height: 5,
+                      margin: const EdgeInsets.only(top: 6, bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                  ),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Select Voter from Ward Register', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.how_to_reg_outlined, color: Color(0xFF0284C7), size: 20),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          isMr ? 'प्रभाग मतदार यादीतून निवडा' : 'Select Voter from Ward Register',
+                          style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  const Divider(height: 16, color: Color(0xFFE2E8F0)),
+                  const SizedBox(height: 4),
                   TextField(
                     controller: voterSearchCtrl,
                     decoration: InputDecoration(
-                      hintText: 'Type voter name or EPIC ID...',
-                      prefixIcon: const Icon(Icons.search),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      hintText: isMr ? 'मतदाराचे नाव किंवा EPIC क्रमांक शोधा...' : 'Type voter name or EPIC ID...',
+                      hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                      prefixIcon: const Icon(Icons.search, color: Color(0xFF64748B)),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1.0),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+                      ),
                     ),
                     onChanged: (_) {
                       setSheetState(() {});
@@ -499,7 +633,12 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                         }
                         final voters = snapshot.data ?? [];
                         if (voters.isEmpty) {
-                          return const Center(child: Text('No voters found in database'));
+                          return Center(
+                            child: Text(
+                              isMr ? 'मतदार सापडले नाहीत' : 'No voters found in database',
+                              style: const TextStyle(color: Color(0xFF64748B)),
+                            ),
+                          );
                         }
                         return ListView.separated(
                           itemCount: voters.length,

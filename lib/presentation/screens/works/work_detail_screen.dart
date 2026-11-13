@@ -83,6 +83,7 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
   }
 
   void _showEditModal() {
+    final isMr = ref.read(isMarathiProvider);
     final titleCtrl = TextEditingController(text: _currentWork.title);
     final descCtrl = TextEditingController(text: _currentWork.description);
     final locCtrl = TextEditingController(text: _currentWork.location);
@@ -92,6 +93,46 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
     final dateCtrl = TextEditingController(text: _currentWork.date);
     String status = _currentWork.status;
 
+    InputDecoration inputDec({String? hint, String? prefixText}) {
+      return InputDecoration(
+        hintText: hint,
+        prefixText: prefixText,
+        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+        prefixStyle: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        filled: true,
+        fillColor: Colors.white,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1.0),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+        ),
+      );
+    }
+
+    Widget fieldLabel(String text, {bool isRequired = false}) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 5.0),
+        child: RichText(
+          text: TextSpan(
+            text: text,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+            children: isRequired
+                ? const [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                    ),
+                  ]
+                : [],
+          ),
+        ),
+      );
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -100,13 +141,20 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
         return StatefulBuilder(
           builder: (stCtx, setModalState) {
             return Container(
-              height: MediaQuery.of(context).size.height * 0.88,
+              height: MediaQuery.of(context).size.height * 0.90,
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 20,
+                    offset: Offset(0, -4),
+                  ),
+                ],
               ),
               padding: EdgeInsets.only(
-                top: 20,
+                top: 8,
                 left: 20,
                 right: 20,
                 bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
@@ -115,50 +163,74 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Edit Development Project',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                    // Top Drag Handle
+                    Center(
+                      child: Container(
+                        width: 44,
+                        height: 5,
+                        margin: const EdgeInsets.only(top: 6, bottom: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(3),
                         ),
-                        IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(sheetCtx)),
-                      ],
-                    ),
-                    const Divider(),
-                    const SizedBox(height: 12),
-                    const Text('Project Title *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: titleCtrl,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                     ),
-                    const SizedBox(height: 14),
-                    const Text('Description', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    // Header
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.edit_note_rounded, color: Color(0xFF0284C7), size: 20),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            isMr ? 'विकास प्रकल्प संपादित करा' : 'Edit Development Project',
+                            style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                          onPressed: () => Navigator.pop(sheetCtx),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 16, color: Color(0xFFE2E8F0)),
                     const SizedBox(height: 6),
+
+                    // Project Title
+                    fieldLabel(isMr ? 'कामाचे नाव / प्रकल्प शीर्षक' : 'Project Title', isRequired: true),
+                    TextField(
+                      controller: titleCtrl,
+                      decoration: inputDec(hint: isMr ? 'उदा. मुख्य रस्ता डांबरीकरण' : 'Project Title...'),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Description
+                    fieldLabel(isMr ? 'कामाचा तपशील / वर्णन' : 'Description'),
                     TextField(
                       controller: descCtrl,
                       maxLines: 3,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
+                      decoration: inputDec(hint: isMr ? 'कामाचे सविस्तर वर्णन...' : 'Description...'),
                     ),
                     const SizedBox(height: 14),
+
+                    // Side-by-side: Location & Area
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Location', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 6),
+                              fieldLabel(isMr ? 'स्थान / लँडमार्क' : 'Location / Landmark'),
                               TextField(
                                 controller: locCtrl,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
+                                decoration: inputDec(hint: isMr ? 'उदा. मुख्य चौक' : 'Location...'),
                               ),
                             ],
                           ),
@@ -168,13 +240,10 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Area / Locality', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 6),
+                              fieldLabel(isMr ? 'परिसर / प्रभाग' : 'Area / Locality'),
                               TextField(
                                 controller: areaCtrl,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
+                                decoration: inputDec(hint: isMr ? 'उदा. प्रभाग १२' : 'Area...'),
                               ),
                             ],
                           ),
@@ -182,24 +251,23 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                       ],
                     ),
                     const SizedBox(height: 14),
+
+                    // Side-by-side: Status & Completion Date
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Status', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 6),
+                              fieldLabel(isMr ? 'कामाची स्थिती' : 'Work Status', isRequired: true),
                               DropdownButtonFormField<String>(
                                 initialValue: status,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-                                ),
-                                items: const [
-                                  DropdownMenuItem(value: 'Planned', child: Text('Planned')),
-                                  DropdownMenuItem(value: 'InProgress', child: Text('In Progress')),
-                                  DropdownMenuItem(value: 'Completed', child: Text('Completed')),
+                                decoration: inputDec(),
+                                items: [
+                                  DropdownMenuItem(value: 'Planned', child: Text(isMr ? 'नियोजित (Planned)' : 'Planned')),
+                                  DropdownMenuItem(value: 'InProgress', child: Text(isMr ? 'सुरू (In Progress)' : 'In Progress')),
+                                  DropdownMenuItem(value: 'Completed', child: Text(isMr ? 'पूर्ण (Completed)' : 'Completed')),
                                 ],
                                 onChanged: (val) {
                                   if (val != null) setModalState(() => status = val);
@@ -213,14 +281,10 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Completion Date', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 6),
+                              fieldLabel(isMr ? 'अंदाजित / पूर्ण तारीख' : 'Completion Date'),
                               TextField(
                                 controller: dateCtrl,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                  hintText: 'YYYY-MM-DD',
-                                ),
+                                decoration: inputDec(hint: 'YYYY-MM-DD'),
                               ),
                             ],
                           ),
@@ -228,21 +292,20 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                       ],
                     ),
                     const SizedBox(height: 14),
+
+                    // Side-by-side: Citizens Benefited & Expenditure
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Citizens Benefited', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 6),
+                              fieldLabel(isMr ? 'लाभार्थी संख्या' : 'Citizens Benefited'),
                               TextField(
                                 controller: benCtrl,
                                 keyboardType: TextInputType.number,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                  hintText: 'e.g. 5000',
-                                ),
+                                decoration: inputDec(hint: 'उदा. 5000'),
                               ),
                             ],
                           ),
@@ -252,15 +315,11 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Expenditure (₹)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 6),
+                              fieldLabel(isMr ? 'खर्च झालेली रक्कम (₹)' : 'Expenditure (₹)'),
                               TextField(
                                 controller: amtCtrl,
                                 keyboardType: TextInputType.number,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                  hintText: 'e.g. 850000',
-                                ),
+                                decoration: inputDec(hint: 'उदा. 850000', prefixText: '₹ '),
                               ),
                             ],
                           ),
@@ -268,6 +327,7 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                       ],
                     ),
                     const SizedBox(height: 24),
+
                     SizedBox(
                       width: double.infinity,
                       height: 48,
@@ -275,6 +335,7 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF0284C7),
                           foregroundColor: Colors.white,
+                          elevation: 0,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                         onPressed: () async {
@@ -295,14 +356,21 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                           if (mounted) {
                             setState(() => _currentWork = updated);
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Project updated successfully'),
-                                backgroundColor: Color(0xFF16A34A),
+                              SnackBar(
+                                content: Text(isMr ? 'प्रकल्प यशस्वीरित्या अद्यतनित केला!' : 'Project updated successfully'),
+                                backgroundColor: const Color(0xFF16A34A),
                               ),
                             );
                           }
                         },
-                        child: const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.bold)),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.save_rounded, size: 18),
+                            const SizedBox(width: 8),
+                            Text(isMr ? 'बदल जतन करा' : 'Save Changes', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -316,9 +384,50 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
   }
 
   void _showAddFeedbackModal() {
+    final isMr = ref.read(isMarathiProvider);
     final nameCtrl = TextEditingController();
     final commentCtrl = TextEditingController();
     int rating = 5;
+
+    InputDecoration inputDec({String? hint, String? prefixText}) {
+      return InputDecoration(
+        hintText: hint,
+        prefixText: prefixText,
+        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+        prefixStyle: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        filled: true,
+        fillColor: Colors.white,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1.0),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+        ),
+      );
+    }
+
+    Widget fieldLabel(String text, {bool isRequired = false}) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 5.0),
+        child: RichText(
+          text: TextSpan(
+            text: text,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+            children: isRequired
+                ? const [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                    ),
+                  ]
+                : [],
+          ),
+        ),
+      );
+    }
 
     showModalBottomSheet(
       context: context,
@@ -329,43 +438,72 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
           builder: (stCtx, setModalState) {
             return Container(
               padding: EdgeInsets.only(
-                top: 20,
+                top: 8,
                 left: 20,
                 right: 20,
                 bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
               ),
               decoration: const BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 20,
+                    offset: Offset(0, -4),
+                  ),
+                ],
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Add Citizen Feedback',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  // Top Drag Handle
+                  Center(
+                    child: Container(
+                      width: 44,
+                      height: 5,
+                      margin: const EdgeInsets.only(top: 6, bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(3),
                       ),
-                      IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(sheetCtx)),
-                    ],
-                  ),
-                  const Divider(),
-                  const SizedBox(height: 10),
-                  const Text('Citizen Name', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                  const SizedBox(height: 6),
-                  TextField(
-                    controller: nameCtrl,
-                    decoration: InputDecoration(
-                      hintText: 'e.g. Suresh Shinde',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  const Text('Rating', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.rate_review_outlined, color: Color(0xFF0284C7), size: 20),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          isMr ? 'नागरिक प्रतिक्रिया जोडा' : 'Add Citizen Feedback',
+                          style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                        onPressed: () => Navigator.pop(sheetCtx),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 16, color: Color(0xFFE2E8F0)),
                   const SizedBox(height: 6),
+
+                  fieldLabel(isMr ? 'नागरिकाचे नाव' : 'Citizen Name', isRequired: true),
+                  TextField(
+                    controller: nameCtrl,
+                    decoration: inputDec(hint: isMr ? 'उदा. सुरेश शिंदे' : 'e.g. Suresh Shinde'),
+                  ),
+                  const SizedBox(height: 12),
+
+                  fieldLabel(isMr ? 'रेटिंग (गुणवत्ता दर्जा)' : 'Rating', isRequired: true),
                   Row(
                     children: List.generate(5, (index) {
                       final starIndex = index + 1;
@@ -380,30 +518,31 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                     }),
                   ),
                   const SizedBox(height: 12),
-                  const Text('Review / Comment', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                  const SizedBox(height: 6),
+
+                  fieldLabel(isMr ? 'अभिप्राय / शेरा' : 'Review / Comment', isRequired: true),
                   TextField(
                     controller: commentCtrl,
                     maxLines: 3,
-                    decoration: InputDecoration(
-                      hintText: 'Share remarks on the quality and durability of this work...',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    decoration: inputDec(
+                      hint: isMr ? 'कामाच्या गुणवत्तेबाबत आणि उपयुक्ततेबाबत शेरा...' : 'Share remarks on the quality and durability of this work...',
                     ),
                   ),
                   const SizedBox(height: 20),
+
                   SizedBox(
                     width: double.infinity,
-                    height: 46,
+                    height: 48,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF0284C7),
                         foregroundColor: Colors.white,
+                        elevation: 0,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                       onPressed: () async {
                         if (nameCtrl.text.trim().isEmpty || commentCtrl.text.trim().isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Please enter citizen name and comment')),
+                            SnackBar(content: Text(isMr ? 'कृपया नागरिकाचे नाव आणि शेरा प्रविष्ट करा' : 'Please enter citizen name and comment')),
                           );
                           return;
                         }
@@ -422,14 +561,17 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                         if (sheetCtx.mounted) Navigator.pop(sheetCtx);
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Feedback added successfully!'),
-                              backgroundColor: Color(0xFF16A34A),
+                            SnackBar(
+                              content: Text(isMr ? 'प्रतिक्रिया यशस्वीरित्या जोडली गेली!' : 'Feedback added successfully!'),
+                              backgroundColor: const Color(0xFF16A34A),
                             ),
                           );
                         }
                       },
-                      child: const Text('Submit Feedback', style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: Text(
+                        isMr ? 'प्रतिक्रिया जतन करा' : 'Submit Feedback',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      ),
                     ),
                   ),
                 ],

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/opposition_model.dart';
 import '../../../data/repositories/opposition_repository.dart';
+import '../../providers/auth_provider.dart';
 import '../../navigation/app_drawer.dart';
 import 'opposition_detail_screen.dart';
 import 'opposition_report_generator.dart';
@@ -119,6 +120,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
   // ADD / EDIT OPPOSITION MEMBER MODAL
   // ===========================================================================
   void _showMemberForm({OppositionMemberModel? memberToEdit}) {
+    final isMr = ref.read(isMarathiProvider);
     final nameCtrl = TextEditingController(text: memberToEdit?.name ?? '');
     final phoneCtrl = TextEditingController(text: memberToEdit?.mobile ?? '');
     final roleCtrl = TextEditingController(text: memberToEdit?.role ?? '');
@@ -136,344 +138,478 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
     final repo = ref.read(oppositionRepoProvider);
     final candidatesList = _members.where((m) => m.isCandidate && m.id != memberToEdit?.id).toList();
 
+    Widget fieldLabel(String text, {bool isRequired = false}) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: RichText(
+          text: TextSpan(
+            text: text,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF334155),
+            ),
+            children: isRequired
+                ? const [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ]
+                : [],
+          ),
+        ),
+      );
+    }
+
+    InputDecoration inputDec({String? hintText, Widget? prefixIcon, Widget? suffixIcon}) {
+      return InputDecoration(
+        hintText: hintText,
+        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+        prefixIcon: prefixIcon,
+        suffixIcon: suffixIcon,
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+        ),
+      );
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) => Container(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 20,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-          ),
+          height: MediaQuery.of(context).size.height * 0.90,
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 20,
+                offset: Offset(0, -4),
+              ),
+            ],
           ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFCBD5E1),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+          child: Column(
+            children: [
+              // Drag Handle
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 5,
+                  margin: const EdgeInsets.only(top: 10, bottom: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(3),
                   ),
                 ),
-                const SizedBox(height: 16),
-                Row(
+              ),
+              // Header
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Icon(Icons.group_add_rounded, color: Color(0xFF0284C7), size: 24),
-                    const SizedBox(width: 10),
-                    Text(
-                      memberToEdit == null ? 'Add New Opposition Member' : 'Edit Opposition Member',
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(7),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.group_add_rounded,
+                            color: Color(0xFF0284C7),
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          memberToEdit == null
+                              ? (isMr ? 'नवीन विरोधी सदस्य' : 'Add Opposition Member')
+                              : (isMr ? 'विरोधी सदस्य संपादित करा' : 'Edit Opposition Member'),
+                          style: const TextStyle(
+                            fontSize: 17.5,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                      onPressed: () => Navigator.pop(ctx),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-
-                // Record Type Switch: Worker vs Candidate
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: InkWell(
-                          onTap: () => setModalState(() => isCandidate = false),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: !isCandidate ? Colors.white : Colors.transparent,
-                              borderRadius: BorderRadius.circular(8),
-                              boxShadow: !isCandidate ? [const BoxShadow(color: Colors.black12, blurRadius: 2)] : null,
-                            ),
-                            child: const Text('Opposition Cadre', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: InkWell(
-                          onTap: () => setModalState(() => isCandidate = true),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: isCandidate ? Colors.white : Colors.transparent,
-                              borderRadius: BorderRadius.circular(8),
-                              boxShadow: isCandidate ? [const BoxShadow(color: Colors.black12, blurRadius: 2)] : null,
-                            ),
-                            child: const Text('Opposition Candidate', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 14),
-
-                // Full Name
-                TextField(
-                  controller: nameCtrl,
-                  decoration: InputDecoration(
-                    labelText: 'Full Name *',
-                    hintText: 'e.g. Adv. Ramesh Shinde',
-                    filled: true,
-                    fillColor: const Color(0xFFF8FAFC),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-                const SizedBox(height: 10),
-
-                // Party & Mobile Row
-                Row(
+              ),
+              const Divider(height: 1, color: Color(0xFFE2E8F0)),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
                   children: [
-                    Expanded(
-                      flex: 4,
-                      child: DropdownButtonFormField<String>(
-                        value: party,
-                        decoration: InputDecoration(
-                          labelText: 'Party *',
-                          filled: true,
-                          fillColor: const Color(0xFFF8FAFC),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    // Record Type Switch: Worker vs Candidate
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: InkWell(
+                              onTap: () => setModalState(() => isCandidate = false),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: !isCandidate ? Colors.white : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(8),
+                                  boxShadow: !isCandidate ? [const BoxShadow(color: Colors.black12, blurRadius: 2)] : null,
+                                ),
+                                child: Text(
+                                  isMr ? 'विरोधी कार्यकर्ता' : 'Opposition Cadre',
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: InkWell(
+                              onTap: () => setModalState(() => isCandidate = true),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: isCandidate ? Colors.white : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(8),
+                                  boxShadow: isCandidate ? [const BoxShadow(color: Colors.black12, blurRadius: 2)] : null,
+                                ),
+                                child: Text(
+                                  isMr ? 'विरोधी उमेदवार' : 'Opposition Candidate',
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Full Name & Party side-by-side
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          flex: 5,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              fieldLabel(isMr ? 'पूर्ण नाव' : 'Full Name', isRequired: true),
+                              TextField(
+                                controller: nameCtrl,
+                                decoration: inputDec(
+                                  hintText: isMr ? 'उदा. ॲड. रमेश शिंदे' : 'e.g. Adv. Ramesh Shinde',
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 5,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              fieldLabel(isMr ? 'पक्ष' : 'Party', isRequired: true),
+                              DropdownButtonFormField<String>(
+                                value: party,
+                                decoration: inputDec(),
+                                items: const [
+                                  DropdownMenuItem(value: 'INC', child: Text('Congress (INC)')),
+                                  DropdownMenuItem(value: 'NCP', child: Text('NCP')),
+                                  DropdownMenuItem(value: 'UBT', child: Text('Shiv Sena (UBT)')),
+                                  DropdownMenuItem(value: 'MNS', child: Text('MNS')),
+                                  DropdownMenuItem(value: 'BJP', child: Text('BJP')),
+                                  DropdownMenuItem(value: 'Independent', child: Text('Independent (Ind)')),
+                                ],
+                                onChanged: (val) {
+                                  if (val != null) setModalState(() => party = val);
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Mobile Number & Role side-by-side
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              fieldLabel(isMr ? 'मोबाईल नंबर' : 'Mobile Number'),
+                              TextField(
+                                controller: phoneCtrl,
+                                keyboardType: TextInputType.phone,
+                                decoration: inputDec(
+                                  hintText: '98220xxxxx',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              fieldLabel(isMr ? 'पद / हुद्दा' : 'Role / Designation'),
+                              TextField(
+                                controller: roleCtrl,
+                                decoration: inputDec(
+                                  hintText: isMr ? 'उदा. माजी नगरसेवक, प्रभाग अध्यक्ष' : 'e.g. Ex-Corporator, Ward President',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Base Area & Strongholds side-by-side
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              fieldLabel(isMr ? 'कार्यक्षेत्र / परिसर' : 'Primary Work Area'),
+                              TextField(
+                                controller: areaCtrl,
+                                decoration: inputDec(
+                                  hintText: isMr ? 'उदा. टिळक चौक, सेक्टर ३' : 'e.g. Tilak Chowk, Sector 3',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              fieldLabel(isMr ? 'प्रभाव क्षेत्रे' : 'Strongholds / Booths'),
+                              TextField(
+                                controller: strongholdsCtrl,
+                                decoration: inputDec(
+                                  hintText: isMr ? 'उदा. बूथ ४-६, शांति नगर' : 'e.g. Booth 4-6, Shanti Nagar',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+
+                    // If Candidate: Show Constituency & Opposing Candidate side-by-side
+                    if (isCandidate) ...[
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'मतदारसंघ / प्रभाग' : 'Constituency / Ward'),
+                                TextField(
+                                  controller: constCtrl,
+                                  decoration: inputDec(
+                                    hintText: 'Ward 12 (Pune PMC)',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'विरोधी उमेदवार' : 'Opposing Candidate'),
+                                TextField(
+                                  controller: oppCtrl,
+                                  decoration: inputDec(
+                                    hintText: 'Sitting Corporator',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      fieldLabel(isMr ? 'उमेदवारी स्थिती' : 'Candidacy Status'),
+                      DropdownButtonFormField<String>(
+                        value: candidacyStatus,
+                        decoration: inputDec(),
                         items: const [
-                          DropdownMenuItem(value: 'INC', child: Text('Congress (INC)')),
-                          DropdownMenuItem(value: 'NCP', child: Text('NCP')),
-                          DropdownMenuItem(value: 'UBT', child: Text('Shiv Sena (UBT)')),
-                          DropdownMenuItem(value: 'MNS', child: Text('MNS')),
-                          DropdownMenuItem(value: 'BJP', child: Text('BJP')),
-                          DropdownMenuItem(value: 'Independent', child: Text('Independent (Ind)')),
+                          DropdownMenuItem(value: 'Declared', child: Text('Declared')),
+                          DropdownMenuItem(value: 'Contesting', child: Text('Contesting')),
+                          DropdownMenuItem(value: 'Withdrawn', child: Text('Withdrawn')),
+                          DropdownMenuItem(value: 'Won', child: Text('Won')),
+                          DropdownMenuItem(value: 'Lost', child: Text('Lost')),
                         ],
                         onChanged: (val) {
-                          if (val != null) setModalState(() => party = val);
+                          if (val != null) setModalState(() => candidacyStatus = val);
+                        },
+                      ),
+                      const SizedBox(height: 14),
+                    ] else ...[
+                      // If Worker: Option to link to candidate
+                      if (candidatesList.isNotEmpty) ...[
+                        fieldLabel(isMr ? 'उमेदवाराशी जोडा (पर्यायी)' : 'Link to Candidate (Optional)'),
+                        DropdownButtonFormField<String>(
+                          value: selectedCandidateId,
+                          decoration: inputDec(),
+                          items: [
+                            DropdownMenuItem(value: null, child: Text(isMr ? 'कोणाशीही जोडलेले नाही' : 'Not linked to any candidate')),
+                            ...candidatesList.map((c) => DropdownMenuItem(value: c.id, child: Text('${c.name} (${c.party})'))),
+                          ],
+                          onChanged: (val) => setModalState(() => selectedCandidateId = val),
+                        ),
+                        const SizedBox(height: 14),
+                      ],
+                    ],
+
+                    // Notes / Strategy
+                    fieldLabel(isMr ? 'नोंदी व रणनीती' : 'Notes & Strategy'),
+                    TextField(
+                      controller: notesCtrl,
+                      maxLines: 2,
+                      decoration: inputDec(
+                        hintText: isMr ? 'स्थानिक प्रभाव, राजकीय निरीक्षणे...' : 'Local influence, outreach, and political observations...',
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Submit Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0284C7),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          elevation: 0,
+                        ),
+                        icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
+                        label: Text(
+                          memberToEdit == null
+                              ? (isMr ? 'सदस्य जतन करा' : 'Add Member')
+                              : (isMr ? 'बदल जतन करा' : 'Save Changes'),
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                        onPressed: () async {
+                          if (nameCtrl.text.trim().isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  isMr
+                                      ? 'कृपया विरोधी सदस्याचे नाव प्रविष्ट करा.'
+                                      : 'Please enter opposition member name.',
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+
+                          final strongholdsList = strongholdsCtrl.text
+                              .split(',')
+                              .map((s) => s.trim())
+                              .where((s) => s.isNotEmpty)
+                              .toList();
+
+                          final newMember = OppositionMemberModel(
+                            id: memberToEdit?.id ?? 'opp-${isCandidate ? "cand" : "wrk"}-${DateTime.now().millisecondsSinceEpoch}',
+                            name: nameCtrl.text.trim(),
+                            mobile: phoneCtrl.text.trim().isNotEmpty ? phoneCtrl.text.trim() : null,
+                            party: party,
+                            role: roleCtrl.text.trim().isNotEmpty ? roleCtrl.text.trim() : null,
+                            area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : null,
+                            strongholds: strongholdsList,
+                            notes: notesCtrl.text.trim().isNotEmpty ? notesCtrl.text.trim() : null,
+                            isCandidate: isCandidate,
+                            constituency: isCandidate ? constCtrl.text.trim() : null,
+                            opposingCandidate: isCandidate ? oppCtrl.text.trim() : null,
+                            candidacyStatus: isCandidate ? candidacyStatus : null,
+                            candidateId: !isCandidate ? selectedCandidateId : null,
+                            activities: memberToEdit?.activities ?? [],
+                            negativeStories: memberToEdit?.negativeStories ?? [],
+                            createdAt: memberToEdit?.createdAt ?? DateTime.now(),
+                          );
+
+                          if (memberToEdit == null) {
+                            await repo.addMember(newMember);
+                          } else {
+                            await repo.updateMember(newMember);
+                          }
+
+                          if (ctx.mounted) {
+                            Navigator.pop(ctx);
+                          }
+                          _loadOppositionData();
+
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  memberToEdit == null
+                                      ? (isMr ? 'विरोधी सदस्य यशस्वीरित्या जोडला!' : 'Opposition member added successfully!')
+                                      : (isMr ? 'तपशील अद्यतनित केले!' : 'Details updated!'),
+                                ),
+                                backgroundColor: const Color(0xFF16A34A),
+                              ),
+                            );
+                          }
                         },
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      flex: 5,
-                      child: TextField(
-                        controller: phoneCtrl,
-                        keyboardType: TextInputType.phone,
-                        decoration: InputDecoration(
-                          labelText: 'Mobile Number',
-                          hintText: '98220xxxxx',
-                          filled: true,
-                          fillColor: const Color(0xFFF8FAFC),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                      ),
-                    ),
+                    const SizedBox(height: 24),
                   ],
                 ),
-                const SizedBox(height: 10),
-
-                // Role / Designation
-                TextField(
-                  controller: roleCtrl,
-                  decoration: InputDecoration(
-                    labelText: 'Role / Designation',
-                    hintText: 'e.g. Ex-Corporator, Ward President, Branch Secretary',
-                    filled: true,
-                    fillColor: const Color(0xFFF8FAFC),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-                const SizedBox(height: 10),
-
-                // Base Area
-                TextField(
-                  controller: areaCtrl,
-                  decoration: InputDecoration(
-                    labelText: 'Primary Work Area / Vicinity',
-                    hintText: 'e.g. Tilak Chowk, Sector 3, Vitthal Nagar',
-                    filled: true,
-                    fillColor: const Color(0xFFF8FAFC),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-                const SizedBox(height: 10),
-
-                // If Candidate: Show Constituency & Candidacy Status
-                if (isCandidate) ...[
-                  TextField(
-                    controller: constCtrl,
-                    decoration: InputDecoration(
-                      labelText: 'Constituency / Ward',
-                      filled: true,
-                      fillColor: const Color(0xFFF0F9FF),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: oppCtrl,
-                          decoration: InputDecoration(
-                            labelText: 'Opposing Candidate',
-                            filled: true,
-                            fillColor: const Color(0xFFF0F9FF),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          value: candidacyStatus,
-                          decoration: InputDecoration(
-                            labelText: 'Candidacy Status',
-                            filled: true,
-                            fillColor: const Color(0xFFF0F9FF),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                          items: const [
-                            DropdownMenuItem(value: 'Declared', child: Text('Declared')),
-                            DropdownMenuItem(value: 'Contesting', child: Text('Contesting')),
-                            DropdownMenuItem(value: 'Withdrawn', child: Text('Withdrawn')),
-                            DropdownMenuItem(value: 'Won', child: Text('Won')),
-                            DropdownMenuItem(value: 'Lost', child: Text('Lost')),
-                          ],
-                          onChanged: (val) {
-                            if (val != null) setModalState(() => candidacyStatus = val);
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                ] else ...[
-                  // If Worker: Option to link to candidate
-                  if (candidatesList.isNotEmpty) ...[
-                    DropdownButtonFormField<String>(
-                      value: selectedCandidateId,
-                      decoration: InputDecoration(
-                        labelText: 'Link to Candidate (Optional)',
-                        filled: true,
-                        fillColor: const Color(0xFFF8FAFC),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                      items: [
-                        const DropdownMenuItem(value: null, child: Text('Not linked to any candidate')),
-                        ...candidatesList.map((c) => DropdownMenuItem(value: c.id, child: Text('${c.name} (${c.party})'))),
-                      ],
-                      onChanged: (val) => setModalState(() => selectedCandidateId = val),
-                    ),
-                    const SizedBox(height: 10),
-                  ],
-                ],
-
-                // Strongholds
-                TextField(
-                  controller: strongholdsCtrl,
-                  decoration: InputDecoration(
-                    labelText: 'Strongholds / Active Areas (comma separated)',
-                    hintText: 'e.g. Tilak Chowk, Shanti Nagar, Booth 4-6',
-                    filled: true,
-                    fillColor: const Color(0xFFF8FAFC),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-                const SizedBox(height: 10),
-
-                // Notes / Strategy
-                TextField(
-                  controller: notesCtrl,
-                  maxLines: 2,
-                  decoration: InputDecoration(
-                    labelText: 'Notes & Strategy',
-                    hintText: 'Local influence, outreach, and political observations...',
-                    filled: true,
-                    fillColor: const Color(0xFFF8FAFC),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Submit Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      if (nameCtrl.text.trim().isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Please enter opposition member name.')),
-                        );
-                        return;
-                      }
-
-                      final strongholdsList = strongholdsCtrl.text
-                          .split(',')
-                          .map((s) => s.trim())
-                          .where((s) => s.isNotEmpty)
-                          .toList();
-
-                      final newMember = OppositionMemberModel(
-                        id: memberToEdit?.id ?? 'opp-${isCandidate ? "cand" : "wrk"}-${DateTime.now().millisecondsSinceEpoch}',
-                        name: nameCtrl.text.trim(),
-                        mobile: phoneCtrl.text.trim().isNotEmpty ? phoneCtrl.text.trim() : null,
-                        party: party,
-                        role: roleCtrl.text.trim().isNotEmpty ? roleCtrl.text.trim() : null,
-                        area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : null,
-                        strongholds: strongholdsList,
-                        notes: notesCtrl.text.trim().isNotEmpty ? notesCtrl.text.trim() : null,
-                        isCandidate: isCandidate,
-                        constituency: isCandidate ? constCtrl.text.trim() : null,
-                        opposingCandidate: isCandidate ? oppCtrl.text.trim() : null,
-                        candidacyStatus: isCandidate ? candidacyStatus : null,
-                        candidateId: !isCandidate ? selectedCandidateId : null,
-                        activities: memberToEdit?.activities ?? [],
-                        negativeStories: memberToEdit?.negativeStories ?? [],
-                        createdAt: memberToEdit?.createdAt ?? DateTime.now(),
-                      );
-
-                      if (memberToEdit == null) {
-                        await repo.addMember(newMember);
-                      } else {
-                        await repo.updateMember(newMember);
-                      }
-
-                      if (!mounted) return;
-                      Navigator.pop(ctx);
-                      _loadOppositionData();
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(memberToEdit == null ? 'Opposition member added successfully!' : 'Details updated!'),
-                          backgroundColor: const Color(0xFF16A34A),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0284C7),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                    child: Text(
-                      memberToEdit == null ? 'Add Member' : 'Save Changes',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

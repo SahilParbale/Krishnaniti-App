@@ -1860,112 +1860,154 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
 
   @override
   Widget build(BuildContext context) {
+    InputDecoration inputDec({String? hint, String? prefixText}) {
+      return InputDecoration(
+        hintText: hint,
+        prefixText: prefixText,
+        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+        prefixStyle: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        filled: true,
+        fillColor: Colors.white,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1.0),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+        ),
+      );
+    }
+
+    Widget fieldLabel(String text, {bool isRequired = false}) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 5.0),
+        child: RichText(
+          text: TextSpan(
+            text: text,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+            children: isRequired
+                ? const [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                    ),
+                  ]
+                : [],
+          ),
+        ),
+      );
+    }
+
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
-        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
+        height: MediaQuery.of(context).size.height * 0.85,
         decoration: const BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 20,
+              offset: Offset(0, -4),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 8,
+          bottom: 20,
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            // Modal Header
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF0284C7), Color(0xFF0369A1)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+            // Top Drag Handle
+            Center(
+              child: Container(
+                width: 44,
+                height: 5,
+                margin: const EdgeInsets.only(top: 6, bottom: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(3),
                 ),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
+            ),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.assignment_add, color: Color(0xFF0284C7), size: 20),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
                         'Assign New Task',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                        style: TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                       ),
                       Text(
                         'To: ${widget.staff.displayName}',
-                        style: const TextStyle(fontSize: 12, color: Color(0xFFE0F2FE)),
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                       ),
                     ],
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                  onPressed: () => Navigator.pop(context),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
             ),
+            const SizedBox(height: 12),
 
             // Form Body
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
                 child: Form(
                   key: _formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Task Title
-                      const Text(
-                        'Task Title *',
-                        style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
-                      ),
-                      const SizedBox(height: 4),
+                      fieldLabel('Task Title', isRequired: true),
                       TextFormField(
                         controller: _titleController,
                         style: const TextStyle(fontSize: 13),
-                        decoration: InputDecoration(
-                          hintText: 'e.g. Ward 12 road pothole repairs',
-                          hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
-                          filled: true,
-                          fillColor: const Color(0xFFF8FAFC),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                        ),
+                        decoration: inputDec(hint: 'e.g. Ward 12 road pothole repairs'),
                         validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter task title' : null,
                       ),
                       const SizedBox(height: 12),
 
                       // Priority & Due Date Row
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Priority Dropdown
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('Priority', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
-                                const SizedBox(height: 4),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF8FAFC),
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: const Color(0xFFCBD5E1)),
-                                  ),
-                                  child: DropdownButtonHideUnderline(
-                                    child: DropdownButton<String>(
-                                      value: _priority,
-                                      isExpanded: true,
-                                      style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A)),
-                                      items: const [
-                                        DropdownMenuItem(value: 'Low', child: Text('Low')),
-                                        DropdownMenuItem(value: 'Medium', child: Text('Medium')),
-                                        DropdownMenuItem(value: 'High', child: Text('High')),
-                                      ],
-                                      onChanged: (v) => setState(() => _priority = v ?? 'Medium'),
-                                    ),
-                                  ),
+                                fieldLabel('Priority'),
+                                DropdownButtonFormField<String>(
+                                  initialValue: _priority,
+                                  decoration: inputDec(),
+                                  items: const [
+                                    DropdownMenuItem(value: 'Low', child: Text('Low')),
+                                    DropdownMenuItem(value: 'Medium', child: Text('Medium')),
+                                    DropdownMenuItem(value: 'High', child: Text('High')),
+                                  ],
+                                  onChanged: (v) => setState(() => _priority = v ?? 'Medium'),
                                 ),
                               ],
                             ),
@@ -1977,8 +2019,7 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('Due Date', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
-                                const SizedBox(height: 4),
+                                fieldLabel('Due Date'),
                                 InkWell(
                                   onTap: () async {
                                     final picked = await showDatePicker(
@@ -1990,9 +2031,9 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
                                     if (picked != null) setState(() => _dueDate = picked);
                                   },
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFFF8FAFC),
+                                      color: Colors.white,
                                       borderRadius: BorderRadius.circular(10),
                                       border: Border.all(color: const Color(0xFFCBD5E1)),
                                     ),
@@ -2002,7 +2043,7 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
                                         const SizedBox(width: 6),
                                         Text(
                                           _dueDate != null ? DateFormat('dd/MM/yyyy').format(_dueDate!) : 'Select Date',
-                                          style: const TextStyle(fontSize: 12.5, color: Color(0xFF0F172A)),
+                                          style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A)),
                                         ),
                                       ],
                                     ),
@@ -2016,78 +2057,42 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
                       const SizedBox(height: 12),
 
                       // Address / Location
-                      const Text(
-                        'Location / Address',
-                        style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
-                      ),
-                      const SizedBox(height: 4),
+                      fieldLabel('Location / Address'),
                       TextFormField(
                         controller: _addressController,
                         style: const TextStyle(fontSize: 13),
-                        decoration: InputDecoration(
-                          hintText: 'e.g. Opposite Ganpati Temple, Shaniwar Peth',
-                          hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
-                          filled: true,
-                          fillColor: const Color(0xFFF8FAFC),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                        ),
+                        decoration: inputDec(hint: 'e.g. Opposite Ganpati Temple, Shaniwar Peth'),
                       ),
                       const SizedBox(height: 12),
 
                       // Description
-                      const Text(
-                        'Details / Instructions',
-                        style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
-                      ),
-                      const SizedBox(height: 4),
+                      fieldLabel('Details / Instructions'),
                       TextFormField(
                         controller: _descController,
                         maxLines: 3,
                         style: const TextStyle(fontSize: 13),
-                        decoration: InputDecoration(
-                          hintText: 'Enter more details and instructions about this task...',
-                          hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
-                          filled: true,
-                          fillColor: const Color(0xFFF8FAFC),
-                          contentPadding: const EdgeInsets.all(12),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                        decoration: inputDec(hint: 'Enter more details and instructions about this task...'),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Submit button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0284C7),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          onPressed: _isSaving ? null : _submit,
+                          child: _isSaving
+                              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                              : const Text('Assign Task', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                         ),
                       ),
-                      const SizedBox(height: 16),
-
-                      // Submit buttons
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              style: OutlinedButton.styleFrom(
-                                side: const BorderSide(color: Colors.white38),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                              ),
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF0284C7),
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                              ),
-                              onPressed: _isSaving ? null : _submit,
-                              child: _isSaving
-                                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                                  : const Text('Assign Task', style: TextStyle(fontWeight: FontWeight.bold)),
-                            ),
-                          ),
-                        ],
-                      ),
+                      const SizedBox(height: 10),
                     ],
                   ),
                 ),

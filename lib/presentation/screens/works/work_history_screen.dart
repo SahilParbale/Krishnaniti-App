@@ -218,6 +218,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
 
   // Create Work Modal matching lines 625-715
   void _openAddWorkModal() {
+    final isMr = ref.read(isMarathiProvider);
     final titleCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     final locCtrl = TextEditingController();
@@ -226,6 +227,46 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
     final benCtrl = TextEditingController();
     final amtCtrl = TextEditingController();
     String status = 'Planned';
+
+    InputDecoration inputDec({String? hint, String? prefixText}) {
+      return InputDecoration(
+        hintText: hint,
+        prefixText: prefixText,
+        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+        prefixStyle: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        filled: true,
+        fillColor: Colors.white,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1.0),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+        ),
+      );
+    }
+
+    Widget fieldLabel(String text, {bool isRequired = false}) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 5.0),
+        child: RichText(
+          text: TextSpan(
+            text: text,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+            children: isRequired
+                ? const [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                    ),
+                  ]
+                : [],
+          ),
+        ),
+      );
+    }
 
     showModalBottomSheet(
       context: context,
@@ -239,9 +280,16 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 20,
+                    offset: Offset(0, -4),
+                  ),
+                ],
               ),
               padding: EdgeInsets.only(
-                top: 20,
+                top: 8,
                 left: 20,
                 right: 20,
                 bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
@@ -250,75 +298,91 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Add New Development Work',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                    // Top Drag Handle
+                    Center(
+                      child: Container(
+                        width: 44,
+                        height: 5,
+                        margin: const EdgeInsets.only(top: 6, bottom: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(3),
                         ),
-                        IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(sheetCtx)),
+                      ),
+                    ),
+                    // Header
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.handyman_rounded, color: Color(0xFF0284C7), size: 20),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            isMr ? 'नवीन विकास काम नोंदवा' : 'Add New Development Work',
+                            style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                          onPressed: () => Navigator.pop(sheetCtx),
+                        ),
                       ],
                     ),
-                    const Divider(height: 20),
+                    const Divider(height: 16, color: Color(0xFFE2E8F0)),
+                    const SizedBox(height: 6),
 
                     // Project Title
-                    const Text('Project Title *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
+                    fieldLabel(isMr ? 'कामाचे नाव / प्रकल्प शीर्षक' : 'Project Title', isRequired: true),
                     TextField(
                       controller: titleCtrl,
-                      decoration: InputDecoration(
-                        hintText: 'Enter project name / tender description...',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      decoration: inputDec(
+                        hint: isMr ? 'प्रकल्पाचे नाव / कामाचे वर्णन प्रविष्ट करा...' : 'Enter project name / tender description...',
                       ),
                     ),
                     const SizedBox(height: 14),
 
                     // Description
-                    const Text('Description', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
+                    fieldLabel(isMr ? 'कामाचा तपशील / वर्णन' : 'Description'),
                     TextField(
                       controller: descCtrl,
                       maxLines: 3,
-                      decoration: InputDecoration(
-                        hintText: 'Detailed scope of civil work...',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      decoration: inputDec(
+                        hint: isMr ? 'कामाचा विस्तृत तपशील, आवश्यकता किंवा उद्दिष्ट...' : 'Detailed scope of civil work...',
                       ),
                     ),
                     const SizedBox(height: 14),
 
-                    // Location & Area
+                    // Side-by-side: Location & Area
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Location', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 6),
+                              fieldLabel(isMr ? 'स्थान / लँडमार्क' : 'Location / Landmark'),
                               TextField(
                                 controller: locCtrl,
-                                decoration: InputDecoration(
-                                  hintText: 'Landmark / Chowk...',
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
+                                decoration: inputDec(hint: isMr ? 'उदा. मुख्य चौक, मंदिर परिसर' : 'Landmark / Chowk...'),
                               ),
                             ],
                           ),
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Area / Locality', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 6),
+                              fieldLabel(isMr ? 'परिसर / प्रभाग' : 'Area / Locality'),
                               TextField(
                                 controller: areaCtrl,
-                                decoration: InputDecoration(
-                                  hintText: 'e.g. Sector 5, Prabhag 12...',
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
+                                decoration: inputDec(hint: isMr ? 'उदा. सेक्टर ५, प्रभाग १२' : 'e.g. Sector 5, Prabhag 12...'),
                               ),
                             ],
                           ),
@@ -327,77 +391,79 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                     ),
                     const SizedBox(height: 14),
 
-                    // Status Dropdown
-                    const Text('Work Status', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    DropdownButtonFormField<String>(
-                      value: status,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      ),
-                      items: const [
-                        DropdownMenuItem(value: 'Planned', child: Text('Planned (नियोजित)')),
-                        DropdownMenuItem(value: 'InProgress', child: Text('In Progress (सुरू)')),
-                        DropdownMenuItem(value: 'Completed', child: Text('Completed (पूर्ण)')),
-                      ],
-                      onChanged: (val) {
-                        if (val != null) setModalState(() => status = val);
-                      },
-                    ),
-                    const SizedBox(height: 14),
-
-                    // People Benefited & Amount Spent
+                    // Side-by-side: Status & Target Date
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('People Benefited', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 6),
+                              fieldLabel(isMr ? 'कामाची स्थिती' : 'Work Status', isRequired: true),
+                              DropdownButtonFormField<String>(
+                                initialValue: status,
+                                decoration: inputDec(),
+                                items: [
+                                  DropdownMenuItem(value: 'Planned', child: Text(isMr ? 'नियोजित (Planned)' : 'Planned')),
+                                  DropdownMenuItem(value: 'InProgress', child: Text(isMr ? 'सुरू (In Progress)' : 'In Progress')),
+                                  DropdownMenuItem(value: 'Completed', child: Text(isMr ? 'पूर्ण (Completed)' : 'Completed')),
+                                ],
+                                onChanged: (val) {
+                                  if (val != null) setModalState(() => status = val);
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              fieldLabel(isMr ? 'अंदाजित / पूर्ण तारीख' : 'Completion Date'),
+                              TextField(
+                                controller: dateCtrl,
+                                decoration: inputDec(hint: 'YYYY-MM-DD'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Side-by-side: People Benefited & Total Amount Spent
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              fieldLabel(isMr ? 'लाभार्थी संख्या' : 'People Benefited'),
                               TextField(
                                 controller: benCtrl,
                                 keyboardType: TextInputType.number,
-                                decoration: InputDecoration(
-                                  hintText: 'e.g. 5000',
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
+                                decoration: inputDec(hint: 'उदा. 5000'),
                               ),
                             ],
                           ),
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Total Amount Spent (₹)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 6),
+                              fieldLabel(isMr ? 'एकूण खर्च रक्कम (₹)' : 'Total Amount Spent (₹)'),
                               TextField(
                                 controller: amtCtrl,
                                 keyboardType: TextInputType.number,
-                                decoration: InputDecoration(
-                                  hintText: 'e.g. 1450000',
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
+                                decoration: inputDec(hint: 'उदा. 1450000', prefixText: '₹ '),
                               ),
                             ],
                           ),
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Completion Date
-                    const Text('Target / Completion Date', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: dateCtrl,
-                      decoration: InputDecoration(
-                        hintText: 'YYYY-MM-DD',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
                     ),
                     const SizedBox(height: 24),
 
@@ -408,12 +474,13 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF0284C7),
                           foregroundColor: Colors.white,
+                          elevation: 0,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                         onPressed: () async {
                           if (titleCtrl.text.trim().isEmpty) {
                             ScaffoldMessenger.of(sheetCtx).showSnackBar(
-                              const SnackBar(content: Text('Please enter project title')),
+                              SnackBar(content: Text(isMr ? 'कृपया कामाचे नाव प्रविष्ट करा' : 'Please enter project title')),
                             );
                             return;
                           }
@@ -442,14 +509,21 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                           if (sheetCtx.mounted) Navigator.pop(sheetCtx);
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('New work project added successfully!'),
-                                backgroundColor: Color(0xFF16A34A),
+                              SnackBar(
+                                content: Text(isMr ? 'नवीन विकास काम यशस्वीरित्या जोडले गेले!' : 'New work project added successfully!'),
+                                backgroundColor: const Color(0xFF16A34A),
                               ),
                             );
                           }
                         },
-                        child: const Text('Save Project', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.save_rounded, size: 18),
+                            const SizedBox(width: 8),
+                            Text(isMr ? 'काम जतन करा' : 'Save Project', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                          ],
+                        ),
                       ),
                     ),
                   ],

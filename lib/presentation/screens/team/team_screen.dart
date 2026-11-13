@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../data/models/team_model.dart';
 import '../../../data/repositories/team_repository.dart';
+import '../../providers/auth_provider.dart';
 import '../../navigation/app_drawer.dart';
 import 'team_member_profile_screen.dart';
 import 'team_report_generator.dart';
@@ -209,6 +210,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
   }
 
   void _showAddMemberModal() {
+    final isMr = ref.read(isMarathiProvider);
     final nameCtrl = TextEditingController();
     final nameMrCtrl = TextEditingController();
     final mobileCtrl = TextEditingController();
@@ -221,297 +223,391 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
 
     final wings = ref.read(teamRepoProvider).getPartyWings();
 
+    Widget fieldLabel(String text, {bool isRequired = false}) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: RichText(
+          text: TextSpan(
+            text: text,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF334155),
+            ),
+            children: isRequired
+                ? const [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ]
+                : [],
+          ),
+        ),
+      );
+    }
+
+    InputDecoration inputDec({String? hintText, Widget? prefixIcon, Widget? suffixIcon}) {
+      return InputDecoration(
+        hintText: hintText,
+        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+        prefixIcon: prefixIcon,
+        suffixIcon: suffixIcon,
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+        ),
+      );
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setModalState) {
-          return Padding(
-            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-            child: Container(
-              padding: const EdgeInsets.all(22),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
+          return Container(
+            height: MediaQuery.of(context).size.height * 0.90,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 20,
+                  offset: Offset(0, -4),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                // Drag Handle
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 5,
+                    margin: const EdgeInsets.only(top: 10, bottom: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(3),
                     ),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF0284C7).withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(Icons.person_add_rounded, color: Color(0xFF0284C7), size: 20),
-                        ),
-                        const SizedBox(width: 10),
-                        const Text('Add New Team Member', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Category Toggle Segment
-                    const Text('Category*', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        {'key': 'Office', 'label': 'Office Team'},
-                        {'key': 'Party', 'label': 'Party Cadre'},
-                        {'key': 'Cooperative', 'label': 'Municipal / Coop'},
-                      ].map((c) {
-                        final isSel = category == c['key'];
-                        return Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 2),
-                            child: ChoiceChip(
-                              label: Text(c['label']!),
-                              selected: isSel,
-                              onSelected: (_) => setModalState(() => category = c['key']!),
-                              selectedColor: const Color(0xFF0284C7),
-                              labelStyle: TextStyle(
-                                fontSize: 11,
-                                fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
-                                color: isSel ? Colors.white : Colors.black87,
-                              ),
+                  ),
+                ),
+                // Header
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(7),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.person_add_rounded,
+                              color: Color(0xFF0284C7),
+                              size: 20,
                             ),
                           ),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Name (Marathi)
-                    const Text('Full Name*', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 5),
-                    TextField(
-                      controller: nameMrCtrl,
-                      decoration: InputDecoration(
-                        hintText: 'e.g. Ramesh B. Kadam',
-                        hintStyle: TextStyle(fontSize: 12.5, color: Colors.grey.shade400),
-                        isDense: true,
-                        filled: true,
-                        fillColor: const Color(0xFFF8FAFC),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-
-                    // Name (English)
-                    const Text('Full Name (English)', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 5),
-                    TextField(
-                      controller: nameCtrl,
-                      decoration: InputDecoration(
-                        hintText: 'e.g. Ramesh Balasaheb Kadam',
-                        hintStyle: TextStyle(fontSize: 12.5, color: Colors.grey.shade400),
-                        isDense: true,
-                        filled: true,
-                        fillColor: const Color(0xFFF8FAFC),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-
-                    // Mobile & Role Row
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Mobile Number*', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
-                              const SizedBox(height: 5),
-                              TextField(
-                                controller: mobileCtrl,
-                                keyboardType: TextInputType.phone,
-                                decoration: InputDecoration(
-                                  hintText: '9822011223',
-                                  prefixText: '+91 ',
-                                  hintStyle: TextStyle(fontSize: 12.5, color: Colors.grey.shade400),
-                                  isDense: true,
-                                  filled: true,
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
-                                ),
-                              ),
-                            ],
+                          const SizedBox(width: 10),
+                          Text(
+                            isMr ? 'नवीन संघ सदस्य जोडा' : 'Add New Team Member',
+                            style: const TextStyle(
+                              fontSize: 17.5,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF0F172A),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Role / Designation*', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
-                              const SizedBox(height: 5),
-                              TextField(
-                                controller: roleCtrl,
-                                decoration: InputDecoration(
-                                  hintText: category == 'Office' ? 'Office Admin' : (category == 'Party' ? 'Ward President' : 'Plumber / Electrician'),
-                                  hintStyle: TextStyle(fontSize: 12.5, color: Colors.grey.shade400),
-                                  isDense: true,
-                                  filled: true,
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-
-                    // Conditional: Wing for Party or Society for Cooperative
-                    if (category == 'Party') ...[
-                      const Text('Party Wing / Cell', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 5),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.grey.shade300),
-                        ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: wing,
-                            isExpanded: true,
-                            items: wings.map((w) => DropdownMenuItem(value: w, child: Text(w, style: const TextStyle(fontSize: 12)))).toList(),
-                            onChanged: (val) {
-                              if (val != null) setModalState(() => wing = val);
-                            },
-                          ),
-                        ),
+                        ],
                       ),
-                      const SizedBox(height: 10),
-                    ] else if (category == 'Cooperative') ...[
-                      const Text('Society or Govt Office Name', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 5),
-                      TextField(
-                        controller: societyCtrl,
-                        decoration: InputDecoration(
-                          hintText: 'e.g. Shaniwar Peth Federation or Municipal Drainage Dept',
-                          hintStyle: TextStyle(fontSize: 12.5, color: Colors.grey.shade400),
-                          isDense: true,
-                          filled: true,
-                          fillColor: const Color(0xFFF8FAFC),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
-                        ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                        onPressed: () => Navigator.pop(ctx),
                       ),
-                      const SizedBox(height: 10),
                     ],
-
-                    // Area & Keywords
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Work Area', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
-                              const SizedBox(height: 5),
-                              TextField(
-                                controller: areaCtrl,
-                                decoration: InputDecoration(
-                                  hintText: 'e.g. Shaniwar Peth',
-                                  hintStyle: TextStyle(fontSize: 12.5, color: Colors.grey.shade400),
-                                  isDense: true,
-                                  filled: true,
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Auto Keywords (comma separated)', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
-                              const SizedBox(height: 5),
-                              TextField(
-                                controller: keywordsCtrl,
-                                decoration: InputDecoration(
-                                  hintText: 'e.g. water, drainage, electricity',
-                                  hintStyle: TextStyle(fontSize: 12.5, color: Colors.grey.shade400),
-                                  isDense: true,
-                                  filled: true,
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Submit Button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          if (nameMrCtrl.text.trim().isEmpty && nameCtrl.text.trim().isEmpty) return;
-                          if (mobileCtrl.text.trim().isEmpty) return;
-
-                          final kw = keywordsCtrl.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-
-                          final newMember = TeamMemberModel(
-                            id: 'stf-${DateTime.now().millisecondsSinceEpoch}',
-                            name: nameCtrl.text.trim().isNotEmpty ? nameCtrl.text.trim() : nameMrCtrl.text.trim(),
-                            nameMarathi: nameMrCtrl.text.trim().isNotEmpty ? nameMrCtrl.text.trim() : null,
-                            mobile: mobileCtrl.text.trim(),
-                            role: roleCtrl.text.trim().isNotEmpty ? roleCtrl.text.trim() : 'Staff',
-                            category: category,
-                            area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : 'Ward 12',
-                            partyWing: category == 'Party' ? wing : null,
-                            societyName: category == 'Cooperative' ? societyCtrl.text.trim() : null,
-                            keywords: kw,
-                            joinedDate: DateTime.now(),
-                          );
-
-                          final repo = ref.read(teamRepoProvider);
-                          await repo.addTeamMember(newMember);
-                          if (!mounted) return;
-                          Navigator.pop(ctx);
-                          _loadTeam();
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('New member added successfully!'), backgroundColor: Color(0xFF16A34A)),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0284C7),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                        child: const Text('Save Member', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+                const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      // Category Toggle Segment
+                      fieldLabel(isMr ? 'श्रेणी / विभाग' : 'Category', isRequired: true),
+                      Row(
+                        children: [
+                          {'key': 'Office', 'label': isMr ? 'कार्यालयीन' : 'Office Team'},
+                          {'key': 'Party', 'label': isMr ? 'पक्ष कार्यकर्ता' : 'Party Cadre'},
+                          {'key': 'Cooperative', 'label': isMr ? 'संस्था / पालिका' : 'Municipal / Coop'},
+                        ].map((c) {
+                          final isSel = category == c['key'];
+                          return Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 2),
+                              child: ChoiceChip(
+                                label: Text(c['label']!),
+                                selected: isSel,
+                                onSelected: (_) => setModalState(() => category = c['key']!),
+                                selectedColor: const Color(0xFF0284C7),
+                                labelStyle: TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
+                                  color: isSel ? Colors.white : Colors.black87,
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Name (Marathi) & Name (English) side-by-side
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'पूर्ण नाव (मराठी)' : 'Full Name (Marathi)', isRequired: true),
+                                TextField(
+                                  controller: nameMrCtrl,
+                                  decoration: inputDec(
+                                    hintText: isMr ? 'उदा. रमेश ब. कदम' : 'e.g. Ramesh B. Kadam',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'पूर्ण नाव (इंग्रजी)' : 'Full Name (English)'),
+                                TextField(
+                                  controller: nameCtrl,
+                                  decoration: inputDec(
+                                    hintText: isMr ? 'उदा. Ramesh Balasaheb Kadam' : 'e.g. Ramesh Balasaheb Kadam',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Mobile & Role side-by-side
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'मोबाईल नंबर' : 'Mobile Number', isRequired: true),
+                                TextField(
+                                  controller: mobileCtrl,
+                                  keyboardType: TextInputType.phone,
+                                  decoration: inputDec(
+                                    hintText: '98220xxxxx',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'पद / हुद्दा' : 'Role / Designation', isRequired: true),
+                                TextField(
+                                  controller: roleCtrl,
+                                  decoration: inputDec(
+                                    hintText: category == 'Office'
+                                        ? (isMr ? 'उदा. कार्यालय समन्वयक' : 'Office Admin')
+                                        : (category == 'Party'
+                                            ? (isMr ? 'उदा. प्रभाग अध्यक्ष' : 'Ward President')
+                                            : (isMr ? 'उदा. वायरमन / प्लंबर' : 'Plumber / Electrician')),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Conditional: Wing for Party or Society for Cooperative
+                      if (category == 'Party') ...[
+                        fieldLabel(isMr ? 'पक्ष आघाडी / सेल' : 'Party Wing / Cell'),
+                        DropdownButtonFormField<String>(
+                          value: wing,
+                          decoration: inputDec(),
+                          isExpanded: true,
+                          items: wings.map((w) => DropdownMenuItem(value: w, child: Text(w, style: const TextStyle(fontSize: 13)))).toList(),
+                          onChanged: (val) {
+                            if (val != null) setModalState(() => wing = val);
+                          },
+                        ),
+                        const SizedBox(height: 14),
+                      ] else if (category == 'Cooperative') ...[
+                        fieldLabel(isMr ? 'सोसायटी किंवा शासकीय कार्यालय नाव' : 'Society or Govt Office Name'),
+                        TextField(
+                          controller: societyCtrl,
+                          decoration: inputDec(
+                            hintText: isMr
+                                ? 'उदा. शनिवार पेठ फेडरेशन किंवा महापालिका जल विभाग'
+                                : 'e.g. Shaniwar Peth Federation or Municipal Drainage Dept',
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                      ],
+
+                      // Area & Keywords side-by-side
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'कार्यक्षेत्र / परिसर' : 'Work Area'),
+                                TextField(
+                                  controller: areaCtrl,
+                                  decoration: inputDec(
+                                    hintText: isMr ? 'उदा. शनिवार पेठ' : 'e.g. Shaniwar Peth',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'ऑटो कीवर्ड्स (स्वल्पविरामाने)' : 'Auto Keywords'),
+                                TextField(
+                                  controller: keywordsCtrl,
+                                  decoration: inputDec(
+                                    hintText: isMr ? 'पाणी, ड्रेनेज, वीज' : 'water, drainage, electric',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Submit Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0284C7),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            elevation: 0,
+                          ),
+                          icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
+                          label: Text(
+                            isMr ? 'सदस्य जतन करा' : 'Save Member',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                          ),
+                          onPressed: () async {
+                            if (nameMrCtrl.text.trim().isEmpty && nameCtrl.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    isMr
+                                        ? 'कृपया सदस्याचे नाव प्रविष्ट करा.'
+                                        : 'Please enter member name.',
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
+                            if (mobileCtrl.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    isMr
+                                        ? 'कृपया मोबाईल नंबर प्रविष्ट करा.'
+                                        : 'Please enter mobile number.',
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
+
+                            final kw = keywordsCtrl.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+
+                            final newMember = TeamMemberModel(
+                              id: 'stf-${DateTime.now().millisecondsSinceEpoch}',
+                              name: nameCtrl.text.trim().isNotEmpty ? nameCtrl.text.trim() : nameMrCtrl.text.trim(),
+                              nameMarathi: nameMrCtrl.text.trim().isNotEmpty ? nameMrCtrl.text.trim() : null,
+                              mobile: mobileCtrl.text.trim(),
+                              role: roleCtrl.text.trim().isNotEmpty ? roleCtrl.text.trim() : 'Staff',
+                              category: category,
+                              area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : 'Ward 12',
+                              partyWing: category == 'Party' ? wing : null,
+                              societyName: category == 'Cooperative' ? societyCtrl.text.trim() : null,
+                              keywords: kw,
+                              joinedDate: DateTime.now(),
+                            );
+
+                            final repo = ref.read(teamRepoProvider);
+                            await repo.addTeamMember(newMember);
+                            if (ctx.mounted) {
+                              Navigator.pop(ctx);
+                            }
+                            _loadTeam();
+
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    isMr
+                                        ? 'नवीन सदस्य यशस्वीरित्या जोडला गेला!'
+                                        : 'New member added successfully!',
+                                  ),
+                                  backgroundColor: const Color(0xFF16A34A),
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                ),
+              ],
             ),
           );
         },

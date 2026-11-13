@@ -3,9 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/scheme_model.dart';
-import '../../../data/models/voter_model.dart';
 import '../../../data/repositories/schemes_repository.dart';
-import '../../../data/repositories/voters_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import 'scheme_detail_screen.dart';
@@ -223,344 +221,51 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
   // SMART SCHEME MATCHER MODAL
   // -------------------------------------------------------------
   void _showSmartMatcherModal() {
+    final isMr = ref.read(isMarathiProvider);
     final ageCtrl = TextEditingController();
     final incomeCtrl = TextEditingController();
     final occCtrl = TextEditingController();
     String gender = 'Male';
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetCtx) {
-        return StatefulBuilder(
-          builder: (stCtx, setModalState) {
-            return Container(
-              height: MediaQuery.of(context).size.height * 0.82,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-              ),
-              padding: EdgeInsets.only(
-                top: 20,
-                left: 20,
-                right: 20,
-                bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: const [
-                            Icon(Icons.auto_awesome_rounded, color: Color(0xFF0284C7), size: 22),
-                            SizedBox(width: 8),
-                            Text('Smart Scheme Matcher', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                          ],
-                        ),
-                        IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(sheetCtx)),
-                      ],
-                    ),
-                    const Text(
-                      'Enter citizen details to find exact matching government welfare schemes',
-                      style: TextStyle(fontSize: 12.5, color: Color(0xFF64748B)),
-                    ),
-                    const Divider(height: 24),
+    InputDecoration inputDec({String? hint, String? prefixText}) {
+      return InputDecoration(
+        hintText: hint,
+        prefixText: prefixText,
+        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+        prefixStyle: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        filled: true,
+        fillColor: Colors.white,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1.0),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+        ),
+      );
+    }
 
-                    // Age
-                    const Text('Citizen Age (वर्षे)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: ageCtrl,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        hintText: 'e.g. 24, 65...',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
+    Widget fieldLabel(String text, {bool isRequired = false}) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 5.0),
+        child: RichText(
+          text: TextSpan(
+            text: text,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+            children: isRequired
+                ? const [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                     ),
-                    const SizedBox(height: 14),
-
-                    // Gender
-                    const Text('Gender (लिंग)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    DropdownButtonFormField<String>(
-                      initialValue: gender,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      ),
-                      items: const [
-                        DropdownMenuItem(value: 'Male', child: Text('Male / पुरुष')),
-                        DropdownMenuItem(value: 'Female', child: Text('Female / महिला')),
-                        DropdownMenuItem(value: 'Other', child: Text('Other / इतर')),
-                      ],
-                      onChanged: (val) {
-                        if (val != null) setModalState(() => gender = val);
-                      },
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Annual Income
-                    const Text('Annual Family Income (वार्षिक उत्पन्न ₹)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: incomeCtrl,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        hintText: 'e.g. 150000, 250000...',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Occupation
-                    const Text('Occupation (व्यवसाय / शिक्षण)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: occCtrl,
-                      decoration: InputDecoration(
-                        hintText: 'e.g. Student, Farmer, Street vendor, Homemaker...',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0284C7),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        onPressed: () {
-                          final age = int.tryParse(ageCtrl.text.trim()) ?? 30;
-                          final occ = occCtrl.text.trim().toLowerCase();
-
-                          // Matching algorithm matching Nagarsevak-Managment AI Matcher
-                          final matched = <int>[];
-                          for (final s in _schemes) {
-                            final cat = s.category.toLowerCase();
-                            final text = '${s.name} ${s.description} ${s.eligibility} ${s.benefits}'.toLowerCase();
-
-                            if (gender == 'Female' && (cat == 'women' || text.contains('महिला') || text.contains('ladki'))) {
-                              matched.add(s.id);
-                            }
-                            if (age >= 60 && (cat == 'senior citizen' || text.contains('senior') || text.contains('ज्येष्ठ') || text.contains('वृद्ध'))) {
-                              matched.add(s.id);
-                            }
-                            if ((occ.contains('student') || occ.contains('विद्यार्थी') || age <= 25) && (cat == 'student' || text.contains('scholarship') || text.contains('शिष्यवृत्ती'))) {
-                              matched.add(s.id);
-                            }
-                            if ((occ.contains('farmer') || occ.contains('शेतकरी')) && (cat == 'farmer' || text.contains('kisan') || text.contains('कृषी'))) {
-                              matched.add(s.id);
-                            }
-                            if ((occ.contains('vendor') || occ.contains('फेरीवाला') || occ.contains('business') || occ.contains('youth')) && (cat == 'youth' || text.contains('svanidhi') || text.contains('loan'))) {
-                              matched.add(s.id);
-                            }
-                            // Universal health & housing schemes
-                            if (cat == 'health' || cat == 'housing') {
-                              matched.add(s.id);
-                            }
-                          }
-
-                          Navigator.pop(sheetCtx);
-                          setState(() {
-                            _matchedSchemeIds = matched.isNotEmpty ? matched : _schemes.map((s) => s.id).toList();
-                          });
-                        },
-                        icon: const Icon(Icons.search, size: 20),
-                        label: const Text('Find Matching Schemes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  // -------------------------------------------------------------
-  // ADD NEW SCHEME MODAL
-  // -------------------------------------------------------------
-  void _showAddSchemeSheet() {
-    final nameCtrl = TextEditingController();
-    final descCtrl = TextEditingController();
-    final eligCtrl = TextEditingController();
-    final benCtrl = TextEditingController();
-    final docCtrl = TextEditingController();
-    String selectedCat = 'Housing';
-
-    final categories = ['All', 'Women', 'Student', 'Senior Citizen', 'Farmer', 'Health', 'Youth', 'Housing'];
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetCtx) {
-        return StatefulBuilder(
-          builder: (stCtx, setModalState) {
-            return Container(
-              height: MediaQuery.of(context).size.height * 0.88,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-              ),
-              padding: EdgeInsets.only(
-                top: 20,
-                left: 20,
-                right: 20,
-                bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Add New Government Scheme',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                        ),
-                        IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(sheetCtx)),
-                      ],
-                    ),
-                    const Divider(),
-                    const SizedBox(height: 12),
-                    const Text('Scheme Name (English / Marathi) *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: nameCtrl,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                        hintText: 'e.g. PM Awas Yojana / प्रधानमंत्री आवास योजना',
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    const Text('Category *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    DropdownButtonFormField<String>(
-                      initialValue: selectedCat,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      ),
-                      items: categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                      onChanged: (val) {
-                        if (val != null) setModalState(() => selectedCat = val);
-                      },
-                    ),
-                    const SizedBox(height: 14),
-                    const Text('Description *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: descCtrl,
-                      maxLines: 2,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                        hintText: 'Brief objective and overview...',
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    const Text('Financial Benefits & Grants *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: benCtrl,
-                      maxLines: 2,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                        hintText: 'e.g. ₹2.5 Lakhs grant, ₹1,500 monthly...',
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    const Text('Eligibility Criteria *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: eligCtrl,
-                      maxLines: 2,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                        hintText: 'Income limits, age, category...',
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    const Text('Documents Required *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: docCtrl,
-                      maxLines: 2,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                        hintText: 'Aadhaar, Ration card, Income proof...',
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0284C7),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        onPressed: () async {
-                          if (nameCtrl.text.trim().isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Please enter scheme name')),
-                            );
-                            return;
-                          }
-                          final newScheme = SchemeModel(
-                            id: 0,
-                            name: nameCtrl.text.trim(),
-                            category: selectedCat,
-                            description: descCtrl.text.trim(),
-                            benefits: benCtrl.text.trim(),
-                            eligibility: eligCtrl.text.trim(),
-                            documents: docCtrl.text.trim(),
-                            createdAt: DateTime.now(),
-                          );
-                          Navigator.pop(sheetCtx);
-                          final created = await ref.read(schemesRepoProvider).createScheme(newScheme);
-                          setState(() {
-                            _schemes.insert(0, created);
-                          });
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Scheme added successfully!'), backgroundColor: Color(0xFF16A34A)),
-                            );
-                          }
-                        },
-                        child: const Text('Save Scheme', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  // -------------------------------------------------------------
-  // APPLICATION STATUS UPDATE SHEET
-  // -------------------------------------------------------------
-  void _showApplicationStatusSheet(SchemeApplicationModel app) {
-    String currentStatus = app.status;
-    final benefitCtrl = TextEditingController(text: app.benefit ?? '');
-    final notesCtrl = TextEditingController(text: app.notes ?? '');
-    final reasonCtrl = TextEditingController(text: app.rejectionReason ?? '');
+                  ]
+                : [],
+          ),
+        ),
+      );
+    }
 
     showModalBottomSheet(
       context: context,
@@ -574,128 +279,720 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 20,
+                    offset: Offset(0, -4),
+                  ),
+                ],
               ),
               padding: EdgeInsets.only(
-                top: 20,
+                top: 8,
                 left: 20,
                 right: 20,
                 bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
               ),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
+              child: Column(
+                children: [
+                  // Top Drag Handle
+                  Center(
+                    child: Container(
+                      width: 44,
+                      height: 5,
+                      margin: const EdgeInsets.only(top: 6, bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF0284C7), size: 20),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Update Application Status', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                            Text(app.applicantName, style: const TextStyle(fontSize: 13, color: Color(0xFF0284C7), fontWeight: FontWeight.w600)),
+                            Text(
+                              isMr ? 'स्मार्ट योजना शोधक' : 'Smart Scheme Matcher',
+                              style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                            ),
+                            Text(
+                              isMr ? 'नागरिकांच्या पात्रतेनुसार अचूक योजना शोधा' : 'Find exact matching welfare schemes',
+                              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                            ),
                           ],
                         ),
-                        IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(sheetCtx)),
-                      ],
-                    ),
-                    const Divider(height: 24),
-                    const Text('Status', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: ['Pending', 'Approved', 'Rejected'].map((st) {
-                        final isSel = currentStatus.toLowerCase() == st.toLowerCase();
-                        Color bg = isSel
-                            ? (st == 'Approved'
-                                ? const Color(0xFF16A34A)
-                                : st == 'Rejected'
-                                    ? const Color(0xFFDC2626)
-                                    : const Color(0xFFD97706))
-                            : const Color(0xFFF1F5F9);
-                        Color text = isSel ? Colors.white : const Color(0xFF475569);
-                        return Expanded(
-                          child: GestureDetector(
-                            onTap: () => setModalState(() => currentStatus = st),
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 4),
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                              decoration: BoxDecoration(
-                                color: bg,
-                                borderRadius: BorderRadius.circular(10),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                        onPressed: () => Navigator.pop(sheetCtx),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Age & Gender side-by-side
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    fieldLabel(isMr ? 'वय (वर्षे)' : 'Citizen Age (Years)', isRequired: true),
+                                    TextField(
+                                      controller: ageCtrl,
+                                      keyboardType: TextInputType.number,
+                                      decoration: inputDec(hint: isMr ? 'उदा. २४, ६५...' : 'e.g. 24, 65...'),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              child: Center(
-                                child: Text(st, style: TextStyle(fontWeight: FontWeight.bold, color: text, fontSize: 13)),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    fieldLabel(isMr ? 'लिंग' : 'Gender', isRequired: true),
+                                    DropdownButtonFormField<String>(
+                                      initialValue: gender,
+                                      decoration: inputDec(),
+                                      items: [
+                                        DropdownMenuItem(value: 'Male', child: Text(isMr ? 'पुरुष' : 'Male')),
+                                        DropdownMenuItem(value: 'Female', child: Text(isMr ? 'महिला' : 'Female')),
+                                        DropdownMenuItem(value: 'Other', child: Text(isMr ? 'इतर' : 'Other')),
+                                      ],
+                                      onChanged: (val) {
+                                        if (val != null) setModalState(() => gender = val);
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Income & Occupation side-by-side
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    fieldLabel(isMr ? 'वार्षिक उत्पन्न (₹)' : 'Annual Income (₹)'),
+                                    TextField(
+                                      controller: incomeCtrl,
+                                      keyboardType: TextInputType.number,
+                                      decoration: inputDec(hint: isMr ? 'उदा. १५००००' : 'e.g. 150000'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    fieldLabel(isMr ? 'व्यवसाय / शिक्षण' : 'Occupation'),
+                                    TextField(
+                                      controller: occCtrl,
+                                      decoration: inputDec(hint: isMr ? 'विद्यार्थी, शेतकरी...' : 'Student, Farmer...'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0284C7),
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              onPressed: () {
+                                final age = int.tryParse(ageCtrl.text.trim()) ?? 30;
+                                final occ = occCtrl.text.trim().toLowerCase();
+
+                                // Matching algorithm matching Nagarsevak-Managment AI Matcher
+                                final matched = <int>[];
+                                for (final s in _schemes) {
+                                  final cat = s.category.toLowerCase();
+                                  final text = '${s.name} ${s.description} ${s.eligibility} ${s.benefits}'.toLowerCase();
+
+                                  if (gender == 'Female' && (cat == 'women' || text.contains('महिला') || text.contains('ladki'))) {
+                                    matched.add(s.id);
+                                  }
+                                  if (age >= 60 && (cat == 'senior citizen' || text.contains('senior') || text.contains('ज्येष्ठ') || text.contains('वृद्ध'))) {
+                                    matched.add(s.id);
+                                  }
+                                  if ((occ.contains('student') || occ.contains('विद्यार्थी') || age <= 25) && (cat == 'student' || text.contains('scholarship') || text.contains('शिष्यवृत्ती'))) {
+                                    matched.add(s.id);
+                                  }
+                                  if ((occ.contains('farmer') || occ.contains('शेतकरी')) && (cat == 'farmer' || text.contains('kisan') || text.contains('कृषी'))) {
+                                    matched.add(s.id);
+                                  }
+                                  if ((occ.contains('vendor') || occ.contains('फेरीवाला') || occ.contains('business') || occ.contains('youth')) && (cat == 'youth' || text.contains('svanidhi') || text.contains('loan'))) {
+                                    matched.add(s.id);
+                                  }
+                                  // Universal health & housing schemes
+                                  if (cat == 'health' || cat == 'housing') {
+                                    matched.add(s.id);
+                                  }
+                                }
+
+                                Navigator.pop(sheetCtx);
+                                setState(() {
+                                  _matchedSchemeIds = matched.isNotEmpty ? matched : _schemes.map((s) => s.id).toList();
+                                });
+                              },
+                              icon: const Icon(Icons.search, size: 20),
+                              label: Text(
+                                isMr ? 'पात्र योजना शोधा' : 'Find Matching Schemes',
+                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                               ),
                             ),
                           ),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 16),
-                    if (currentStatus.toLowerCase() == 'approved') ...[
-                      const Text('Sanctioned Benefit / Grant Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                      const SizedBox(height: 6),
-                      TextField(
-                        controller: benefitCtrl,
-                        decoration: InputDecoration(
-                          hintText: 'e.g. ₹1,500/month DBT approved...',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                    ],
-                    if (currentStatus.toLowerCase() == 'rejected') ...[
-                      const Text('Reason for Rejection', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                      const SizedBox(height: 6),
-                      TextField(
-                        controller: reasonCtrl,
-                        decoration: InputDecoration(
-                          hintText: 'e.g. Income exceeds ₹2.5 Lakhs limit...',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                    ],
-                    const Text('Officer / Office Notes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: notesCtrl,
-                      maxLines: 2,
-                      decoration: InputDecoration(
-                        hintText: 'Follow-up remarks...',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          const SizedBox(height: 10),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0284C7),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // -------------------------------------------------------------
+  // ADD NEW SCHEME MODAL
+  // -------------------------------------------------------------
+  void _showAddSchemeSheet() {
+    final isMr = ref.read(isMarathiProvider);
+    final nameCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    final eligCtrl = TextEditingController();
+    final benCtrl = TextEditingController();
+    final docCtrl = TextEditingController();
+    String selectedCat = 'Housing';
+
+    final categories = ['All', 'Women', 'Student', 'Senior Citizen', 'Farmer', 'Health', 'Youth', 'Housing'];
+
+    InputDecoration inputDec({String? hint, String? prefixText}) {
+      return InputDecoration(
+        hintText: hint,
+        prefixText: prefixText,
+        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+        prefixStyle: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        filled: true,
+        fillColor: Colors.white,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1.0),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+        ),
+      );
+    }
+
+    Widget fieldLabel(String text, {bool isRequired = false}) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 5.0),
+        child: RichText(
+          text: TextSpan(
+            text: text,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+            children: isRequired
+                ? const [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                    ),
+                  ]
+                : [],
+          ),
+        ),
+      );
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) {
+        return StatefulBuilder(
+          builder: (stCtx, setModalState) {
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.88,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 20,
+                    offset: Offset(0, -4),
+                  ),
+                ],
+              ),
+              padding: EdgeInsets.only(
+                top: 8,
+                left: 20,
+                right: 20,
+                bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
+              ),
+              child: Column(
+                children: [
+                  // Top Drag Handle
+                  Center(
+                    child: Container(
+                      width: 44,
+                      height: 5,
+                      margin: const EdgeInsets.only(top: 6, bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        onPressed: () async {
-                          Navigator.pop(sheetCtx);
-                          await ref.read(schemesRepoProvider).updateApplicationStatus(
-                                app.id,
-                                currentStatus,
-                                benefit: benefitCtrl.text.trim().isNotEmpty ? benefitCtrl.text.trim() : null,
-                                rejectionReason: reasonCtrl.text.trim().isNotEmpty ? reasonCtrl.text.trim() : null,
-                                notes: notesCtrl.text.trim().isNotEmpty ? notesCtrl.text.trim() : null,
+                        child: const Icon(Icons.account_balance_rounded, color: Color(0xFF0284C7), size: 20),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          isMr ? 'नवीन शासकीय योजना जोडा' : 'Add New Government Scheme',
+                          style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                        onPressed: () => Navigator.pop(sheetCtx),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Scheme Name & Category side-by-side
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                flex: 6,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    fieldLabel(isMr ? 'योजनेचे नाव' : 'Scheme Name', isRequired: true),
+                                    TextField(
+                                      controller: nameCtrl,
+                                      decoration: inputDec(hint: isMr ? 'उदा. प्रधानमंत्री आवास योजना' : 'e.g. PM Awas Yojana'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                flex: 4,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    fieldLabel(isMr ? 'वर्ग / विभाग' : 'Category', isRequired: true),
+                                    DropdownButtonFormField<String>(
+                                      initialValue: selectedCat,
+                                      decoration: inputDec(),
+                                      items: categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                                      onChanged: (val) {
+                                        if (val != null) setModalState(() => selectedCat = val);
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Benefits & Eligibility side-by-side
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    fieldLabel(isMr ? 'आर्थिक लाभ व अनुदान' : 'Financial Benefits & Grants', isRequired: true),
+                                    TextField(
+                                      controller: benCtrl,
+                                      maxLines: 2,
+                                      decoration: inputDec(hint: isMr ? 'उदा. ₹२.५ लाख अनुदान...' : 'e.g. ₹2.5 Lakhs grant...'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    fieldLabel(isMr ? 'पात्रता अटी' : 'Eligibility Criteria', isRequired: true),
+                                    TextField(
+                                      controller: eligCtrl,
+                                      maxLines: 2,
+                                      decoration: inputDec(hint: isMr ? 'उत्पन्न मर्यादा, वय...' : 'Income limit, age...'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Documents
+                          fieldLabel(isMr ? 'आवश्यक कागदपत्रे' : 'Documents Required Checklist', isRequired: true),
+                          TextField(
+                            controller: docCtrl,
+                            maxLines: 2,
+                            decoration: inputDec(hint: isMr ? 'आधार कार्ड, रेशन कार्ड, उत्पन्न दाखला...' : 'Aadhaar, Ration card, Income proof...'),
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Description
+                          fieldLabel(isMr ? 'योजनेचा तपशील व उद्दिष्ट' : 'Description & Objectives', isRequired: true),
+                          TextField(
+                            controller: descCtrl,
+                            maxLines: 2,
+                            decoration: inputDec(hint: isMr ? 'योजनेची संक्षिप्त उद्दिष्टे...' : 'Brief objective and overview...'),
+                          ),
+                          const SizedBox(height: 20),
+
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0284C7),
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              onPressed: () async {
+                                if (nameCtrl.text.trim().isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(isMr ? 'कृपया योजनेचे नाव प्रविष्ट करा' : 'Please enter scheme name')),
+                                  );
+                                  return;
+                                }
+                                final newScheme = SchemeModel(
+                                  id: 0,
+                                  name: nameCtrl.text.trim(),
+                                  category: selectedCat,
+                                  description: descCtrl.text.trim(),
+                                  benefits: benCtrl.text.trim(),
+                                  eligibility: eligCtrl.text.trim(),
+                                  documents: docCtrl.text.trim(),
+                                  createdAt: DateTime.now(),
+                                );
+                                Navigator.pop(sheetCtx);
+                                final created = await ref.read(schemesRepoProvider).createScheme(newScheme);
+                                setState(() {
+                                  _schemes.insert(0, created);
+                                });
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(isMr ? 'योजना यशस्वीरित्या जोडली!' : 'Scheme added successfully!'),
+                                      backgroundColor: const Color(0xFF16A34A),
+                                    ),
+                                  );
+                                }
+                              },
+                              child: Text(
+                                isMr ? 'योजना जतन करा' : 'Save Scheme',
+                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // -------------------------------------------------------------
+  // APPLICATION STATUS UPDATE SHEET
+  // -------------------------------------------------------------
+  void _showApplicationStatusSheet(SchemeApplicationModel app) {
+    final isMr = ref.read(isMarathiProvider);
+    String currentStatus = app.status;
+    final benefitCtrl = TextEditingController(text: app.benefit ?? '');
+    final notesCtrl = TextEditingController(text: app.notes ?? '');
+    final reasonCtrl = TextEditingController(text: app.rejectionReason ?? '');
+
+    InputDecoration inputDec({String? hint, String? prefixText}) {
+      return InputDecoration(
+        hintText: hint,
+        prefixText: prefixText,
+        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+        prefixStyle: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        filled: true,
+        fillColor: Colors.white,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1.0),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+        ),
+      );
+    }
+
+    Widget fieldLabel(String text, {bool isRequired = false}) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 5.0),
+        child: RichText(
+          text: TextSpan(
+            text: text,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+            children: isRequired
+                ? const [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                    ),
+                  ]
+                : [],
+          ),
+        ),
+      );
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) {
+        return StatefulBuilder(
+          builder: (stCtx, setModalState) {
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.75,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 20,
+                    offset: Offset(0, -4),
+                  ),
+                ],
+              ),
+              padding: EdgeInsets.only(
+                top: 8,
+                left: 20,
+                right: 20,
+                bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
+              ),
+              child: Column(
+                children: [
+                  // Top Drag Handle
+                  Center(
+                    child: Container(
+                      width: 44,
+                      height: 5,
+                      margin: const EdgeInsets.only(top: 6, bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.edit_note_rounded, color: Color(0xFF0284C7), size: 20),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isMr ? 'अर्जाची स्थिती अद्यतनित करा' : 'Update Application Status',
+                              style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                            ),
+                            Text(
+                              app.applicantName,
+                              style: const TextStyle(fontSize: 12, color: Color(0xFF0284C7), fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                        onPressed: () => Navigator.pop(sheetCtx),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          fieldLabel(isMr ? 'स्थिती' : 'Status', isRequired: true),
+                          Row(
+                            children: ['Pending', 'Approved', 'Rejected'].map((st) {
+                              final isSel = currentStatus.toLowerCase() == st.toLowerCase();
+                              Color bg = isSel
+                                  ? (st == 'Approved'
+                                      ? const Color(0xFF16A34A)
+                                      : st == 'Rejected'
+                                          ? const Color(0xFFDC2626)
+                                          : const Color(0xFFD97706))
+                                  : const Color(0xFFF1F5F9);
+                              Color text = isSel ? Colors.white : const Color(0xFF475569);
+                              return Expanded(
+                                child: GestureDetector(
+                                  onTap: () => setModalState(() => currentStatus = st),
+                                  child: Container(
+                                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                                    padding: const EdgeInsets.symmetric(vertical: 10),
+                                    decoration: BoxDecoration(
+                                      color: bg,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        st == 'Pending' ? (isMr ? 'प्रलंबित' : 'Pending') : st == 'Approved' ? (isMr ? 'मंजूर' : 'Approved') : (isMr ? 'नाकारले' : 'Rejected'),
+                                        style: TextStyle(fontWeight: FontWeight.bold, color: text, fontSize: 13),
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               );
-                          _loadData();
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Application updated to $currentStatus')),
-                            );
-                          }
-                        },
-                        child: const Text('Update Status', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                            }).toList(),
+                          ),
+                          const SizedBox(height: 14),
+                          if (currentStatus.toLowerCase() == 'approved') ...[
+                            fieldLabel(isMr ? 'मंजूर लाभ / अनुदान तपशील' : 'Sanctioned Benefit / Grant Details'),
+                            TextField(
+                              controller: benefitCtrl,
+                              decoration: inputDec(hint: isMr ? 'उदा. ₹१,५००/महिना डीबीटी मंजूर...' : 'e.g. ₹1,500/month DBT approved...'),
+                            ),
+                            const SizedBox(height: 14),
+                          ],
+                          if (currentStatus.toLowerCase() == 'rejected') ...[
+                            fieldLabel(isMr ? 'नाकारण्याचे कारण' : 'Reason for Rejection'),
+                            TextField(
+                              controller: reasonCtrl,
+                              decoration: inputDec(hint: isMr ? 'उदा. उत्पन्न मर्यादा ओलांडली...' : 'e.g. Income exceeds ₹2.5 Lakhs limit...'),
+                            ),
+                            const SizedBox(height: 14),
+                          ],
+                          fieldLabel(isMr ? 'अधिकारी / कार्यालयीन टीप' : 'Officer / Office Notes'),
+                          TextField(
+                            controller: notesCtrl,
+                            maxLines: 2,
+                            decoration: inputDec(hint: isMr ? 'पुढील कार्यवाहीच्या नोंदी...' : 'Follow-up remarks...'),
+                          ),
+                          const SizedBox(height: 20),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0284C7),
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              onPressed: () async {
+                                Navigator.pop(sheetCtx);
+                                await ref.read(schemesRepoProvider).updateApplicationStatus(
+                                      app.id,
+                                      currentStatus,
+                                      benefit: benefitCtrl.text.trim().isNotEmpty ? benefitCtrl.text.trim() : null,
+                                      rejectionReason: reasonCtrl.text.trim().isNotEmpty ? reasonCtrl.text.trim() : null,
+                                      notes: notesCtrl.text.trim().isNotEmpty ? notesCtrl.text.trim() : null,
+                                    );
+                                _loadData();
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(isMr ? 'अर्जाची स्थिती अद्यतनित केली: $currentStatus' : 'Application updated to $currentStatus')),
+                                  );
+                                }
+                              },
+                              child: Text(
+                                isMr ? 'स्थिती अद्यतनित करा' : 'Update Status',
+                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                        ],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             );
           },

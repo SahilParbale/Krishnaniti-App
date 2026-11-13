@@ -7,6 +7,7 @@ import '../../../core/services/supabase_service.dart';
 import '../../../data/models/voter_model.dart';
 import '../../../data/repositories/sms_repository.dart';
 import '../../navigation/app_drawer.dart';
+import '../../providers/auth_provider.dart';
 
 class ConferenceMeetingModel {
   final String id;
@@ -173,156 +174,327 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
     }
   }
 
+  Widget _fieldLabel(String text, {bool isRequired = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 5),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            text,
+            style: const TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF334155),
+            ),
+          ),
+          if (isRequired)
+            const Text(' *', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  InputDecoration _inputDec({String? hint, Widget? prefixIcon}) {
+    return InputDecoration(
+      hintText: hint,
+      prefixIcon: prefixIcon,
+      hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+      ),
+    );
+  }
+
   void _showCreateMeetingDialog() {
+    final isMr = ref.read(isMarathiProvider);
     final titleController = TextEditingController();
     final notesController = TextEditingController();
     DateTime selectedDate = DateTime.now().add(const Duration(hours: 2));
     TimeOfDay selectedTime = TimeOfDay.fromDateTime(selectedDate);
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
-        builder: (context, setDlgState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Row(
-            children: const [
-              Icon(Icons.video_call_rounded, color: Color(0xFF2563EB), size: 24),
-              SizedBox(width: 8),
-              Text('Schedule Meeting', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        builder: (modalCtx, setDlgState) => Container(
+          height: MediaQuery.of(context).size.height * 0.72,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 20,
+                offset: Offset(0, -4),
+              ),
             ],
           ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Meeting Topic / Title', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: titleController,
-                  decoration: InputDecoration(
-                    hintText: 'e.g. Ward Development Discussion',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Column(
+            children: [
+              // Drag Handle
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 5,
+                  margin: const EdgeInsets.only(top: 10, bottom: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(3),
                   ),
                 ),
-                const SizedBox(height: 12),
-                const Text('Schedule Date & Time', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                const SizedBox(height: 6),
-                Row(
+              ),
+
+              // Header
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () async {
-                          final picked = await showDatePicker(
-                            context: context,
-                            initialDate: selectedDate,
-                            firstDate: DateTime.now(),
-                            lastDate: DateTime.now().add(const Duration(days: 365)),
-                          );
-                          if (picked != null) {
-                            setDlgState(() => selectedDate = picked);
-                          }
-                        },
-                        icon: const Icon(Icons.calendar_today, size: 16),
-                        label: Text(DateFormat('dd MMM yyyy').format(selectedDate), style: const TextStyle(fontSize: 12)),
-                      ),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.video_call_rounded,
+                            color: Color(0xFF0284C7),
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isMr ? 'व्हिडिओ बैठक आयोजित करा' : 'Schedule Video Meeting',
+                              style: const TextStyle(
+                                color: Color(0xFF0F172A),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 17.5,
+                              ),
+                            ),
+                            Text(
+                              isMr ? 'बैठकीचा विषय व वेळ निश्चित करा' : 'Set meeting topic, date & time',
+                              style: const TextStyle(
+                                color: Color(0xFF64748B),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () async {
-                          final picked = await showTimePicker(
-                            context: context,
-                            initialTime: selectedTime,
-                          );
-                          if (picked != null) {
-                            setDlgState(() => selectedTime = picked);
-                          }
-                        },
-                        icon: const Icon(Icons.access_time, size: 16),
-                        label: Text(selectedTime.format(context), style: const TextStyle(fontSize: 12)),
-                      ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                      onPressed: () => Navigator.pop(ctx),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                const Text('Meeting Agenda / Notes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: notesController,
-                  maxLines: 2,
-                  decoration: InputDecoration(
-                    hintText: 'Optional agenda details...',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    contentPadding: const EdgeInsets.all(10),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0284C7),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              onPressed: () async {
-                final title = titleController.text.trim();
-                if (title.isEmpty) return;
+              const Divider(height: 1),
 
-                final scheduled = DateTime(
-                  selectedDate.year,
-                  selectedDate.month,
-                  selectedDate.day,
-                  selectedTime.hour,
-                  selectedTime.minute,
-                );
+              // Content
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    _fieldLabel(isMr ? 'बैठकीचा विषय / शीर्षक' : 'Meeting Topic / Title', isRequired: true),
+                    TextField(
+                      controller: titleController,
+                      decoration: _inputDec(
+                        hint: isMr ? 'उदा. प्रभाग विकास चर्चा' : 'e.g. Ward Development Discussion',
+                        prefixIcon: const Icon(Icons.title_rounded, size: 18, color: Color(0xFF64748B)),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
 
-                final slug = title.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '-').replaceAll(RegExp(r'-+'), '-');
-                final rand = DateTime.now().millisecondsSinceEpoch % 10000;
-                final link = 'https://meet.jit.si/nagarsevak-$slug-$rand';
+                    // Date & Time Side-by-side
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _fieldLabel(isMr ? 'तारीख' : 'Meeting Date', isRequired: true),
+                              InkWell(
+                                onTap: () async {
+                                  final picked = await showDatePicker(
+                                    context: context,
+                                    initialDate: selectedDate,
+                                    firstDate: DateTime.now(),
+                                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                                  );
+                                  if (picked != null) {
+                                    setDlgState(() => selectedDate = picked);
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: const Color(0xFFCBD5E1)),
+                                    borderRadius: BorderRadius.circular(10),
+                                    color: Colors.white,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.calendar_today_rounded, size: 16, color: Color(0xFF0284C7)),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        DateFormat('dd MMM yyyy').format(selectedDate),
+                                        style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A), fontWeight: FontWeight.w500),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _fieldLabel(isMr ? 'वेळ' : 'Meeting Time', isRequired: true),
+                              InkWell(
+                                onTap: () async {
+                                  final picked = await showTimePicker(
+                                    context: context,
+                                    initialTime: selectedTime,
+                                  );
+                                  if (picked != null) {
+                                    setDlgState(() => selectedTime = picked);
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: const Color(0xFFCBD5E1)),
+                                    borderRadius: BorderRadius.circular(10),
+                                    color: Colors.white,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.access_time_rounded, size: 16, color: Color(0xFF0284C7)),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        selectedTime.format(context),
+                                        style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A), fontWeight: FontWeight.w500),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
 
-                final newMeeting = ConferenceMeetingModel(
-                  id: 'conf-${DateTime.now().millisecondsSinceEpoch}',
-                  title: title,
-                  meetLink: link,
-                  scheduledAt: scheduled,
-                  createdAt: DateTime.now(),
-                  status: 'scheduled',
-                  invitedCount: 0,
-                  notes: notesController.text.trim(),
-                );
+                    // Meeting Agenda / Notes
+                    _fieldLabel(isMr ? 'अजेंडा / टिपणी (ऐच्छिक)' : 'Meeting Agenda / Notes (Optional)'),
+                    TextField(
+                      controller: notesController,
+                      maxLines: 3,
+                      decoration: _inputDec(
+                        hint: isMr ? 'बैठकीतील महत्त्वाचे मुद्दे...' : 'Optional agenda details or notes...',
+                      ),
+                    ),
+                    const SizedBox(height: 22),
 
-                try {
-                  final client = SupabaseService.instance.client;
-                  final tenantId = SupabaseService.instance.activeTenantId;
-                  await client.from('conference_meetings').insert(newMeeting.toJson(tenantId: tenantId));
-                } catch (_) {}
+                    // Submit Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0284C7),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          elevation: 0,
+                        ),
+                        icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
+                        label: Text(
+                          isMr ? 'बैठक आयोजित करा' : 'Schedule Meeting',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
+                        onPressed: () async {
+                          final title = titleController.text.trim();
+                          if (title.isEmpty) return;
 
-                setState(() {
-                  _meetings.insert(0, newMeeting);
-                });
+                          final scheduled = DateTime(
+                            selectedDate.year,
+                            selectedDate.month,
+                            selectedDate.day,
+                            selectedTime.hour,
+                            selectedTime.minute,
+                          );
 
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Conference Meeting scheduled successfully!')),
-                );
-              },
-              child: const Text('Create Meeting'),
-            ),
-          ],
+                          final slug = title.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '-').replaceAll(RegExp(r'-+'), '-');
+                          final rand = DateTime.now().millisecondsSinceEpoch % 10000;
+                          final link = 'https://meet.jit.si/nagarsevak-$slug-$rand';
+
+                          final newMeeting = ConferenceMeetingModel(
+                            id: 'conf-${DateTime.now().millisecondsSinceEpoch}',
+                            title: title,
+                            meetLink: link,
+                            scheduledAt: scheduled,
+                            createdAt: DateTime.now(),
+                            status: 'scheduled',
+                            invitedCount: 0,
+                            notes: notesController.text.trim(),
+                          );
+
+                          try {
+                            final client = SupabaseService.instance.client;
+                            final tenantId = SupabaseService.instance.activeTenantId;
+                            await client.from('conference_meetings').insert(newMeeting.toJson(tenantId: tenantId));
+                          } catch (_) {}
+
+                          setState(() {
+                            _meetings.insert(0, newMeeting);
+                          });
+
+                          Navigator.pop(ctx);
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(isMr ? 'कॉन्फरन्स बैठक यशस्वीरित्या नियोजित केली!' : 'Conference Meeting scheduled successfully!'),
+                                backgroundColor: const Color(0xFF0284C7),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   void _showInviteVoterDialog(ConferenceMeetingModel meeting) {
+    final isMr = ref.read(isMarathiProvider);
     final searchController = TextEditingController();
     List<VoterModel> voterList = [];
     final Set<String> selectedIds = {};
@@ -331,9 +503,7 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setSheetState) {
           void fetchVoters() async {
@@ -355,82 +525,146 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
             fetchVoters();
           }
 
-          return Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-              top: 16,
-              left: 16,
-              right: 16,
+          return Container(
+            height: MediaQuery.of(context).size.height * 0.80,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 20,
+                  offset: Offset(0, -4),
+                ),
+              ],
             ),
-            child: SizedBox(
-              height: MediaQuery.of(context).size.height * 0.75,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Drag Handle
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 5,
+                    margin: const EdgeInsets.only(top: 10, bottom: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                ),
+
+                // Header
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Invite Voters to Meeting',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.person_add_alt_1_rounded,
+                              color: Color(0xFF0284C7),
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                isMr ? 'मतदारांना आमंत्रित करा' : 'Invite Voters to Meeting',
+                                style: const TextStyle(
+                                  color: Color(0xFF0F172A),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 17.5,
+                                ),
+                              ),
+                              Text(
+                                meeting.title,
+                                style: const TextStyle(
+                                  color: Color(0xFF0284C7),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                       IconButton(
                         onPressed: () => Navigator.pop(ctx),
-                        icon: const Icon(Icons.close),
+                        icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
                       ),
                     ],
                   ),
-                  Text(
-                    meeting.title,
-                    style: const TextStyle(fontSize: 12, color: Color(0xFF0284C7), fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
+                ),
+                const Divider(height: 1),
+
+                // Search Bar
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  child: TextField(
                     controller: searchController,
-                    decoration: InputDecoration(
-                      hintText: 'Search voter by name...',
-                      prefixIcon: const Icon(Icons.search, size: 18),
-                      isDense: true,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: _inputDec(
+                      hint: isMr ? 'मतदाराचे नाव शोधा...' : 'Search voter by name...',
+                      prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFF64748B)),
                     ),
                     onSubmitted: (_) => fetchVoters(),
                   ),
-                  const SizedBox(height: 10),
-                  Expanded(
-                    child: isLoadingVoters
-                        ? const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)))
-                        : voterList.isEmpty
-                            ? const Center(child: Text('No voters found'))
-                            : ListView.separated(
-                                itemCount: voterList.length,
-                                separatorBuilder: (_, __) => const SizedBox(height: 6),
-                                itemBuilder: (context, idx) {
-                                  final v = voterList[idx];
-                                  final isSel = selectedIds.contains(v.id);
-                                  return CheckboxListTile(
-                                    value: isSel,
-                                    onChanged: (val) {
-                                      setSheetState(() {
-                                        if (val == true) {
-                                          selectedIds.add(v.id);
-                                        } else {
-                                          selectedIds.remove(v.id);
-                                        }
-                                      });
-                                    },
-                                    title: Text(v.displayName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                                    subtitle: Text('${v.mobile ?? '-'} · ${v.address}', style: const TextStyle(fontSize: 11)),
-                                    dense: true,
-                                    activeColor: const Color(0xFF0284C7),
-                                  );
-                                },
+                ),
+
+                // Voter List
+                Expanded(
+                  child: isLoadingVoters
+                      ? const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)))
+                      : voterList.isEmpty
+                          ? Center(
+                              child: Text(
+                                isMr ? 'कोणतेही मतदार आढळले नाहीत' : 'No voters found',
+                                style: const TextStyle(color: Color(0xFF64748B)),
                               ),
-                  ),
-                  const SizedBox(height: 10),
-                  SizedBox(
+                            )
+                          : ListView.separated(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              itemCount: voterList.length,
+                              separatorBuilder: (_, __) => const Divider(height: 1),
+                              itemBuilder: (context, idx) {
+                                final v = voterList[idx];
+                                final isSel = selectedIds.contains(v.id);
+                                return CheckboxListTile(
+                                  value: isSel,
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  onChanged: (val) {
+                                    setSheetState(() {
+                                      if (val == true) {
+                                        selectedIds.add(v.id);
+                                      } else {
+                                        selectedIds.remove(v.id);
+                                      }
+                                    });
+                                  },
+                                  title: Text(v.displayName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                                  subtitle: Text('${v.mobile ?? '-'} · ${v.address}', style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                                  dense: true,
+                                  activeColor: const Color(0xFF0284C7),
+                                );
+                              },
+                            ),
+                ),
+
+                // Footer button
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: SizedBox(
                     width: double.infinity,
-                    height: 46,
+                    height: 48,
                     child: ElevatedButton.icon(
                       onPressed: selectedIds.isEmpty
                           ? null
@@ -460,22 +694,30 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                               });
 
                               Navigator.pop(ctx);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Invited $count voters to the conference!')),
-                              );
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(isMr ? '$count मतदारांना बैठकीचे आमंत्रण पाठवले!' : 'Invited $count voters to the conference!'),
+                                    backgroundColor: const Color(0xFF0284C7),
+                                  ),
+                                );
+                              }
                             },
                       icon: const Icon(Icons.send_rounded, size: 18),
-                      label: Text('Send Meeting Invites (${selectedIds.length})'),
+                      label: Text(
+                        isMr ? 'आमंत्रण पाठवा (${selectedIds.length})' : 'Send Meeting Invites (${selectedIds.length})',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF0284C7),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        elevation: 0,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                ],
-              ),
+                ),
+              ],
             ),
           );
         },

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/survey_model.dart';
 import '../../../data/repositories/surveys_repository.dart';
+import '../../providers/auth_provider.dart';
 
 class CreateSurveyScreen extends ConsumerStatefulWidget {
   final SurveyModel? surveyToEdit;
@@ -150,8 +151,60 @@ class _CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
     }
   }
 
+  Widget _fieldLabel(String text, {bool isRequired = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: RichText(
+        text: TextSpan(
+          text: text,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF334155),
+          ),
+          children: isRequired
+              ? const [
+                  TextSpan(
+                    text: ' *',
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ]
+              : [],
+        ),
+      ),
+    );
+  }
+
+  InputDecoration _inputDec({String? hintText, Widget? prefixIcon, Widget? suffixIcon}) {
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+      prefixIcon: prefixIcon,
+      suffixIcon: suffixIcon,
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isMr = ref.read(isMarathiProvider);
     final isEdit = widget.surveyToEdit != null;
 
     return Scaffold(
@@ -164,7 +217,9 @@ class _CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          isEdit ? 'Edit Survey' : 'Create New Survey',
+          isEdit
+              ? (isMr ? 'सर्व्हेक्षण संपादित करा' : 'Edit Survey')
+              : (isMr ? 'नवीन सर्व्हेक्षण तयार करा' : 'Create New Survey'),
           style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
         ),
       ),
@@ -179,76 +234,109 @@ class _CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: const Color(0xFFE2E8F0)),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x08000000),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ],
               ),
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Survey Basic Information',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.info_outline_rounded, color: Color(0xFF0284C7), size: 18),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        isMr ? 'सर्व्हेक्षणाची मूलभूत माहिती' : 'Survey Basic Information',
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 14),
 
+                  _fieldLabel(isMr ? 'सर्व्हेक्षणाचा विषय / शीर्षक' : 'Survey Main Subject / Title', isRequired: true),
                   TextField(
                     controller: _titleCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Survey Main Subject / Title *',
-                      border: OutlineInputBorder(),
+                    decoration: _inputDec(
+                      hintText: isMr ? 'उदा. प्रभाग १२ विकास कामे जनमत' : 'e.g. Ward 12 Development Survey',
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
 
+                  _fieldLabel(isMr ? 'सर्व्हेक्षण तपशील व उद्दिष्ट' : 'Survey Details & Objective', isRequired: true),
                   TextField(
                     controller: _descCtrl,
                     maxLines: 3,
-                    decoration: const InputDecoration(
-                      labelText: 'Survey Details & Objective *',
-                      border: OutlineInputBorder(),
+                    decoration: _inputDec(
+                      hintText: isMr
+                          ? 'या सर्व्हेक्षणाचा मुख्य उद्देश व माहिती...'
+                          : 'Objective and instructions for this survey...',
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
 
+                  // Area & Target Sample Size side-by-side
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: DropdownButtonFormField<String>(
-                          value: _selectedArea,
-                          decoration: const InputDecoration(
-                            labelText: 'Ward / Area',
-                            border: OutlineInputBorder(),
-                          ),
-                          items: _prabhagAreas.map((a) {
-                            return DropdownMenuItem(value: a, child: Text(a));
-                          }).toList(),
-                          onChanged: (val) {
-                            if (val != null) setState(() => _selectedArea = val);
-                          },
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _fieldLabel(isMr ? 'प्रभाग / परिसर' : 'Ward / Area'),
+                            DropdownButtonFormField<String>(
+                              value: _selectedArea,
+                              decoration: _inputDec(),
+                              items: _prabhagAreas.map((a) {
+                                return DropdownMenuItem(value: a, child: Text(a, style: const TextStyle(fontSize: 13)));
+                              }).toList(),
+                              onChanged: (val) {
+                                if (val != null) setState(() => _selectedArea = val);
+                              },
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 12),
                       Expanded(
-                        child: TextField(
-                          controller: _targetCtrl,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'Sample Target (1% = 426)',
-                            border: OutlineInputBorder(),
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _fieldLabel(isMr ? 'नमुना उद्दिष्ट (1% = 426)' : 'Sample Target (1% = 426)'),
+                            TextField(
+                              controller: _targetCtrl,
+                              keyboardType: TextInputType.number,
+                              decoration: _inputDec(hintText: '426'),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
 
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Survey Status:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      Text(
+                        isMr ? 'सर्व्हेक्षण स्थिती:' : 'Survey Status:',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF334155)),
+                      ),
                       SegmentedButton<String>(
-                        segments: const [
-                          ButtonSegment(value: 'Active', label: Text('Active')),
-                          ButtonSegment(value: 'Draft', label: Text('Draft')),
+                        segments: [
+                          ButtonSegment(value: 'Active', label: Text(isMr ? 'सक्रिय' : 'Active')),
+                          ButtonSegment(value: 'Draft', label: Text(isMr ? 'मसुदा' : 'Draft')),
                         ],
                         selected: {_status},
                         onSelectionChanged: (set) => setState(() => _status = set.first),
@@ -265,14 +353,23 @@ class _CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Survey Questions',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                Row(
+                  children: [
+                    const Icon(Icons.help_outline_rounded, color: Color(0xFF0284C7), size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      isMr ? 'सर्व्हेक्षण प्रश्न' : 'Survey Questions',
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                    ),
+                  ],
                 ),
                 TextButton.icon(
                   onPressed: _addNewQuestion,
                   icon: const Icon(Icons.add_circle_outline_rounded, color: Color(0xFF0284C7)),
-                  label: const Text('Add Question', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
+                  label: Text(
+                    isMr ? 'प्रश्न जोडा' : 'Add Question',
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
+                  ),
                 ),
               ],
             ),
@@ -289,7 +386,7 @@ class _CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  border: Border.all(color: const Color(0xFFCBD5E1)),
                 ),
                 padding: const EdgeInsets.all(14),
                 child: Column(
@@ -298,7 +395,10 @@ class _CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Question ${idx + 1}', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
+                        Text(
+                          isMr ? 'प्रश्न ${idx + 1}' : 'Question ${idx + 1}',
+                          style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0284C7), fontSize: 14),
+                        ),
                         IconButton(
                           icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 20),
                           onPressed: () => _removeQuestion(idx),
@@ -307,41 +407,61 @@ class _CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
                     ),
                     const SizedBox(height: 6),
 
-                    TextField(
-                      controller: q.textController,
-                      decoration: const InputDecoration(
-                        labelText: 'Question Text *',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-
-                    DropdownButtonFormField<SurveyQuestionType>(
-                      value: q.type,
-                      decoration: const InputDecoration(
-                        labelText: 'Question Type',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: const [
-                        DropdownMenuItem(value: SurveyQuestionType.yesNo, child: Text('Yes / No')),
-                        DropdownMenuItem(value: SurveyQuestionType.mcq, child: Text('Multiple Choice (MCQ)')),
-                        DropdownMenuItem(value: SurveyQuestionType.rating, child: Text('Star Rating (1 to 5)')),
+                    // Question Text & Question Type side-by-side
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          flex: 6,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _fieldLabel(isMr ? 'प्रश्नाचा मजकूर' : 'Question Text', isRequired: true),
+                              TextField(
+                                controller: q.textController,
+                                decoration: _inputDec(
+                                  hintText: isMr ? 'उदा. तुम्हाला योजनेचा लाभ मिळाला का?' : 'e.g. Did you receive benefit?',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 4,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _fieldLabel(isMr ? 'प्रकार' : 'Question Type'),
+                              DropdownButtonFormField<SurveyQuestionType>(
+                                value: q.type,
+                                decoration: _inputDec(),
+                                isExpanded: true,
+                                items: const [
+                                  DropdownMenuItem(value: SurveyQuestionType.yesNo, child: Text('Yes / No', style: TextStyle(fontSize: 12))),
+                                  DropdownMenuItem(value: SurveyQuestionType.mcq, child: Text('MCQ Options', style: TextStyle(fontSize: 12))),
+                                  DropdownMenuItem(value: SurveyQuestionType.rating, child: Text('Star Rating', style: TextStyle(fontSize: 12))),
+                                ],
+                                onChanged: (val) {
+                                  if (val != null) {
+                                    setState(() {
+                                      q.type = val;
+                                      if (val == SurveyQuestionType.mcq && q.options.isEmpty) {
+                                        q.options = ['Option 1', 'Option 2', 'Option 3'];
+                                      }
+                                    });
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
-                      onChanged: (val) {
-                        if (val != null) {
-                          setState(() {
-                            q.type = val;
-                            if (val == SurveyQuestionType.mcq && q.options.isEmpty) {
-                              q.options = ['Option 1', 'Option 2', 'Option 3'];
-                            }
-                          });
-                        }
-                      },
                     ),
 
                     if (q.type == SurveyQuestionType.mcq) ...[
-                      const SizedBox(height: 10),
-                      const Text('Options:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 12),
+                      Text(isMr ? 'पर्याय:' : 'Options:', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
                       const SizedBox(height: 6),
                       Wrap(
                         spacing: 6,
@@ -349,6 +469,7 @@ class _CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
                         children: q.options.asMap().entries.map((optEntry) {
                           return Chip(
                             label: Text(optEntry.value),
+                            deleteIconColor: const Color(0xFFDC2626),
                             onDeleted: () {
                               setState(() => q.options.removeAt(optEntry.key));
                             },
@@ -359,7 +480,7 @@ class _CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
                       OutlinedButton.icon(
                         onPressed: () => _addOptionToMcq(q),
                         icon: const Icon(Icons.add, size: 14),
-                        label: const Text('Add New Option', style: TextStyle(fontSize: 11)),
+                        label: Text(isMr ? 'नवीन पर्याय जोडा' : 'Add New Option', style: const TextStyle(fontSize: 11)),
                       ),
                     ],
                   ],
@@ -370,16 +491,24 @@ class _CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
             const SizedBox(height: 20),
 
             // Save Button
-            ElevatedButton(
-              onPressed: _saveSurvey,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0284C7),
-                minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: Text(
-                isEdit ? 'Save Changes' : 'Create & Publish Survey',
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton.icon(
+                onPressed: _saveSurvey,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0284C7),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  elevation: 0,
+                ),
+                icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
+                label: Text(
+                  isEdit
+                      ? (isMr ? 'बदल जतन करा' : 'Save Changes')
+                      : (isMr ? 'सर्व्हेक्षण प्रकाशित करा' : 'Create & Publish Survey'),
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                ),
               ),
             ),
 

@@ -6,6 +6,7 @@ import '../../../data/models/voter_model.dart';
 import '../../../data/repositories/sadasya_repository.dart';
 import '../../../data/repositories/voters_repository.dart';
 import '../../navigation/app_drawer.dart';
+import '../../providers/auth_provider.dart';
 import 'sadasya_profile_screen.dart';
 import 'sadasya_report_generator.dart';
 
@@ -1092,6 +1093,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
   }
 
   void _openEditMemberDialog(SadasyaModel member) {
+    final isMr = ref.read(isMarathiProvider);
     final nameCtrl = TextEditingController(text: member.name);
     final mobileCtrl = TextEditingController(text: member.mobile);
     final ageCtrl = TextEditingController(text: member.age > 0 ? member.age.toString() : '');
@@ -1100,109 +1102,294 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
     final roleCtrl = TextEditingController(text: member.role ?? 'Active Member');
     String gender = member.gender;
 
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('Edit Member Details', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameCtrl,
-                  decoration: const InputDecoration(labelText: 'Full Name', border: OutlineInputBorder()),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: mobileCtrl,
-                  keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(labelText: 'Mobile Number', border: OutlineInputBorder()),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: ageCtrl,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: 'Age', border: OutlineInputBorder()),
-                      ),
+    InputDecoration inputDec({String? hint, String? prefixText}) {
+      return InputDecoration(
+        hintText: hint,
+        prefixText: prefixText,
+        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+        prefixStyle: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        filled: true,
+        fillColor: Colors.white,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1.0),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+        ),
+      );
+    }
+
+    Widget fieldLabel(String text, {bool isRequired = false}) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 5.0),
+        child: RichText(
+          text: TextSpan(
+            text: text,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+            children: isRequired
+                ? const [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        value: gender,
-                        decoration: const InputDecoration(labelText: 'Gender', border: OutlineInputBorder()),
-                        items: const [
-                          DropdownMenuItem(value: 'M', child: Text('Male')),
-                          DropdownMenuItem(value: 'F', child: Text('Female')),
-                          DropdownMenuItem(value: 'O', child: Text('Other')),
-                        ],
-                        onChanged: (val) {
-                          if (val != null) setDialogState(() => gender = val);
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: areaCtrl,
-                  decoration: const InputDecoration(labelText: 'Area / Region', border: OutlineInputBorder()),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: addressCtrl,
-                  decoration: const InputDecoration(labelText: 'Address', border: OutlineInputBorder()),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: roleCtrl,
-                  decoration: const InputDecoration(labelText: 'Role / Designation', border: OutlineInputBorder()),
-                ),
-              ],
-            ),
+                  ]
+                : [],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final name = nameCtrl.text.trim();
-                final mobile = mobileCtrl.text.trim();
-                if (name.isEmpty || mobile.isEmpty) return;
+        ),
+      );
+    }
 
-                final updated = member.copyWith(
-                  name: name,
-                  nameMarathi: name,
-                  mobile: mobile,
-                  age: int.tryParse(ageCtrl.text.trim()) ?? member.age,
-                  gender: gender,
-                  area: areaCtrl.text.trim(),
-                  address: addressCtrl.text.trim(),
-                  addressMarathi: addressCtrl.text.trim(),
-                  role: roleCtrl.text.trim(),
-                );
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => Container(
+          height: MediaQuery.of(ctx).size.height * 0.85,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 20,
+                offset: Offset(0, -4),
+              ),
+            ],
+          ),
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 8,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+          ),
+          child: Column(
+            children: [
+              // Top Drag Handle
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 5,
+                  margin: const EdgeInsets.only(top: 6, bottom: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.edit_note_rounded, color: Color(0xFF0284C7), size: 20),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      isMr ? 'सदस्य माहिती सुधारा' : 'Edit Member Details',
+                      style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                    onPressed: () => Navigator.pop(ctx),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Full Name & Mobile Number side-by-side
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'पूर्ण नाव' : 'Full Name', isRequired: true),
+                                TextField(
+                                  controller: nameCtrl,
+                                  decoration: inputDec(hint: isMr ? 'उदा. राहुल शिंदे' : 'e.g. Rahul Shinde'),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'मोबाईल नंबर' : 'Mobile Number', isRequired: true),
+                                TextField(
+                                  controller: mobileCtrl,
+                                  keyboardType: TextInputType.phone,
+                                  maxLength: 10,
+                                  buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
+                                  decoration: inputDec(prefixText: '+91 ', hint: '98xxxxxxxx'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
 
-                final messenger = ScaffoldMessenger.of(context);
-                Navigator.pop(ctx);
-                final repo = ref.read(sadasyaRepoProvider);
-                await repo.updateSadasya(updated);
-                await _loadMembers();
+                      // Age & Gender side-by-side
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'वय' : 'Age'),
+                                TextField(
+                                  controller: ageCtrl,
+                                  keyboardType: TextInputType.number,
+                                  decoration: inputDec(hint: 'e.g. 32'),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'लिंग' : 'Gender'),
+                                DropdownButtonFormField<String>(
+                                  initialValue: gender,
+                                  decoration: inputDec(),
+                                  items: [
+                                    DropdownMenuItem(value: 'M', child: Text(isMr ? 'पुरुष' : 'Male')),
+                                    DropdownMenuItem(value: 'F', child: Text(isMr ? 'महिला' : 'Female')),
+                                    DropdownMenuItem(value: 'O', child: Text(isMr ? 'इतर' : 'Other')),
+                                  ],
+                                  onChanged: (val) {
+                                    if (val != null) setDialogState(() => gender = val);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
 
-                if (!mounted) return;
-                messenger.showSnackBar(
-                  const SnackBar(content: Text('Member details updated successfully!')),
-                );
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0284C7)),
-              child: const Text('Save', style: TextStyle(color: Colors.white)),
-            ),
-          ],
+                      // Area & Role side-by-side
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'परिसर / प्रभाग' : 'Area / Region'),
+                                TextField(
+                                  controller: areaCtrl,
+                                  decoration: inputDec(hint: isMr ? 'उदा. शनिवार पेठ' : 'e.g. Shaniwar Peth'),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'पद / जबाबदारी' : 'Role / Designation'),
+                                TextField(
+                                  controller: roleCtrl,
+                                  decoration: inputDec(hint: isMr ? 'उदा. बूथ प्रमुख' : 'e.g. Booth In-charge'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Address
+                      fieldLabel(isMr ? 'पत्ता' : 'Residential Address'),
+                      TextField(
+                        controller: addressCtrl,
+                        maxLines: 2,
+                        decoration: inputDec(hint: isMr ? 'घर क्र., लेन, परिसर...' : 'House no, street...'),
+                      ),
+                      const SizedBox(height: 20),
+
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            final name = nameCtrl.text.trim();
+                            final mobile = mobileCtrl.text.trim();
+                            if (name.isEmpty || mobile.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(isMr ? 'कृपया नाव आणि मोबाईल नंबर भरा' : 'Please enter name and mobile')),
+                              );
+                              return;
+                            }
+
+                            final updated = member.copyWith(
+                              name: name,
+                              nameMarathi: name,
+                              mobile: mobile,
+                              age: int.tryParse(ageCtrl.text.trim()) ?? member.age,
+                              gender: gender,
+                              area: areaCtrl.text.trim(),
+                              address: addressCtrl.text.trim(),
+                              addressMarathi: addressCtrl.text.trim(),
+                              role: roleCtrl.text.trim(),
+                            );
+
+                            final messenger = ScaffoldMessenger.of(context);
+                            Navigator.pop(ctx);
+                            final repo = ref.read(sadasyaRepoProvider);
+                            await repo.updateSadasya(updated);
+                            await _loadMembers();
+
+                            if (!mounted) return;
+                            messenger.showSnackBar(
+                              SnackBar(
+                                content: Text(isMr ? 'सदस्य माहिती अद्यतनित केली!' : 'Member details updated successfully!'),
+                                backgroundColor: const Color(0xFF16A34A),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0284C7),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          child: Text(
+                            isMr ? 'बदल जतन करा' : 'Save Changes',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1317,43 +1504,103 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
     }
   }
 
+  InputDecoration _inputDec({String? hint, String? prefixText}) {
+    return InputDecoration(
+      hintText: hint,
+      prefixText: prefixText,
+      hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+      prefixStyle: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      filled: true,
+      fillColor: Colors.white,
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1.0),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+      ),
+    );
+  }
+
+  Widget _fieldLabel(String text, {bool isRequired = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 5.0),
+      child: RichText(
+        text: TextSpan(
+          text: text,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+          children: isRequired
+              ? const [
+                  TextSpan(
+                    text: ' *',
+                    style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                  ),
+                ]
+              : [],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isMr = ref.watch(isMarathiProvider);
+
     return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
+      height: MediaQuery.of(context).size.height * 0.88,
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 20,
+            offset: Offset(0, -4),
+          ),
+        ],
       ),
       child: Column(
         children: [
           // Drag handle
           Center(
             child: Container(
-              margin: const EdgeInsets.only(top: 12),
-              width: 40,
-              height: 4,
+              margin: const EdgeInsets.only(top: 8, bottom: 8),
+              width: 44,
+              height: 5,
               decoration: BoxDecoration(
                 color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
+                borderRadius: BorderRadius.circular(3),
               ),
             ),
           ),
-          const SizedBox(height: 12),
 
           // Header
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Add New Party Member',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.person_add_alt_1_rounded, color: Color(0xFF0284C7), size: 20),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    isMr ? 'नवीन पक्ष सदस्य नोंदणी' : 'Add New Party Member',
+                    style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close_rounded),
+                  icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
                   onPressed: () => Navigator.pop(context),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
                 ),
               ],
             ),
@@ -1366,14 +1613,14 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
             unselectedLabelColor: const Color(0xFF64748B),
             indicatorColor: const Color(0xFF0284C7),
             indicatorWeight: 3,
-            tabs: const [
+            tabs: [
               Tab(
-                icon: Icon(Icons.how_to_vote_rounded, size: 18),
-                text: 'Add from Voter List',
+                icon: const Icon(Icons.how_to_vote_rounded, size: 18),
+                text: isMr ? 'मतदार यादीतून जोडा' : 'Add from Voter List',
               ),
               Tab(
-                icon: Icon(Icons.edit_note_rounded, size: 18),
-                text: 'Direct Registration',
+                icon: const Icon(Icons.edit_note_rounded, size: 18),
+                text: isMr ? 'थेट नोंदणी' : 'Direct Registration',
               ),
             ],
           ),
@@ -1394,6 +1641,8 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
   }
 
   Widget _buildVoterSearchTab() {
+    final isMr = ref.watch(isMarathiProvider);
+
     if (_selectedVoter != null) {
       // Step 2: Confirm selected voter
       return SingleChildScrollView(
@@ -1404,17 +1653,17 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
             Row(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.arrow_back_rounded),
+                  icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0284C7)),
                   onPressed: () => setState(() => _selectedVoter = null),
                 ),
                 const SizedBox(width: 4),
-                const Text(
-                  'Confirm Member Details',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                Text(
+                  isMr ? 'सदस्य तपशील निश्चित करा' : 'Confirm Member Details',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
@@ -1437,39 +1686,67 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
               ),
             ),
             const SizedBox(height: 16),
-            TextField(
-              controller: _confirmMobileCtrl,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                labelText: 'Mobile Number *',
-                border: OutlineInputBorder(),
-              ),
+
+            // Mobile & Area side-by-side
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _fieldLabel(isMr ? 'मोबाईल नंबर' : 'Mobile Number', isRequired: true),
+                      TextField(
+                        controller: _confirmMobileCtrl,
+                        keyboardType: TextInputType.phone,
+                        maxLength: 10,
+                        buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
+                        decoration: _inputDec(prefixText: '+91 ', hint: '98xxxxxxxx'),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _fieldLabel(isMr ? 'परिसर / प्रभाग' : 'Area / Region', isRequired: true),
+                      TextField(
+                        controller: _confirmAreaCtrl,
+                        decoration: _inputDec(hint: isMr ? 'उदा. शनिवार पेठ' : 'e.g. Shaniwar Peth'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
-            TextField(
-              controller: _confirmAreaCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Area / Region *',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
+
+            // Role / Designation
+            _fieldLabel(isMr ? 'पद / जबाबदारी' : 'Role / Designation (e.g. Booth Head)'),
             TextField(
               controller: _confirmRoleCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Role / Designation (e.g. Booth Head)',
-                border: OutlineInputBorder(),
-              ),
+              decoration: _inputDec(hint: isMr ? 'उदा. बूथ प्रमुख' : 'e.g. Booth Head'),
             ),
             const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _saveSelectedVoterAsMember,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0284C7),
-                minimumSize: const Size(double.infinity, 48),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: _saveSelectedVoterAsMember,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0284C7),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: Text(
+                  isMr ? 'सदस्य म्हणून जोडा' : 'Add as Member',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                ),
               ),
-              child: const Text('Add as Member', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -1484,23 +1761,24 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
             controller: _voterSearchCtrl,
             onChanged: _searchVoters,
             decoration: InputDecoration(
-              hintText: 'Search by voter name, EPIC No. or mobile...',
+              hintText: isMr ? 'मतदाराचे नाव, EPIC किंवा मोबाईलने शोधा...' : 'Search by voter name, EPIC No. or mobile...',
               prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF0284C7)),
               filled: true,
               fillColor: const Color(0xFFF8FAFC),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
             ),
           ),
           const SizedBox(height: 12),
           if (_isSearchingVoters)
             const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()))
           else if (_voterResults.isEmpty)
-            const Expanded(
+            Expanded(
               child: Center(
                 child: Text(
-                  'Type voter name or EPIC number above to search voters',
+                  isMr ? 'मतदार शोधण्यासाठी वरील चौकटीत नाव किंवा EPIC नंबर टाका' : 'Type voter name or EPIC number above to search voters',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                  style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
                 ),
               ),
             )
@@ -1540,73 +1818,151 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
   }
 
   Widget _buildManualEntryTab() {
+    final isMr = ref.watch(isMarathiProvider);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          TextField(
-            controller: _manualNameCtrl,
-            decoration: const InputDecoration(labelText: 'Full Name *', border: OutlineInputBorder()),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _manualMobileCtrl,
-            keyboardType: TextInputType.phone,
-            decoration: const InputDecoration(labelText: 'Mobile Number *', border: OutlineInputBorder()),
-          ),
-          const SizedBox(height: 12),
+          // Full Name & Mobile side-by-side
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: TextField(
-                  controller: _manualAgeCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Age', border: OutlineInputBorder()),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _fieldLabel(isMr ? 'पूर्ण नाव' : 'Full Name', isRequired: true),
+                    TextField(
+                      controller: _manualNameCtrl,
+                      decoration: _inputDec(hint: isMr ? 'उदा. राहुल शिंदे' : 'e.g. Rahul Shinde'),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: _manualGender,
-                  decoration: const InputDecoration(labelText: 'Gender', border: OutlineInputBorder()),
-                  items: const [
-                    DropdownMenuItem(value: 'M', child: Text('Male')),
-                    DropdownMenuItem(value: 'F', child: Text('Female')),
-                    DropdownMenuItem(value: 'O', child: Text('Other')),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _fieldLabel(isMr ? 'मोबाईल नंबर' : 'Mobile Number', isRequired: true),
+                    TextField(
+                      controller: _manualMobileCtrl,
+                      keyboardType: TextInputType.phone,
+                      maxLength: 10,
+                      buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
+                      decoration: _inputDec(prefixText: '+91 ', hint: '98xxxxxxxx'),
+                    ),
                   ],
-                  onChanged: (val) {
-                    if (val != null) setState(() => _manualGender = val);
-                  },
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          TextField(
-            controller: _manualAreaCtrl,
-            decoration: const InputDecoration(labelText: 'Area / Region (e.g. Shaniwar Peth) *', border: OutlineInputBorder()),
+
+          // Age & Gender side-by-side
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _fieldLabel(isMr ? 'वय' : 'Age'),
+                    TextField(
+                      controller: _manualAgeCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: _inputDec(hint: 'e.g. 32'),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _fieldLabel(isMr ? 'लिंग' : 'Gender'),
+                    DropdownButtonFormField<String>(
+                      initialValue: _manualGender,
+                      decoration: _inputDec(),
+                      items: [
+                        DropdownMenuItem(value: 'M', child: Text(isMr ? 'पुरुष' : 'Male')),
+                        DropdownMenuItem(value: 'F', child: Text(isMr ? 'महिला' : 'Female')),
+                        DropdownMenuItem(value: 'O', child: Text(isMr ? 'इतर' : 'Other')),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) setState(() => _manualGender = val);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
+
+          // Area & Role side-by-side
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _fieldLabel(isMr ? 'परिसर / प्रभाग' : 'Area / Region', isRequired: true),
+                    TextField(
+                      controller: _manualAreaCtrl,
+                      decoration: _inputDec(hint: isMr ? 'उदा. शनिवार पेठ' : 'e.g. Shaniwar Peth'),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _fieldLabel(isMr ? 'पद / जबाबदारी' : 'Role / Designation'),
+                    TextField(
+                      controller: _manualRoleCtrl,
+                      decoration: _inputDec(hint: isMr ? 'उदा. बूथ प्रमुख' : 'e.g. Active Member'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Residential Address
+          _fieldLabel(isMr ? 'पत्ता' : 'Residential Address', isRequired: true),
           TextField(
             controller: _manualAddressCtrl,
-            decoration: const InputDecoration(labelText: 'Residential Address *', border: OutlineInputBorder()),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _manualRoleCtrl,
-            decoration: const InputDecoration(labelText: 'Role / Designation', border: OutlineInputBorder()),
+            maxLines: 2,
+            decoration: _inputDec(hint: isMr ? 'घर क्र., लेन, परिसर...' : 'House no, street...'),
           ),
           const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: _saveManualMember,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0284C7),
-              minimumSize: const Size(double.infinity, 48),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: _saveManualMember,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0284C7),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: Text(
+                isMr ? 'सदस्य नोंदणी करा' : 'Register Member',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              ),
             ),
-            child: const Text('Register Member', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
+          const SizedBox(height: 10),
         ],
       ),
     );
