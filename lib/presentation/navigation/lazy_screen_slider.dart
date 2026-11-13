@@ -195,15 +195,15 @@ class _LazyScreenSliderState extends State<LazyScreenSlider>
           _isDragging = false;
           final velocity = details.primaryVelocity ?? 0.0;
 
-          // 1) Swipe Right (finger moves left-to-right > 65px or velocity > 300) -> Navigate Back / Previous!
-          if ((_horizontalDragDelta > 65.0 || velocity > 300.0) && widget.onSwipeRight != null) {
+          // 1) Swipe Right (finger moves left-to-right > 40px or velocity > 200) -> Navigate Back / Previous!
+          if ((_horizontalDragDelta > 40.0 || velocity > 200.0) && widget.onSwipeRight != null) {
             HapticFeedback.lightImpact();
             widget.onSwipeRight!();
             return;
           }
 
-          // 2) Swipe Left (finger moves right-to-left < -65px or velocity < -300) -> Navigate Forward / Next!
-          if ((_horizontalDragDelta < -65.0 || velocity < -300.0) && widget.onSwipeLeft != null) {
+          // 2) Swipe Left (finger moves right-to-left < -40px or velocity < -200) -> Navigate Forward / Next!
+          if ((_horizontalDragDelta < -40.0 || velocity < -200.0) && widget.onSwipeLeft != null) {
             HapticFeedback.lightImpact();
             widget.onSwipeLeft!();
             return;
