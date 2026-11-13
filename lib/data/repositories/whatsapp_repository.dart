@@ -14,7 +14,13 @@ final whatsAppRepoProvider = Provider<WhatsAppRepository>((ref) {
 
 class WhatsAppRepository {
   final VotersRepository votersRepo;
-  final SupabaseClient _client = SupabaseService.instance.client;
+  SupabaseClient? get _client {
+    try {
+      return SupabaseService.instance.client;
+    } catch (_) {
+      return null;
+    }
+  }
   String? get _tenantId => SupabaseService.instance.activeTenantId;
 
   WhatsAppRepository({required this.votersRepo});
@@ -214,7 +220,9 @@ class WhatsAppRepository {
     String? booth,
   }) async {
     try {
-      var query = _client
+      final client = _client;
+      if (client == null) throw Exception('Supabase offline');
+      var query = client
           .from('voters')
           .select('*')
           .not('mobile', 'is', null)
@@ -300,7 +308,9 @@ class WhatsAppRepository {
 
   Future<List<WhatsAppBroadcastModel>> getBroadcastHistory() async {
     try {
-      var query = _client.from('message_logs').select('*').eq('channel', 'whatsapp');
+      final client = _client;
+      if (client == null) throw Exception('Supabase offline');
+      var query = client.from('message_logs').select('*').eq('channel', 'whatsapp');
       if (_tenantId != null && _tenantId!.isNotEmpty) {
         query = query.eq('tenant_id', _tenantId!);
       }
@@ -340,8 +350,11 @@ class WhatsAppRepository {
     );
 
     try {
-      final payload = newBroadcast.toJson(tenantId: _tenantId);
-      await _client.from('message_logs').insert(payload);
+      final client = _client;
+      if (client != null) {
+        final payload = newBroadcast.toJson(tenantId: _tenantId);
+        await client.from('message_logs').insert(payload);
+      }
     } catch (_) {}
 
     _seedBroadcasts.insert(0, newBroadcast);

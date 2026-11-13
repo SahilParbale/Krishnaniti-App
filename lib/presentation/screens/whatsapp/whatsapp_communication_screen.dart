@@ -23,7 +23,7 @@ class WhatsAppCommunicationScreen extends ConsumerStatefulWidget {
 
 class _WhatsAppCommunicationScreenState
     extends ConsumerState<WhatsAppCommunicationScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late TabController _tabController;
 
   // Filter controllers
@@ -606,26 +606,41 @@ class _WhatsAppCommunicationScreenState
                       ),
                       labelColor: Colors.white,
                       unselectedLabelColor: const Color(0xFF64748B),
-                      labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      labelStyle: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                      labelPadding: const EdgeInsets.symmetric(horizontal: 2),
                       dividerColor: Colors.transparent,
                       tabs: const [
                         Tab(
                           child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.send_rounded, size: 14),
-                              SizedBox(width: 5),
-                              Text('Send WhatsApp'),
+                              Icon(Icons.send_rounded, size: 13),
+                              SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  'Send Message',
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ),
                             ],
                           ),
                         ),
                         Tab(
                           child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.history_rounded, size: 14),
-                              SizedBox(width: 5),
-                              Text('History & Reports'),
+                              Icon(Icons.history_rounded, size: 13),
+                              SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  'History',
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ),
                             ],
                           ),
                         ),

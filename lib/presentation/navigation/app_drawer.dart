@@ -24,22 +24,22 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
   @override
   void initState() {
     super.initState();
-    // Default open groups matching user workflow in Nagarsevak-Managment (only daily_work initially open for compact look)
+    // All groups and subpages open by default as requested
     _openGroups = {
       'daily_work': true,
       'ward_info': true,
       'municipal': true,
-      'media': false,
-      'programs': false,
-      'political': false,
-      'public_comm': false,
+      'media': true,
+      'programs': true,
+      'political': true,
+      'public_comm': true,
     };
   }
 
   void _toggleGroup(String groupId) {
     HapticFeedback.selectionClick();
     setState(() {
-      _openGroups[groupId] = !(_openGroups[groupId] ?? false);
+      _openGroups[groupId] = !(_openGroups[groupId] ?? true);
     });
   }
 
@@ -239,10 +239,10 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
                 _DrawerGroupHeader(
                   title: 'Daily work',
                   icon: Icons.business_center_outlined,
-                  isOpen: _openGroups['daily_work'] ?? false,
+                  isOpen: _openGroups['daily_work'] ?? true,
                   onToggle: () => _toggleGroup('daily_work'),
                 ),
-                if (_openGroups['daily_work'] ?? false) ...[
+                if (_openGroups['daily_work'] ?? true) ...[
                   _DrawerSubItem(
                     icon: Icons.assignment_outlined,
                     title: 'Requests & Complaints',
@@ -313,10 +313,10 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
                 _DrawerGroupHeader(
                   title: 'Ward information',
                   icon: Icons.info_outline_rounded,
-                  isOpen: _openGroups['ward_info'] ?? false,
+                  isOpen: _openGroups['ward_info'] ?? true,
                   onToggle: () => _toggleGroup('ward_info'),
                 ),
-                if (_openGroups['ward_info'] ?? false) ...[
+                if (_openGroups['ward_info'] ?? true) ...[
                   _DrawerSubItem(
                     icon: Icons.warning_amber_rounded,
                     title: 'Ward Problems',
@@ -387,10 +387,10 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
                 _DrawerGroupHeader(
                   title: 'Municipal work',
                   icon: Icons.account_balance_outlined,
-                  isOpen: _openGroups['municipal'] ?? false,
+                  isOpen: _openGroups['municipal'] ?? true,
                   onToggle: () => _toggleGroup('municipal'),
                 ),
-                if (_openGroups['municipal'] ?? false) ...[
+                if (_openGroups['municipal'] ?? true) ...[
                   _DrawerSubItem(
                     icon: Icons.menu_book_outlined,
                     title: 'GB Register',
@@ -443,10 +443,10 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
                 _DrawerGroupHeader(
                   title: 'Media & Promotion',
                   icon: Icons.campaign_outlined,
-                  isOpen: _openGroups['media'] ?? false,
+                  isOpen: _openGroups['media'] ?? true,
                   onToggle: () => _toggleGroup('media'),
                 ),
-                if (_openGroups['media'] ?? false) ...[
+                if (_openGroups['media'] ?? true) ...[
                   _DrawerSubItem(
                     icon: Icons.trending_up_rounded,
                     title: 'Social Analytics',
@@ -505,10 +505,10 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
                 _DrawerGroupHeader(
                   title: 'Programs and activities',
                   icon: Icons.event_available_outlined,
-                  isOpen: _openGroups['programs'] ?? false,
+                  isOpen: _openGroups['programs'] ?? true,
                   onToggle: () => _toggleGroup('programs'),
                 ),
-                if (_openGroups['programs'] ?? false) ...[
+                if (_openGroups['programs'] ?? true) ...[
                   _DrawerSubItem(
                     icon: Icons.event_outlined,
                     title: 'Events & Invites',
@@ -543,10 +543,10 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
                 _DrawerGroupHeader(
                   title: 'Political',
                   icon: Icons.flag_outlined,
-                  isOpen: _openGroups['political'] ?? false,
+                  isOpen: _openGroups['political'] ?? true,
                   onToggle: () => _toggleGroup('political'),
                 ),
-                if (_openGroups['political'] ?? false) ...[
+                if (_openGroups['political'] ?? true) ...[
                   _DrawerSubItem(
                     icon: Icons.bar_chart_rounded,
                     title: 'Result Analysis',
@@ -689,10 +689,10 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
                 _DrawerGroupHeader(
                   title: 'Public Communication',
                   icon: Icons.record_voice_over_outlined,
-                  isOpen: _openGroups['public_comm'] ?? false,
+                  isOpen: _openGroups['public_comm'] ?? true,
                   onToggle: () => _toggleGroup('public_comm'),
                 ),
-                if (_openGroups['public_comm'] ?? false) ...[
+                if (_openGroups['public_comm'] ?? true) ...[
                   _DrawerSubItem(
                     icon: Icons.sms_outlined,
                     title: 'Send SMS',

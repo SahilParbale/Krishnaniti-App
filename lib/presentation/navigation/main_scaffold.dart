@@ -368,12 +368,20 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
     final radialConfigs = customRadialKeys.map((k) => getModuleConfig(k)).toList();
     final radialItems = RadialQuickAccessMenu.buildItemsFromConfigs(radialConfigs);
 
-    final canPop = ref.watch(canPopProvider);
     final isGoingBack = ref.watch(isGoingBackProvider);
+    final main4Screens = [
+      customBottomKeys[0],
+      customBottomKeys[1],
+      customBottomKeys[2],
+      'profile_settings',
+    ];
 
     return PopScope(
-      canPop: !canPop && !_isRadialOpen,
+      canPop: false,
       onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+
+        // 1. If radial quick menu is open, dismantle/close it first
         if (_isRadialOpen) {
           setState(() {
             _isRadialOpen = false;
@@ -381,13 +389,29 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
           });
           return;
         }
-        if (!didPop) {
-          final popped = ref.read(activeScreenProvider.notifier).popScreen();
-          if (!popped) {
-            ref.read(activeScreenProvider.notifier).resetToDashboard();
-            ref.read(mainTabIndexProvider.notifier).setTab(0);
-          }
+
+        // 2. If an input popup / modal bottom sheet / dialog is open in Navigator, dismantle it first!
+        final nav = Navigator.of(context, rootNavigator: false);
+        if (nav.canPop()) {
+          nav.pop();
+          return;
         }
+        final rootNav = Navigator.of(context, rootNavigator: true);
+        if (rootNav.canPop()) {
+          rootNav.pop();
+          return;
+        }
+
+        // 3. Wherever the user is across the app, redirect back to the Dashboard page!
+        if (activeScreen != 'dashboard') {
+          HapticFeedback.lightImpact();
+          ref.read(activeScreenProvider.notifier).resetToDashboard();
+          ref.read(mainTabIndexProvider.notifier).setTab(0);
+          return;
+        }
+
+        // 4. If already on dashboard and no popups open, minimize/exit app cleanly
+        SystemNavigator.pop();
       },
       child: Stack(
         children: [
@@ -398,17 +422,34 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
               builders: _builders,
               isGoingBack: isGoingBack,
               onSwipeRight: () {
-                // Swipe Right -> Go back to previous screen or dashboard
-                final popped = ref.read(activeScreenProvider.notifier).popScreen();
-                if (!popped && index != 0) {
+                // Swipe Right (finger moves →):
+                // In the 4 main screens (Dashboard, Complaints, Letters, Profile), moves backward.
+                // Anywhere else in any subpage, redirects directly to Dashboard!
+                final idxIn4 = main4Screens.indexOf(activeScreen);
+                if (idxIn4 > 0) {
+                  final prevScreen = main4Screens[idxIn4 - 1];
+                  HapticFeedback.lightImpact();
+                  ref.read(activeScreenProvider.notifier).setScreen(prevScreen, isBack: true);
+                  if (prevScreen == 'dashboard') {
+                    ref.read(mainTabIndexProvider.notifier).setTab(0);
+                  }
+                } else if (activeScreen != 'dashboard') {
+                  HapticFeedback.lightImpact();
                   ref.read(activeScreenProvider.notifier).resetToDashboard();
                   ref.read(mainTabIndexProvider.notifier).setTab(0);
                 }
               },
               onSwipeLeft: () {
-                // Swipe Left -> Next screen in tab bar or sequence
-                if (index < screenKeys.length - 1) {
-                  ref.read(activeScreenProvider.notifier).setScreen(screenKeys[index + 1]);
+                // Swipe Left (finger moves ←):
+                // Moves forward across the 4 main screens (Dashboard -> Complaints -> Letters -> Profile)
+                final idxIn4 = main4Screens.indexOf(activeScreen);
+                if (idxIn4 != -1 && idxIn4 < main4Screens.length - 1) {
+                  final nextScreen = main4Screens[idxIn4 + 1];
+                  HapticFeedback.lightImpact();
+                  ref.read(activeScreenProvider.notifier).setScreen(nextScreen, isBack: false);
+                  if (nextScreen == 'dashboard') {
+                    ref.read(mainTabIndexProvider.notifier).setTab(0);
+                  }
                 }
               },
             ),

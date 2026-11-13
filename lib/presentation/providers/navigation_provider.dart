@@ -11,9 +11,9 @@ class ActiveScreenNotifier extends Notifier<String> {
   bool get isGoingBack => _isGoingBack;
   bool get canPop => _history.length > 1 && state != 'dashboard';
 
-  void pushScreen(String screenKey) {
+  void pushScreen(String screenKey, {bool isBack = false}) {
     if (state == screenKey) return;
-    _isGoingBack = false;
+    _isGoingBack = isBack;
     if (screenKey == 'dashboard') {
       _history.clear();
       _history.add('dashboard');
@@ -24,8 +24,8 @@ class ActiveScreenNotifier extends Notifier<String> {
     state = screenKey;
   }
 
-  void setScreen(String screenKey) {
-    pushScreen(screenKey);
+  void setScreen(String screenKey, {bool isBack = false}) {
+    pushScreen(screenKey, isBack: isBack);
   }
 
   bool popScreen() {

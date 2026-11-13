@@ -22,7 +22,7 @@ class WhatsAppCallingScreen extends ConsumerStatefulWidget {
 }
 
 class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late TabController _tabController;
   late AnimationController _pulseController;
   late Animation<double> _pulseAnim;
@@ -419,8 +419,26 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
                       indicatorSize: TabBarIndicatorSize.tab,
                       dividerColor: Colors.transparent,
                       tabs: const [
-                        Tab(icon: Icon(Icons.phone, size: 16), text: 'Make Call'),
-                        Tab(icon: Icon(Icons.history, size: 16), text: 'Call History'),
+                        Tab(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.phone, size: 14),
+                              SizedBox(width: 5),
+                              Text('Make Call'),
+                            ],
+                          ),
+                        ),
+                        Tab(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.history, size: 14),
+                              SizedBox(width: 5),
+                              Text('Call History'),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),

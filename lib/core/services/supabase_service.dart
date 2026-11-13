@@ -14,7 +14,18 @@ class SupabaseService {
     _activeTenantId = tenantId ?? AppConfig.defaultTenantId;
   }
 
-  SupabaseClient get client => Supabase.instance.client;
+  static SupabaseClient? _fallbackClient;
+
+  SupabaseClient get client {
+    try {
+      return Supabase.instance.client;
+    } catch (_) {
+      return _fallbackClient ??= SupabaseClient(
+        AppConfig.supabaseUrl,
+        AppConfig.supabaseAnonKey,
+      );
+    }
+  }
 
   static Future<void> initialize() async {
     await Supabase.initialize(
