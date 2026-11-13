@@ -146,6 +146,7 @@ class _CurvedBottomBarState extends State<CurvedBottomBar> {
             child: Listener(
               onPointerDown: (e) {
                 setState(() => _isFabPressed = true);
+                HapticFeedback.lightImpact();
                 widget.onFabPointerDown?.call(e);
               },
               onPointerMove: (e) {
@@ -160,9 +161,9 @@ class _CurvedBottomBarState extends State<CurvedBottomBar> {
                 widget.onFabPointerCancel?.call();
               },
               child: AnimatedScale(
-                scale: _isFabPressed ? 0.92 : 1.0,
-                duration: const Duration(milliseconds: 120),
-                curve: Curves.easeOutCubic,
+                scale: _isFabPressed ? 0.90 : 1.0,
+                duration: const Duration(milliseconds: 140),
+                curve: Curves.easeOutBack,
                   child: Container(
                     width: kFabOuterSize,
                     height: kFabOuterSize,
@@ -171,13 +172,13 @@ class _CurvedBottomBarState extends State<CurvedBottomBar> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.12),
-                          blurRadius: 10,
-                          offset: const Offset(0, 3),
+                          color: Colors.black.withValues(alpha: 0.10),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
                         ),
                         BoxShadow(
-                          color: const Color(0xFF0284C7).withValues(alpha: 0.20),
-                          blurRadius: 14,
+                          color: const Color(0xFF0284C7).withValues(alpha: _isFabPressed ? 0.35 : 0.22),
+                          blurRadius: _isFabPressed ? 18 : 14,
                           offset: const Offset(0, 2),
                         ),
                       ],
