@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../data/models/voter_model.dart';
 import '../../../data/repositories/voters_repository.dart';
+import '../../providers/auth_provider.dart';
 import '../../navigation/app_drawer.dart';
 import 'voter_profile_screen.dart';
 import 'voter_slip_generator.dart';
@@ -388,6 +389,512 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
     );
   }
 
+  void _showAddVoterModal() {
+    final isMr = ref.read(isMarathiProvider);
+    final epicNoCtrl = TextEditingController();
+    final mobileCtrl = TextEditingController();
+    final nameEnCtrl = TextEditingController();
+    final nameMrCtrl = TextEditingController();
+    final ageCtrl = TextEditingController();
+    String gender = 'M';
+    final casteCtrl = TextEditingController();
+    final addressEnCtrl = TextEditingController();
+    final addressMrCtrl = TextEditingController();
+    final houseCtrl = TextEditingController();
+    final wardCtrl = TextEditingController(text: '12');
+    final acCtrl = TextEditingController(text: '214');
+    final boothCtrl = TextEditingController(text: _selectedBooth != 'All' ? _selectedBooth : '२८/शनिवार पेठ');
+    final serialCtrl = TextEditingController();
+
+    Widget fieldLabel(String text, {bool isRequired = false}) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: RichText(
+          text: TextSpan(
+            text: text,
+            style: const TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF334155),
+            ),
+            children: isRequired
+                ? const [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ]
+                : [],
+          ),
+        ),
+      );
+    }
+
+    InputDecoration inputDec({String? hintText, Widget? prefixIcon, String? prefixText}) {
+      return InputDecoration(
+        hintText: hintText,
+        prefixIcon: prefixIcon,
+        prefixText: prefixText,
+        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+        prefixStyle: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+        ),
+      );
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) {
+          return Container(
+            height: MediaQuery.of(context).size.height * 0.90,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 20,
+                  offset: Offset(0, -4),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                // Drag handle
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 5,
+                    margin: const EdgeInsets.only(top: 10, bottom: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                ),
+                // Header
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(7),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.person_add_rounded,
+                              color: Color(0xFF0284C7),
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            isMr ? 'नवीन मतदार नोंदवा' : 'Add New Voter',
+                            style: const TextStyle(
+                              fontSize: 17.5,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      // Section 1: Basic Information
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isMr ? 'प्राथमिक माहिती (Basic Information)' : 'Basic Information',
+                              style: const TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            // EPIC No & Mobile
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      fieldLabel(isMr ? 'ओळखपत्र क्र. (EPIC No)' : 'EPIC No', isRequired: true),
+                                      TextField(
+                                        controller: epicNoCtrl,
+                                        textCapitalization: TextCapitalization.characters,
+                                        decoration: inputDec(hintText: 'MH/12/042/102941'),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      fieldLabel(isMr ? 'मोबाईल नंबर' : 'Mobile Number'),
+                                      TextField(
+                                        controller: mobileCtrl,
+                                        keyboardType: TextInputType.phone,
+                                        maxLength: 10,
+                                        buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
+                                        decoration: inputDec(prefixText: '+91 ', hintText: '98220xxxxx'),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+
+                            // Name English & Marathi
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      fieldLabel(isMr ? 'पूर्ण नाव (इंग्रजी)' : 'Full Name (English)', isRequired: true),
+                                      TextField(
+                                        controller: nameEnCtrl,
+                                        decoration: inputDec(hintText: 'e.g. Ramesh Kadam'),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      fieldLabel(isMr ? 'पूर्ण नाव (मराठी)' : 'Full Name (Marathi)'),
+                                      TextField(
+                                        controller: nameMrCtrl,
+                                        decoration: inputDec(hintText: 'उदा. रमेश कदम'),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+
+                            // Age & Gender
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      fieldLabel(isMr ? 'वय (Age)' : 'Age', isRequired: true),
+                                      TextField(
+                                        controller: ageCtrl,
+                                        keyboardType: TextInputType.number,
+                                        decoration: inputDec(hintText: 'e.g. 35'),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      fieldLabel(isMr ? 'लिंग (Gender)' : 'Gender', isRequired: true),
+                                      DropdownButtonFormField<String>(
+                                        initialValue: gender,
+                                        decoration: inputDec(),
+                                        items: [
+                                          DropdownMenuItem(value: 'M', child: Text(isMr ? 'पुरुष (Male)' : 'Male')),
+                                          DropdownMenuItem(value: 'F', child: Text(isMr ? 'महिला (Female)' : 'Female')),
+                                          DropdownMenuItem(value: 'O', child: Text(isMr ? 'इतर (Other)' : 'Other')),
+                                        ],
+                                        onChanged: (val) {
+                                          if (val != null) setModalState(() => gender = val);
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+
+                            // Caste
+                            fieldLabel(isMr ? 'जात / प्रवर्ग (Caste / Category)' : 'Caste / Category'),
+                            TextField(
+                              controller: casteCtrl,
+                              decoration: inputDec(hintText: isMr ? 'उदा. मराठा, ब्राह्मण, ओबीसी, इ.' : 'e.g. Open, OBC, SC, etc.'),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Section 2: Address & Booth Details
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isMr ? 'पत्ता व मतदान केंद्र तपशील (Address & Booth Details)' : 'Address & Booth Details',
+                              style: const TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            fieldLabel(isMr ? 'पत्ता (इंग्रजी)' : 'Address (English)'),
+                            TextField(
+                              controller: addressEnCtrl,
+                              maxLines: 2,
+                              decoration: inputDec(hintText: 'e.g. Sadashiv Sadan, Shaniwar Peth, Pune'),
+                            ),
+                            const SizedBox(height: 12),
+                            fieldLabel(isMr ? 'पत्ता (मराठी)' : 'Address (Marathi)'),
+                            TextField(
+                              controller: addressMrCtrl,
+                              maxLines: 2,
+                              decoration: inputDec(hintText: 'उदा. सदाशिव सदन, शनिवार पेठ, पुणे - ४११०३०'),
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      fieldLabel(isMr ? 'घर क्र. (House No)' : 'House No'),
+                                      TextField(
+                                        controller: houseCtrl,
+                                        decoration: inputDec(hintText: 'e.g. 42'),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      fieldLabel(isMr ? 'प्रभाग क्र. (Ward No)' : 'Ward No'),
+                                      TextField(
+                                        controller: wardCtrl,
+                                        decoration: inputDec(hintText: 'e.g. 12'),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      fieldLabel(isMr ? 'विधानसभा क्र. (AC No)' : 'AC No'),
+                                      TextField(
+                                        controller: acCtrl,
+                                        keyboardType: TextInputType.number,
+                                        decoration: inputDec(hintText: '214'),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      fieldLabel(isMr ? 'यादी भाग / केंद्र (Booth / Part No)' : 'Part / Booth No'),
+                                      TextField(
+                                        controller: boothCtrl,
+                                        decoration: inputDec(hintText: '२८/शनिवार पेठ'),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            fieldLabel(isMr ? 'यादीतील अनुक्रमांक (Serial No)' : 'Serial No in Electoral Roll'),
+                            TextField(
+                              controller: serialCtrl,
+                              keyboardType: TextInputType.number,
+                              decoration: inputDec(hintText: 'e.g. 145'),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Submit & Cancel Buttons
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 13),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              onPressed: () => Navigator.pop(ctx),
+                              child: Text(
+                                isMr ? 'रद्द करा' : 'Cancel',
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            flex: 2,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0284C7),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 13),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                elevation: 0,
+                              ),
+                              icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
+                              label: Text(
+                                isMr ? 'मतदार जतन करा' : 'Save Voter',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                              onPressed: () async {
+                                if (epicNoCtrl.text.trim().isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(isMr ? 'कृपया ओळखपत्र क्र. (EPIC No) प्रविष्ट करा.' : 'Please enter EPIC No.')),
+                                  );
+                                  return;
+                                }
+                                if (nameEnCtrl.text.trim().isEmpty && nameMrCtrl.text.trim().isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(isMr ? 'कृपया मतदाराचे नाव प्रविष्ट करा.' : 'Please enter voter name.')),
+                                  );
+                                  return;
+                                }
+                                if (ageCtrl.text.trim().isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(isMr ? 'कृपया वय प्रविष्ट करा.' : 'Please enter age.')),
+                                  );
+                                  return;
+                                }
+
+                                final epic = epicNoCtrl.text.trim().toUpperCase();
+                                final nameEn = nameEnCtrl.text.trim().isNotEmpty ? nameEnCtrl.text.trim() : nameMrCtrl.text.trim();
+                                final nameMr = nameMrCtrl.text.trim().isNotEmpty ? nameMrCtrl.text.trim() : nameEn;
+                                final age = int.tryParse(ageCtrl.text.trim()) ?? 18;
+                                final booth = boothCtrl.text.trim().isNotEmpty ? boothCtrl.text.trim() : '२८/शनिवार पेठ';
+                                final address = addressMrCtrl.text.trim().isNotEmpty
+                                    ? addressMrCtrl.text.trim()
+                                    : (addressEnCtrl.text.trim().isNotEmpty ? addressEnCtrl.text.trim() : 'शनिवार पेठ, पुणे');
+                                final serial = int.tryParse(serialCtrl.text.trim());
+
+                                final newVoter = VoterModel(
+                                  id: 'vtr-${DateTime.now().millisecondsSinceEpoch}',
+                                  nameMarathi: nameMr,
+                                  nameEnglish: nameEn,
+                                  epicNo: epic,
+                                  booth: booth,
+                                  serialNo: serial,
+                                  address: address,
+                                  houseNo: houseCtrl.text.trim().isNotEmpty ? houseCtrl.text.trim() : null,
+                                  age: age,
+                                  gender: gender,
+                                  mobile: mobileCtrl.text.trim().isNotEmpty ? mobileCtrl.text.trim() : null,
+                                  caste: casteCtrl.text.trim().isNotEmpty ? casteCtrl.text.trim() : null,
+                                  favour: 'Neutral',
+                                  isFriendRelative: false,
+                                  relationType: 'Self',
+                                );
+
+                                final messenger = ScaffoldMessenger.of(context);
+                                await ref.read(votersRepoProvider).addVoter(newVoter);
+
+                                if (ctx.mounted) Navigator.pop(ctx);
+                                if (!mounted) return;
+                                _loadVoters();
+
+                                messenger.showSnackBar(
+                                  SnackBar(
+                                    content: Text(isMr ? 'नवीन मतदार यशस्वीरित्या जोडला गेला!' : 'Voter added successfully!'),
+                                    backgroundColor: const Color(0xFF16A34A),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final filtered = _filteredVoters;
@@ -442,7 +949,14 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
             ),
           ],
         ),
-        actions: const [],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person_add_rounded, color: Colors.white),
+            tooltip: ref.watch(isMarathiProvider) ? 'मतदार जोडा' : 'Add Voter',
+            onPressed: _showAddVoterModal,
+          ),
+          const SizedBox(width: 4),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)))
@@ -482,6 +996,17 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                 ],
               ),
             ),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: const Color(0xFF0284C7),
+        foregroundColor: Colors.white,
+        elevation: 3,
+        icon: const Icon(Icons.person_add_alt_1_rounded),
+        label: Text(
+          ref.watch(isMarathiProvider) ? 'मतदार जोडा' : 'Add Voter',
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+        ),
+        onPressed: _showAddVoterModal,
+      ),
     );
   }
 

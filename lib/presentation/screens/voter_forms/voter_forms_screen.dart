@@ -102,7 +102,8 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
     String status = appToEdit?.status ?? 'Submitted';
     String? linkedVoterId = appToEdit?.voterId;
 
-    // Search state for existing voters
+    // Search Mode State
+    bool isSearchMode = false;
     final voterSearchCtrl = TextEditingController();
     List<VoterModel> voterSuggestions = [];
     bool isSearchingVoter = false;
@@ -114,7 +115,7 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
           text: TextSpan(
             text: text,
             style: const TextStyle(
-              fontSize: 13,
+              fontSize: 12.5,
               fontWeight: FontWeight.w600,
               color: Color(0xFF334155),
             ),
@@ -214,8 +215,8 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
                           const SizedBox(width: 10),
                           Text(
                             appToEdit == null
-                                ? (isMr ? 'नवीन अर्ज नोंदवा' : 'Log Voter Application')
-                                : (isMr ? 'अर्ज संपादित करा' : 'Edit Voter Application'),
+                                ? (isMr ? 'नवीन अर्ज नोंदवा' : 'Log New Application')
+                                : (isMr ? 'मतदार अर्ज नोंदी सुधारा' : 'Edit Voter Application'),
                             style: const TextStyle(
                               fontSize: 17.5,
                               fontWeight: FontWeight.bold,
@@ -236,107 +237,222 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
                   child: ListView(
                     padding: const EdgeInsets.all(16),
                     children: [
-                      // Optional Voter Auto-complete Search
-                      if (appToEdit == null) ...[
-                        fieldLabel(isMr ? 'मतदार यादीतून शोधा (पर्यायी)' : 'Search Name from Voter Roll (Optional)'),
-                        TextField(
-                          controller: voterSearchCtrl,
-                          decoration: inputDec(
-                            hintText: isMr ? 'नाव किंवा ओळखपत्र (EPIC) नंबर प्रविष्ट करा...' : 'Type name or EPIC number...',
-                            prefixIcon: const Icon(Icons.search, size: 20, color: Color(0xFF64748B)),
-                            suffixIcon: isSearchingVoter
-                                ? const Padding(
-                                    padding: EdgeInsets.all(12),
-                                    child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
-                                  )
-                                : null,
+                      // Link Voter Search Card (When not in search mode, no voter linked, and not editing)
+                      if (!isSearchMode && appToEdit == null && linkedVoterId == null) ...[
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF0F9FF),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFBAE6FD), style: BorderStyle.solid),
                           ),
-                          onChanged: (val) async {
-                            if (val.trim().length >= 2) {
-                              setModalState(() => isSearchingVoter = true);
-                              final repo = ref.read(voterApplicationsRepoProvider);
-                              final results = await repo.searchVoters(val);
-                              setModalState(() {
-                                voterSuggestions = results;
-                                isSearchingVoter = false;
-                              });
-                            } else {
-                              setModalState(() => voterSuggestions = []);
-                            }
-                          },
+                          child: Column(
+                            children: [
+                              Container(
+                                width: 38,
+                                height: 38,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFE0F2FE),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.person_search_rounded, color: Color(0xFF0284C7), size: 20),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                isMr ? 'मतदार यादीतून लिंक करा' : 'Link Voter from Roll',
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                isMr
+                                    ? 'मतदार यादीतील नाव शोधून अर्जाचे नाव व मोबाईल स्वयंचलित भरा'
+                                    : 'Search voter list to auto-fill applicant name and mobile',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                              ),
+                              const SizedBox(height: 10),
+                              OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  visualDensity: VisualDensity.compact,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                icon: const Icon(Icons.search, size: 16, color: Color(0xFF0284C7)),
+                                label: Text(
+                                  isMr ? 'मतदार यादी शोधा' : 'Search Voter Roll',
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
+                                ),
+                                onPressed: () => setModalState(() => isSearchMode = true),
+                              ),
+                            ],
+                          ),
                         ),
-                        if (voterSuggestions.isNotEmpty) ...[
-                          const SizedBox(height: 6),
-                          Container(
-                            constraints: const BoxConstraints(maxHeight: 160),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: const Color(0xFFCBD5E1)),
-                            ),
-                            child: ListView.separated(
-                              shrinkWrap: true,
-                              itemCount: voterSuggestions.length,
-                              separatorBuilder: (context, index) => const Divider(height: 1),
-                              itemBuilder: (context, idx) {
-                                final v = voterSuggestions[idx];
-                                return ListTile(
-                                  dense: true,
-                                  title: Text(v.displayName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                                  subtitle: Text('EPIC: ${v.epicNo} · Booth: ${v.booth}', style: const TextStyle(fontSize: 11)),
-                                  trailing: const Icon(Icons.check_circle_outline, color: Color(0xFF0284C7), size: 18),
-                                  onTap: () {
-                                    setModalState(() {
-                                      nameCtrl.text = v.displayName;
-                                      if (v.mobile != null) mobileCtrl.text = v.mobile!;
-                                      linkedVoterId = v.id;
-                                      voterSuggestions = [];
-                                      voterSearchCtrl.clear();
-                                    });
-                                  },
-                                );
-                              },
-                            ),
-                          ),
-                        ],
                         const SizedBox(height: 14),
                       ],
 
-                      // Applicant Name & Mobile Number side-by-side
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                fieldLabel(isMr ? 'अर्जदाराचे नाव' : 'Applicant Name', isRequired: true),
-                                TextField(
-                                  controller: nameCtrl,
-                                  decoration: inputDec(
-                                    hintText: isMr ? 'उदा. राहुल सुरेश शिंदे' : 'e.g. Rahul Suresh Shinde',
+                      // Dedicated Voter Search Panel
+                      if (isSearchMode) ...[
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFCBD5E1)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  TextButton.icon(
+                                    style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                                    icon: const Icon(Icons.arrow_back, size: 16),
+                                    label: Text(isMr ? 'अर्जाकडे परत जा' : 'Back to form', style: const TextStyle(fontSize: 12)),
+                                    onPressed: () => setModalState(() => isSearchMode = false),
+                                  ),
+                                  Text(
+                                    isMr ? 'मतदार शोधा' : 'Search Voter',
+                                    style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              TextField(
+                                controller: voterSearchCtrl,
+                                autofocus: true,
+                                decoration: inputDec(
+                                  hintText: isMr ? 'नाव, मोबाईल किंवा ओळखपत्र (EPIC) नंबर...' : 'Search by name, mobile or EPIC...',
+                                  prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF64748B)),
+                                  suffixIcon: isSearchingVoter
+                                      ? const Padding(
+                                          padding: EdgeInsets.all(12),
+                                          child: SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
+                                        )
+                                      : null,
+                                ),
+                                onChanged: (val) async {
+                                  if (val.trim().length >= 2) {
+                                    setModalState(() => isSearchingVoter = true);
+                                    final repo = ref.read(voterApplicationsRepoProvider);
+                                    final results = await repo.searchVoters(val);
+                                    setModalState(() {
+                                      voterSuggestions = results;
+                                      isSearchingVoter = false;
+                                    });
+                                  } else {
+                                    setModalState(() => voterSuggestions = []);
+                                  }
+                                },
+                              ),
+                              if (voterSuggestions.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                Container(
+                                  constraints: const BoxConstraints(maxHeight: 180),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                                  ),
+                                  child: ListView.separated(
+                                    shrinkWrap: true,
+                                    itemCount: voterSuggestions.length,
+                                    separatorBuilder: (_, index) => const Divider(height: 1),
+                                    itemBuilder: (context, idx) {
+                                      final v = voterSuggestions[idx];
+                                      return ListTile(
+                                        dense: true,
+                                        visualDensity: VisualDensity.compact,
+                                        title: Text(v.displayName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                                        subtitle: Text(
+                                          '${v.age}Y • ${v.gender} • EPIC: ${v.epicNo}',
+                                          style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                        ),
+                                        trailing: const Icon(Icons.add_circle_outline_rounded, color: Color(0xFF0284C7), size: 20),
+                                        onTap: () {
+                                          setModalState(() {
+                                            nameCtrl.text = v.displayName;
+                                            if (v.mobile != null && v.mobile!.isNotEmpty) {
+                                              mobileCtrl.text = v.mobile!;
+                                            }
+                                            linkedVoterId = v.id;
+                                            isSearchMode = false;
+                                            voterSuggestions = [];
+                                            voterSearchCtrl.clear();
+                                          });
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text(isMr ? 'मतदार लिंक केला!' : 'Voter linked successfully!'),
+                                              backgroundColor: const Color(0xFF16A34A),
+                                              duration: const Duration(seconds: 2),
+                                            ),
+                                          );
+                                        },
+                                      );
+                                    },
                                   ),
                                 ),
                               ],
-                            ),
+                            ],
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                fieldLabel(isMr ? 'मोबाईल नंबर' : 'Mobile Number'),
-                                TextField(
-                                  controller: mobileCtrl,
-                                  keyboardType: TextInputType.phone,
-                                  decoration: inputDec(
-                                    hintText: '98220xxxxx',
-                                  ),
+                        ),
+                        const SizedBox(height: 14),
+                      ],
+
+                      // Linked Voter Indicator Banner
+                      if (linkedVoterId != null && linkedVoterId!.isNotEmpty) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFDCFCE7),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFFBBF7D0)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.check_circle_rounded, size: 16, color: Color(0xFF16A34A)),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  '${isMr ? "मतदार ओळखपत्र क्र. शी लिंक केले" : "Linked to Voter ID"}: $linkedVoterId',
+                                  style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
                                 ),
-                              ],
-                            ),
+                              ),
+                              InkWell(
+                                onTap: () => setModalState(() => linkedVoterId = null),
+                                child: Text(
+                                  isMr ? 'काढून टाका' : 'Remove',
+                                  style: const TextStyle(fontSize: 11, color: Color(0xFFDC2626), decoration: TextDecoration.underline),
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
+                        const SizedBox(height: 14),
+                      ],
+
+                      // Applicant Name
+                      fieldLabel(isMr ? 'अर्जदाराचे नाव' : 'Applicant Name', isRequired: true),
+                      TextField(
+                        controller: nameCtrl,
+                        decoration: inputDec(
+                          hintText: isMr ? 'उदा. राहुल सुरेश शिंदे' : 'e.g. Rahul Suresh Shinde',
+                          prefixIcon: const Icon(Icons.person_outline_rounded, size: 18, color: Color(0xFF64748B)),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Applicant Mobile
+                      fieldLabel(isMr ? 'मोबाईल नंबर' : 'Applicant Mobile'),
+                      TextField(
+                        controller: mobileCtrl,
+                        keyboardType: TextInputType.phone,
+                        maxLength: 10,
+                        buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
+                        decoration: inputDec(
+                          prefixIcon: const Icon(Icons.phone_outlined, size: 18, color: Color(0xFF64748B)),
+                          hintText: '98220xxxxx',
+                        ),
                       ),
                       const SizedBox(height: 14),
 
@@ -350,13 +466,13 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
                               children: [
                                 fieldLabel(isMr ? 'अर्जाचा प्रकार' : 'Form Type', isRequired: true),
                                 DropdownButtonFormField<String>(
-                                  value: formType,
+                                  initialValue: formType,
                                   decoration: inputDec(),
                                   isExpanded: true,
                                   items: [
-                                    DropdownMenuItem(value: 'Form 6', child: Text(isMr ? 'नमुना ६ - नवीन नोंदणी' : 'Form 6 - New Reg', style: const TextStyle(fontSize: 12))),
-                                    DropdownMenuItem(value: 'Form 7', child: Text(isMr ? 'नमुना ७ - नाव वगळणे' : 'Form 7 - Deletion', style: const TextStyle(fontSize: 12))),
-                                    DropdownMenuItem(value: 'Form 8', child: Text(isMr ? 'नमुना ८ - दुरुस्ती' : 'Form 8 - Update', style: const TextStyle(fontSize: 12))),
+                                    DropdownMenuItem(value: 'Form 6', child: Text(isMr ? 'नमुना ६ (नवीन नोंदणी)' : 'Form 6 (New Reg)', style: const TextStyle(fontSize: 12))),
+                                    DropdownMenuItem(value: 'Form 7', child: Text(isMr ? 'नमुना ७ (नाव वगळणे)' : 'Form 7 (Deletion)', style: const TextStyle(fontSize: 12))),
+                                    DropdownMenuItem(value: 'Form 8', child: Text(isMr ? 'नमुना ८ (दुरुस्ती)' : 'Form 8 (Correction)', style: const TextStyle(fontSize: 12))),
                                     DropdownMenuItem(value: 'Search', child: Text(isMr ? 'यादी शोध साहाय्य' : 'Roll Search', style: const TextStyle(fontSize: 12))),
                                   ],
                                   onChanged: (val) {
@@ -373,7 +489,7 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
                               children: [
                                 fieldLabel(isMr ? 'अर्जाची स्थिती' : 'Status', isRequired: true),
                                 DropdownButtonFormField<String>(
-                                  value: status,
+                                  initialValue: status,
                                   decoration: inputDec(),
                                   isExpanded: true,
                                   items: [
@@ -406,76 +522,94 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
                       ),
                       const SizedBox(height: 24),
 
-                      // Save Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton.icon(
-                          onPressed: () async {
-                            final name = nameCtrl.text.trim();
-                            if (name.isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    isMr ? 'कृपया अर्जदाराचे नाव प्रविष्ट करा.' : 'Please enter applicant name.',
-                                  ),
-                                ),
-                              );
-                              return;
-                            }
-
-                            final messenger = ScaffoldMessenger.of(context);
-                            final appModel = VoterApplicationModel(
-                              id: appToEdit?.id ?? 'app-${DateTime.now().millisecondsSinceEpoch}',
-                              voterId: linkedVoterId,
-                              applicantName: name,
-                              applicantMobile: mobileCtrl.text.trim().isNotEmpty ? mobileCtrl.text.trim() : null,
-                              formType: formType,
-                              status: status,
-                              notes: notesCtrl.text.trim().isNotEmpty ? notesCtrl.text.trim() : null,
-                              createdAt: appToEdit?.createdAt ?? DateTime.now(),
-                            );
-
-                            final repo = ref.read(voterApplicationsRepoProvider);
-                            if (appToEdit == null) {
-                              await repo.addApplication(appModel);
-                            } else {
-                              await repo.updateApplication(appModel);
-                            }
-
-                            if (ctx.mounted) {
-                              Navigator.pop(ctx);
-                            }
-                            if (!mounted) return;
-                            _loadApplications();
-
-                            messenger.showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  appToEdit == null
-                                      ? (isMr ? 'अर्ज यशस्वीरित्या नोंदवला गेला!' : 'Application logged successfully!')
-                                      : (isMr ? 'अर्जाचे तपशील अद्यतनित केले!' : 'Application details updated!'),
-                                ),
-                                backgroundColor: const Color(0xFF16A34A),
+                      // Form Buttons: Cancel & Save Application
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 13),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                               ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0284C7),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            elevation: 0,
+                              onPressed: () => Navigator.pop(ctx),
+                              child: Text(
+                                isMr ? 'रद्द करा' : 'Cancel',
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
                           ),
-                          icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
-                          label: Text(
-                            appToEdit == null
-                                ? (isMr ? 'अर्ज जतन करा' : 'Save Application')
-                                : (isMr ? 'बदल जतन करा' : 'Save Changes'),
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            flex: 2,
+                            child: ElevatedButton.icon(
+                              onPressed: () async {
+                                final name = nameCtrl.text.trim();
+                                if (name.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        isMr ? 'कृपया अर्जदाराचे नाव प्रविष्ट करा.' : 'Please enter applicant name.',
+                                      ),
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                final messenger = ScaffoldMessenger.of(context);
+                                final appModel = VoterApplicationModel(
+                                  id: appToEdit?.id ?? 'app-${DateTime.now().millisecondsSinceEpoch}',
+                                  voterId: linkedVoterId,
+                                  applicantName: name,
+                                  applicantMobile: mobileCtrl.text.trim().isNotEmpty ? mobileCtrl.text.trim() : null,
+                                  formType: formType,
+                                  status: status,
+                                  notes: notesCtrl.text.trim().isNotEmpty ? notesCtrl.text.trim() : null,
+                                  createdAt: appToEdit?.createdAt ?? DateTime.now(),
+                                );
+
+                                final repo = ref.read(voterApplicationsRepoProvider);
+                                if (appToEdit == null) {
+                                  await repo.addApplication(appModel);
+                                } else {
+                                  await repo.updateApplication(appModel);
+                                }
+
+                                if (ctx.mounted) {
+                                  Navigator.pop(ctx);
+                                }
+                                if (!mounted) return;
+                                _loadApplications();
+
+                                messenger.showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      appToEdit == null
+                                          ? (isMr ? 'अर्ज यशस्वीरित्या नोंदवला गेला!' : 'Application logged successfully!')
+                                          : (isMr ? 'अर्जाचे तपशील अद्यतनित केले!' : 'Application details updated!'),
+                                    ),
+                                    backgroundColor: const Color(0xFF16A34A),
+                                  ),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0284C7),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 13),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                elevation: 0,
+                              ),
+                              icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
+                              label: Text(
+                                appToEdit == null
+                                    ? (isMr ? 'अर्ज जतन करा' : 'Save Application')
+                                    : (isMr ? 'बदल जतन करा' : 'Save Changes'),
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 16),
                     ],
                   ),
                 ),

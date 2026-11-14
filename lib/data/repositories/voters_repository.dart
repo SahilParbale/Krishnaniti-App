@@ -566,6 +566,17 @@ class VotersRepository {
     };
   }
 
+  Future<void> addVoter(VoterModel voter) async {
+    _seedVoters.insert(0, voter);
+    try {
+      final payload = voter.toJson();
+      if (_tenantId != null && _tenantId!.isNotEmpty) {
+        payload['tenant_id'] = _tenantId;
+      }
+      await _client.from('voters').insert(payload);
+    } catch (_) {}
+  }
+
   Future<List<String>> getBoothsList() async {
     return [
       '२८/शनिवार पेठ',

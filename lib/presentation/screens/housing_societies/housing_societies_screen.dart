@@ -83,16 +83,16 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
 
   void _openAddEditModal([HousingSocietyModel? societyToEdit]) {
     final isMr = ref.read(isMarathiProvider);
-    final nameMrCtrl = TextEditingController(text: societyToEdit?.nameMarathi ?? societyToEdit?.name ?? '');
     final nameEnCtrl = TextEditingController(text: societyToEdit?.nameEnglish ?? societyToEdit?.name ?? '');
+    final nameMrCtrl = TextEditingController(text: societyToEdit?.nameMarathi ?? societyToEdit?.name ?? '');
+    final areaCtrl = TextEditingController(text: societyToEdit?.area ?? '');
+    final addressCtrl = TextEditingController(text: societyToEdit?.address ?? '');
     final chairmanNameCtrl = TextEditingController(text: societyToEdit?.chairmanName ?? '');
     final chairmanPhoneCtrl = TextEditingController(text: societyToEdit?.chairmanMobile ?? '');
     final secretaryNameCtrl = TextEditingController(text: societyToEdit?.secretaryName ?? '');
     final secretaryPhoneCtrl = TextEditingController(text: societyToEdit?.secretaryMobile ?? '');
     final votersCtrl = TextEditingController(text: (societyToEdit != null && societyToEdit.voterCount > 0) ? societyToEdit.voterCount.toString() : '');
     final favVotersCtrl = TextEditingController(text: (societyToEdit != null && societyToEdit.favourableVoterCount > 0) ? societyToEdit.favourableVoterCount.toString() : '');
-    final areaCtrl = TextEditingController(text: societyToEdit?.area ?? '');
-    final addressCtrl = TextEditingController(text: societyToEdit?.address ?? '');
     final notesCtrl = TextEditingController(text: societyToEdit?.notes ?? '');
     String status = societyToEdit?.status ?? 'Active';
 
@@ -122,7 +122,7 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
         child: RichText(
           text: TextSpan(
             text: text,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
             children: isRequired
                 ? const [
                     TextSpan(
@@ -156,336 +156,400 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
               ],
             ),
             padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 16,
               top: 8,
               left: 20,
               right: 20,
             ),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Top Drag Handle
-                  Center(
-                    child: Container(
-                      width: 44,
-                      height: 5,
-                      margin: const EdgeInsets.only(top: 6, bottom: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(3),
-                      ),
+            child: Column(
+              children: [
+                // Top Drag Handle
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 5,
+                    margin: const EdgeInsets.only(top: 6, bottom: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(3),
                     ),
                   ),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(Icons.apartment_rounded, color: Color(0xFF0284C7), size: 20),
+                ),
+                // Header
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          societyToEdit == null
-                              ? (isMr ? 'गृहनिर्माण संस्था नोंदणी' : 'Add Housing Society')
-                              : (isMr ? 'संस्था माहिती संपादन' : 'Edit Society Details'),
-                          style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.pop(ctx),
-                        icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                      ),
-                    ],
-                  ),
-                  const Divider(height: 16, color: Color(0xFFE2E8F0)),
-                  const SizedBox(height: 6),
-
-                  // Side-by-side: Society Name (Marathi) & Society Name (English)
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            fieldLabel(isMr ? 'सोसायटीचे नाव (मराठी)' : 'Society Name (Marathi)', isRequired: true),
-                            TextField(
-                              controller: nameMrCtrl,
-                              decoration: inputDec(hint: isMr ? 'उदा. गोकुळधाम सोसायटी' : 'e.g. Gokuldham Society'),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            fieldLabel(isMr ? 'सोसायटीचे नाव (इंग्रजी)' : 'Society Name (English)'),
-                            TextField(
-                              controller: nameEnCtrl,
-                              decoration: inputDec(hint: 'e.g. Gokuldham Co-op Society'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-
-                  // Side-by-side: Chairman Name & Chairman Mobile
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            fieldLabel(isMr ? 'अध्यक्षांचे नाव' : 'Chairman Name'),
-                            TextField(
-                              controller: chairmanNameCtrl,
-                              decoration: inputDec(hint: isMr ? 'उदा. रमेश कदम' : 'e.g. Ramesh Kadam'),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            fieldLabel(isMr ? 'अध्यक्ष मोबाईल (+91)' : 'Chairman Mobile (+91)'),
-                            TextField(
-                              controller: chairmanPhoneCtrl,
-                              keyboardType: TextInputType.phone,
-                              decoration: inputDec(prefixText: '+91 ', hint: '9876543210'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-
-                  // Side-by-side: Secretary Name & Secretary Mobile
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            fieldLabel(isMr ? 'सचिवांचे नाव' : 'Secretary Name'),
-                            TextField(
-                              controller: secretaryNameCtrl,
-                              decoration: inputDec(hint: isMr ? 'उदा. सचिन जोशी' : 'e.g. Sachin Joshi'),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            fieldLabel(isMr ? 'सचिव मोबाईल (+91)' : 'Secretary Mobile (+91)'),
-                            TextField(
-                              controller: secretaryPhoneCtrl,
-                              keyboardType: TextInputType.phone,
-                              decoration: inputDec(prefixText: '+91 ', hint: '9876543210'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-
-                  // Side-by-side: Total Voters & Favourable Voters
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            fieldLabel(isMr ? 'एकूण मतदार संख्या' : 'Total Voters Count'),
-                            TextField(
-                              controller: votersCtrl,
-                              keyboardType: TextInputType.number,
-                              decoration: inputDec(hint: 'उदा. 150'),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            fieldLabel(isMr ? 'अनुकूल मतदार संख्या' : 'Favourable Voters Count'),
-                            TextField(
-                              controller: favVotersCtrl,
-                              keyboardType: TextInputType.number,
-                              decoration: inputDec(hint: 'उदा. 100'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-
-                  // Side-by-side: Area & Status
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        flex: 6,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            fieldLabel(isMr ? 'परिसर / गल्ली / प्रभाग' : 'Area / Lane / Ward'),
-                            TextField(
-                              controller: areaCtrl,
-                              decoration: inputDec(hint: isMr ? 'उदा. शांती नगर, प्रभाग १२' : 'e.g. Shanti Nagar, Ward 12'),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        flex: 5,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            fieldLabel(isMr ? 'स्थिती' : 'Status'),
-                            DropdownButtonFormField<String>(
-                              initialValue: status,
-                              decoration: inputDec(),
-                              items: [
-                                DropdownMenuItem(value: 'Active', child: Text(isMr ? 'सक्रिय (Active)' : 'Active')),
-                                DropdownMenuItem(value: 'Inactive', child: Text(isMr ? 'निष्क्रिय (Inactive)' : 'Inactive')),
-                              ],
-                              onChanged: (val) {
-                                if (val != null) setModalState(() => status = val);
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-
-                  fieldLabel(isMr ? 'पूर्ण पत्ता' : 'Full Address'),
-                  TextField(
-                    controller: addressCtrl,
-                    decoration: inputDec(hint: isMr ? 'उदा. प्लॉट १२, शांती नगर' : 'e.g. Plot 12, Shanti Nagar'),
-                  ),
-                  const SizedBox(height: 14),
-
-                  fieldLabel(isMr ? 'महत्त्वाच्या समस्या / मागण्या / शेरा' : 'Key Issues / Demands / Notes'),
-                  TextField(
-                    controller: notesCtrl,
-                    maxLines: 3,
-                    decoration: inputDec(hint: isMr ? 'उदा. रस्ते डांबरीकरण, पाणीपुरवठा, पथदिवे...' : 'e.g. Road tarring, water supply, streetlights...'),
-                  ),
-                  const SizedBox(height: 24),
-
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        final name = nameMrCtrl.text.trim().isNotEmpty ? nameMrCtrl.text.trim() : nameEnCtrl.text.trim();
-                        if (name.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(isMr ? 'कृपया सोसायटीचे नाव प्रविष्ट करा.' : 'Please enter society name.')),
-                          );
-                          return;
-                        }
-
-                        final vCount = int.tryParse(votersCtrl.text.trim()) ?? 0;
-                        final favCount = int.tryParse(favVotersCtrl.text.trim()) ?? 0;
-
-                        if (favCount > vCount) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(isMr ? 'अनुकूल मतदार एकूण मतदारांपेक्षा जास्त असू शकत नाहीत!' : 'Favourable voters cannot exceed total voters!')),
-                          );
-                          return;
-                        }
-
-                        final model = HousingSocietyModel(
-                          id: societyToEdit?.id ?? 'soc-${DateTime.now().millisecondsSinceEpoch}',
-                          name: name,
-                          nameMarathi: nameMrCtrl.text.trim().isNotEmpty ? nameMrCtrl.text.trim() : name,
-                          nameEnglish: nameEnCtrl.text.trim().isNotEmpty ? nameEnCtrl.text.trim() : name,
-                          chairmanName: chairmanNameCtrl.text.trim(),
-                          chairmanMobile: chairmanPhoneCtrl.text.trim(),
-                          secretaryName: secretaryNameCtrl.text.trim(),
-                          secretaryMobile: secretaryPhoneCtrl.text.trim(),
-                          voterCount: vCount,
-                          favourableVoterCount: favCount,
-                          area: areaCtrl.text.trim(),
-                          address: addressCtrl.text.trim(),
-                          notes: notesCtrl.text.trim(),
-                          status: status,
-                          createdAt: societyToEdit?.createdAt ?? DateTime.now(),
-                        );
-
-                        final messenger = ScaffoldMessenger.of(context);
-                        final repo = ref.read(housingSocietyRepoProvider);
-                        if (societyToEdit == null) {
-                          await repo.addSociety(model);
-                        } else {
-                          await repo.updateSociety(model);
-                        }
-
-                        if (ctx.mounted) {
-                          Navigator.pop(ctx);
-                        }
-                        if (!mounted) return;
-                        _loadData();
-
-                        messenger.showSnackBar(
-                          SnackBar(
-                            content: Text(societyToEdit == null
-                                ? (isMr ? 'सोसायटी यशस्वीरित्या नोंदवली गेली!' : 'Society registered successfully!')
-                                : (isMr ? 'सोसायटी माहिती अद्यतनित केली!' : 'Details updated!')),
-                            backgroundColor: const Color(0xFF16A34A),
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0284C7),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      child: const Icon(Icons.home_work_rounded, color: Color(0xFF0284C7), size: 20),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.save_rounded, size: 18),
-                          const SizedBox(width: 8),
                           Text(
                             societyToEdit == null
-                                ? (isMr ? 'सोसायटी नोंदणी करा' : 'Register Society')
-                                : (isMr ? 'बदल जतन करा' : 'Save Changes'),
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                ? (isMr ? 'नवीन सोसायटी नोंदवा' : 'Log New Housing Society')
+                                : (isMr ? 'सोसायटी माहिती सुधारा' : 'Edit Society Info'),
+                            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                          ),
+                          Text(
+                            isMr ? 'प्रभागातील सोसायटी चेअरमन, सेक्रेटरी व मतदारांची नोंद' : 'Register society committee details, chairman and voter base.',
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                           ),
                         ],
                       ),
                     ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                    ),
+                  ],
+                ),
+                const Divider(height: 16, color: Color(0xFFE2E8F0)),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    children: [
+                      // Row 1: Society Name (English) & Society Name (Marathi)
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'सोसायटीचे नाव (इंग्रजी)' : 'Society Name (English)'),
+                                TextField(
+                                  controller: nameEnCtrl,
+                                  decoration: inputDec(hint: 'e.g. Gokuldham CHS'),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'सोसायटीचे नाव (मराठी)' : 'Society Name (Marathi)', isRequired: true),
+                                TextField(
+                                  controller: nameMrCtrl,
+                                  decoration: inputDec(hint: 'उदा. गोकुळधाम सोसायटी'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Row 2: Area / Neighborhood & Detailed Address
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'परिसर / गल्ली भाग' : 'Area / Neighborhood'),
+                                TextField(
+                                  controller: areaCtrl,
+                                  decoration: inputDec(hint: isMr ? 'उदा. शांती नगर' : 'e.g. Shanti Nagar'),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'सोसायटी पत्ता' : 'Detailed Address'),
+                                TextField(
+                                  controller: addressCtrl,
+                                  decoration: inputDec(hint: isMr ? 'उदा. प्लॉट १२, रोड ५' : 'e.g. Plot 12, Road 5'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Row 3: Chairman Name & Chairman Mobile
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'चेअरमन नाव' : 'Chairman Name'),
+                                TextField(
+                                  controller: chairmanNameCtrl,
+                                  decoration: inputDec(hint: 'e.g. Ashok Bhide'),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'चेअरमन मोबाईल' : 'Chairman Mobile'),
+                                TextField(
+                                  controller: chairmanPhoneCtrl,
+                                  keyboardType: TextInputType.phone,
+                                  maxLength: 10,
+                                  buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
+                                  decoration: inputDec(prefixText: '+91 ', hint: '98xxxxxxxx'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Row 4: Secretary Name & Secretary Mobile
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'सेक्रेटरी नाव' : 'Secretary Name'),
+                                TextField(
+                                  controller: secretaryNameCtrl,
+                                  decoration: inputDec(hint: 'e.g. Aatmaram Bhide'),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'सेक्रेटरी मोबाईल' : 'Secretary Mobile'),
+                                TextField(
+                                  controller: secretaryPhoneCtrl,
+                                  keyboardType: TextInputType.phone,
+                                  maxLength: 10,
+                                  buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
+                                  decoration: inputDec(prefixText: '+91 ', hint: '98xxxxxxxx'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Row 5: Total Voters & Favourable Voters
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'एकूण मतदार संख्या' : 'Total Voters Count'),
+                                TextField(
+                                  controller: votersCtrl,
+                                  keyboardType: TextInputType.number,
+                                  decoration: inputDec(hint: 'e.g. 150'),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'फेवर मतदार संख्या (आपले समर्थक)' : 'Favourable Voters Count'),
+                                TextField(
+                                  controller: favVotersCtrl,
+                                  keyboardType: TextInputType.number,
+                                  decoration: inputDec(hint: 'e.g. 100'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Notes / Grievances textarea
+                      fieldLabel(isMr ? 'सोसायटीमधील प्रमुख समस्या / विशेष नोंदी' : 'Society Grievances / Special Notes'),
+                      TextField(
+                        controller: notesCtrl,
+                        maxLines: 3,
+                        decoration: inputDec(
+                          hint: isMr
+                              ? 'उदा. कचरा समस्या, पाणी वेळेवर न मिळणे, रस्ते खराब असणे...'
+                              : 'e.g. Potholes on entryway, streetlights non-functional, water line needs work...',
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Status Radio Selection
+                      fieldLabel(isMr ? 'सोसायटी स्थिती' : 'Status'),
+                      Row(
+                        children: [
+                          InkWell(
+                            onTap: () => setModalState(() => status = 'Active'),
+                            child: Row(
+                              children: [
+                                Radio<String>(
+                                  value: 'Active',
+                                  groupValue: status,
+                                  activeColor: const Color(0xFF0284C7),
+                                  onChanged: (val) {
+                                    if (val != null) setModalState(() => status = val);
+                                  },
+                                ),
+                                Text(
+                                  isMr ? 'सक्रिय (Active)' : 'Active',
+                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 24),
+                          InkWell(
+                            onTap: () => setModalState(() => status = 'Inactive'),
+                            child: Row(
+                              children: [
+                                Radio<String>(
+                                  value: 'Inactive',
+                                  groupValue: status,
+                                  activeColor: const Color(0xFF0284C7),
+                                  onChanged: (val) {
+                                    if (val != null) setModalState(() => status = val);
+                                  },
+                                ),
+                                Text(
+                                  isMr ? 'निष्क्रिय (Inactive)' : 'Inactive',
+                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Action Buttons: Cancel & Save Details
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 13),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              onPressed: () => Navigator.pop(ctx),
+                              child: Text(
+                                isMr ? 'रद्द करा' : 'Cancel',
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            flex: 2,
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                final name = nameMrCtrl.text.trim().isNotEmpty ? nameMrCtrl.text.trim() : nameEnCtrl.text.trim();
+                                if (name.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(isMr ? 'कृपया सोसायटीचे नाव प्रविष्ट करा.' : 'Please enter society name.')),
+                                  );
+                                  return;
+                                }
+
+                                final vCount = int.tryParse(votersCtrl.text.trim()) ?? 0;
+                                final favCount = int.tryParse(favVotersCtrl.text.trim()) ?? 0;
+
+                                if (favCount > vCount && vCount > 0) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(isMr ? 'अनुकूल मतदार एकूण मतदारांपेक्षा जास्त असू शकत नाहीत!' : 'Favourable voters cannot exceed total voters!')),
+                                  );
+                                  return;
+                                }
+
+                                final model = HousingSocietyModel(
+                                  id: societyToEdit?.id ?? 'soc-${DateTime.now().millisecondsSinceEpoch}',
+                                  name: name,
+                                  nameMarathi: nameMrCtrl.text.trim().isNotEmpty ? nameMrCtrl.text.trim() : name,
+                                  nameEnglish: nameEnCtrl.text.trim().isNotEmpty ? nameEnCtrl.text.trim() : name,
+                                  chairmanName: chairmanNameCtrl.text.trim(),
+                                  chairmanMobile: chairmanPhoneCtrl.text.trim(),
+                                  secretaryName: secretaryNameCtrl.text.trim(),
+                                  secretaryMobile: secretaryPhoneCtrl.text.trim(),
+                                  voterCount: vCount,
+                                  favourableVoterCount: favCount,
+                                  area: areaCtrl.text.trim(),
+                                  address: addressCtrl.text.trim(),
+                                  notes: notesCtrl.text.trim(),
+                                  status: status,
+                                  createdAt: societyToEdit?.createdAt ?? DateTime.now(),
+                                );
+
+                                final messenger = ScaffoldMessenger.of(context);
+                                final repo = ref.read(housingSocietyRepoProvider);
+                                if (societyToEdit == null) {
+                                  await repo.addSociety(model);
+                                } else {
+                                  await repo.updateSociety(model);
+                                }
+
+                                if (ctx.mounted) {
+                                  Navigator.pop(ctx);
+                                }
+                                if (!mounted) return;
+                                _loadData();
+
+                                messenger.showSnackBar(
+                                  SnackBar(
+                                    content: Text(societyToEdit == null
+                                        ? (isMr ? 'नवीन सोसायटी नोंदणी यशस्वी झाली!' : 'Society registered successfully!')
+                                        : (isMr ? 'माहिती जतन केली!' : 'Details updated successfully!')),
+                                    backgroundColor: const Color(0xFF16A34A),
+                                  ),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0284C7),
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(vertical: 13),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              child: Text(
+                                societyToEdit == null
+                                    ? (isMr ? 'माहिती जतन करा' : 'Save Details')
+                                    : (isMr ? 'बदल जतन करा' : 'Save Changes'),
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           );
         },

@@ -210,53 +210,155 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     );
   }
 
-  void _showAddMemberModal() {
+  void _showAddMemberModal() => _showMemberModal();
+
+  void _showMemberModal({TeamMemberModel? memberToEdit}) {
     final isMr = ref.read(isMarathiProvider);
-    final nameCtrl = TextEditingController();
-    final nameMrCtrl = TextEditingController();
-    final mobileCtrl = TextEditingController();
-    final roleCtrl = TextEditingController();
-    final areaCtrl = TextEditingController(text: 'Shaniwar Peth');
-    final keywordsCtrl = TextEditingController();
-    final societyCtrl = TextEditingController();
-    String category = 'Office';
-    String wing = 'Youth Wing';
+    final nameCtrl = TextEditingController(text: memberToEdit?.name ?? '');
+    final mobileCtrl = TextEditingController(text: memberToEdit?.mobile ?? '');
+    final emailCtrl = TextEditingController(text: memberToEdit?.email ?? '');
+    final passwordCtrl = TextEditingController();
+    bool showPassword = false;
+    final roleCtrl = TextEditingController(text: memberToEdit?.role ?? '');
+    final areaCtrl = TextEditingController(text: memberToEdit?.area ?? 'Ward 12, Shaniwar Peth');
+    final societyCtrl = TextEditingController(text: memberToEdit?.societyName ?? '');
+    final keywordsCtrl = TextEditingController(text: memberToEdit?.keywords.join(', ') ?? '');
 
-    final wings = ref.read(teamRepoProvider).getPartyWings();
+    String category = memberToEdit?.category ?? 'Office';
+    String paksh = memberToEdit?.paksh ?? '';
+    String partyWing = memberToEdit?.partyWing ?? '';
+    String pad = memberToEdit?.pad ?? '';
+    bool canAssignWork = memberToEdit?.canAssignWork ?? true;
 
-    Widget fieldLabel(String text, {bool isRequired = false}) {
+    final complaintCategories = [
+      {'id': 'Road', 'label': isMr ? 'रस्ते (Roads)' : 'Roads (रस्ते)'},
+      {'id': 'Water', 'label': isMr ? 'पाणीपुरवठा (Water Supply)' : 'Water Supply (पाणीपुरवठा)'},
+      {'id': 'StreetLight', 'label': isMr ? 'वीज/लाईट (Street Lights)' : 'Electricity/Street Lights (वीज/लाईट)'},
+      {'id': 'Cleaning', 'label': isMr ? 'कचरा/स्वच्छता (Cleaning)' : 'Cleaning/Waste (कचरा/स्वच्छता)'},
+      {'id': 'Drainage', 'label': isMr ? 'गटार/ड्रेनेज (Drainage)' : 'Drainage (गटार/ड्रेनेज)'},
+      {'id': 'Other', 'label': isMr ? 'इतर (Other)' : 'Other (इतर)'},
+    ];
+
+    List<String> selectedCategories = (memberToEdit?.keywords ?? [])
+        .where((k) => complaintCategories.any((c) => c['id'] == k))
+        .toList();
+
+    final availablePermissions = [
+      {'id': 'complaints', 'label': isMr ? 'तक्रारी व विनंत्या' : 'Complaints & Requests'},
+      {'id': 'letters', 'label': isMr ? 'पत्रव्यवहार व अर्ज' : 'Letters & Applications'},
+      {'id': 'tasks', 'label': isMr ? 'कामे व कार्ये' : 'Task Management'},
+      {'id': 'visitors', 'label': isMr ? 'अभ्यागत नोंद' : 'Visitor Log'},
+      {'id': 'schemes', 'label': isMr ? 'शासकीय योजना' : 'Government Schemes'},
+      {'id': 'ward_problems', 'label': isMr ? 'प्रभाग समस्या' : 'Ward Problems'},
+      {'id': 'ward_info', 'label': isMr ? 'प्रभाग नकाशा' : 'Ward Map'},
+      {'id': 'work_history', 'label': isMr ? 'कामांचा इतिहास' : 'Work History'},
+      {'id': 'improvements', 'label': isMr ? 'प्रभाग सुधारणा' : 'Ward Improvements'},
+      {'id': 'provision', 'label': isMr ? 'प्रभाग तरतूद' : 'Ward Provision'},
+      {'id': 'gb_register', 'label': isMr ? 'जीबी रजिस्टर' : 'GB Register / Diary'},
+      {'id': 'budget', 'label': isMr ? 'प्रभाग अंदाजपत्रक' : 'Ward Budget'},
+      {'id': 'gov_office', 'label': isMr ? 'शासकीय कार्यालये' : 'Government Offices'},
+      {'id': 'social', 'label': isMr ? 'सोशल मीडिया ॲनालिटिक्स' : 'Social Media Analytics'},
+      {'id': 'newspaper', 'label': isMr ? 'वर्तमानपत्र कात्रणे' : 'Newspaper Clippings'},
+      {'id': 'media_tracking', 'label': isMr ? 'मीडिया ट्रॅकिंग' : 'Media Tracking'},
+      {'id': 'bot', 'label': isMr ? 'व्हॉट्सॲप बॉट' : 'WhatsApp Bot'},
+      {'id': 'ai_content', 'label': isMr ? 'एआय कंटेंट स्टुडिओ' : 'AI Content Studio'},
+      {'id': 'events', 'label': isMr ? 'कार्यक्रम व निमंत्रणे' : 'Events & Invites'},
+      {'id': 'gallery', 'label': isMr ? 'फोटो गॅलरी' : 'Media Gallery'},
+      {'id': 'results', 'label': isMr ? 'निवडणूक निकाल' : 'Election Results'},
+      {'id': 'sadasya', 'label': isMr ? 'पक्ष सदस्य' : 'Party Members (Sadasya)'},
+      {'id': 'surveys', 'label': isMr ? 'जनमत चाचण्या' : 'Surveys'},
+      {'id': 'voters', 'label': isMr ? 'मतदार यादी शोध' : 'Voter Search'},
+      {'id': 'social_organizations', 'label': isMr ? 'मंडळ व संस्था' : 'NGO & Mandals Info'},
+      {'id': 'staff', 'label': isMr ? 'संघ व्यवस्थापन' : 'Staff Management'},
+    ];
+
+    List<String> selectedPermissions = memberToEdit?.permissions != null
+        ? List<String>.from(memberToEdit!.permissions!)
+        : ['complaints', 'letters', 'tasks', 'visitors', 'ward_problems'];
+
+    final partyWingsList = [
+      'युवक आघाडी',
+      'महिला आघाडी',
+      'विद्यार्थी आघाडी',
+      'शेतकरी आघाडी',
+      'कामगार आघाडी',
+      'व्यापारी आघाडी',
+      'अल्पसंख्याक आघाडी',
+      'ओबीसी आघाडी',
+      'ज्येष्ठ नागरिक आघाडी',
+      'क्रीडा आघाडी',
+      'आयटी सेल',
+      'सोशल मीडिया सेल',
+      'जनसंपर्क विभाग',
+      'स्वयंसेवक संघटना',
+    ];
+
+    final partyPostsList = [
+      'अध्यक्ष (President)',
+      'उपाध्यक्ष (Vice President)',
+      'सचिव (Secretary)',
+      'सहसचिव (Joint Secretary)',
+      'कोषाध्यक्ष (Treasurer)',
+      'संघटक (Organizer)',
+      'सदस्य (Member)',
+    ];
+
+    final roleSuggestions = [
+      'Office Admin',
+      'Personal Assistant',
+      'Ward President',
+      'Booth Pramukh',
+      'Electrician',
+      'Plumber',
+      'Sanitation Worker',
+    ];
+
+    Widget fieldLabel(String text, {bool isRequired = false, String? optionalNote}) {
       return Padding(
         padding: const EdgeInsets.only(bottom: 6),
-        child: RichText(
-          text: TextSpan(
-            text: text,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF334155),
+        child: Row(
+          children: [
+            RichText(
+              text: TextSpan(
+                text: text,
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF334155),
+                ),
+                children: isRequired
+                    ? const [
+                        TextSpan(
+                          text: ' *',
+                          style: TextStyle(
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ]
+                    : [],
+              ),
             ),
-            children: isRequired
-                ? const [
-                    TextSpan(
-                      text: ' *',
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ]
-                : [],
-          ),
+            if (optionalNote != null) ...[
+              const SizedBox(width: 6),
+              Text(
+                '($optionalNote)',
+                style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+              ),
+            ],
+          ],
         ),
       );
     }
 
-    InputDecoration inputDec({String? hintText, Widget? prefixIcon, Widget? suffixIcon}) {
+    InputDecoration inputDec({String? hintText, Widget? prefixIcon, Widget? suffixIcon, String? prefixText}) {
       return InputDecoration(
         hintText: hintText,
-        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
         prefixIcon: prefixIcon,
         suffixIcon: suffixIcon,
+        prefixText: prefixText,
+        prefixStyle: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
+        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
         filled: true,
         fillColor: Colors.white,
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -322,15 +424,17 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                               color: const Color(0xFF0284C7).withValues(alpha: 0.1),
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(
-                              Icons.person_add_rounded,
-                              color: Color(0xFF0284C7),
+                            child: Icon(
+                              memberToEdit != null ? Icons.edit_rounded : Icons.person_add_rounded,
+                              color: const Color(0xFF0284C7),
                               size: 20,
                             ),
                           ),
                           const SizedBox(width: 10),
                           Text(
-                            isMr ? 'नवीन संघ सदस्य जोडा' : 'Add New Team Member',
+                            memberToEdit != null
+                                ? (isMr ? 'सदस्याची माहिती सुधारा' : 'Edit Staff Member')
+                                : (isMr ? 'नवीन कर्मचारी / कार्यकर्ता जोडा' : 'Add Staff Member'),
                             style: const TextStyle(
                               fontSize: 17.5,
                               fontWeight: FontWeight.bold,
@@ -351,141 +455,167 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                   child: ListView(
                     padding: const EdgeInsets.all(16),
                     children: [
-                      // Category Toggle Segment
-                      fieldLabel(isMr ? 'श्रेणी / विभाग' : 'Category', isRequired: true),
+                      // Row 1: Category & Political Party
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          {'key': 'Office', 'label': isMr ? 'कार्यालयीन' : 'Office Team'},
-                          {'key': 'Party', 'label': isMr ? 'पक्ष कार्यकर्ता' : 'Party Cadre'},
-                          {'key': 'Cooperative', 'label': isMr ? 'संस्था / पालिका' : 'Municipal / Coop'},
-                        ].map((c) {
-                          final isSel = category == c['key'];
-                          return Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 2),
-                              child: ChoiceChip(
-                                label: Text(c['label']!),
-                                selected: isSel,
-                                onSelected: (_) => setModalState(() => category = c['key']!),
-                                selectedColor: const Color(0xFF0284C7),
-                                labelStyle: TextStyle(
-                                  fontSize: 11.5,
-                                  fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
-                                  color: isSel ? Colors.white : Colors.black87,
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'श्रेणी / विभाग' : 'Category', isRequired: true),
+                                DropdownButtonFormField<String>(
+                                  initialValue: category,
+                                  decoration: inputDec(),
+                                  isExpanded: true,
+                                  items: [
+                                    DropdownMenuItem(
+                                      value: 'Office',
+                                      child: Text(isMr ? 'कार्यालयीन कर्मचारी' : 'Office Team', style: const TextStyle(fontSize: 12.5)),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'Party',
+                                      child: Text(isMr ? 'पक्ष पदाधिकारी / कार्यकर्ते' : 'Party Cadre', style: const TextStyle(fontSize: 12.5)),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'Cooperative',
+                                      child: Text(isMr ? 'महापालिका / इतर संस्था' : 'Municipal / Co-op', style: const TextStyle(fontSize: 12.5)),
+                                    ),
+                                  ],
+                                  onChanged: (val) {
+                                    if (val != null) setModalState(() => category = val);
+                                  },
                                 ),
-                              ),
+                              ],
                             ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'राजकीय पक्ष (पक्ष)' : 'Political Party', optionalNote: isMr ? 'ऐच्छिक' : 'Optional'),
+                                DropdownButtonFormField<String>(
+                                  initialValue: paksh,
+                                  decoration: inputDec(),
+                                  isExpanded: true,
+                                  items: [
+                                    DropdownMenuItem(value: '', child: Text(isMr ? 'पक्ष निवडा' : 'Select Party', style: const TextStyle(fontSize: 12.5))),
+                                    DropdownMenuItem(value: 'BJP', child: Text(isMr ? 'भाजप (भारतीय जनता पक्ष)' : 'BJP (Bharatiya Janata Party)', style: const TextStyle(fontSize: 12.5))),
+                                    DropdownMenuItem(value: 'INC', child: Text(isMr ? 'काँग्रेस (आय)' : 'INC (Congress)', style: const TextStyle(fontSize: 12.5))),
+                                    DropdownMenuItem(value: 'NCP', child: Text(isMr ? 'राष्ट्रवादी काँग्रेस' : 'NCP (Nationalist Congress Party)', style: const TextStyle(fontSize: 12.5))),
+                                    DropdownMenuItem(value: 'SHS', child: Text(isMr ? 'शिवसेना' : 'Shiv Sena', style: const TextStyle(fontSize: 12.5))),
+                                    DropdownMenuItem(value: 'UBT', child: Text(isMr ? 'शिवसेना (UBT)' : 'Shivsena (UBT)', style: const TextStyle(fontSize: 12.5))),
+                                    DropdownMenuItem(value: 'MNS', child: Text(isMr ? 'मनसे (MNS)' : 'MNS', style: const TextStyle(fontSize: 12.5))),
+                                    DropdownMenuItem(value: 'AAP', child: Text(isMr ? 'आप (Aam Aadmi Party)' : 'AAP', style: const TextStyle(fontSize: 12.5))),
+                                    DropdownMenuItem(value: 'Independent', child: Text(isMr ? 'अपक्ष' : 'Independent', style: const TextStyle(fontSize: 12.5))),
+                                    DropdownMenuItem(value: 'Other', child: Text(isMr ? 'इतर / कोणताही नाही' : 'Other / None', style: const TextStyle(fontSize: 12.5))),
+                                  ],
+                                  onChanged: (val) {
+                                    if (val != null) setModalState(() => paksh = val);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Full Name
+                      fieldLabel(isMr ? 'पूर्ण नाव' : 'Full Name', isRequired: true),
+                      TextField(
+                        controller: nameCtrl,
+                        decoration: inputDec(
+                          hintText: isMr ? 'उदा. रमेश बाळासाहेब कदम' : 'e.g. Ramesh Balasaheb Kadam',
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Mobile Number (+91 prefix)
+                      fieldLabel(isMr ? 'मोबाईल नंबर' : 'Mobile Number', isRequired: true),
+                      TextField(
+                        controller: mobileCtrl,
+                        keyboardType: TextInputType.phone,
+                        maxLength: 10,
+                        buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
+                        decoration: inputDec(
+                          prefixText: '+91 ',
+                          hintText: '9876543210',
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Email & Password (Login ID & Password)
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'ईमेल (Login ID)' : 'Email (Login ID)'),
+                                TextField(
+                                  controller: emailCtrl,
+                                  keyboardType: TextInputType.emailAddress,
+                                  decoration: inputDec(
+                                    hintText: 'staff@example.com',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'पासवर्ड' : 'Password'),
+                                TextField(
+                                  controller: passwordCtrl,
+                                  obscureText: !showPassword,
+                                  decoration: inputDec(
+                                    hintText: '••••••••',
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        showPassword ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                                        size: 18,
+                                        color: const Color(0xFF64748B),
+                                      ),
+                                      onPressed: () => setModalState(() => showPassword = !showPassword),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Role / Designation with quick suggestion chips
+                      fieldLabel(isMr ? 'पद / हुद्दा' : 'Role / Designation', isRequired: true),
+                      TextField(
+                        controller: roleCtrl,
+                        decoration: inputDec(
+                          hintText: isMr ? 'उदा. कार्यालय प्रशासक, प्रभाग अध्यक्ष...' : 'e.g. Office Admin, Ward President...',
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: roleSuggestions.map((r) {
+                          return ActionChip(
+                            label: Text(r, style: const TextStyle(fontSize: 11)),
+                            backgroundColor: const Color(0xFFF1F5F9),
+                            onPressed: () => setModalState(() => roleCtrl.text = r),
                           );
                         }).toList(),
                       ),
                       const SizedBox(height: 14),
 
-                      // Name (Marathi) & Name (English) side-by-side
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                fieldLabel(isMr ? 'पूर्ण नाव (मराठी)' : 'Full Name (Marathi)', isRequired: true),
-                                TextField(
-                                  controller: nameMrCtrl,
-                                  decoration: inputDec(
-                                    hintText: isMr ? 'उदा. रमेश ब. कदम' : 'e.g. Ramesh B. Kadam',
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                fieldLabel(isMr ? 'पूर्ण नाव (इंग्रजी)' : 'Full Name (English)'),
-                                TextField(
-                                  controller: nameCtrl,
-                                  decoration: inputDec(
-                                    hintText: isMr ? 'उदा. Ramesh Balasaheb Kadam' : 'e.g. Ramesh Balasaheb Kadam',
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-
-                      // Mobile & Role side-by-side
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                fieldLabel(isMr ? 'मोबाईल नंबर' : 'Mobile Number', isRequired: true),
-                                TextField(
-                                  controller: mobileCtrl,
-                                  keyboardType: TextInputType.phone,
-                                  decoration: inputDec(
-                                    hintText: '98220xxxxx',
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                fieldLabel(isMr ? 'पद / हुद्दा' : 'Role / Designation', isRequired: true),
-                                TextField(
-                                  controller: roleCtrl,
-                                  decoration: inputDec(
-                                    hintText: category == 'Office'
-                                        ? (isMr ? 'उदा. कार्यालय समन्वयक' : 'Office Admin')
-                                        : (category == 'Party'
-                                            ? (isMr ? 'उदा. प्रभाग अध्यक्ष' : 'Ward President')
-                                            : (isMr ? 'उदा. वायरमन / प्लंबर' : 'Plumber / Electrician')),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-
-                      // Conditional: Wing for Party or Society for Cooperative
-                      if (category == 'Party') ...[
-                        fieldLabel(isMr ? 'पक्ष आघाडी / सेल' : 'Party Wing / Cell'),
-                        DropdownButtonFormField<String>(
-                          value: wing,
-                          decoration: inputDec(),
-                          isExpanded: true,
-                          items: wings.map((w) => DropdownMenuItem(value: w, child: Text(w, style: const TextStyle(fontSize: 13)))).toList(),
-                          onChanged: (val) {
-                            if (val != null) setModalState(() => wing = val);
-                          },
-                        ),
-                        const SizedBox(height: 14),
-                      ] else if (category == 'Cooperative') ...[
-                        fieldLabel(isMr ? 'सोसायटी किंवा शासकीय कार्यालय नाव' : 'Society or Govt Office Name'),
-                        TextField(
-                          controller: societyCtrl,
-                          decoration: inputDec(
-                            hintText: isMr
-                                ? 'उदा. शनिवार पेठ फेडरेशन किंवा महापालिका जल विभाग'
-                                : 'e.g. Shaniwar Peth Federation or Municipal Drainage Dept',
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                      ],
-
-                      // Area & Keywords side-by-side
+                      // Work Area & Society Name
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -508,11 +638,11 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                fieldLabel(isMr ? 'ऑटो कीवर्ड्स (स्वल्पविरामाने)' : 'Auto Keywords'),
+                                fieldLabel(isMr ? 'सोसायटीचे नाव' : 'Society Name', optionalNote: isMr ? 'ऐच्छिक' : 'Optional'),
                                 TextField(
-                                  controller: keywordsCtrl,
+                                  controller: societyCtrl,
                                   decoration: inputDec(
-                                    hintText: isMr ? 'पाणी, ड्रेनेज, वीज' : 'water, drainage, electric',
+                                    hintText: isMr ? 'उदा. रॉयल हाईट्स' : 'e.g. Royal Heights',
                                   ),
                                 ),
                               ],
@@ -520,91 +650,324 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 14),
 
-                      // Submit Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0284C7),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                      // Party Wing & Designation/Post (Pad)
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'पक्ष आघाडी / सेल' : 'Party Wing', optionalNote: isMr ? 'ऐच्छिक' : 'Optional'),
+                                DropdownButtonFormField<String>(
+                                  initialValue: partyWingsList.contains(partyWing) ? partyWing : '',
+                                  decoration: inputDec(),
+                                  isExpanded: true,
+                                  items: [
+                                    DropdownMenuItem(value: '', child: Text(isMr ? 'आघाडी निवडा' : 'Select Wing', style: const TextStyle(fontSize: 12.5))),
+                                    ...partyWingsList.map((w) => DropdownMenuItem(value: w, child: Text(w, style: const TextStyle(fontSize: 12.5)))),
+                                  ],
+                                  onChanged: (val) {
+                                    if (val != null) setModalState(() => partyWing = val);
+                                  },
+                                ),
+                              ],
                             ),
-                            elevation: 0,
                           ),
-                          icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
-                          label: Text(
-                            isMr ? 'सदस्य जतन करा' : 'Save Member',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(isMr ? 'पद (आघाडीतील पद)' : 'Designation / Post', optionalNote: isMr ? 'ऐच्छिक' : 'Optional'),
+                                DropdownButtonFormField<String>(
+                                  initialValue: partyPostsList.any((p) => p.startsWith(pad) && pad.isNotEmpty)
+                                      ? partyPostsList.firstWhere((p) => p.startsWith(pad))
+                                      : '',
+                                  decoration: inputDec(),
+                                  isExpanded: true,
+                                  items: [
+                                    DropdownMenuItem(value: '', child: Text(isMr ? 'पद निवडा' : 'Select Post', style: const TextStyle(fontSize: 12.5))),
+                                    ...partyPostsList.map((p) => DropdownMenuItem(value: p, child: Text(p, style: const TextStyle(fontSize: 12.5)))),
+                                  ],
+                                  onChanged: (val) {
+                                    if (val != null) setModalState(() => pad = val.split(' ')[0]);
+                                  },
+                                ),
+                              ],
+                            ),
                           ),
-                          onPressed: () async {
-                            if (nameMrCtrl.text.trim().isEmpty && nameCtrl.text.trim().isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    isMr
-                                        ? 'कृपया सदस्याचे नाव प्रविष्ट करा.'
-                                        : 'Please enter member name.',
-                                  ),
-                                ),
-                              );
-                              return;
-                            }
-                            if (mobileCtrl.text.trim().isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    isMr
-                                        ? 'कृपया मोबाईल नंबर प्रविष्ट करा.'
-                                        : 'Please enter mobile number.',
-                                  ),
-                                ),
-                              );
-                              return;
-                            }
+                        ],
+                      ),
+                      const SizedBox(height: 14),
 
-                            final kw = keywordsCtrl.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+                      // Auto Keywords
+                      fieldLabel(isMr ? 'ऑटो कीवर्ड्स' : 'Auto Keywords', optionalNote: isMr ? 'ऐच्छिक' : 'Optional'),
+                      TextField(
+                        controller: keywordsCtrl,
+                        decoration: inputDec(
+                          hintText: isMr ? 'पाणी, ड्रेनेज, वीज, कचरा' : 'water, drainage, electricity, waste',
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4, bottom: 14),
+                        child: Text(
+                          isMr
+                              ? 'तक्रारींचे स्वयंचलित वाटप करण्यासाठी कीवर्ड्स (स्वल्पविरामाने वेगळे करा)'
+                              : 'Keywords used to auto-assign incoming citizen complaints',
+                          style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                        ),
+                      ),
 
-                            final newMember = TeamMemberModel(
-                              id: 'stf-${DateTime.now().millisecondsSinceEpoch}',
-                              name: nameCtrl.text.trim().isNotEmpty ? nameCtrl.text.trim() : nameMrCtrl.text.trim(),
-                              nameMarathi: nameMrCtrl.text.trim().isNotEmpty ? nameMrCtrl.text.trim() : null,
-                              mobile: mobileCtrl.text.trim(),
-                              role: roleCtrl.text.trim().isNotEmpty ? roleCtrl.text.trim() : 'Staff',
-                              category: category,
-                              area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : 'Ward 12',
-                              partyWing: category == 'Party' ? wing : null,
-                              societyName: category == 'Cooperative' ? societyCtrl.text.trim() : null,
-                              keywords: kw,
-                              joinedDate: DateTime.now(),
+                      // Complaint Categories (Auto-Assign)
+                      fieldLabel(isMr ? 'तक्रार श्रेणी (स्वयंचलित वाटप)' : 'Complaint Categories (Auto-Assign)'),
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEEF2FF),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFE0E7FF)),
+                        ),
+                        child: Wrap(
+                          spacing: 10,
+                          runSpacing: 4,
+                          children: complaintCategories.map((cat) {
+                            final catId = cat['id']!;
+                            final isChecked = selectedCategories.contains(catId);
+                            return FilterChip(
+                              label: Text(cat['label']!, style: TextStyle(fontSize: 12, color: isChecked ? Colors.indigo.shade900 : const Color(0xFF334155))),
+                              selected: isChecked,
+                              selectedColor: const Color(0xFFC7D2FE),
+                              checkmarkColor: Colors.indigo.shade900,
+                              onSelected: (selected) {
+                                setModalState(() {
+                                  if (selected) {
+                                    selectedCategories.add(catId);
+                                  } else {
+                                    selectedCategories.remove(catId);
+                                  }
+                                });
+                              },
                             );
+                          }).toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
 
-                            final repo = ref.read(teamRepoProvider);
-                            await repo.addTeamMember(newMember);
-                            if (ctx.mounted) {
-                              Navigator.pop(ctx);
-                            }
-                            _loadTeam();
-
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    isMr
-                                        ? 'नवीन सदस्य यशस्वीरित्या जोडला गेला!'
-                                        : 'New member added successfully!',
-                                  ),
-                                  backgroundColor: const Color(0xFF16A34A),
+                      // Permissions (Access Control)
+                      fieldLabel(isMr ? 'परवानग्या व अधिकार (Access Control)' : 'Permissions (Access Control)'),
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  '${selectedPermissions.length} / ${availablePermissions.length} ${isMr ? 'अधिकार निवडले' : 'selected'}',
+                                  style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                                 ),
-                              );
-                            }
-                          },
+                                TextButton(
+                                  onPressed: () {
+                                    setModalState(() {
+                                      if (selectedPermissions.length == availablePermissions.length) {
+                                        selectedPermissions.clear();
+                                      } else {
+                                        selectedPermissions = availablePermissions.map((p) => p['id']!).toList();
+                                      }
+                                    });
+                                  },
+                                  style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                                  child: Text(
+                                    selectedPermissions.length == availablePermissions.length
+                                        ? (isMr ? 'सर्व काढा' : 'Deselect All')
+                                        : (isMr ? 'सर्व निवडा' : 'Select All'),
+                                    style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const Divider(height: 8, color: Color(0xFFE2E8F0)),
+                            SizedBox(
+                              height: 180,
+                              child: ListView.builder(
+                                shrinkWrap: true,
+                                itemCount: availablePermissions.length,
+                                itemBuilder: (context, idx) {
+                                  final perm = availablePermissions[idx];
+                                  final permId = perm['id']!;
+                                  final isChecked = selectedPermissions.contains(permId);
+                                  return CheckboxListTile(
+                                    dense: true,
+                                    visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+                                    contentPadding: EdgeInsets.zero,
+                                    activeColor: const Color(0xFF0284C7),
+                                    title: Text(perm['label']!, style: const TextStyle(fontSize: 12.5)),
+                                    value: isChecked,
+                                    onChanged: (val) {
+                                      setModalState(() {
+                                        if (val == true) {
+                                          selectedPermissions.add(permId);
+                                        } else {
+                                          selectedPermissions.remove(permId);
+                                        }
+                                      });
+                                    },
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Management Access: Assign Work to Other Staff
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF9C3),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFFEF08A)),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Checkbox(
+                              value: canAssignWork,
+                              activeColor: const Color(0xFF0284C7),
+                              onChanged: (val) => setModalState(() => canAssignWork = val ?? true),
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    isMr ? 'इतर कर्मचाऱ्यांना काम सोपवण्याची परवानगी द्या' : 'Assign Work to Other Staff',
+                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF713F12)),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    isMr
+                                        ? 'या युझरला इतर कर्मचाऱ्यांना तक्रारी व कार्ये वाटप करण्याचे अधिकार मिळतील.'
+                                        : 'Allow this user to delegate tasks and citizen complaints to other staff members.',
+                                    style: const TextStyle(fontSize: 11, color: Color(0xFF854D0E)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 24),
+
+                      // Form Buttons: Cancel & Save Member
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 13),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              onPressed: () => Navigator.pop(ctx),
+                              child: Text(
+                                isMr ? 'रद्द करा' : 'Cancel',
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            flex: 2,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0284C7),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 13),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                elevation: 0,
+                              ),
+                              icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
+                              label: Text(
+                                memberToEdit != null
+                                    ? (isMr ? 'बदल जतन करा' : 'Save Changes')
+                                    : (isMr ? 'सदस्य जतन करा' : 'Save Member'),
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                              onPressed: () async {
+                                if (nameCtrl.text.trim().isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(isMr ? 'कृपया सदस्याचे नाव प्रविष्ट करा.' : 'Please enter member name.')),
+                                  );
+                                  return;
+                                }
+                                if (mobileCtrl.text.trim().isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(isMr ? 'कृपया मोबाईल नंबर प्रविष्ट करा.' : 'Please enter mobile number.')),
+                                  );
+                                  return;
+                                }
+
+                                final manualKw = keywordsCtrl.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+                                final combinedKw = {...manualKw, ...selectedCategories}.toList();
+
+                                final member = TeamMemberModel(
+                                  id: memberToEdit?.id ?? 'stf-${DateTime.now().millisecondsSinceEpoch}',
+                                  name: nameCtrl.text.trim(),
+                                  nameMarathi: nameCtrl.text.trim(),
+                                  mobile: mobileCtrl.text.trim(),
+                                  email: emailCtrl.text.trim().isNotEmpty ? emailCtrl.text.trim() : null,
+                                  role: roleCtrl.text.trim().isNotEmpty ? roleCtrl.text.trim() : 'Staff',
+                                  category: category,
+                                  area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : 'Ward 12',
+                                  partyWing: partyWing.isNotEmpty ? partyWing : null,
+                                  paksh: paksh.isNotEmpty ? paksh : null,
+                                  pad: pad.isNotEmpty ? pad : null,
+                                  societyName: societyCtrl.text.trim().isNotEmpty ? societyCtrl.text.trim() : null,
+                                  keywords: combinedKw,
+                                  permissions: selectedPermissions,
+                                  canAssignWork: canAssignWork,
+                                  joinedDate: memberToEdit?.joinedDate ?? DateTime.now(),
+                                );
+
+                                final messenger = ScaffoldMessenger.of(context);
+                                final repo = ref.read(teamRepoProvider);
+                                if (memberToEdit != null) {
+                                  await repo.updateTeamMember(member);
+                                } else {
+                                  await repo.addTeamMember(member);
+                                }
+
+                                if (ctx.mounted) Navigator.pop(ctx);
+                                if (!mounted) return;
+                                _loadTeam();
+
+                                messenger.showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      memberToEdit != null
+                                          ? (isMr ? 'सदस्याची माहिती अद्यतनित केली!' : 'Member updated successfully!')
+                                          : (isMr ? 'नवीन सदस्य यशस्वीरित्या जोडला गेला!' : 'New member added successfully!'),
+                                    ),
+                                    backgroundColor: const Color(0xFF16A34A),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
                     ],
                   ),
                 ),
@@ -942,6 +1305,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
   }
 
   Widget _buildTeamCard(TeamMemberModel member) {
+    final isMr = ref.watch(isMarathiProvider);
     Color catColor = const Color(0xFF0284C7);
     Color catBg = const Color(0xFFE0F2FE);
 
@@ -1034,6 +1398,11 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                         ),
                       ],
                     ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF64748B)),
+                    tooltip: isMr ? 'माहिती सुधारा' : 'Edit Member',
+                    onPressed: () => _showMemberModal(memberToEdit: member),
                   ),
                   const Icon(Icons.chevron_right, size: 20, color: Colors.grey),
                 ],
