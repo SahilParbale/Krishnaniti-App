@@ -365,20 +365,18 @@ final customBottomBarProvider =
     NotifierProvider<CustomBottomBarNotifier, List<String>>(CustomBottomBarNotifier.new);
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 2. Radial Quick Actions 7 Slots (Left Bottom Leg to Right Bottom Leg)
+// 2. Radial Quick Actions 5 Slots (Semicircular Arc from Left to Right)
 // ─────────────────────────────────────────────────────────────────────────────
 const List<String> kDefaultQuickActionSlots = [
-  'work_history', // 0: Left Bottom Leg
-  'complaints',   // 1: Left Arc 162°
-  'letters',      // 2: Left Upper Arc 126°
-  'voters',       // 3: Top Peak Arc 90°
-  'diary',        // 4: Right Upper Arc 54°
-  'visitors',     // 5: Right Arc 18°
-  'ai_content',   // 6: Right Bottom Leg
+  'work_history', // 0: Left Arc 162°
+  'complaints',   // 1: Left Upper Arc 126°
+  'voters',       // 2: Top Center Arc 90°
+  'letters',      // 3: Right Upper Arc 54°
+  'diary',        // 4: Right Arc 18°
 ];
 
 class CustomQuickActionsNotifier extends Notifier<List<String>> {
-  static const String _prefKey = 'custom_quick_action_slots';
+  static const String _prefKey = 'custom_quick_action_slots_v5';
 
   @override
   List<String> build() {
@@ -390,14 +388,14 @@ class CustomQuickActionsNotifier extends Notifier<List<String>> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final saved = prefs.getStringList(_prefKey);
-      if (saved != null && saved.length == 7) {
+      if (saved != null && saved.length == 5) {
         state = List.from(saved);
       }
     } catch (_) {}
   }
 
   Future<void> setSlot(int slotIndex, String moduleKey) async {
-    if (slotIndex < 0 || slotIndex >= 7) return;
+    if (slotIndex < 0 || slotIndex >= 5) return;
     final updated = List<String>.from(state);
     updated[slotIndex] = moduleKey;
     state = updated;
