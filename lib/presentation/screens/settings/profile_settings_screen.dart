@@ -26,6 +26,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
   @override
   bool get wantKeepAlive => true;
   late TabController _tabController;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   bool _isLoading = true;
   bool _isSaving = false;
@@ -562,6 +563,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: const Color(0xFFF8FAFC),
       drawer: NagarsevakAppDrawer(
         currentTabIndex: 3,
@@ -572,16 +574,18 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
         foregroundColor: Colors.white,
         elevation: 0,
         titleSpacing: 0,
-        leading: Builder(
-            builder: (ctx) => IconButton(
-              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: 'Open Menu Drawer',
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                Scaffold.of(ctx).openDrawer();
-              },
-            ),
-          ),
+        leading: IconButton(
+          icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+          tooltip: 'Toggle Sidebar Menu',
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+              _scaffoldKey.currentState?.closeDrawer();
+            } else {
+              _scaffoldKey.currentState?.openDrawer();
+            }
+          },
+        ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -689,6 +693,15 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                     onPointerMove: (event) {
                       _horizontalPointerDelta += event.delta.dx;
                       _verticalPointerDelta += event.delta.dy;
+
+                      // Sidebar Toggling on Settings Page:
+                      // Pulling from the extreme left edge immediately triggers and opens the sidebar drawer
+                      if (_pointerStartX <= 55.0 && _horizontalPointerDelta > 20.0) {
+                        if (!(_scaffoldKey.currentState?.isDrawerOpen ?? false)) {
+                          HapticFeedback.lightImpact();
+                          _scaffoldKey.currentState?.openDrawer();
+                        }
+                      }
                     },
                     onPointerUp: (event) {
                       final screenWidth = MediaQuery.of(context).size.width;
@@ -712,13 +725,17 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                           return;
                         }
 
-                        // 3. Swiping right at the first sub-page (Profile Details) -> Navigate back to previous screen (Letters)!
-                        if (_horizontalPointerDelta > 30.0 && _tabController.index == 0) {
-                          final customBottomKeys = ref.read(customBottomBarProvider);
-                          final prevScreen = customBottomKeys.length > 2 ? customBottomKeys[2] : 'letters';
-                          HapticFeedback.lightImpact();
-                          ref.read(activeScreenProvider.notifier).setScreen(prevScreen, isBack: true);
-                          return;
+                        // 3. Sidebar Toggling on Settings Page:
+                        // Different from other pages: swiping right on the first sub-page or pulling from left edge
+                        // toggles/opens the sidebar drawer cleanly, rather than navigating backward to Letters!
+                        if (_horizontalPointerDelta > 30.0) {
+                          if (_pointerStartX <= 70.0 || _tabController.index == 0) {
+                            HapticFeedback.lightImpact();
+                            if (!(_scaffoldKey.currentState?.isDrawerOpen ?? false)) {
+                              _scaffoldKey.currentState?.openDrawer();
+                            }
+                            return;
+                          }
                         }
                       }
                     },
