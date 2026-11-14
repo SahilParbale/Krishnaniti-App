@@ -441,17 +441,8 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
                 }
               },
               onSwipeRight: () {
-                // Swipe Right (finger moves →):
-                // For Profile Settings: Make it different! Toggle/open the sidebar drawer!
-                if (activeScreen == 'profile_settings') {
-                  HapticFeedback.lightImpact();
-                  if (!(_mainScaffoldKey.currentState?.isDrawerOpen ?? false)) {
-                    _mainScaffoldKey.currentState?.openDrawer();
-                  }
-                  return;
-                }
-
-                // In the other main screens (Dashboard, Complaints, Letters), moves backward.
+                // Swipe Right (finger moves → from middle of screen):
+                // In the 4 main screens (Dashboard, Complaints, Letters, Profile), moves backward.
                 // From Dashboard, loops back to Profile Settings.
                 // Anywhere else in any subpage, redirects directly to Dashboard!
                 final idxIn4 = main4Screens.indexOf(activeScreen);

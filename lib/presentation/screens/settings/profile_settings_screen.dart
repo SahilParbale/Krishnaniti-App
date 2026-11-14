@@ -694,9 +694,8 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                       _horizontalPointerDelta += event.delta.dx;
                       _verticalPointerDelta += event.delta.dy;
 
-                      // Sidebar Toggling on Settings Page:
-                      // Pulling from the extreme left edge immediately triggers and opens the sidebar drawer
-                      if (_pointerStartX <= 55.0 && _horizontalPointerDelta > 20.0) {
+                      // When pulled from left corner (<= 50px): sidebar drawer comes!
+                      if (_pointerStartX <= 50.0 && _horizontalPointerDelta > 20.0) {
                         if (!(_scaffoldKey.currentState?.isDrawerOpen ?? false)) {
                           HapticFeedback.lightImpact();
                           _scaffoldKey.currentState?.openDrawer();
@@ -708,34 +707,40 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                       final isHorizontal = _horizontalPointerDelta.abs() > 30.0 &&
                           _horizontalPointerDelta.abs() > _verticalPointerDelta.abs() * 1.1;
 
-                      if (isHorizontal) {
-                        // 1. Right-edge inward swipe on ANY subpage -> Navigate forward to Dashboard!
-                        if (_pointerStartX > screenWidth - 60.0 && _horizontalPointerDelta < -30.0) {
-                          HapticFeedback.lightImpact();
-                          ref.read(activeScreenProvider.notifier).setScreen('dashboard', isBack: false);
-                          ref.read(mainTabIndexProvider.notifier).setTab(0);
-                          return;
-                        }
+                      if (!isHorizontal) return;
 
-                        // 2. Swiping left when sub-pages are ending (at the last tab: Report Issue) -> Navigate forward to Dashboard!
-                        if (_horizontalPointerDelta < -30.0 && _tabController.index == _tabController.length - 1) {
-                          HapticFeedback.lightImpact();
-                          ref.read(activeScreenProvider.notifier).setScreen('dashboard', isBack: false);
-                          ref.read(mainTabIndexProvider.notifier).setTab(0);
-                          return;
-                        }
-
-                        // 3. Sidebar Toggling on Settings Page:
-                        // Different from other pages: swiping right on the first sub-page or pulling from left edge
-                        // toggles/opens the sidebar drawer cleanly, rather than navigating backward to Letters!
-                        if (_horizontalPointerDelta > 30.0) {
-                          if (_pointerStartX <= 70.0 || _tabController.index == 0) {
+                      // 1. When pulled from left corner (<= 50px): The sidebar comes!
+                      if (_pointerStartX <= 50.0) {
+                        if (_horizontalPointerDelta > 15.0) {
+                          if (!(_scaffoldKey.currentState?.isDrawerOpen ?? false)) {
                             HapticFeedback.lightImpact();
-                            if (!(_scaffoldKey.currentState?.isDrawerOpen ?? false)) {
-                              _scaffoldKey.currentState?.openDrawer();
-                            }
-                            return;
+                            _scaffoldKey.currentState?.openDrawer();
                           }
+                        }
+                        return; // Consume left corner gesture completely: do NOT swipe screens!
+                      }
+
+                      // 2. While pulled from middle of the screen (> 50px): The screen gets swiped!
+
+                      // A) Swiping Right (finger moves →): Screen gets swiped back to Letters!
+                      if (_horizontalPointerDelta > 30.0) {
+                        final customBottomKeys = ref.read(customBottomBarProvider);
+                        final prevScreen = customBottomKeys.length > 2 ? customBottomKeys[2] : 'letters';
+                        HapticFeedback.lightImpact();
+                        ref.read(activeScreenProvider.notifier).setScreen(prevScreen, isBack: true);
+                        return;
+                      }
+
+                      // B) Swiping Left (finger moves ←):
+                      // - When sub-pages are ending (at the last tab: Report Issue) OR right-edge inward swipe:
+                      // Screen gets swiped forward to Dashboard!
+                      if (_horizontalPointerDelta < -30.0) {
+                        if (_tabController.index == _tabController.length - 1 ||
+                            _pointerStartX > screenWidth - 60.0) {
+                          HapticFeedback.lightImpact();
+                          ref.read(activeScreenProvider.notifier).setScreen('dashboard', isBack: false);
+                          ref.read(mainTabIndexProvider.notifier).setTab(0);
+                          return;
                         }
                       }
                     },
