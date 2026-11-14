@@ -443,6 +443,7 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
               onSwipeRight: () {
                 // Swipe Right (finger moves →):
                 // In the 4 main screens (Dashboard, Complaints, Letters, Profile), moves backward.
+                // From Dashboard, loops back to Profile Settings.
                 // Anywhere else in any subpage, redirects directly to Dashboard!
                 final idxIn4 = main4Screens.indexOf(activeScreen);
                 if (idxIn4 > 0) {
@@ -452,6 +453,10 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
                   if (prevScreen == 'dashboard') {
                     ref.read(mainTabIndexProvider.notifier).setTab(0);
                   }
+                } else if (idxIn4 == 0) {
+                  // Loop from Dashboard back to Profile Settings!
+                  HapticFeedback.lightImpact();
+                  ref.read(activeScreenProvider.notifier).setScreen(main4Screens.last, isBack: true);
                 } else if (activeScreen != 'dashboard') {
                   HapticFeedback.lightImpact();
                   ref.read(activeScreenProvider.notifier).resetToDashboard();
@@ -460,15 +465,27 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
               },
               onSwipeLeft: () {
                 // Swipe Left (finger moves ←):
-                // Moves forward across the 4 main screens (Dashboard -> Complaints -> Letters -> Profile)
+                // Moves forward across the 4 main screens (Dashboard -> Complaints -> Letters -> Profile -> Dashboard loop)
                 final idxIn4 = main4Screens.indexOf(activeScreen);
-                if (idxIn4 != -1 && idxIn4 < main4Screens.length - 1) {
-                  final nextScreen = main4Screens[idxIn4 + 1];
-                  HapticFeedback.lightImpact();
-                  ref.read(activeScreenProvider.notifier).setScreen(nextScreen, isBack: false);
-                  if (nextScreen == 'dashboard') {
+                if (idxIn4 != -1) {
+                  if (idxIn4 < main4Screens.length - 1) {
+                    final nextScreen = main4Screens[idxIn4 + 1];
+                    HapticFeedback.lightImpact();
+                    ref.read(activeScreenProvider.notifier).setScreen(nextScreen, isBack: false);
+                    if (nextScreen == 'dashboard') {
+                      ref.read(mainTabIndexProvider.notifier).setTab(0);
+                    }
+                  } else {
+                    // At the end (profile_settings): Loop smoothly forward to Dashboard!
+                    HapticFeedback.lightImpact();
+                    ref.read(activeScreenProvider.notifier).setScreen(main4Screens[0], isBack: false);
                     ref.read(mainTabIndexProvider.notifier).setTab(0);
                   }
+                } else {
+                  // Anywhere else in any subpage, swiping left redirects directly to Dashboard!
+                  HapticFeedback.lightImpact();
+                  ref.read(activeScreenProvider.notifier).resetToDashboard();
+                  ref.read(mainTabIndexProvider.notifier).setTab(0);
                 }
               },
             ),

@@ -9,6 +9,7 @@ import '../../../core/services/supabase_service.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/custom_navigation_provider.dart';
+import '../../providers/navigation_provider.dart';
 
 class ProfileSettingsScreen extends ConsumerStatefulWidget {
   final VoidCallback? onBackToHome;
@@ -66,6 +67,11 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
   bool _isLoadingTickets = false;
 
   final ImagePicker _picker = ImagePicker();
+
+  // Screen Touch gesture tracking for seamless transitions when sub-pages end
+  double _horizontalPointerDelta = 0.0;
+  double _verticalPointerDelta = 0.0;
+  double _pointerStartX = 0.0;
 
   @override
   void initState() {
@@ -673,15 +679,59 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                   ),
                 ),
                 Expanded(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildProfileTab(isDark),
-                      _buildBarCustomizationTab(isDark),
-                      _buildSmsTab(isDark),
-                      _buildSecurityTab(isDark),
-                      _buildSupportTab(isDark),
-                    ],
+                  child: Listener(
+                    behavior: HitTestBehavior.translucent,
+                    onPointerDown: (event) {
+                      _pointerStartX = event.position.dx;
+                      _horizontalPointerDelta = 0.0;
+                      _verticalPointerDelta = 0.0;
+                    },
+                    onPointerMove: (event) {
+                      _horizontalPointerDelta += event.delta.dx;
+                      _verticalPointerDelta += event.delta.dy;
+                    },
+                    onPointerUp: (event) {
+                      final screenWidth = MediaQuery.of(context).size.width;
+                      final isHorizontal = _horizontalPointerDelta.abs() > 30.0 &&
+                          _horizontalPointerDelta.abs() > _verticalPointerDelta.abs() * 1.1;
+
+                      if (isHorizontal) {
+                        // 1. Right-edge inward swipe on ANY subpage -> Navigate forward to Dashboard!
+                        if (_pointerStartX > screenWidth - 60.0 && _horizontalPointerDelta < -30.0) {
+                          HapticFeedback.lightImpact();
+                          ref.read(activeScreenProvider.notifier).setScreen('dashboard', isBack: false);
+                          ref.read(mainTabIndexProvider.notifier).setTab(0);
+                          return;
+                        }
+
+                        // 2. Swiping left when sub-pages are ending (at the last tab: Report Issue) -> Navigate forward to Dashboard!
+                        if (_horizontalPointerDelta < -30.0 && _tabController.index == _tabController.length - 1) {
+                          HapticFeedback.lightImpact();
+                          ref.read(activeScreenProvider.notifier).setScreen('dashboard', isBack: false);
+                          ref.read(mainTabIndexProvider.notifier).setTab(0);
+                          return;
+                        }
+
+                        // 3. Swiping right at the first sub-page (Profile Details) -> Navigate back to previous screen (Letters)!
+                        if (_horizontalPointerDelta > 30.0 && _tabController.index == 0) {
+                          final customBottomKeys = ref.read(customBottomBarProvider);
+                          final prevScreen = customBottomKeys.length > 2 ? customBottomKeys[2] : 'letters';
+                          HapticFeedback.lightImpact();
+                          ref.read(activeScreenProvider.notifier).setScreen(prevScreen, isBack: true);
+                          return;
+                        }
+                      }
+                    },
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildProfileTab(isDark),
+                        _buildBarCustomizationTab(isDark),
+                        _buildSmsTab(isDark),
+                        _buildSecurityTab(isDark),
+                        _buildSupportTab(isDark),
+                      ],
+                    ),
                   ),
                 ),
               ],
