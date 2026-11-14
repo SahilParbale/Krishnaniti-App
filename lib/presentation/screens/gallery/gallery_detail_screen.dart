@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -148,39 +149,32 @@ class _GalleryDetailScreenState extends ConsumerState<GalleryDetailScreen> {
                   panEnabled: true,
                   minScale: 0.8,
                   maxScale: 3.5,
-                  child: Image.network(
-                    _item.imageUrl,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: double.infinity,
-                    errorBuilder: (ctx, error, stackTrace) {
-                      return Container(
-                        color: const Color(0xFF1E293B),
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              Icon(Icons.broken_image_rounded, size: 48, color: Colors.white54),
-                              SizedBox(height: 8),
-                              Text(
-                                'No image available',
-                                style: TextStyle(color: Colors.white70, fontSize: 13),
+                  child: (_item.imageUrl.startsWith('http://') || _item.imageUrl.startsWith('https://'))
+                      ? Image.network(
+                          _item.imageUrl,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                          errorBuilder: (ctx, error, stackTrace) => _buildDetailImageError(),
+                          loadingBuilder: (ctx, child, progress) {
+                            if (progress == null) return child;
+                            return Container(
+                              color: const Color(0xFF0F172A),
+                              child: const Center(
+                                child: CircularProgressIndicator(color: Colors.white),
                               ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                    loadingBuilder: (ctx, child, progress) {
-                      if (progress == null) return child;
-                      return Container(
-                        color: const Color(0xFF0F172A),
-                        child: const Center(
-                          child: CircularProgressIndicator(color: Colors.white),
-                        ),
-                      );
-                    },
-                  ),
+                            );
+                          },
+                        )
+                      : (File(_item.imageUrl).existsSync()
+                          ? Image.file(
+                              File(_item.imageUrl),
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: double.infinity,
+                              errorBuilder: (ctx, error, stackTrace) => _buildDetailImageError(),
+                            )
+                          : _buildDetailImageError()),
                 ),
               ),
 
@@ -395,6 +389,25 @@ class _GalleryDetailScreenState extends ConsumerState<GalleryDetailScreen> {
               const SizedBox(height: 32),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailImageError() {
+    return Container(
+      color: const Color(0xFF1E293B),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(Icons.broken_image_rounded, size: 48, color: Colors.white54),
+            SizedBox(height: 8),
+            Text(
+              'No image available',
+              style: TextStyle(color: Colors.white70, fontSize: 13),
+            ),
+          ],
         ),
       ),
     );

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../data/models/newspaper_clipping_model.dart';
@@ -503,33 +504,7 @@ class _NewspaperClippingDetailScreenState
                     // High-Res Image Preview
                     Stack(
                       children: [
-                        Image.network(
-                          _clipping.imageUrl,
-                          width: double.infinity,
-                          height: 240,
-                          fit: BoxFit.cover,
-                          errorBuilder: (ctx, err, stack) {
-                            return Container(
-                              width: double.infinity,
-                              height: 200,
-                              color: Colors.grey.shade200,
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.newspaper_rounded,
-                                      size: 52, color: Colors.grey.shade400),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    '${_clipping.newspaper} Press Clipping',
-                                    style: TextStyle(
-                                        color: Colors.grey.shade600,
-                                        fontSize: 13),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
+                        _buildClippingImage(),
                         // Sentiment Badge Top Left
                         Positioned(
                           top: 12,
@@ -865,6 +840,50 @@ class _NewspaperClippingDetailScreenState
         ),
       ),
     );
+  }
+
+  Widget _buildClippingImage() {
+    Widget placeholder() => Container(
+          width: double.infinity,
+          height: 200,
+          color: Colors.grey.shade200,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.newspaper_rounded,
+                  size: 52, color: Colors.grey.shade400),
+              const SizedBox(height: 8),
+              Text(
+                '${_clipping.newspaper} Press Clipping',
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+              ),
+            ],
+          ),
+        );
+
+    if (_clipping.imageUrl.startsWith('http://') ||
+        _clipping.imageUrl.startsWith('https://')) {
+      return Image.network(
+        _clipping.imageUrl,
+        width: double.infinity,
+        height: 240,
+        fit: BoxFit.cover,
+        errorBuilder: (ctx, err, stack) => placeholder(),
+      );
+    }
+    try {
+      final file = File(_clipping.imageUrl);
+      if (file.existsSync()) {
+        return Image.file(
+          file,
+          width: double.infinity,
+          height: 240,
+          fit: BoxFit.cover,
+          errorBuilder: (ctx, err, stack) => placeholder(),
+        );
+      }
+    } catch (_) {}
+    return placeholder();
   }
 }
 

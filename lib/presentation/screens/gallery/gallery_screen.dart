@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../../../data/models/gallery_model.dart';
 import '../../../data/repositories/gallery_repository.dart';
@@ -69,12 +71,11 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
     final isMr = ref.read(isMarathiProvider);
     final titleCtrl = TextEditingController();
     final descCtrl = TextEditingController();
-    final locCtrl = TextEditingController(text: 'Shaniwar Peth, Pune');
-    final urlCtrl = TextEditingController(
-      text: 'https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=800&q=80',
-    );
+    final urlCtrl = TextEditingController();
     DateTime selectedDate = DateTime.now();
     GalleryCategory selectedCat = GalleryCategory.event;
+    XFile? pickedImage;
+    final ImagePicker picker = ImagePicker();
 
     Widget fieldLabel(String text, {bool isRequired = false}) {
       return Padding(
@@ -133,8 +134,21 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) {
+          Future<void> pickPhoto(ImageSource source) async {
+            try {
+              final file = await picker.pickImage(source: source, imageQuality: 85);
+              if (file != null) {
+                setModalState(() {
+                  pickedImage = file;
+                });
+              }
+            } catch (e) {
+              debugPrint('Error picking image: $e');
+            }
+          }
+
           return Container(
-            height: MediaQuery.of(ctx).size.height * 0.88,
+            height: MediaQuery.of(ctx).size.height * 0.90,
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -160,37 +174,24 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                     ),
                   ),
                 ),
-                // Header
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(7),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.add_photo_alternate_rounded,
-                              color: Color(0xFF0284C7),
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            isMr ? 'नवीन फोटो जोडा' : 'Add New Photo',
-                            style: const TextStyle(
-                              fontSize: 17.5,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF0F172A),
-                            ),
-                          ),
-                        ],
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.add_photo_alternate_rounded, color: Color(0xFF0284C7), size: 20),
                       ),
+                      const SizedBox(width: 10),
+                      Text(
+                        isMr ? 'नवीन फोटो जोडा' : 'Add New Photo',
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                      ),
+                      const Spacer(),
                       IconButton(
                         icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
                         onPressed: () => Navigator.pop(ctx),
@@ -200,208 +201,301 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                 ),
                 const Divider(height: 1, color: Color(0xFFE2E8F0)),
                 Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      // Title & Category side-by-side
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            flex: 6,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                fieldLabel(isMr ? 'फोटोचे नाव / शीर्षक' : 'Photo Title', isRequired: true),
-                                TextField(
-                                  controller: titleCtrl,
-                                  decoration: inputDec(
-                                    hintText: isMr ? 'उदा. प्रभाग विकास पाहणी २०२४' : 'e.g. Ward Development 2024',
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            flex: 4,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                fieldLabel(isMr ? 'श्रेणी' : 'Category'),
-                                DropdownButtonFormField<GalleryCategory>(
-                                  value: selectedCat,
-                                  decoration: inputDec(),
-                                  isExpanded: true,
-                                  items: GalleryCategory.values.map((c) {
-                                    return DropdownMenuItem(
-                                      value: c,
-                                      child: Row(
-                                        children: [
-                                          Icon(c.icon, size: 14, color: c.color),
-                                          const SizedBox(width: 6),
-                                          Text(isMr ? c.titleMr : c.titleEn, style: const TextStyle(fontSize: 12)),
-                                        ],
-                                      ),
-                                    );
-                                  }).toList(),
-                                  onChanged: (val) {
-                                    if (val != null) setModalState(() => selectedCat = val);
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-
-                      // Date & Location side-by-side
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                fieldLabel(isMr ? 'तारीख' : 'Date'),
-                                InkWell(
-                                  onTap: () async {
-                                    final picked = await showDatePicker(
-                                      context: ctx,
-                                      initialDate: selectedDate,
-                                      firstDate: DateTime(2020),
-                                      lastDate: DateTime.now(),
-                                    );
-                                    if (picked != null) {
-                                      setModalState(() => selectedDate = picked);
-                                    }
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(color: const Color(0xFFCBD5E1)),
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.fromLTRB(20, 16, 20, MediaQuery.of(ctx).viewInsets.bottom + 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Title & Category side-by-side
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              flex: 6,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  fieldLabel(isMr ? 'फोटोचे नाव / शीर्षक' : 'Photo Title', isRequired: true),
+                                  TextField(
+                                    controller: titleCtrl,
+                                    decoration: inputDec(
+                                      hintText: isMr ? 'उदा. प्रभाग विकास पाहणी २०२४' : 'e.g. Ward Development 2024',
                                     ),
-                                    child: Row(
-                                      children: [
-                                        const Icon(Icons.calendar_today_rounded, size: 14, color: Color(0xFF0284C7)),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          DateFormat('dd/MM/yyyy').format(selectedDate),
-                                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              flex: 4,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  fieldLabel(isMr ? 'श्रेणी' : 'Category'),
+                                  DropdownButtonFormField<GalleryCategory>(
+                                    initialValue: selectedCat,
+                                    decoration: inputDec(),
+                                    isExpanded: true,
+                                    items: GalleryCategory.values.map((c) {
+                                      return DropdownMenuItem(
+                                        value: c,
+                                        child: Row(
+                                          children: [
+                                            Icon(c.icon, size: 14, color: c.color),
+                                            const SizedBox(width: 6),
+                                            Text(isMr ? c.titleMr : c.titleEn, style: const TextStyle(fontSize: 12)),
+                                          ],
                                         ),
-                                      ],
+                                      );
+                                    }).toList(),
+                                    onChanged: (val) {
+                                      if (val != null) setModalState(() => selectedCat = val);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Image Upload from Mobile Camera & Storage (Device)
+                        fieldLabel(isMr ? 'फोटो निवडा (कॅमेरा व मोबाइल स्टोरेज)' : 'Select Photo (Camera & Device Storage)', isRequired: true),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (pickedImage != null) ...[
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  margin: const EdgeInsets.only(bottom: 10),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: const Color(0xFFCBD5E1)),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(6),
+                                        child: Image.file(
+                                          File(pickedImage!.path),
+                                          width: 44,
+                                          height: 44,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (context, error, stackTrace) => Container(
+                                            width: 44,
+                                            height: 44,
+                                            color: const Color(0xFFE2E8F0),
+                                            child: const Icon(Icons.image_rounded, color: Color(0xFF64748B)),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              pickedImage!.name,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              isMr ? 'फोटो निवडला आहे' : 'Photo selected',
+                                              style: const TextStyle(fontSize: 11, color: Color(0xFF16A34A), fontWeight: FontWeight.w500),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.close_rounded, size: 18, color: Color(0xFFEF4444)),
+                                        onPressed: () => setModalState(() => pickedImage = null),
+                                        tooltip: isMr ? 'काढून टाका' : 'Remove',
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: OutlinedButton.icon(
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: const Color(0xFF0284C7),
+                                        side: const BorderSide(color: Color(0xFF0284C7)),
+                                        padding: const EdgeInsets.symmetric(vertical: 10),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                      ),
+                                      icon: const Icon(Icons.camera_alt_rounded, size: 18),
+                                      label: Text(
+                                        isMr ? 'कॅमेरा' : 'Camera',
+                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                                      ),
+                                      onPressed: () => pickPhoto(ImageSource.camera),
                                     ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                fieldLabel(isMr ? 'स्थान / परिसर' : 'Location'),
-                                TextField(
-                                  controller: locCtrl,
-                                  decoration: inputDec(
-                                    hintText: isMr ? 'उदा. शनिवार पेठ, पुणे' : 'e.g. Shaniwar Peth, Pune',
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: OutlinedButton.icon(
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: const Color(0xFF0284C7),
+                                        side: const BorderSide(color: Color(0xFF0284C7)),
+                                        padding: const EdgeInsets.symmetric(vertical: 10),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                      ),
+                                      icon: const Icon(Icons.photo_library_rounded, size: 18),
+                                      label: Text(
+                                        isMr ? 'मोबाइल स्टोरेज' : 'Device Storage',
+                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                                      ),
+                                      onPressed: () => pickPhoto(ImageSource.gallery),
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
+                                ],
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-
-                      // Image URL
-                      fieldLabel(isMr ? 'फोटो URL' : 'Image URL', isRequired: true),
-                      TextField(
-                        controller: urlCtrl,
-                        decoration: inputDec(
-                          hintText: 'https://images.unsplash.com/...',
                         ),
-                      ),
-                      const SizedBox(height: 14),
+                        const SizedBox(height: 14),
 
-                      // Description
-                      fieldLabel(isMr ? 'तपशील / वर्णन' : 'Description'),
-                      TextField(
-                        controller: descCtrl,
-                        maxLines: 3,
-                        decoration: inputDec(
-                          hintText: isMr ? 'फोटो किंवा कार्यक्रमाविषयी थोडक्यात माहिती...' : 'Brief details about this photo or event...',
+                        // Optional Image URL
+                        fieldLabel(isMr ? 'किंवा फोटो वेब लिंक / URL' : 'Or Image Web URL (Optional)'),
+                        TextField(
+                          controller: urlCtrl,
+                          decoration: inputDec(
+                            hintText: 'https://images.unsplash.com/...',
+                            prefixIcon: const Icon(Icons.link_rounded, size: 18, color: Color(0xFF64748B)),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 24),
+                        const SizedBox(height: 14),
 
-                      // Submit Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton.icon(
-                          onPressed: () async {
-                            if (titleCtrl.text.trim().isEmpty) return;
-                            final newItem = GalleryItemModel(
-                              id: 'gal-${DateTime.now().millisecondsSinceEpoch}',
-                              title: titleCtrl.text.trim(),
-                              titleMr: titleCtrl.text.trim(),
-                              category: selectedCat,
-                              imageUrl: urlCtrl.text.trim().isNotEmpty
-                                  ? urlCtrl.text.trim()
-                                  : 'https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=800&q=80',
-                              description: descCtrl.text.trim().isNotEmpty
-                                  ? descCtrl.text.trim()
-                                  : 'Ward 12 public development program.',
-                              descriptionMr: descCtrl.text.trim().isNotEmpty
-                              ? descCtrl.text.trim()
-                              : 'Ward 12 public development program.',
-                              date: selectedDate,
-                              location: locCtrl.text.trim().isNotEmpty ? locCtrl.text.trim() : 'Ward 12, Pune',
-                              tags: ['Ward Development', selectedCat.titleEn],
-                              isFavorite: false,
-                              viewsCount: 1,
-                              createdAt: DateTime.now(),
+                        // Date Picker (Full width, location field removed)
+                        fieldLabel(isMr ? 'तारीख' : 'Date'),
+                        InkWell(
+                          onTap: () async {
+                            final picked = await showDatePicker(
+                              context: ctx,
+                              initialDate: selectedDate,
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime.now(),
                             );
-
-                            final repo = ref.read(galleryRepoProvider);
-                            await repo.addGalleryItem(newItem);
-                            if (ctx.mounted) {
-                              Navigator.pop(ctx);
-                            }
-                            if (mounted) {
-                              _loadGallery();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    isMr
-                                        ? 'फोटो गॅलरीमध्ये यशस्वीरित्या जोडला गेला!'
-                                        : 'Photo added to gallery successfully!',
-                                  ),
-                                  backgroundColor: const Color(0xFF16A34A),
-                                ),
-                              );
+                            if (picked != null) {
+                              setModalState(() => selectedDate = picked);
                             }
                           },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0284C7),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            elevation: 0,
-                          ),
-                          icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
-                          label: Text(
-                            isMr ? 'गॅलरीत जोडा' : 'Add to Gallery',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFFCBD5E1)),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.calendar_today_rounded, size: 16, color: Color(0xFF0284C7)),
+                                const SizedBox(width: 8),
+                                Text(
+                                  DateFormat('dd/MM/yyyy').format(selectedDate),
+                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
+                        const SizedBox(height: 14),
+
+                        // Description
+                        fieldLabel(isMr ? 'तपशील / वर्णन' : 'Description'),
+                        TextField(
+                          controller: descCtrl,
+                          maxLines: 3,
+                          decoration: inputDec(
+                            hintText: isMr ? 'फोटो किंवा कार्यक्रमाविषयी थोडक्यात माहिती...' : 'Brief details about this photo or event...',
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Submit Button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: ElevatedButton.icon(
+                            onPressed: () async {
+                              final title = titleCtrl.text.trim();
+                              if (title.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(isMr ? 'कृपया फोटोचे शीर्षक प्रविष्ट करा' : 'Please enter photo title.')),
+                                );
+                                return;
+                              }
+
+                              final finalImageUrl = pickedImage != null
+                                  ? pickedImage!.path
+                                  : (urlCtrl.text.trim().isNotEmpty
+                                      ? urlCtrl.text.trim()
+                                      : 'https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=800&q=80');
+
+                              final desc = descCtrl.text.trim().isNotEmpty
+                                  ? descCtrl.text.trim()
+                                  : 'Ward 12 public development program.';
+
+                              final newItem = GalleryItemModel(
+                                id: 'gal-${DateTime.now().millisecondsSinceEpoch}',
+                                title: title,
+                                titleMr: title,
+                                category: selectedCat,
+                                imageUrl: finalImageUrl,
+                                description: desc,
+                                descriptionMr: desc,
+                                date: selectedDate,
+                                location: 'Ward 12, Pune',
+                                tags: ['Ward Development', selectedCat.titleEn],
+                                isFavorite: false,
+                                viewsCount: 1,
+                                createdAt: DateTime.now(),
+                              );
+
+                              final repo = ref.read(galleryRepoProvider);
+                              await repo.addGalleryItem(newItem);
+                              if (ctx.mounted) {
+                                Navigator.pop(ctx);
+                              }
+                              if (mounted) {
+                                _loadGallery();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(isMr ? 'फोटो गॅलरीमध्ये यशस्वीरित्या जोडला गेला!' : 'Photo added to gallery successfully!'),
+                                    backgroundColor: const Color(0xFF16A34A),
+                                  ),
+                                );
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0284C7),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              elevation: 0,
+                            ),
+                            icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
+                            label: Text(
+                              isMr ? 'गॅलरीत जोडा' : 'Add to Gallery',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -411,6 +505,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
       ),
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -767,7 +862,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.network(
+                  _buildGalleryImage(
                     item.imageUrl,
                     fit: BoxFit.cover,
                     errorBuilder: (ctx, error, stackTrace) {
@@ -935,7 +1030,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                 // Thumbnail
                 ClipRRect(
                   borderRadius: BorderRadius.circular(10),
-                  child: Image.network(
+                  child: _buildGalleryImage(
                     item.imageUrl,
                     width: 80,
                     height: 80,
@@ -1029,5 +1124,40 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
         );
       },
     );
+  }
+
+  Widget _buildGalleryImage(
+    String url, {
+    double? width,
+    double? height,
+    BoxFit fit = BoxFit.cover,
+    Widget Function(BuildContext, Object, StackTrace?)? errorBuilder,
+    Widget Function(BuildContext, Widget, ImageChunkEvent?)? loadingBuilder,
+  }) {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return Image.network(
+        url,
+        width: width,
+        height: height,
+        fit: fit,
+        errorBuilder: errorBuilder,
+        loadingBuilder: loadingBuilder,
+      );
+    }
+    try {
+      final file = File(url);
+      if (file.existsSync()) {
+        return Image.file(
+          file,
+          width: width,
+          height: height,
+          fit: fit,
+          errorBuilder: errorBuilder,
+        );
+      }
+    } catch (_) {}
+    return errorBuilder != null
+        ? errorBuilder(context, Exception('File not found'), null)
+        : const SizedBox();
   }
 }

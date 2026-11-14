@@ -87,7 +87,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
     DateTime selectedDate = DateTime.now().add(const Duration(days: 3));
     TimeOfDay selectedTime = const TimeOfDay(hour: 10, minute: 0);
     EventType selectedType = EventType.publicMeeting;
-    String targetAudience = 'All Citizens';
+    String targetAudience = 'All';
 
     InputDecoration inputDec({String? hint, String? prefixText}) {
       return InputDecoration(
@@ -377,27 +377,71 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
 
                   const SizedBox(height: 14),
 
-                  // Event Type Dropdown
-                  fieldLabel(isMr ? 'कार्यक्रमाचा प्रकार' : 'Event Type', isRequired: true),
-                  DropdownButtonFormField<EventType>(
-                    initialValue: selectedType,
-                    decoration: inputDec(),
-                    isExpanded: true,
-                    items: EventType.values.map((t) {
-                      return DropdownMenuItem(
-                        value: t,
-                        child: Row(
+                  // Side-by-side: Event Type & Target Audience (matching EventManagement.tsx)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(t.icon, size: 16, color: t.color),
-                            const SizedBox(width: 8),
-                            Text(isMr ? t.titleMr : t.id, style: const TextStyle(fontSize: 13)),
+                            fieldLabel(isMr ? 'कार्यक्रमाचा प्रकार' : 'Event Type', isRequired: true),
+                            DropdownButtonFormField<EventType>(
+                              initialValue: selectedType,
+                              decoration: inputDec(),
+                              isExpanded: true,
+                              items: EventType.values.map((t) {
+                                return DropdownMenuItem(
+                                  value: t,
+                                  child: Row(
+                                    children: [
+                                      Icon(t.icon, size: 16, color: t.color),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          isMr ? t.titleMr : t.id,
+                                          style: const TextStyle(fontSize: 12.5),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (val) {
+                                if (val != null) setModalState(() => selectedType = val);
+                              },
+                            ),
                           ],
                         ),
-                      );
-                    }).toList(),
-                    onChanged: (val) {
-                      if (val != null) setModalState(() => selectedType = val);
-                    },
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            fieldLabel(isMr ? 'लक्षित वर्ग / समाज' : 'Target Audience', isRequired: true),
+                            DropdownButtonFormField<String>(
+                              initialValue: targetAudience,
+                              decoration: inputDec(),
+                              isExpanded: true,
+                              items: [
+                                DropdownMenuItem(value: 'All', child: Text(isMr ? 'सर्व (All)' : 'All Citizens', style: const TextStyle(fontSize: 12.5))),
+                                const DropdownMenuItem(value: 'OPEN', child: Text('OPEN (खुला)', style: TextStyle(fontSize: 12.5))),
+                                const DropdownMenuItem(value: 'OBC', child: Text('OBC (इ.मा.व.)', style: TextStyle(fontSize: 12.5))),
+                                const DropdownMenuItem(value: 'SC', child: Text('SC (अनु. जाती)', style: TextStyle(fontSize: 12.5))),
+                                const DropdownMenuItem(value: 'ST', child: Text('ST (अनु. जमाती)', style: TextStyle(fontSize: 12.5))),
+                                const DropdownMenuItem(value: 'VJNT', child: Text('VJNT (वि.जा.भ.ज.)', style: TextStyle(fontSize: 12.5))),
+                                const DropdownMenuItem(value: 'SBC', child: Text('SBC (वि.मा.प्र.)', style: TextStyle(fontSize: 12.5))),
+                              ],
+                              onChanged: (val) {
+                                if (val != null) setModalState(() => targetAudience = val);
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
 
                   const SizedBox(height: 24),

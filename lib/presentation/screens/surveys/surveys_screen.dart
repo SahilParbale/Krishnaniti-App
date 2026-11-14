@@ -369,15 +369,21 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
           'New Survey',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
         ),
-        onPressed: () async {
-          final res = await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const CreateSurveyScreen()),
-          );
-          if (res == true) _loadSurveys();
-        },
+        onPressed: () => _openSurveyModal(),
       ),
     );
+  }
+
+  Future<void> _openSurveyModal({SurveyModel? surveyToEdit}) async {
+    final res = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => CreateSurveyBottomSheet(surveyToEdit: surveyToEdit),
+    );
+    if (res == true) {
+      _loadSurveys();
+    }
   }
 
   Widget _buildKpiStatsRow(int activeCount) {
@@ -841,14 +847,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                   icon: const Icon(Icons.more_vert, size: 20, color: Colors.grey),
                   onSelected: (action) {
                     if (action == 'edit') {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => CreateSurveyScreen(surveyToEdit: survey),
-                        ),
-                      ).then((res) {
-                        if (res == true) _loadSurveys();
-                      });
+                      _openSurveyModal(surveyToEdit: survey);
                     } else if (action == 'delete') {
                       _deleteSurvey(survey);
                     }
@@ -1139,16 +1138,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                         IconButton(
                           icon: const Icon(Icons.edit_outlined, size: 16, color: Colors.grey),
                           tooltip: 'Edit',
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => CreateSurveyScreen(surveyToEdit: s),
-                              ),
-                            ).then((res) {
-                              if (res == true) _loadSurveys();
-                            });
-                          },
+                          onPressed: () => _openSurveyModal(surveyToEdit: s),
                         ),
                       ],
                     ),
@@ -1186,13 +1176,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
           ),
           const SizedBox(height: 16),
           ElevatedButton.icon(
-            onPressed: () async {
-              final res = await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CreateSurveyScreen()),
-              );
-              if (res == true) _loadSurveys();
-            },
+            onPressed: () => _openSurveyModal(),
             icon: const Icon(Icons.add, size: 18, color: Colors.white),
             label: const Text('Create First Survey', style: TextStyle(color: Colors.white)),
             style: ElevatedButton.styleFrom(

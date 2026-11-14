@@ -1103,7 +1103,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
     final ageCtrl = TextEditingController(text: member.age > 0 ? member.age.toString() : '');
     final areaCtrl = TextEditingController(text: member.area ?? 'Shaniwar Peth');
     final addressCtrl = TextEditingController(text: member.displayAddress);
-    final roleCtrl = TextEditingController(text: member.role ?? 'Active Member');
+    final wardCtrl = TextEditingController(text: member.ward ?? '12');
     String gender = member.gender;
 
     InputDecoration inputDec({String? hint, String? prefixText}) {
@@ -1314,10 +1314,10 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                fieldLabel(isMr ? 'पद / जबाबदारी' : 'Role / Designation'),
+                                fieldLabel(isMr ? 'प्रभाग क्र. / वार्ड क्र.' : 'Ward Number'),
                                 TextField(
-                                  controller: roleCtrl,
-                                  decoration: inputDec(hint: isMr ? 'उदा. बूथ प्रमुख' : 'e.g. Booth In-charge'),
+                                  controller: wardCtrl,
+                                  decoration: inputDec(hint: isMr ? 'उदा. १२' : 'e.g. 12'),
                                 ),
                               ],
                             ),
@@ -1356,9 +1356,10 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
                               age: int.tryParse(ageCtrl.text.trim()) ?? member.age,
                               gender: gender,
                               area: areaCtrl.text.trim(),
+                              ward: wardCtrl.text.trim(),
                               address: addressCtrl.text.trim(),
                               addressMarathi: addressCtrl.text.trim(),
-                              role: roleCtrl.text.trim(),
+                              role: member.role,
                             );
 
                             final messenger = ScaffoldMessenger.of(context);
@@ -1453,7 +1454,7 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
   VoterModel? _selectedVoter;
   final TextEditingController _confirmMobileCtrl = TextEditingController(text: '+91 ');
   final TextEditingController _confirmAreaCtrl = TextEditingController(text: 'Shaniwar Peth');
-  final TextEditingController _confirmRoleCtrl = TextEditingController(text: 'Booth Cadre');
+  final TextEditingController _confirmWardCtrl = TextEditingController(text: '12');
 
   // Manual Tab State
   final TextEditingController _manualNameCtrl = TextEditingController();
@@ -1461,7 +1462,7 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
   final TextEditingController _manualAgeCtrl = TextEditingController();
   final TextEditingController _manualAreaCtrl = TextEditingController(text: 'Shaniwar Peth');
   final TextEditingController _manualAddressCtrl = TextEditingController();
-  final TextEditingController _manualRoleCtrl = TextEditingController(text: 'Active Member');
+  final TextEditingController _manualWardCtrl = TextEditingController(text: '12');
   String _manualGender = 'M';
 
   @override
@@ -1476,13 +1477,13 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
     _voterSearchCtrl.dispose();
     _confirmMobileCtrl.dispose();
     _confirmAreaCtrl.dispose();
-    _confirmRoleCtrl.dispose();
+    _confirmWardCtrl.dispose();
     _manualNameCtrl.dispose();
     _manualMobileCtrl.dispose();
     _manualAgeCtrl.dispose();
     _manualAreaCtrl.dispose();
     _manualAddressCtrl.dispose();
-    _manualRoleCtrl.dispose();
+    _manualWardCtrl.dispose();
     super.dispose();
   }
 
@@ -1727,11 +1728,11 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
             ),
             const SizedBox(height: 12),
 
-            // Role / Designation
-            _fieldLabel(isMr ? 'पद / जबाबदारी' : 'Role / Designation (e.g. Booth Head)'),
+            // Ward No
+            _fieldLabel(isMr ? 'प्रभाग क्र. / वार्ड क्र.' : 'Ward Number', isRequired: true),
             TextField(
-              controller: _confirmRoleCtrl,
-              decoration: _inputDec(hint: isMr ? 'उदा. बूथ प्रमुख' : 'e.g. Booth Head'),
+              controller: _confirmWardCtrl,
+              decoration: _inputDec(hint: isMr ? 'उदा. १२' : 'e.g. 12'),
             ),
             const SizedBox(height: 20),
 
@@ -1907,7 +1908,7 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
           ),
           const SizedBox(height: 12),
 
-          // Area & Role side-by-side
+          // Area & Ward No side-by-side
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1915,7 +1916,7 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _fieldLabel(isMr ? 'परिसर / प्रभाग' : 'Area / Region', isRequired: true),
+                    _fieldLabel(isMr ? 'परिसर' : 'Area / Locality', isRequired: true),
                     TextField(
                       controller: _manualAreaCtrl,
                       decoration: _inputDec(hint: isMr ? 'उदा. शनिवार पेठ' : 'e.g. Shaniwar Peth'),
@@ -1928,10 +1929,10 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _fieldLabel(isMr ? 'पद / जबाबदारी' : 'Role / Designation'),
+                    _fieldLabel(isMr ? 'प्रभाग क्र. / वार्ड क्र.' : 'Ward Number', isRequired: true),
                     TextField(
-                      controller: _manualRoleCtrl,
-                      decoration: _inputDec(hint: isMr ? 'उदा. बूथ प्रमुख' : 'e.g. Active Member'),
+                      controller: _manualWardCtrl,
+                      decoration: _inputDec(hint: isMr ? 'उदा. १२' : 'e.g. 12'),
                     ),
                   ],
                 ),
@@ -1990,7 +1991,7 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
       mobile: mobile,
       age: voter.age,
       gender: voter.gender,
-      ward: 'Ward 12',
+      ward: _confirmWardCtrl.text.trim().isNotEmpty ? _confirmWardCtrl.text.trim() : 'Ward 12',
       area: _confirmAreaCtrl.text.trim().isNotEmpty ? _confirmAreaCtrl.text.trim() : 'Shaniwar Peth',
       address: voter.address,
       addressMarathi: voter.address,
@@ -1999,7 +2000,7 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
       voterId: voter.epicNo,
       linkedVoterId: voter.id,
       status: 'Active',
-      role: _confirmRoleCtrl.text.trim().isNotEmpty ? _confirmRoleCtrl.text.trim() : 'Active Member',
+      role: 'Active Member',
       registeredAt: DateTime.now(),
     );
 
@@ -2034,13 +2035,13 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
       mobile: mobile,
       age: int.tryParse(_manualAgeCtrl.text.trim()) ?? 0,
       gender: _manualGender,
-      ward: 'Ward 12',
+      ward: _manualWardCtrl.text.trim().isNotEmpty ? _manualWardCtrl.text.trim() : 'Ward 12',
       area: area.isNotEmpty ? area : 'Shaniwar Peth',
       address: address,
       addressMarathi: address,
       isVoter: false,
       status: 'Active',
-      role: _manualRoleCtrl.text.trim().isNotEmpty ? _manualRoleCtrl.text.trim() : 'Active Member',
+      role: 'Active Member',
       registeredAt: DateTime.now(),
     );
 
