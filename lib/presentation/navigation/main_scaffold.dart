@@ -364,7 +364,7 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
       bottomBarIndex = 3;
     }
 
-    // Build 7 dynamic radial items
+    // Build 5 dynamic radial items
     final radialConfigs = customRadialKeys.map((k) => getModuleConfig(k)).toList();
     final radialItems = RadialQuickAccessMenu.buildItemsFromConfigs(radialConfigs);
 

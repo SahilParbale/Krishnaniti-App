@@ -1166,7 +1166,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
           const SizedBox(height: 22),
 
           // ─────────────────────────────────────────────────────────────
-          // SECTION 2: RADIAL QUICK ACCESS ACTIONS (7 SLOTS)
+          // SECTION 2: RADIAL QUICK ACCESS ACTIONS (5 SLOTS)
           // ─────────────────────────────────────────────────────────────
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1175,14 +1175,14 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    isMr ? 'द्रुत क्रिया मेनू (7 पर्याय)' : 'Radial Quick Access Actions (7 Slots)',
+                    isMr ? 'द्रुत क्रिया मेनू (5 पर्याय)' : 'Radial Quick Access Actions (5 Slots)',
                     style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     isMr
-                        ? 'मध्यवर्ती बटण दाबून धरल्यावर किंवा ओढल्यावर दिसणारे 7 पर्याय.'
-                        : 'The 7 gesture actions on the curved glass running track.',
+                        ? 'मध्यवर्ती बटण दाबून धरल्यावर किंवा ओढल्यावर दिसणारे 5 पर्याय.'
+                        : 'The 5 gesture actions on the curved glass running track.',
                     style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                   ),
                 ],
@@ -1206,7 +1206,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
 
           const SizedBox(height: 8),
 
-          // 7 Radial Action Slots
+          // 5 Radial Action Slots
           Card(
             elevation: 0,
             shape: RoundedRectangleBorder(
@@ -1217,13 +1217,13 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
               child: Column(
                 children: [
-                  for (int slotIdx = 0; slotIdx < 7; slotIdx++) ...[
+                  for (int slotIdx = 0; slotIdx < 5; slotIdx++) ...[
                     _buildQuickActionSlotTile(
                       slotIndex: slotIdx,
                       moduleKey: quickSlots[slotIdx],
                       isMr: isMr,
                     ),
-                    if (slotIdx < 6) const Divider(height: 1, indent: 46),
+                    if (slotIdx < 4) const Divider(height: 1, indent: 46),
                   ],
                 ],
               ),
@@ -1306,23 +1306,19 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
     final config = getModuleConfig(moduleKey);
 
     final positionLabelsEn = [
-      'Slot 1 • Left Bottom Leg',
-      'Slot 2 • Left Arc (162°)',
-      'Slot 3 • Left Upper Arc (126°)',
-      'Slot 4 • Top Center Arc (90°)',
-      'Slot 5 • Right Upper Arc (54°)',
-      'Slot 6 • Right Arc (18°)',
-      'Slot 7 • Right Bottom Leg',
+      'Slot 1 • Left Arc (162°)',
+      'Slot 2 • Left Upper Arc (126°)',
+      'Slot 3 • Top Center Arc (90°)',
+      'Slot 4 • Right Upper Arc (54°)',
+      'Slot 5 • Right Arc (18°)',
     ];
 
     final positionLabelsMr = [
-      'पर्याय 1 • डावे खालचे टोक',
-      'पर्याय 2 • डावा चाप (162°)',
-      'पर्याय 3 • डावा वरील चाप (126°)',
-      'पर्याय 4 • मध्य शिखर चाप (90°)',
-      'पर्याय 5 • उजवा वरील चाप (54°)',
-      'पर्याय 6 • उजवा चाप (18°)',
-      'पर्याय 7 • उजवे खालचे टोक',
+      'पर्याय 1 • डावा चाप (162°)',
+      'पर्याय 2 • डावा वरील चाप (126°)',
+      'पर्याय 3 • मध्य शिखर चाप (90°)',
+      'पर्याय 4 • उजवा वरील चाप (54°)',
+      'पर्याय 5 • उजवा चाप (18°)',
     ];
 
     return ListTile(

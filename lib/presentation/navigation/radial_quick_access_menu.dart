@@ -64,106 +64,76 @@ class RadialQuickAccessMenu extends ConsumerStatefulWidget {
   List<RadialMenuItem> get activeItems => customItems ?? items;
 
   static List<RadialMenuItem> buildItemsFromConfigs(List<NavItemConfig> configs) {
-    if (configs.length != 7) return items;
+    if (configs.length < 5) return items;
     return [
-      // 0: Left Bottom Leg
+      // 0: Left Arc (162 deg)
       RadialMenuItem(
         id: configs[0].key,
         titleEn: configs[0].titleEn,
         titleMr: configs[0].titleMr,
         icon: configs[0].icon,
         gradient: const [Color(0xFF0284C7), Color(0xFF0369A1)],
-        legDy: 34.0,
-        isLeftLeg: true,
+        angleDeg: 162.0,
       ),
-      // 1: Left Arc (162 deg)
+      // 1: Left Upper Arc (126 deg)
       RadialMenuItem(
         id: configs[1].key,
         titleEn: configs[1].titleEn,
         titleMr: configs[1].titleMr,
         icon: configs[1].icon,
         gradient: const [Color(0xFF0284C7), Color(0xFF0369A1)],
-        angleDeg: 162.0,
+        angleDeg: 126.0,
       ),
-      // 2: Left Upper Arc (126 deg)
+      // 2: Top Center Arc (90 deg)
       RadialMenuItem(
         id: configs[2].key,
         titleEn: configs[2].titleEn,
         titleMr: configs[2].titleMr,
         icon: configs[2].icon,
         gradient: const [Color(0xFF0284C7), Color(0xFF0369A1)],
-        angleDeg: 126.0,
+        angleDeg: 90.0,
       ),
-      // 3: Top Peak Arc (90 deg)
+      // 3: Right Upper Arc (54 deg)
       RadialMenuItem(
         id: configs[3].key,
         titleEn: configs[3].titleEn,
         titleMr: configs[3].titleMr,
         icon: configs[3].icon,
         gradient: const [Color(0xFF0284C7), Color(0xFF0369A1)],
-        angleDeg: 90.0,
+        angleDeg: 54.0,
       ),
-      // 4: Right Upper Arc (54 deg)
+      // 4: Right Arc (18 deg)
       RadialMenuItem(
         id: configs[4].key,
         titleEn: configs[4].titleEn,
         titleMr: configs[4].titleMr,
         icon: configs[4].icon,
         gradient: const [Color(0xFF0284C7), Color(0xFF0369A1)],
-        angleDeg: 54.0,
-      ),
-      // 5: Right Arc (18 deg)
-      RadialMenuItem(
-        id: configs[5].key,
-        titleEn: configs[5].titleEn,
-        titleMr: configs[5].titleMr,
-        icon: configs[5].icon,
-        gradient: const [Color(0xFF0284C7), Color(0xFF0369A1)],
         angleDeg: 18.0,
-      ),
-      // 6: Right Bottom Leg
-      RadialMenuItem(
-        id: configs[6].key,
-        titleEn: configs[6].titleEn,
-        titleMr: configs[6].titleMr,
-        icon: configs[6].icon,
-        gradient: const [Color(0xFF0284C7), Color(0xFF0369A1)],
-        legDy: 34.0,
-        isLeftLeg: false,
       ),
     ];
   }
 
   static const List<RadialMenuItem> items = [
-    // 0: Left Bottom Leg
+    // 0: Left Arc (162 deg)
     RadialMenuItem(
       id: 'works',
       titleEn: 'Work History',
       titleMr: 'विकास कामे',
       icon: Icons.engineering_rounded,
       gradient: [Color(0xFF0284C7), Color(0xFF0369A1)],
-      legDy: 34.0,
-      isLeftLeg: true,
+      angleDeg: 162.0,
     ),
-    // 1: Left Arc (162 deg)
+    // 1: Left Upper Arc (126 deg)
     RadialMenuItem(
       id: 'request',
       titleEn: 'Requests & Complaints',
       titleMr: 'तक्रारी आणि विनंती',
       icon: Icons.add_task_rounded,
       gradient: [Color(0xFF0284C7), Color(0xFF0369A1)],
-      angleDeg: 162.0,
-    ),
-    // 2: Left Upper Arc (126 deg)
-    RadialMenuItem(
-      id: 'letters',
-      titleEn: 'Letters',
-      titleMr: 'पत्र व्यवहार',
-      icon: Icons.mark_email_unread_rounded,
-      gradient: [Color(0xFF0284C7), Color(0xFF0369A1)],
       angleDeg: 126.0,
     ),
-    // 3: Top Peak Arc (90 deg)
+    // 2: Top Center Arc (90 deg)
     RadialMenuItem(
       id: 'voters',
       titleEn: 'Voter Search',
@@ -172,33 +142,23 @@ class RadialQuickAccessMenu extends ConsumerStatefulWidget {
       gradient: [Color(0xFF0284C7), Color(0xFF0369A1)],
       angleDeg: 90.0,
     ),
-    // 4: Right Upper Arc (54 deg)
+    // 3: Right Upper Arc (54 deg)
+    RadialMenuItem(
+      id: 'letters',
+      titleEn: 'Letters',
+      titleMr: 'पत्र व्यवहार',
+      icon: Icons.mark_email_unread_rounded,
+      gradient: [Color(0xFF0284C7), Color(0xFF0369A1)],
+      angleDeg: 54.0,
+    ),
+    // 4: Right Arc (18 deg)
     RadialMenuItem(
       id: 'diary',
       titleEn: 'Diary',
       titleMr: 'दैनंदिनी नोंद',
       icon: Icons.event_note_rounded,
       gradient: [Color(0xFF0284C7), Color(0xFF0369A1)],
-      angleDeg: 54.0,
-    ),
-    // 5: Right Arc (18 deg)
-    RadialMenuItem(
-      id: 'visitors',
-      titleEn: 'Visitor Log',
-      titleMr: 'कार्यालय भेट',
-      icon: Icons.badge_rounded,
-      gradient: [Color(0xFF0284C7), Color(0xFF0369A1)],
       angleDeg: 18.0,
-    ),
-    // 6: Right Bottom Leg
-    RadialMenuItem(
-      id: 'ai_content',
-      titleEn: 'AI Content Studio',
-      titleMr: 'AI प्रसिद्धी',
-      icon: Icons.auto_awesome_rounded,
-      gradient: [Color(0xFF0284C7), Color(0xFF0369A1)],
-      legDy: 34.0,
-      isLeftLeg: false,
     ),
   ];
 
@@ -300,9 +260,9 @@ class _RadialQuickAccessMenuState extends ConsumerState<RadialQuickAccessMenu>
 
   /// Calculates symmetrical fan launch progress for each badge
   double _getItemBlossomProgress(int i, double animVal) {
-    // Symmetrical ripple: Peak (index 3) leads, followed by upper arcs, sides, and bottom legs
-    const delays = [0.20, 0.14, 0.08, 0.02, 0.08, 0.14, 0.20];
-    final delay = i < delays.length ? delays[i] : 0.08;
+    // Symmetrical ripple for 5 items: Center Peak (index 2 at 90°) leads, followed by upper arcs (1, 3) and sides (0, 4)
+    const delays = [0.12, 0.06, 0.01, 0.06, 0.12];
+    final delay = i < delays.length ? delays[i] : 0.06;
     const span = 0.72;
     final t = ((animVal - delay) / span).clamp(0.0, 1.0);
     return Curves.easeOutBack.transform(t);
@@ -677,7 +637,8 @@ class _RunningTrackClipper extends CustomClipper<Path> {
 
   @override
   Path getClip(Size size) {
-    final bottomY = math.max(size.height, center.dy + 120.0);
+    // Shortened glassmorphism cover terminating cleanly just below the arc baseline
+    final bottomY = center.dy + 12.0;
     if (_cachedPath == null || _cachedBottomY != bottomY) {
       _cachedBottomY = bottomY;
       _cachedPath = _buildRunningTrackPath(
@@ -714,7 +675,8 @@ class _RunningTrackShadowPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final bottomY = math.max(size.height, center.dy + 120.0);
+    // Shortened glassmorphism shadow terminating cleanly just below the arc baseline
+    final bottomY = center.dy + 12.0;
     if (_cachedPath == null || _cachedBottomY != bottomY) {
       _cachedBottomY = bottomY;
       _cachedPath = _buildRunningTrackPath(
@@ -778,7 +740,8 @@ class _RunningTrackGlassPainter extends CustomPainter {
 
     final rIn = radius - (trackWidth / 2.0);  // 76.0px
     final rOut = radius + (trackWidth / 2.0); // 148.0px
-    final bottomY = math.max(size.height, cy + 120.0);
+    // Shortened bottomY terminating cleanly just below the arc baseline
+    final bottomY = cy + 12.0;
 
     // 2) Center running track lane guideline (Frosted Civic Blue tint)
     final laneGuidePaint = Paint()
@@ -829,6 +792,14 @@ class _RunningTrackGlassPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2;
     canvas.drawPath(innerBorderPath, innerBorderPaint);
+
+    // 4b) Specular foot borders closing the shortened track
+    final footBorderPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.65)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.4;
+    canvas.drawLine(Offset(cx - rOut, bottomY), Offset(cx - rIn, bottomY), footBorderPaint);
+    canvas.drawLine(Offset(cx + rIn, bottomY), Offset(cx + rOut, bottomY), footBorderPaint);
 
     // 5) Dynamic Optic Fiber Illumination & Glow when hovering over items
     if (hoveredIndex >= 0 && hoveredIndex < activeItems.length) {
