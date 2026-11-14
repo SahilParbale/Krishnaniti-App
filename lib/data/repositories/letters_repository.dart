@@ -85,6 +85,7 @@ class LettersRepository {
     String? voterId,
     String? addedByStaffId,
     List<String> attachments = const [],
+    Map<String, dynamic>? additionalDetails,
   }) async {
     final payload = {
       'type': type,
@@ -101,6 +102,7 @@ class LettersRepository {
         if (voterId != null) 'voter_id': voterId,
         if (addedByStaffId != null) 'added_by_staff_id': addedByStaffId,
         if (attachments.isNotEmpty) 'attachments': attachments,
+        if (additionalDetails != null) ...additionalDetails,
       },
       if (addedByStaffId != null) 'added_by_staff_id': addedByStaffId,
       'status': 'Pending',

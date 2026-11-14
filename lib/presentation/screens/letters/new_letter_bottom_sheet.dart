@@ -70,6 +70,10 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
   final _addressCtrl = TextEditingController();
   final _purposeCtrl = TextEditingController();
 
+  // Dynamic Additional Details Controllers & Keys (matching LetterForm.tsx lines 600-628)
+  final Map<String, TextEditingController> _dynamicControllers = {};
+  List<String> _activeDynamicFieldKeys = [];
+
   // Incoming Form Controllers (matching IncomingLetterUpload.tsx)
   final _incomingTitleCtrl = TextEditingController();
   final _incomingDescCtrl = TextEditingController();
@@ -106,7 +110,8 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
           _addressCtrl.text.isNotEmpty ||
           _purposeCtrl.text.isNotEmpty ||
           _areaCtrl.text.isNotEmpty ||
-          _pickedFiles.isNotEmpty;
+          _pickedFiles.isNotEmpty ||
+          _dynamicControllers.values.any((c) => c.text.isNotEmpty);
     } else {
       return _incomingTitleCtrl.text.isNotEmpty ||
           _incomingDescCtrl.text.isNotEmpty ||
@@ -121,6 +126,7 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
     super.initState();
     _activeTab = widget.initialTab == 'incoming' ? 'incoming' : 'outgoing';
     _staffList = List.from(_fallbackStaffList);
+    _syncDynamicFields(_selectedLetterType);
 
     if (widget.prefillVoterId != null) {
       _selectedVoterId = widget.prefillVoterId;
@@ -143,6 +149,9 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
     _subjectCtrl.dispose();
     _addressCtrl.dispose();
     _purposeCtrl.dispose();
+    for (final c in _dynamicControllers.values) {
+      c.dispose();
+    }
     _incomingTitleCtrl.dispose();
     _incomingDescCtrl.dispose();
     _incomingAreaCtrl.dispose();
@@ -249,6 +258,9 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
       _subjectCtrl.clear();
       _addressCtrl.clear();
       _purposeCtrl.clear();
+      for (final c in _dynamicControllers.values) {
+        c.clear();
+      }
       _incomingTitleCtrl.clear();
       _incomingDescCtrl.clear();
       _incomingAreaCtrl.clear();
@@ -307,6 +319,14 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
         final repo = ref.read(lettersRepoProvider);
         final attachments = _pickedFiles.map((f) => f.path).toList();
 
+        final Map<String, dynamic> additionalDetails = {};
+        for (final key in _activeDynamicFieldKeys) {
+          final ctrl = _dynamicControllers[key];
+          if (ctrl != null && ctrl.text.trim().isNotEmpty) {
+            additionalDetails[key] = ctrl.text.trim();
+          }
+        }
+
         await repo.createLetterRequest(
           type: _selectedLetterType,
           name: fullName,
@@ -319,6 +339,7 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
           voterId: _selectedVoterId,
           addedByStaffId: _selectedStaffId,
           attachments: attachments,
+          additionalDetails: additionalDetails,
         );
 
         if (mounted) {
@@ -385,6 +406,154 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
+    );
+  }
+
+  void _syncDynamicFields(String letterType) {
+    final defaultKeys = kDefaultLetterTypeFields[letterType] ?? ['ward_no', 'reason_for_certificate'];
+    setState(() {
+      _activeDynamicFieldKeys = List.from(defaultKeys);
+      for (final key in _activeDynamicFieldKeys) {
+        if (!_dynamicControllers.containsKey(key)) {
+          _dynamicControllers[key] = TextEditingController();
+        }
+      }
+    });
+  }
+
+  bool _isDefaultFieldForSelectedType(String key) {
+    final defaults = kDefaultLetterTypeFields[_selectedLetterType] ?? [];
+    return defaults.contains(key);
+  }
+
+  void _openAddFieldDialog(bool isMr) {
+    final available = kDynamicFieldDefinitions.keys
+        .where((k) => !_activeDynamicFieldKeys.contains(k))
+        .toList();
+    final customFieldCtrl = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+            return Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomInset),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        isMr ? 'अतिरिक्त माहितीचे फील्ड जोडा' : 'Add Additional Field',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 20),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Custom field input
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: customFieldCtrl,
+                          decoration: InputDecoration(
+                            hintText: isMr ? 'किंवा नवीन फील्डचे नाव टाका...' : 'Or enter custom field name...',
+                            hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                            filled: true,
+                            fillColor: const Color(0xFFF8FAFC),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: () {
+                          final customName = customFieldCtrl.text.trim();
+                          if (customName.isNotEmpty) {
+                            final key = customName.toLowerCase().replaceAll(RegExp(r'\s+'), '_');
+                            if (!_activeDynamicFieldKeys.contains(key)) {
+                              Navigator.pop(ctx);
+                              setState(() {
+                                _activeDynamicFieldKeys.add(key);
+                                _dynamicControllers.putIfAbsent(key, () => TextEditingController());
+                              });
+                            }
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0284C7),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: Text(isMr ? 'जोडा' : 'Add'),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 14),
+                  Text(
+                    isMr ? 'किंवा यादीतून निवडा:' : 'Or choose from standard fields:',
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                  ),
+                  const SizedBox(height: 8),
+
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 280),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: available.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                      itemBuilder: (_, idx) {
+                        final key = available[idx];
+                        final meta = kDynamicFieldDefinitions[key]!;
+                        return ListTile(
+                          dense: true,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                          leading: const Icon(Icons.add_circle_outline_rounded, color: Color(0xFF0284C7), size: 20),
+                          title: Text(
+                            isMr ? meta.mrLabel : meta.enLabel,
+                            style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                          ),
+                          subtitle: Text(
+                            isMr ? meta.enLabel : meta.mrLabel,
+                            style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                          ),
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            setState(() {
+                              _activeDynamicFieldKeys.add(key);
+                              _dynamicControllers.putIfAbsent(key, () => TextEditingController());
+                            });
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -789,7 +958,10 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
                         );
                       }).toList(),
                       onChanged: (val) {
-                        if (val != null) setState(() => _selectedLetterType = val);
+                        if (val != null) {
+                          setState(() => _selectedLetterType = val);
+                          _syncDynamicFields(val);
+                        }
                       },
                     ),
                   ),
@@ -863,7 +1035,12 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
 
         const SizedBox(height: 16),
 
-        // Section 3: Attachments
+        // Section 3: Additional Details (अतिरिक्त माहिती - matching LetterForm.tsx lines 600-628)
+        _buildAdditionalDetailsSection(isMr),
+
+        const SizedBox(height: 16),
+
+        // Section 4: Attachments
         _buildAttachmentsSection(isMr),
       ],
     );
@@ -1163,6 +1340,140 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
           ),
         ),
       ],
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // SECTION: ADDITIONAL DETAILS (अतिरिक्त माहिती - matching LetterForm.tsx lines 600-628)
+  // ---------------------------------------------------------------------------
+  Widget _buildAdditionalDetailsSection(bool isMr) {
+    return _CardSection(
+      title: isMr ? 'अतिरिक्त माहिती' : 'Additional Details',
+      icon: Icons.playlist_add_check_rounded,
+      action: InkWell(
+        onTap: () => _openAddFieldDialog(isMr),
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF0F9FF),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFFBAE6FD)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.add_rounded, size: 15, color: Color(0xFF0284C7)),
+              const SizedBox(width: 4),
+              Text(
+                isMr ? 'फील्ड जोडा' : 'Add Field',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF0284C7),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.info_outline_rounded, size: 14, color: Color(0xFF64748B)),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    isMr
+                        ? 'निवडलेल्या दाखल्यानुसार खालील तपशील भरा किंवा नवीन फील्ड जोडा'
+                        : 'Fill in the specific details below or add custom fields',
+                    style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          if (_activeDynamicFieldKeys.isEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  isMr ? 'कोणतेही अतिरिक्त फील्ड नाही' : 'No additional fields added',
+                  style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                ),
+              ),
+            )
+          else
+            ..._activeDynamicFieldKeys.map((fieldKey) {
+              final meta = kDynamicFieldDefinitions[fieldKey];
+              final label = meta != null
+                  ? (isMr ? meta.mrLabel : meta.enLabel)
+                  : fieldKey.replaceAll('_', ' ').toUpperCase();
+              final placeholder = meta != null
+                  ? (isMr ? meta.placeholderMr : meta.placeholderEn)
+                  : (isMr ? '$label प्रविष्ट करा' : 'Enter $label');
+              final keyboardType = meta?.keyboardType ?? TextInputType.text;
+
+              final ctrl = _dynamicControllers.putIfAbsent(fieldKey, () => TextEditingController());
+              final isDefault = _isDefaultFieldForSelectedType(fieldKey);
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: _buildTextField(
+                        controller: ctrl,
+                        label: label,
+                        placeholder: placeholder,
+                        keyboardType: keyboardType,
+                      ),
+                    ),
+                    if (!isDefault) ...[
+                      const SizedBox(width: 8),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 2),
+                        child: InkWell(
+                          onTap: () {
+                            setState(() {
+                              _activeDynamicFieldKeys.remove(fieldKey);
+                              _dynamicControllers[fieldKey]?.clear();
+                            });
+                          },
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.all(9),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEF2F2),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0xFFFECACA)),
+                            ),
+                            child: const Icon(
+                              Icons.delete_outline_rounded,
+                              size: 18,
+                              color: Color(0xFFDC2626),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              );
+            }),
+        ],
+      ),
     );
   }
 

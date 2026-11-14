@@ -10,6 +10,7 @@ import '../../../core/localization/app_strings.dart';
 import '../../../data/models/letter_model.dart';
 import '../../providers/auth_provider.dart';
 import '../dashboard/dashboard_screen.dart';
+import 'letter_form_constants.dart';
 
 class LetterDetailScreen extends ConsumerStatefulWidget {
   final LetterModel letter;
@@ -971,6 +972,44 @@ class _LetterDetailScreenState extends ConsumerState<LetterDetailScreen> {
                 ],
               ),
             ),
+
+          // Dynamic Additional Details (अतिरिक्त माहिती) matching Nagarsevak-Managment
+          Builder(
+            builder: (context) {
+              const standardKeys = {
+                'name', 'subject', 'text', 'address', 'purpose', 'mobile',
+                'gender', 'voter_id', 'added_by_staff_id', 'attachments', 'title',
+                'bearer_name', 'bearer_mobile', 'file_url', 'reason'
+              };
+              final extraEntries = _letter.details.entries
+                  .where((e) => !standardKeys.contains(e.key) && e.value != null && e.value.toString().trim().isNotEmpty)
+                  .toList();
+
+              if (extraEntries.isEmpty) return const SizedBox.shrink();
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 8),
+                  const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                  const SizedBox(height: 10),
+                  Text(
+                    isMr ? 'अतिरिक्त माहिती' : 'Additional Details',
+                    style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: Color(0xFF0284C7)),
+                  ),
+                  const SizedBox(height: 4),
+                  ...extraEntries.map((e) {
+                    final meta = kDynamicFieldDefinitions[e.key];
+                    final label = meta != null ? (isMr ? meta.mrLabel : meta.enLabel) : e.key.replaceAll('_', ' ');
+                    return _buildDetailRow(
+                      label: label,
+                      value: e.value.toString(),
+                    );
+                  }),
+                ],
+              );
+            },
+          ),
         ],
       ),
     );
