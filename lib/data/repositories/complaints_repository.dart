@@ -601,11 +601,16 @@ class ComplaintsRepository {
             .map((item) => ComplaintModel.fromJson(item as Map<String, dynamic>))
             .toList();
 
-        final selfIdentified = cList.where((c) => c.category.toLowerCase() == 'selfidentified').toList();
+        final civicComplaints = cList.where((c) {
+          final cat = c.category.toLowerCase();
+          return cat != 'help' && cat != 'personal help';
+        }).toList();
+
+        final selfIdentified = civicComplaints.where((c) => c.category.toLowerCase() == 'selfidentified').toList();
         if (selfIdentified.isNotEmpty) {
           allProblems.addAll(selfIdentified);
         } else {
-          allProblems.addAll(cList);
+          allProblems.addAll(civicComplaints);
         }
       } catch (_) {}
 

@@ -319,51 +319,24 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Title & Status side-by-side
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                flex: 6,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    fieldLabel(isMr ? 'सुधारणा कामाचे नाव' : 'Title / Proposed Work', isRequired: true),
-                                    TextField(
-                                      controller: titleCtrl,
-                                      decoration: inputDec(hint: isMr ? 'उदा. पादचारी पूल, ओपन जिम...' : 'e.g. Pedestrian skywalk, Open gym...'),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                flex: 4,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    fieldLabel(isMr ? 'स्थिती' : 'Status'),
-                                    DropdownButtonFormField<String>(
-                                      initialValue: status,
-                                      decoration: inputDec(),
-                                      items: [
-                                        DropdownMenuItem(value: 'Pending', child: Text(isMr ? 'प्रलंबित' : 'Pending')),
-                                        DropdownMenuItem(value: 'Planned', child: Text(isMr ? 'नियोजित' : 'Planned')),
-                                        DropdownMenuItem(value: 'In Progress', child: Text(isMr ? 'सुरू' : 'In Progress')),
-                                        DropdownMenuItem(value: 'Complete', child: Text(isMr ? 'पूर्ण' : 'Complete')),
-                                      ],
-                                      onChanged: (val) {
-                                        if (val != null) setModalState(() => status = val);
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                          // 1. Title (Full Width - matching PossibleImprovements.tsx lines 535-545)
+                          fieldLabel(isMr ? 'सुधारणा कामाचे नाव' : 'Title / Proposed Work', isRequired: true),
+                          TextField(
+                            controller: titleCtrl,
+                            decoration: inputDec(hint: isMr ? 'उदा. पादचारी पूल, ओपन जिम...' : 'e.g. Pedestrian skywalk, Open gym...'),
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 14),
 
-                          // Location & Prabhag Area side-by-side
+                          // 2. Description (Full Width - matching PossibleImprovements.tsx lines 547-568)
+                          fieldLabel(isMr ? 'तपशीलवार माहिती व आवश्यकता' : 'Detailed Description', isRequired: true),
+                          TextField(
+                            controller: descCtrl,
+                            maxLines: 3,
+                            decoration: inputDec(hint: isMr ? 'ही सुधारणा का आवश्यक आहे? नागरिकांना काय फायदा होईल?' : 'Why is this improvement needed? How will it help?'),
+                          ),
+                          const SizedBox(height: 14),
+
+                          // 3. Location & Area side-by-side (matching PossibleImprovements.tsx lines 570-591)
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -394,9 +367,9 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                               ),
                             ],
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 14),
 
-                          // Target Date & Beneficiaries side-by-side
+                          // 4. Expected Target Date & Beneficiaries side-by-side (matching PossibleImprovements.tsx lines 593-611)
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -428,14 +401,22 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                               ),
                             ],
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 14),
 
-                          // Description
-                          fieldLabel(isMr ? 'तपशीलवार माहिती व आवश्यकता' : 'Detailed Description', isRequired: true),
-                          TextField(
-                            controller: descCtrl,
-                            maxLines: 3,
-                            decoration: inputDec(hint: isMr ? 'ही सुधारणा का आवश्यक आहे? नागरिकांना काय फायदा होईल?' : 'Why is this improvement needed? How will it help?'),
+                          // 5. Status (Full Width Dropdown - matching PossibleImprovements.tsx lines 613-623)
+                          fieldLabel(isMr ? 'सद्यस्थिती' : 'Status'),
+                          DropdownButtonFormField<String>(
+                            initialValue: status,
+                            decoration: inputDec(),
+                            items: [
+                              DropdownMenuItem(value: 'Pending', child: Text(isMr ? 'प्रलंबित (Pending)' : 'Pending')),
+                              DropdownMenuItem(value: 'Planned', child: Text(isMr ? 'नियोजित (Planned)' : 'Planned')),
+                              DropdownMenuItem(value: 'In Progress', child: Text(isMr ? 'सुरू (In Progress)' : 'In Progress')),
+                              DropdownMenuItem(value: 'Complete', child: Text(isMr ? 'पूर्ण (Complete)' : 'Complete')),
+                            ],
+                            onChanged: (val) {
+                              if (val != null) setModalState(() => status = val);
+                            },
                           ),
                           const SizedBox(height: 20),
 

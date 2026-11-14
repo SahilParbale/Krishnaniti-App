@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../data/models/complaint_model.dart';
-import '../../../data/models/staff_model.dart';
 import '../../../data/repositories/complaints_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
@@ -37,7 +36,6 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
 
   bool _loading = true;
   List<ComplaintModel> _complaints = [];
-  List<StaffModel> _staffList = [];
 
   @override
   void initState() {
@@ -57,15 +55,11 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
     setState(() => _loading = true);
     try {
       final repo = ref.read(complaintsRepoProvider);
-      final results = await Future.wait([
-        repo.getWardProblems(),
-        repo.getStaffList(),
-      ]);
+      final list = await repo.getWardProblems();
 
       if (mounted) {
         setState(() {
-          _complaints = results[0] as List<ComplaintModel>;
-          _staffList = results[1] as List<StaffModel>;
+          _complaints = list;
           _loading = false;
         });
       }
@@ -200,19 +194,16 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
   }
 
   Color _getTypeBg(String type) {
-    if (type == 'Help') return const Color(0xFFFAF5FF);
     if (type == 'SelfIdentified') return const Color(0xFFFFF7ED);
     return const Color(0xFFF0F9FF);
   }
 
   Color _getTypeTextColor(String type) {
-    if (type == 'Help') return const Color(0xFF7E22CE);
     if (type == 'SelfIdentified') return const Color(0xFFC2410C);
     return const Color(0xFF0369A1);
   }
 
   Color _getTypeBorderColor(String type) {
-    if (type == 'Help') return const Color(0xFFF3E8FF);
     if (type == 'SelfIdentified') return const Color(0xFFFFEDD5);
     return const Color(0xFFE0F2FE);
   }
@@ -221,6 +212,7 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
     NewComplaintBottomSheet.show(
       context,
       initialTab: 'Complaints',
+      hidePersonalHelp: true,
     ).then((val) {
       if (val == true) {
         _fetchComplaints();

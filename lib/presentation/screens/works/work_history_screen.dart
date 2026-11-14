@@ -391,31 +391,10 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                     ),
                     const SizedBox(height: 14),
 
-                    // Side-by-side: Status & Target Date
+                    // Side-by-side: Completion Date & People Benefited (matching WorkHistory.tsx lines 679-697)
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              fieldLabel(isMr ? 'कामाची स्थिती' : 'Work Status', isRequired: true),
-                              DropdownButtonFormField<String>(
-                                initialValue: status,
-                                decoration: inputDec(),
-                                items: [
-                                  DropdownMenuItem(value: 'Planned', child: Text(isMr ? 'नियोजित (Planned)' : 'Planned')),
-                                  DropdownMenuItem(value: 'InProgress', child: Text(isMr ? 'सुरू (In Progress)' : 'In Progress')),
-                                  DropdownMenuItem(value: 'Completed', child: Text(isMr ? 'पूर्ण (Completed)' : 'Completed')),
-                                ],
-                                onChanged: (val) {
-                                  if (val != null) setModalState(() => status = val);
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -428,14 +407,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                             ],
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Side-by-side: People Benefited & Total Amount Spent
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -449,19 +421,19 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                             ],
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              fieldLabel(isMr ? 'एकूण खर्च रक्कम (₹)' : 'Total Amount Spent (₹)'),
-                              TextField(
-                                controller: amtCtrl,
-                                keyboardType: TextInputType.number,
-                                decoration: inputDec(hint: 'उदा. 1450000', prefixText: '₹ '),
-                              ),
-                            ],
-                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Total Amount Spent (matching WorkHistory.tsx lines 698-707)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        fieldLabel(isMr ? 'एकूण खर्च रक्कम (₹)' : 'Total Amount Spent (₹)'),
+                        TextField(
+                          controller: amtCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: inputDec(hint: 'उदा. 1450000', prefixText: '₹ '),
                         ),
                       ],
                     ),

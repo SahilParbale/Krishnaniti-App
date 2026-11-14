@@ -15,12 +15,14 @@ import 'complaint_form_constants.dart';
 /// (ComplaintForm.tsx & PersonalRequestForm.tsx).
 class NewComplaintBottomSheet extends ConsumerStatefulWidget {
   final String initialTab; // 'Complaints' or 'Personal Help'
+  final bool hidePersonalHelp;
   final String? prefillVoterId;
   final String? prefillVoterName;
 
   const NewComplaintBottomSheet({
     super.key,
     this.initialTab = 'Complaints',
+    this.hidePersonalHelp = false,
     this.prefillVoterId,
     this.prefillVoterName,
   });
@@ -28,6 +30,7 @@ class NewComplaintBottomSheet extends ConsumerStatefulWidget {
   static Future<bool?> show(
     BuildContext context, {
     String initialTab = 'Complaints',
+    bool hidePersonalHelp = false,
     String? prefillVoterId,
     String? prefillVoterName,
   }) {
@@ -39,6 +42,7 @@ class NewComplaintBottomSheet extends ConsumerStatefulWidget {
       barrierColor: Colors.black54,
       builder: (_) => NewComplaintBottomSheet(
         initialTab: initialTab,
+        hidePersonalHelp: hidePersonalHelp,
         prefillVoterId: prefillVoterId,
         prefillVoterName: prefillVoterName,
       ),
@@ -107,9 +111,9 @@ class _NewComplaintBottomSheetState
   @override
   void initState() {
     super.initState();
-    _activeTab = widget.initialTab == 'Personal Help'
-        ? 'Personal Help'
-        : 'Complaints';
+    _activeTab = widget.hidePersonalHelp
+        ? 'Complaints'
+        : (widget.initialTab == 'Personal Help' ? 'Personal Help' : 'Complaints');
     _selectedCategory = 'Other';
     _selectedPersonalType = 'Personal Help';
     _staffList = List.from(_fallbackStaffList);
@@ -446,8 +450,9 @@ class _NewComplaintBottomSheetState
             // Top Header matching ComplaintForm.tsx card header
             _buildTopCardHeader(isMr),
 
-            // Tab Selector (Area Complaint vs Personal Help)
-            _buildTabSelector(isMr),
+            // Tab Selector (Area Complaint vs Personal Help - hidden when opened from Ward Problems)
+            if (!widget.hidePersonalHelp)
+              _buildTabSelector(isMr),
 
             // Scrollable Form Body
             Expanded(
@@ -488,9 +493,17 @@ class _NewComplaintBottomSheetState
   // TOP CARD HEADER (matching ComplaintForm.tsx)
   // ---------------------------------------------------------------------------
   Widget _buildTopCardHeader(bool isMr) {
-    final titleText = _activeTab == 'Complaints'
-        ? (isMr ? 'नवीन तक्रार' : 'New Request')
-        : (isMr ? 'वैयक्तिक विनंत्या' : 'Personal Requests');
+    final titleText = widget.hidePersonalHelp
+        ? (isMr ? 'नवीन प्रभागातील समस्या' : 'Report Ward Problem')
+        : (_activeTab == 'Complaints'
+            ? (isMr ? 'नवीन तक्रार' : 'New Request')
+            : (isMr ? 'वैयक्तिक विनंत्या' : 'Personal Requests'));
+
+    final subtitleText = widget.hidePersonalHelp
+        ? (isMr ? 'प्रभागातील नागरी समस्यांची नोंद घ्या' : 'Record civic and ward-level issues')
+        : (isMr
+            ? 'अधिकृत तक्रारी आणि वैयक्तिक मदत विनंत्या व्यवस्थापित करा'
+            : 'Track and manage official citizen grievances');
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -528,10 +541,16 @@ class _NewComplaintBottomSheetState
                       ),
                     ],
                   ),
-                ] else if (_activeTab == 'Personal Help') ...[
+                ] else if (_activeTab == 'Personal Help' && !widget.hidePersonalHelp) ...[
                   const SizedBox(height: 2),
                   Text(
                     isMr ? 'नवीन वैयक्तिक मदत विनंती नोंदवा' : 'Create a new manual personal help request',
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  ),
+                ] else ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitleText,
                     style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                   ),
                 ],
