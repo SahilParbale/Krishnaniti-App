@@ -11,6 +11,7 @@ class LazyScreenSlider extends StatefulWidget {
   final bool isGoingBack;
   final VoidCallback? onSwipeRight; // Go back / previous
   final VoidCallback? onSwipeLeft;  // Go forward / next
+  final VoidCallback? onOpenDrawer; // Trigger sidebar drawer from extreme left edge pull
 
   const LazyScreenSlider({
     super.key,
@@ -19,6 +20,7 @@ class LazyScreenSlider extends StatefulWidget {
     this.isGoingBack = false,
     this.onSwipeRight,
     this.onSwipeLeft,
+    this.onOpenDrawer,
   });
 
   @override
@@ -34,7 +36,9 @@ class _LazyScreenSliderState extends State<LazyScreenSlider>
   late final Animation<double> _slideAnimation;
 
   // Interactive horizontal drag tracking
+  double _dragStartX = 0.0;
   double _horizontalDragDelta = 0.0;
+  bool _drawerTriggered = false;
   bool _isDragging = false;
 
   @override
@@ -178,16 +182,26 @@ class _LazyScreenSliderState extends State<LazyScreenSlider>
       },
     );
 
-    // Screen Touch Motion: Left/Right Horizontal Swipe Gestures
+    // Screen Touch Motion: Left/Right Horizontal Swipe Gestures with Extreme Left Edge Drawer Access
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
       onHorizontalDragStart: (details) {
+        _dragStartX = details.globalPosition.dx;
         _horizontalDragDelta = 0.0;
+        _drawerTriggered = false;
         _isDragging = true;
       },
       onHorizontalDragUpdate: (details) {
         if (_isDragging) {
           _horizontalDragDelta += details.delta.dx;
+
+          // Extreme Left Edge Pull (within 50px of left screen edge):
+          // Immediately trigger the sidebar drawer to open when pulling rightwards!
+          if (_dragStartX <= 50.0 && _horizontalDragDelta > 20.0 && !_drawerTriggered) {
+            _drawerTriggered = true;
+            HapticFeedback.lightImpact();
+            widget.onOpenDrawer?.call();
+          }
         }
       },
       onHorizontalDragEnd: (details) {
@@ -195,6 +209,27 @@ class _LazyScreenSliderState extends State<LazyScreenSlider>
           _isDragging = false;
           final velocity = details.primaryVelocity ?? 0.0;
 
+          // If touch began at the extreme left edge:
+          if (_dragStartX <= 50.0) {
+            // Fling or quick swipe from left edge triggers drawer if not already triggered
+            if (!_drawerTriggered && (_horizontalDragDelta > 15.0 || velocity > 150.0)) {
+              _drawerTriggered = true;
+              HapticFeedback.lightImpact();
+              widget.onOpenDrawer?.call();
+            }
+            // Consume edge gesture: NEVER trigger horizontal screen transitions from edge drag
+            _drawerTriggered = false;
+            _horizontalDragDelta = 0.0;
+            return;
+          }
+
+          if (_drawerTriggered) {
+            _drawerTriggered = false;
+            _horizontalDragDelta = 0.0;
+            return;
+          }
+
+          // Normal mid-screen horizontal swipes (_dragStartX > 50.0):
           // 1) Swipe Right (finger moves left-to-right > 40px or velocity > 200) -> Navigate Back / Previous!
           if ((_horizontalDragDelta > 40.0 || velocity > 200.0) && widget.onSwipeRight != null) {
             HapticFeedback.lightImpact();
@@ -213,6 +248,7 @@ class _LazyScreenSliderState extends State<LazyScreenSlider>
       onHorizontalDragCancel: () {
         _isDragging = false;
         _horizontalDragDelta = 0.0;
+        _drawerTriggered = false;
       },
       child: content,
     );

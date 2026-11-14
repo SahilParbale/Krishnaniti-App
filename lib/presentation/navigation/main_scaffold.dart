@@ -2,10 +2,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'lazy_indexed_stack.dart';
 import 'lazy_screen_slider.dart';
 import 'curved_bottom_bar.dart';
 import 'radial_quick_access_menu.dart';
+import 'app_drawer.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/custom_navigation_provider.dart';
 import '../providers/auth_provider.dart';
@@ -59,6 +59,8 @@ class MainScaffold extends ConsumerStatefulWidget {
 }
 
 class _MainScaffoldState extends ConsumerState<MainScaffold> {
+  final GlobalKey<ScaffoldState> _mainScaffoldKey = GlobalKey<ScaffoldState>();
+
   static const List<String> screenKeys = [
     'dashboard',           // 0
     'complaints',          // 1
@@ -390,6 +392,12 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
           return;
         }
 
+        // 1.5. If main sidebar drawer is open, close it first!
+        if (_mainScaffoldKey.currentState?.isDrawerOpen ?? false) {
+          _mainScaffoldKey.currentState?.closeDrawer();
+          return;
+        }
+
         // 2. If an input popup / modal bottom sheet / dialog is open in Navigator, dismantle it first!
         final nav = Navigator.of(context, rootNavigator: false);
         if (nav.canPop()) {
@@ -416,11 +424,22 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
       child: Stack(
         children: [
           Scaffold(
+            key: _mainScaffoldKey,
             backgroundColor: const Color(0xFFF8FAFC),
+            drawer: NagarsevakAppDrawer(
+              onTabChange: _onTabChange,
+            ),
+            drawerEdgeDragWidth: 50.0,
+            drawerEnableOpenDragGesture: true,
             body: LazyScreenSlider(
               index: index,
               builders: _builders,
               isGoingBack: isGoingBack,
+              onOpenDrawer: () {
+                if (!(_mainScaffoldKey.currentState?.isDrawerOpen ?? false)) {
+                  _mainScaffoldKey.currentState?.openDrawer();
+                }
+              },
               onSwipeRight: () {
                 // Swipe Right (finger moves →):
                 // In the 4 main screens (Dashboard, Complaints, Letters, Profile), moves backward.
