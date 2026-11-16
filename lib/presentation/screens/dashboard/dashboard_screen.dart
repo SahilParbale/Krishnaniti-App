@@ -471,32 +471,34 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                 child: const Icon(Icons.account_balance_rounded, color: Colors.white, size: 18),
               ),
               const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Text(
-                    'Dashboard',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 16.5,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                      letterSpacing: -0.2,
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Dashboard',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 16.5,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: -0.2,
+                      ),
                     ),
-                  ),
-                  Text(
-                    'Overview, analytics & ward summary',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFFE0F2FE),
+                    Text(
+                      'Overview, analytics & ward summary',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFFE0F2FE),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
@@ -519,39 +521,44 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Container(
-                          width: 40,
-                          height: 40,
-                          margin: const EdgeInsets.only(right: 12),
+                          width: 38,
+                          height: 38,
+                          margin: const EdgeInsets.only(right: 10),
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            border: Border.all(color: const Color(0xFF0284C7), width: 2),
+                            border: Border.all(color: const Color(0xFF0284C7), width: 1.8),
                           ),
                           child: ClipOval(
                             child: Image.network(
                               'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => const Icon(Icons.person, color: Color(0xFF0284C7), size: 22),
+                              errorBuilder: (_, __, ___) => const Icon(Icons.person, color: Color(0xFF0284C7), size: 20),
                             ),
                           ),
                         ),
-                        Expanded(
+                        const Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
                               Text(
                                 'Dashboard',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                  fontSize: 22,
+                                  fontSize: 18,
                                   fontWeight: FontWeight.w800,
                                   color: Color(0xFF0F172A),
-                                  letterSpacing: -0.4,
+                                  letterSpacing: -0.3,
                                 ),
                               ),
-                              SizedBox(height: 2),
+                              SizedBox(height: 1),
                               Text(
                                 'Welcome back, Hon. Nagarsevak',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                  fontSize: 12.5,
+                                  fontSize: 11.5,
                                   fontWeight: FontWeight.w500,
                                   color: Color(0xFF64748B),
                                 ),
@@ -560,29 +567,35 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.help_outline_rounded, color: Color(0xFF64748B), size: 22),
+                          icon: const Icon(Icons.help_outline_rounded, color: Color(0xFF64748B), size: 20),
                           tooltip: 'Help / Tour',
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.all(4),
+                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                           onPressed: _showDashboardHelp,
                         ),
                         const SizedBox(width: 4),
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (_) => const NewComplaintScreen()),
-                            );
-                          },
-                          icon: const Icon(Icons.add_rounded, size: 16),
-                          label: const Text(
-                            'New Request',
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0284C7),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            elevation: 0,
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const NewComplaintScreen()),
+                              );
+                            },
+                            icon: const Icon(Icons.add_rounded, size: 15),
+                            label: const Text(
+                              'New Request',
+                              style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0284C7),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+                              elevation: 0,
+                            ),
                           ),
                         ),
                       ],
@@ -1169,46 +1182,64 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                               Expanded(
                                 child: Column(
                                   children: [
-                                    const Text(
-                                      'CLEARANCE RATE',
-                                      style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: Color(0xFF64748B)),
+                                    const FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        'CLEARANCE RATE',
+                                        style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: Color(0xFF64748B)),
+                                      ),
                                     ),
                                     const SizedBox(height: 4),
-                                    Text(
-                                      '${totalVal > 0 ? ((resolvedVal / totalVal) * 100).round() : 72}%',
-                                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        '${totalVal > 0 ? ((resolvedVal / totalVal) * 100).round() : 72}%',
+                                        style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                                      ),
                                     ),
                                   ],
                                 ),
                               ),
                               Container(height: 28, width: 1, color: const Color(0xFFE2E8F0)),
-                              Expanded(
+                              const Expanded(
                                 child: Column(
-                                  children: const [
-                                    Text(
-                                      'AVG. RESPONSE',
-                                      style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: Color(0xFF64748B)),
+                                  children: [
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        'AVG. RESPONSE',
+                                        style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: Color(0xFF64748B)),
+                                      ),
                                     ),
                                     SizedBox(height: 4),
-                                    Text(
-                                      '24 Hrs',
-                                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        '24 Hrs',
+                                        style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                                      ),
                                     ),
                                   ],
                                 ),
                               ),
                               Container(height: 28, width: 1, color: const Color(0xFFE2E8F0)),
-                              Expanded(
+                              const Expanded(
                                 child: Column(
-                                  children: const [
-                                    Text(
-                                      'SATISFACTION',
-                                      style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: Color(0xFF64748B)),
+                                  children: [
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        'SATISFACTION',
+                                        style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: Color(0xFF64748B)),
+                                      ),
                                     ),
                                     SizedBox(height: 4),
-                                    Text(
-                                      '88%',
-                                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        '88%',
+                                        style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -1356,9 +1387,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                               children: [
                                                 const Icon(Icons.schedule_rounded, size: 11, color: Color(0xFF94A3B8)),
                                                 const SizedBox(width: 3),
-                                                Text(
-                                                  activity.area != null ? '${activity.area} • Today' : 'Ward No. 12',
-                                                  style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                                                Expanded(
+                                                  child: Text(
+                                                    activity.area != null ? '${activity.area} • Today' : 'Ward No. 12',
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                    style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                                                  ),
                                                 ),
                                               ],
                                             ),
@@ -1533,13 +1568,17 @@ class _StatCardItem extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 3),
-                  Text(
-                    value,
-                    style: const TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF0F172A),
-                      letterSpacing: -0.2,
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      value,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                        letterSpacing: -0.2,
+                      ),
                     ),
                   ),
                 ],

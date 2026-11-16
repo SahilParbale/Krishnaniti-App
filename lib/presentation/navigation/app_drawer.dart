@@ -853,6 +853,8 @@ class _DrawerGroupHeader extends StatelessWidget {
                     color: isOpen ? const Color(0xFF0284C7) : const Color(0xFF1E293B),
                     letterSpacing: -0.1,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               Icon(
@@ -992,6 +994,8 @@ class _DrawerSingleItem extends ConsumerWidget {
                       fontWeight: active ? FontWeight.w700 : FontWeight.w600,
                       color: active ? const Color(0xFF0284C7) : const Color(0xFF1E293B),
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 Icon(

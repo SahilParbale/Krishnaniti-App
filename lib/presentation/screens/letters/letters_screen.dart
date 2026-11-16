@@ -379,12 +379,16 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                                 color: _isOutgoing ? const Color(0xFF0284C7) : const Color(0xFF64748B),
                               ),
                               const SizedBox(width: 6),
-                              Text(
-                                '${isMr ? AppStrings.outgoingLettersMr : AppStrings.outgoingLetters} ($outCount)',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: _isOutgoing ? FontWeight.w800 : FontWeight.w600,
-                                  color: _isOutgoing ? const Color(0xFF0284C7) : const Color(0xFF64748B),
+                              Flexible(
+                                child: Text(
+                                  '${isMr ? AppStrings.outgoingLettersMr : AppStrings.outgoingLetters} ($outCount)',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: _isOutgoing ? FontWeight.w800 : FontWeight.w600,
+                                    color: _isOutgoing ? const Color(0xFF0284C7) : const Color(0xFF64748B),
+                                  ),
                                 ),
                               ),
                             ],
@@ -417,12 +421,16 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                                 color: !_isOutgoing ? const Color(0xFF0284C7) : const Color(0xFF64748B),
                               ),
                               const SizedBox(width: 6),
-                              Text(
-                                '${isMr ? AppStrings.incomingLettersMr : AppStrings.incomingLetters} ($inCount)',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: !_isOutgoing ? FontWeight.w800 : FontWeight.w600,
-                                  color: !_isOutgoing ? const Color(0xFF0284C7) : const Color(0xFF64748B),
+                              Flexible(
+                                child: Text(
+                                  '${isMr ? AppStrings.incomingLettersMr : AppStrings.incomingLetters} ($inCount)',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: !_isOutgoing ? FontWeight.w800 : FontWeight.w600,
+                                    color: !_isOutgoing ? const Color(0xFF0284C7) : const Color(0xFF64748B),
+                                  ),
                                 ),
                               ),
                             ],
@@ -697,10 +705,13 @@ class _LetterCard extends StatelessWidget {
                                   if (letter.area != null && letter.area!.isNotEmpty) ...[
                                     const Icon(Icons.location_on_outlined, size: 13, color: Color(0xFF94A3B8)),
                                     const SizedBox(width: 2),
-                                    Text(
-                                      letter.area!,
-                                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
-                                      overflow: TextOverflow.ellipsis,
+                                    Flexible(
+                                      child: Text(
+                                        letter.area!,
+                                        maxLines: 1,
+                                        style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                     ),
                                     const SizedBox(width: 8),
                                   ],

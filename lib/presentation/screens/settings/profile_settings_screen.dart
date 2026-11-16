@@ -774,30 +774,40 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
-                    'Nagarsevak Profile & Branding',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                  ),
-                  Text(
-                    'Configures official letterhead, receipts & card headers',
-                    style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                  ),
-                ],
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Nagarsevak Profile & Branding',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                    ),
+                    Text(
+                      'Configures official letterhead, receipts & card headers',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                    ),
+                  ],
+                ),
               ),
-              ElevatedButton.icon(
-                onPressed: _isSaving ? null : _saveSettings,
-                icon: _isSaving
-                    ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Icon(Icons.save_rounded, size: 16),
-                label: Text(_isSaving ? 'Saving...' : 'Save Changes'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0284C7),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              const SizedBox(width: 8),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: ElevatedButton.icon(
+                  onPressed: _isSaving ? null : _saveSettings,
+                  icon: _isSaving
+                      ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Icon(Icons.save_rounded, size: 16),
+                  label: Text(_isSaving ? 'Saving...' : 'Save Changes', style: const TextStyle(fontSize: 12)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0284C7),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
                 ),
               ),
             ],
@@ -899,11 +909,18 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: const [
+                  const Row(
+                    children: [
                       Icon(Icons.flag_rounded, size: 18, color: Color(0xFF0284C7)),
                       SizedBox(width: 6),
-                      Text('Party Affiliation & Branding Images', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                      Expanded(
+                        child: Text(
+                          'Party Affiliation & Branding Images',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                        ),
+                      ),
                     ],
                   ),
                   const Divider(height: 20),
@@ -1134,22 +1151,29 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isMr ? 'बॉटम नेव्हिगेशन बार (4 पर्याय)' : 'Bottom Navigation Bar (4 Tabs)',
-                    style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    isMr
-                        ? 'पहिले 3 टॅब बदला. चौथा सेटिंग्ज पर्याय कायम निश्चित आहे.'
-                        : 'First 3 tabs are customizable. Tab 4 (Settings) is fixed.',
-                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                  ),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isMr ? 'बॉटम नेव्हिगेशन बार (4 पर्याय)' : 'Bottom Navigation Bar (4 Tabs)',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      isMr
+                          ? 'पहिले 3 टॅब बदला. चौथा सेटिंग्ज पर्याय कायम निश्चित आहे.'
+                          : 'First 3 tabs are customizable. Tab 4 (Settings) is fixed.',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 6),
               TextButton.icon(
                 onPressed: () {
                   ref.read(customBottomBarProvider.notifier).resetToDefaults();
@@ -1243,22 +1267,29 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isMr ? 'द्रुत क्रिया मेनू (5 पर्याय)' : 'Radial Quick Access Actions (5 Slots)',
-                    style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    isMr
-                        ? 'मध्यवर्ती बटण दाबून धरल्यावर किंवा ओढल्यावर दिसणारे 5 पर्याय.'
-                        : 'The 5 gesture actions on the curved glass running track.',
-                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                  ),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isMr ? 'द्रुत क्रिया मेनू (5 पर्याय)' : 'Radial Quick Access Actions (5 Slots)',
+                      style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      isMr
+                          ? 'मध्यवर्ती बटण दाबून धरल्यावर किंवा ओढल्यावर दिसणारे 5 पर्याय.'
+                          : 'The 5 gesture actions on the curved glass running track.',
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               TextButton.icon(
                 onPressed: () {
                   ref.read(customQuickActionsProvider.notifier).resetToDefaults();
@@ -1905,10 +1936,15 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                                       Row(
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
-                                          Text(
-                                            '${log['os'] ?? 'Device'} · ${log['browser'] ?? 'App'}',
-                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                          Expanded(
+                                            child: Text(
+                                              '${log['os'] ?? 'Device'} · ${log['browser'] ?? 'App'}',
+                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
                                           ),
+                                          const SizedBox(width: 8),
                                           Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                             decoration: BoxDecoration(
@@ -1927,6 +1963,8 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                                       Text(
                                         'IP: ${log['ip_address'] ?? '127.0.0.1'} · ${log['email'] ?? 'User'}',
                                         style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                       Text(
                                         dateStr,
@@ -1971,7 +2009,14 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                     children: const [
                       Icon(Icons.report_problem_outlined, color: Color(0xFFD97706), size: 18),
                       SizedBox(width: 6),
-                      Text('Report New Issue or Feature Request', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                      Expanded(
+                        child: Text(
+                          'Report New Issue or Feature Request',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 4),
@@ -2007,14 +2052,14 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
 
                   const SizedBox(height: 10),
 
-                  Row(
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       const Text('Severity / Priority:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                      const SizedBox(width: 12),
                       _buildPriorityChoice('Low'),
-                      const SizedBox(width: 8),
                       _buildPriorityChoice('Medium'),
-                      const SizedBox(width: 8),
                       _buildPriorityChoice('High'),
                     ],
                   ),
@@ -2090,10 +2135,15 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text(
-                                      t['id'] ?? 'TKT',
-                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
+                                    Expanded(
+                                      child: Text(
+                                        t['id'] ?? 'TKT',
+                                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                     ),
+                                    const SizedBox(width: 8),
                                     Row(
                                       children: [
                                         _buildTicketBadge(t['priority'] ?? 'Medium', const Color(0xFF3B82F6)),
