@@ -238,7 +238,10 @@ class _VoterProfileScreenState extends ConsumerState<VoterProfileScreen> {
               Expanded(
                 child: OutlinedButton.icon(
                   icon: const Icon(Icons.phone, size: 16, color: Color(0xFF0284C7)),
-                  label: const Text('Direct Call', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  label: const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text('Direct Call', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  ),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     side: const BorderSide(color: Color(0xFF0284C7)),
@@ -252,7 +255,10 @@ class _VoterProfileScreenState extends ConsumerState<VoterProfileScreen> {
             Expanded(
               child: ElevatedButton.icon(
                 icon: const Icon(Icons.send_rounded, size: 16, color: Colors.white),
-                label: const Text('WhatsApp Slip', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                label: const FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text('WhatsApp Slip', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF25D366),
                   padding: const EdgeInsets.symmetric(vertical: 12),
@@ -627,12 +633,15 @@ class _VoterProfileScreenState extends ConsumerState<VoterProfileScreen> {
                             decoration: BoxDecoration(color: c, shape: BoxShape.circle),
                           ),
                           const SizedBox(height: 4),
-                          Text(
-                            st['label']!.toString(),
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
-                              color: isSel ? c : Colors.grey.shade700,
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              st['label']!.toString(),
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
+                                color: isSel ? c : Colors.grey.shade700,
+                              ),
                             ),
                           ),
                         ],

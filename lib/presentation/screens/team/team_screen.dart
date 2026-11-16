@@ -1157,16 +1157,24 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
             child: Icon(icon, size: 15, color: color),
           ),
           const SizedBox(height: 6),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+            ),
           ),
           const SizedBox(height: 1),
-          Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.grey.shade700),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.grey.shade700),
+            ),
           ),
         ],
       ),
@@ -1368,7 +1376,9 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                         if (member.name != member.displayName)
                           Text(member.name, style: TextStyle(fontSize: 11.5, color: Colors.grey.shade500)),
                         const SizedBox(height: 3),
-                        Row(
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
                           children: [
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -1382,7 +1392,6 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                                 style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: catColor),
                               ),
                             ),
-                            const SizedBox(width: 6),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(

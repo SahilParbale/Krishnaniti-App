@@ -732,8 +732,38 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
                 labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 dividerColor: Colors.transparent,
                 tabs: const [
-                  Tab(text: 'ECI Forms & Guides', icon: Icon(Icons.description_outlined, size: 18)),
-                  Tab(text: 'Application History', icon: Icon(Icons.history_edu_outlined, size: 18)),
+                  Tab(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.description_outlined, size: 16),
+                        SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            'ECI Forms & Guides',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Tab(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.history_edu_outlined, size: 16),
+                        SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            'Application History',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -1060,21 +1090,24 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
 
           const SizedBox(height: 14),
 
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 6,
             children: [
               Text(
                 'Logged Applications: ${_applications.length}',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF475569)),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF475569)),
               ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
                 children: [
                   Text(
                     'Approval Rate: ${_stats['total'] > 0 ? ((_stats['approved'] / _stats['total']) * 100).round() : 0}%',
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF16A34A)),
                   ),
-                  const SizedBox(width: 8),
                   TextButton.icon(
                     onPressed: () => VoterFormsReportGenerator.generateAndPrintReport(applications: _applications),
                     icon: const Icon(Icons.picture_as_pdf_outlined, size: 16, color: Color(0xFFDC2626)),
@@ -1178,9 +1211,13 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  count,
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: color),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    count,
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: color),
+                  ),
                 ),
               ],
             ),

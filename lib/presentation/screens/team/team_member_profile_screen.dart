@@ -553,7 +553,9 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
                     if (_member.name != _member.displayName)
                       Text(_member.name, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
                     const SizedBox(height: 4),
-                    Row(
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
@@ -567,7 +569,6 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
                             style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: catColor),
                           ),
                         ),
-                        const SizedBox(width: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
                           decoration: BoxDecoration(
@@ -613,11 +614,13 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
         children: [
           Icon(icon, size: 15, color: const Color(0xFF0284C7)),
           const SizedBox(width: 8),
-          SizedBox(
-            width: 130,
+          Flexible(
+            flex: 2,
             child: Text(label, style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600)),
           ),
-          Expanded(
+          const SizedBox(width: 8),
+          Flexible(
+            flex: 3,
             child: Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
           ),
         ],

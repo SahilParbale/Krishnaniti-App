@@ -255,14 +255,26 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
                 const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Recorded Responses', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF1E40AF))),
+                    Expanded(
+                      child: Text(
+                        'Recorded Responses',
+                        style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF1E40AF)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    SizedBox(width: 4),
                     Icon(Icons.how_to_reg_rounded, size: 18, color: Color(0xFF2563EB)),
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  '$totalResponses',
-                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF1E3A8A)),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '$totalResponses',
+                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF1E3A8A)),
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -288,14 +300,26 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
                 const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Sample Completion', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF166534))),
+                    Expanded(
+                      child: Text(
+                        'Sample Completion',
+                        style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF166534)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    SizedBox(width: 4),
                     Icon(Icons.pie_chart_rounded, size: 18, color: Color(0xFF16A34A)),
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  '$completionRate%',
-                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF14532D)),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '$completionRate%',
+                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF14532D)),
+                  ),
                 ),
                 const SizedBox(height: 6),
                 ClipRRect(
