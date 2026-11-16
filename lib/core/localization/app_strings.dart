@@ -30,12 +30,38 @@ class AppStrings {
   static const String roleNagarsevakMr = 'नगरसेवक';
   static const String roleAmdar = 'Amdar';
   static const String roleAmdarMr = 'आमदार';
+  static const String roleKhasdar = 'Khasdar';
+  static const String roleKhasdarMr = 'खासदार';
+  static const String roleMinister = 'Minister';
+  static const String roleMinisterMr = 'मंत्री';
   static const String roleStaff = 'Staff';
   static const String roleStaffMr = 'कार्यालय कर्मचारी';
   static const String roleKaryakarta = 'Karyakarta';
   static const String roleKaryakartaMr = 'कार्यकर्ता';
   static const String loginButton = 'Sign In';
   static const String loginButtonMr = 'लॉगिन करा';
+  static const String backToRoles = 'Back to Role Selection';
+  static const String backToRolesMr = 'भूमिका निवडीकडे परत जा';
+  static const String backToWebsite = 'Back to Website';
+  static const String backToWebsiteMr = 'वेबसाइटकडे परत जा';
+  static const String enterpriseSecurityNote = 'Protected by enterprise-grade security. Unauthorized access is strictly prohibited.';
+  static const String enterpriseSecurityNoteMr = 'प्रगत सुरक्षा मानकांनी संरक्षित. अनधिकृत प्रवेशास सक्त मनाई आहे.';
+
+  // Landing Page
+  static const String smartGovernanceBadge = 'Smart Governance Platform';
+  static const String smartGovernanceBadgeMr = 'स्मार्ट शासन मंच';
+  static const String landingHeroTitle = 'Empowering Local Leaders, Serving Citizens Better.';
+  static const String landingHeroTitleMr = 'स्थानिक नेतृत्वाला सक्षम करणे, उज्ज्वल भविष्यासाठी.';
+  static const String landingHeroSubtitle = 'A comprehensive digital solution to manage your ward, connect with citizens, and track development work efficiently.';
+  static const String landingHeroSubtitleMr = 'आपला प्रभाग व्यवस्थापित करण्यासाठी, नागरिकांशी जोडले जाण्यासाठी आणि विकास कामांचा मागोवा घेण्यासाठी एक संपूर्ण डिजिटल समाधान.';
+  static const String getStarted = 'Get Started';
+  static const String getStartedMr = 'सुरुवात करा';
+  static const String loginToDashboard = 'Login to Dashboard';
+  static const String loginToDashboardMr = 'डॅशबोर्डवर लॉगिन करा';
+  static const String viewDemo = 'View Demo';
+  static const String viewDemoMr = 'डेमो पहा';
+  static const String trustedByLeaders = 'TRUSTED BY LEADING MUNICIPAL REPRESENTATIVES';
+  static const String trustedByLeadersMr = 'आघाडी नगरप्रतिनिधींचा विश्वास';
 
   // Dashboard Stats
   static const String totalComplaints = 'Total Grievances';

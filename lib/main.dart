@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/services/supabase_service.dart';
 import 'core/theme/app_theme.dart';
 import 'presentation/providers/auth_provider.dart';
-import 'presentation/screens/auth/login_screen.dart';
+import 'presentation/screens/landing/landing_screen.dart';
 import 'presentation/navigation/main_scaffold.dart';
 
 void main() async {
@@ -35,14 +35,14 @@ class NagarsevakApp extends ConsumerWidget {
           if (user != null) {
             return const MainScaffold();
           }
-          return const LoginScreen();
+          return const LandingScreen();
         },
         loading: () => const Scaffold(
           body: Center(
             child: CircularProgressIndicator(strokeWidth: 2),
           ),
         ),
-        error: (e, st) => const LoginScreen(),
+        error: (e, st) => const LandingScreen(),
       ),
     );
   }

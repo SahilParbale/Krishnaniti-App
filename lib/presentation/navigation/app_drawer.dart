@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/navigation_provider.dart';
+import '../providers/auth_provider.dart';
 
 class NagarsevakAppDrawer extends ConsumerStatefulWidget {
   final int currentTabIndex;
@@ -803,7 +804,20 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
                   ),
                 ),
 
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
+                const Divider(height: 16, thickness: 1, color: Color(0xFFF1F5F9)),
+
+                // Sign Out / Logout
+                _DrawerSingleItem(
+                  icon: Icons.logout_rounded,
+                  title: 'Sign Out',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    ref.read(authStateProvider.notifier).signOut();
+                  },
+                ),
+
+                const SizedBox(height: 16),
               ],
             ),
           ),
@@ -874,20 +888,17 @@ class _DrawerGroupHeader extends StatelessWidget {
 class _DrawerSubItem extends ConsumerWidget {
   final IconData icon;
   final String title;
-  final bool? isSelected;
   final VoidCallback onTap;
 
   const _DrawerSubItem({
-    super.key,
     required this.icon,
     required this.title,
-    this.isSelected,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final active = isSelected ?? (ref.watch(activeScreenProvider) == resolveScreenKey(title));
+    final active = ref.watch(activeScreenProvider) == resolveScreenKey(title);
     return Container(
       margin: const EdgeInsets.only(left: 18, right: 8, top: 1, bottom: 1),
       decoration: BoxDecoration(
@@ -948,20 +959,17 @@ class _DrawerSubItem extends ConsumerWidget {
 class _DrawerSingleItem extends ConsumerWidget {
   final IconData icon;
   final String title;
-  final bool? isSelected;
   final VoidCallback onTap;
 
   const _DrawerSingleItem({
-    super.key,
     required this.icon,
     required this.title,
-    this.isSelected,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final active = isSelected ?? (ref.watch(activeScreenProvider) == resolveScreenKey(title));
+    final active = ref.watch(activeScreenProvider) == resolveScreenKey(title);
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
       decoration: BoxDecoration(
