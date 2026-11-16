@@ -8,6 +8,7 @@ import '../../../data/repositories/sadasya_repository.dart';
 import '../../../data/repositories/voters_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/app_modal_sheet.dart';
 import 'sadasya_profile_screen.dart';
 import 'sadasya_report_generator.dart';
 
@@ -1127,23 +1128,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
     }
 
     Widget fieldLabel(String text, {bool isRequired = false}) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 5.0),
-        child: RichText(
-          text: TextSpan(
-            text: text,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-            children: isRequired
-                ? const [
-                    TextSpan(
-                      text: ' *',
-                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                    ),
-                  ]
-                : [],
-          ),
-        ),
-      );
+      return AppFieldLabel(label: text, isRequired: isRequired);
     }
 
     showModalBottomSheet(
@@ -1164,59 +1149,28 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
               ),
             ],
           ),
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 8,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-          ),
           child: Column(
             children: [
-              // Top Drag Handle
-              Center(
-                child: Container(
-                  width: 44,
-                  height: 5,
-                  margin: const EdgeInsets.only(top: 6, bottom: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                ),
+              // 1. FIXED HEADER
+              AppModalHeader(
+                icon: Icons.edit_note_rounded,
+                title: isMr ? 'सदस्य माहिती सुधारा' : 'Edit Member Details',
+                subtitle: member.name,
+                onClose: () => Navigator.pop(ctx),
               ),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.edit_note_rounded, color: Color(0xFF0284C7), size: 20),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      isMr ? 'सदस्य माहिती सुधारा' : 'Edit Member Details',
-                      style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                    onPressed: () => Navigator.pop(ctx),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
+
+              // 2. SCROLLABLE FORM BODY & SUBMIT BUTTON
               Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Full Name & Mobile Number side-by-side
-                      Row(
+                child: ListView(
+                  padding: EdgeInsets.fromLTRB(
+                    18,
+                    14,
+                    18,
+                    MediaQuery.of(ctx).viewInsets.bottom + 24,
+                  ),
+                  children: [
+                    // Full Name & Mobile Number side-by-side
+                    Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
@@ -1392,13 +1346,12 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
                     ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
-    );
-  }
+      );
+    }
 
   void _confirmDeleteMember(SadasyaModel member) {
     showDialog(
@@ -1530,23 +1483,7 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
   }
 
   Widget _fieldLabel(String text, {bool isRequired = false}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 5.0),
-      child: RichText(
-        text: TextSpan(
-          text: text,
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-          children: isRequired
-              ? const [
-                  TextSpan(
-                    text: ' *',
-                    style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                  ),
-                ]
-              : [],
-        ),
-      ),
-    );
+    return AppFieldLabel(label: text, isRequired: isRequired);
   }
 
   @override
@@ -1568,47 +1505,14 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
       ),
       child: Column(
         children: [
-          // Drag handle
-          Center(
-            child: Container(
-              margin: const EdgeInsets.only(top: 8, bottom: 8),
-              width: 44,
-              height: 5,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(3),
-              ),
-            ),
-          ),
-
-          // Header
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.person_add_alt_1_rounded, color: Color(0xFF0284C7), size: 20),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    isMr ? 'नवीन पक्ष सदस्य नोंदणी' : 'Add New Party Member',
-                    style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                  onPressed: () => Navigator.pop(context),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ],
-            ),
+          // 1. FIXED HEADER
+          AppModalHeader(
+            icon: Icons.person_add_alt_1_rounded,
+            title: isMr ? 'नवीन पक्ष सदस्य नोंदणी' : 'Add New Party Member',
+            subtitle: isMr
+                ? 'मतदार यादीतून किंवा थेट फॉर्म भरून सदस्य जोडा'
+                : 'Register cadre members via voter roll or direct entry',
+            onClose: () => Navigator.pop(context),
           ),
 
           // Tabs

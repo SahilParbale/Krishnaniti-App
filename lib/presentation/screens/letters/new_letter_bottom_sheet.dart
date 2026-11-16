@@ -9,6 +9,7 @@ import '../../../data/repositories/letters_repository.dart';
 import '../../../data/repositories/complaints_repository.dart';
 import '../../../data/repositories/voters_repository.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/app_image_picker.dart';
 import 'letter_form_constants.dart';
 
 /// Modal Bottom Sheet that slides up from the bottom with downward-dismiss capability,
@@ -97,7 +98,6 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
 
   // Attachments
   final List<XFile> _pickedFiles = [];
-  final ImagePicker _picker = ImagePicker();
 
   bool _isSubmitting = false;
 
@@ -280,17 +280,6 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
-  }
-
-  Future<void> _pickFile(ImageSource source) async {
-    try {
-      final file = await _picker.pickImage(source: source, imageQuality: 75);
-      if (file != null) {
-        setState(() => _pickedFiles.add(file));
-      }
-    } catch (e) {
-      debugPrint('Error picking file: $e');
-    }
   }
 
   Future<void> _handleSubmit() async {
@@ -1064,113 +1053,19 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFCBD5E1), width: 1.5),
-                ),
-                child: Column(
-                  children: [
-                    const Icon(Icons.cloud_upload_outlined, size: 36, color: Color(0xFF0284C7)),
-                    const SizedBox(height: 8),
-                    Text(
-                      isMr ? 'आवक पत्राचा फोटो किंवा स्कॅन कॉपी जोडा' : 'Add photo or scanned copy of incoming letter',
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'PDF, JPG, PNG (Max 10MB)',
-                      style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        OutlinedButton.icon(
-                          onPressed: () => _pickFile(ImageSource.camera),
-                          icon: const Icon(Icons.camera_alt_rounded, size: 16),
-                          label: Text(isMr ? 'कॅमेरा' : 'Camera'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF0284C7),
-                            side: const BorderSide(color: Color(0xFFBAE6FD)),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        OutlinedButton.icon(
-                          onPressed: () => _pickFile(ImageSource.gallery),
-                          icon: const Icon(Icons.photo_library_rounded, size: 16),
-                          label: Text(isMr ? 'गॅलरी / फाईल्स' : 'Gallery / File'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF0284C7),
-                            side: const BorderSide(color: Color(0xFFBAE6FD)),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+              AppImagePickerField(
+                label: isMr ? 'आवक पत्राचा फोटो किंवा स्कॅन कॉपी जोडा' : 'Add photo or scanned copy of incoming letter',
+                isRequired: false,
+                isMarathi: isMr,
+                allowMultiple: true,
+                initialFiles: _pickedFiles,
+                onFilesChanged: (files) {
+                  setState(() {
+                    _pickedFiles.clear();
+                    _pickedFiles.addAll(files);
+                  });
+                },
               ),
-
-              if (_pickedFiles.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: _pickedFiles.asMap().entries.map((entry) {
-                    final idx = entry.key;
-                    final file = entry.value;
-                    return Stack(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF0F9FF),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFFBAE6FD)),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.description_rounded, size: 18, color: Color(0xFF0284C7)),
-                              const SizedBox(width: 6),
-                              ConstrainedBox(
-                                constraints: const BoxConstraints(maxWidth: 160),
-                                child: Text(
-                                  file.name,
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0369A1)),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Positioned(
-                          top: 0,
-                          right: 0,
-                          child: GestureDetector(
-                            onTap: () => setState(() => _pickedFiles.removeAt(idx)),
-                            child: Container(
-                              padding: const EdgeInsets.all(2),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFFDC2626),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(Icons.close_rounded, size: 10, color: Colors.white),
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  }).toList(),
-                ),
-              ],
             ],
           ),
         ),
@@ -1488,90 +1383,17 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
         isMr ? 'कमाल १०० MB' : 'Max 100MB',
         style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              OutlinedButton.icon(
-                onPressed: () => _pickFile(ImageSource.camera),
-                icon: const Icon(Icons.camera_alt_rounded, size: 18),
-                label: Text(isMr ? 'कॅमेरा' : 'Camera'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF0284C7),
-                  side: const BorderSide(color: Color(0xFFBAE6FD)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-              ),
-              const SizedBox(width: 8),
-              OutlinedButton.icon(
-                onPressed: () => _pickFile(ImageSource.gallery),
-                icon: const Icon(Icons.photo_library_rounded, size: 18),
-                label: Text(isMr ? 'गॅलरी' : 'Gallery'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF0284C7),
-                  side: const BorderSide(color: Color(0xFFBAE6FD)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-              ),
-            ],
-          ),
-          if (_pickedFiles.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _pickedFiles.asMap().entries.map((entry) {
-                final idx = entry.key;
-                final file = entry.value;
-                return Stack(
-                  children: [
-                    Container(
-                      width: 72,
-                      height: 72,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                        color: const Color(0xFFF8FAFC),
-                      ),
-                      alignment: Alignment.center,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.insert_drive_file_rounded, color: Color(0xFF0284C7), size: 26),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            child: Text(
-                              file.name,
-                              style: const TextStyle(fontSize: 8, color: Color(0xFF334155)),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Positioned(
-                      top: 2,
-                      right: 2,
-                      child: GestureDetector(
-                        onTap: () => setState(() => _pickedFiles.removeAt(idx)),
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: const BoxDecoration(
-                            color: Colors.black54,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.close_rounded, size: 12, color: Colors.white),
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              }).toList(),
-            ),
-          ],
-        ],
+      child: AppImagePickerField(
+        isRequired: false,
+        isMarathi: isMr,
+        allowMultiple: true,
+        initialFiles: _pickedFiles,
+        onFilesChanged: (files) {
+          setState(() {
+            _pickedFiles.clear();
+            _pickedFiles.addAll(files);
+          });
+        },
       ),
     );
   }

@@ -6,6 +6,8 @@ import '../../../data/models/work_history_model.dart';
 import '../../../data/repositories/work_history_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_image_picker.dart';
 import 'ahwal_report_generator.dart';
 import 'work_detail_screen.dart';
 import 'work_report_generator.dart';
@@ -248,26 +250,6 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
       );
     }
 
-    Widget fieldLabel(String text, {bool isRequired = false}) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 5.0),
-        child: RichText(
-          text: TextSpan(
-            text: text,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-            children: isRequired
-                ? const [
-                    TextSpan(
-                      text: ' *',
-                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                    ),
-                  ]
-                : [],
-          ),
-        ),
-      );
-    }
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -288,218 +270,237 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                   ),
                 ],
               ),
-              padding: EdgeInsets.only(
-                top: 8,
-                left: 20,
-                right: 20,
-                bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Top Drag Handle
-                    Center(
-                      child: Container(
-                        width: 44,
-                        height: 5,
-                        margin: const EdgeInsets.only(top: 6, bottom: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(3),
-                        ),
+              child: Column(
+                children: [
+                  // 1. FIXED HEADER
+                  AppModalHeader(
+                    icon: Icons.handyman_rounded,
+                    title: isMr ? 'नवीन विकास काम नोंदवा' : 'Add New Development Work',
+                    subtitle: isMr
+                        ? 'कामाचा तपशील, स्थान व खर्च नोंदवा'
+                        : 'Record project title, ward location and cost',
+                    onClose: () => Navigator.pop(sheetCtx),
+                  ),
+
+                  // 2. SCROLLABLE FORM BODY & BUTTONS
+                  Expanded(
+                    child: ListView(
+                      padding: EdgeInsets.fromLTRB(
+                        20,
+                        16,
+                        20,
+                        MediaQuery.of(sheetCtx).viewInsets.bottom + 24,
                       ),
-                    ),
-                    // Header
-                    Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(Icons.handyman_rounded, color: Color(0xFF0284C7), size: 20),
+                        // Project Title
+                        AppFieldLabel(
+                          label: isMr ? 'कामाचे नाव / प्रकल्प शीर्षक' : 'Project Title',
+                          isRequired: true,
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            isMr ? 'नवीन विकास काम नोंदवा' : 'Add New Development Work',
-                            style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                        TextField(
+                          controller: titleCtrl,
+                          decoration: inputDec(
+                            hint: isMr ? 'प्रकल्पाचे नाव / कामाचे वर्णन प्रविष्ट करा...' : 'Enter project name / tender description...',
                           ),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                          onPressed: () => Navigator.pop(sheetCtx),
+                        const SizedBox(height: 14),
+
+                        // Description
+                        AppFieldLabel(
+                          label: isMr ? 'कामाचा तपशील / वर्णन' : 'Description',
+                          isRequired: false,
+                          optionalHint: isMr ? 'ऐच्छिक' : 'Optional',
                         ),
-                      ],
-                    ),
-                    const Divider(height: 16, color: Color(0xFFE2E8F0)),
-                    const SizedBox(height: 6),
+                        TextField(
+                          controller: descCtrl,
+                          maxLines: 3,
+                          decoration: inputDec(
+                            hint: isMr ? 'कामाचा विस्तृत तपशील, आवश्यकता किंवा उद्दिष्ट...' : 'Detailed scope of civil work...',
+                          ),
+                        ),
+                        const SizedBox(height: 14),
 
-                    // Project Title
-                    fieldLabel(isMr ? 'कामाचे नाव / प्रकल्प शीर्षक' : 'Project Title', isRequired: true),
-                    TextField(
-                      controller: titleCtrl,
-                      decoration: inputDec(
-                        hint: isMr ? 'प्रकल्पाचे नाव / कामाचे वर्णन प्रविष्ट करा...' : 'Enter project name / tender description...',
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Description
-                    fieldLabel(isMr ? 'कामाचा तपशील / वर्णन' : 'Description'),
-                    TextField(
-                      controller: descCtrl,
-                      maxLines: 3,
-                      decoration: inputDec(
-                        hint: isMr ? 'कामाचा विस्तृत तपशील, आवश्यकता किंवा उद्दिष्ट...' : 'Detailed scope of civil work...',
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Side-by-side: Location & Area
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              fieldLabel(isMr ? 'स्थान / लँडमार्क' : 'Location / Landmark'),
-                              TextField(
-                                controller: locCtrl,
-                                decoration: inputDec(hint: isMr ? 'उदा. मुख्य चौक, मंदिर परिसर' : 'Landmark / Chowk...'),
+                        // Side-by-side: Location & Area
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppFieldLabel(
+                                    label: isMr ? 'स्थान / लँडमार्क' : 'Location / Landmark',
+                                    isRequired: false,
+                                  ),
+                                  TextField(
+                                    controller: locCtrl,
+                                    decoration: inputDec(hint: isMr ? 'उदा. मुख्य चौक, मंदिर परिसर' : 'Landmark / Chowk...'),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              fieldLabel(isMr ? 'परिसर / प्रभाग' : 'Area / Locality'),
-                              TextField(
-                                controller: areaCtrl,
-                                decoration: inputDec(hint: isMr ? 'उदा. सेक्टर ५, प्रभाग १२' : 'e.g. Sector 5, Prabhag 12...'),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppFieldLabel(
+                                    label: isMr ? 'परिसर / प्रभाग' : 'Area / Locality',
+                                    isRequired: false,
+                                  ),
+                                  TextField(
+                                    controller: areaCtrl,
+                                    decoration: inputDec(hint: isMr ? 'उदा. सेक्टर ५, प्रभाग १२' : 'e.g. Sector 5, Prabhag 12...'),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
+                        const SizedBox(height: 14),
 
-                    // Side-by-side: Completion Date & People Benefited (matching WorkHistory.tsx lines 679-697)
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              fieldLabel(isMr ? 'अंदाजित / पूर्ण तारीख' : 'Completion Date'),
-                              TextField(
-                                controller: dateCtrl,
-                                decoration: inputDec(hint: 'YYYY-MM-DD'),
+                        // Side-by-side: Completion Date & People Benefited
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppFieldLabel(
+                                    label: isMr ? 'अंदाजित / पूर्ण तारीख' : 'Completion Date',
+                                    isRequired: false,
+                                  ),
+                                  TextField(
+                                    controller: dateCtrl,
+                                    decoration: inputDec(hint: 'YYYY-MM-DD'),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              fieldLabel(isMr ? 'लाभार्थी संख्या' : 'People Benefited'),
-                              TextField(
-                                controller: benCtrl,
-                                keyboardType: TextInputType.number,
-                                decoration: inputDec(hint: 'उदा. 5000'),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppFieldLabel(
+                                    label: isMr ? 'लाभार्थी संख्या' : 'People Benefited',
+                                    isRequired: false,
+                                  ),
+                                  TextField(
+                                    controller: benCtrl,
+                                    keyboardType: TextInputType.number,
+                                    decoration: inputDec(hint: 'उदा. 5000'),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
+                        const SizedBox(height: 14),
 
-                    // Total Amount Spent (matching WorkHistory.tsx lines 698-707)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        fieldLabel(isMr ? 'एकूण खर्च रक्कम (₹)' : 'Total Amount Spent (₹)'),
+                        // Total Amount Spent
+                        AppFieldLabel(
+                          label: isMr ? 'एकूण खर्च रक्कम (₹)' : 'Total Amount Spent (₹)',
+                          isRequired: false,
+                        ),
                         TextField(
                           controller: amtCtrl,
                           keyboardType: TextInputType.number,
                           decoration: inputDec(hint: 'उदा. 1450000', prefixText: '₹ '),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
+                        const SizedBox(height: 14),
 
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0284C7),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        // Image Upload via Camera & Phone Storage
+                        AppImagePickerField(
+                          label: isMr ? 'कामाचा फोटो (कॅमेरा व मोबाइल स्टोरेज)' : 'Work Progress Photo (Camera & Phone Storage)',
+                          isRequired: false,
+                          isMarathi: isMr,
+                          onFilesChanged: (_) {},
                         ),
-                        onPressed: () async {
-                          if (titleCtrl.text.trim().isEmpty) {
-                            ScaffoldMessenger.of(sheetCtx).showSnackBar(
-                              SnackBar(content: Text(isMr ? 'कृपया कामाचे नाव प्रविष्ट करा' : 'Please enter project title')),
-                            );
-                            return;
-                          }
+                        const SizedBox(height: 24),
 
-                          final newWork = WorkHistoryModel(
-                            id: 'work-${DateTime.now().millisecondsSinceEpoch}',
-                            source: 'Manual',
-                            title: titleCtrl.text.trim(),
-                            description: descCtrl.text.trim().isNotEmpty
-                                ? descCtrl.text.trim()
-                                : 'Development work initiated for Prabhag residents.',
-                            location: locCtrl.text.trim().isNotEmpty ? locCtrl.text.trim() : 'Ward 12',
-                            area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : 'Ward 12',
-                            status: status,
-                            date: dateCtrl.text.trim(),
-                            peopleBenefited: int.tryParse(benCtrl.text.trim()),
-                            amount: double.tryParse(amtCtrl.text.trim()),
-                            feedbackRating: 5.0,
-                            feedbackCount: 0,
-                          );
-
-                          final repo = ref.read(workHistoryRepoProvider);
-                          await repo.addWork(newWork);
-                          await _fetchData();
-
-                          if (sheetCtx.mounted) Navigator.pop(sheetCtx);
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(isMr ? 'नवीन विकास काम यशस्वीरित्या जोडले गेले!' : 'New work project added successfully!'),
-                                backgroundColor: const Color(0xFF16A34A),
-                              ),
-                            );
-                          }
-                        },
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        // SCROLLABLE ACTION BUTTONS (Cancel & Submit)
+                        Row(
                           children: [
-                            const Icon(Icons.save_rounded, size: 18),
-                            const SizedBox(width: 8),
-                            Text(isMr ? 'काम जतन करा' : 'Save Project', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                            Expanded(
+                              child: OutlinedButton(
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 13),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  side: const BorderSide(color: Color(0xFFCBD5E1)),
+                                ),
+                                onPressed: () => Navigator.pop(sheetCtx),
+                                child: Text(
+                                  isMr ? 'रद्द करा' : 'Cancel',
+                                  style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              flex: 2,
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF0284C7),
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  padding: const EdgeInsets.symmetric(vertical: 13),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                                icon: const Icon(Icons.save_rounded, size: 18),
+                                label: Text(
+                                  isMr ? 'काम जतन करा' : 'Save Project',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                ),
+                                onPressed: () async {
+                                  if (titleCtrl.text.trim().isEmpty) {
+                                    ScaffoldMessenger.of(sheetCtx).showSnackBar(
+                                      SnackBar(content: Text(isMr ? 'कृपया कामाचे नाव प्रविष्ट करा' : 'Please enter project title')),
+                                    );
+                                    return;
+                                  }
+
+                                  final newWork = WorkHistoryModel(
+                                    id: 'work-${DateTime.now().millisecondsSinceEpoch}',
+                                    source: 'Manual',
+                                    title: titleCtrl.text.trim(),
+                                    description: descCtrl.text.trim().isNotEmpty
+                                        ? descCtrl.text.trim()
+                                        : 'Development work initiated for Prabhag residents.',
+                                    location: locCtrl.text.trim().isNotEmpty ? locCtrl.text.trim() : 'Ward 12',
+                                    area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : 'Ward 12',
+                                    status: status,
+                                    date: dateCtrl.text.trim(),
+                                    peopleBenefited: int.tryParse(benCtrl.text.trim()),
+                                    amount: double.tryParse(amtCtrl.text.trim()),
+                                    feedbackRating: 5.0,
+                                    feedbackCount: 0,
+                                  );
+
+                                  final repo = ref.read(workHistoryRepoProvider);
+                                  await repo.addWork(newWork);
+                                  await _fetchData();
+
+                                  if (sheetCtx.mounted) Navigator.pop(sheetCtx);
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(isMr ? 'नवीन विकास काम यशस्वीरित्या जोडले गेले!' : 'New work project added successfully!'),
+                                        backgroundColor: const Color(0xFF16A34A),
+                                      ),
+                                    );
+                                  }
+                                },
+                              ),
+                            ),
                           ],
                         ),
-                      ),
+                        const SizedBox(height: 10),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             );
           },

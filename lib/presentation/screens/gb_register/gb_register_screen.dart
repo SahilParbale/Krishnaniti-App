@@ -6,6 +6,7 @@ import '../../../data/models/gb_register_entry_model.dart';
 import '../../../data/repositories/gb_register_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/app_modal_sheet.dart';
 import 'gb_register_detail_screen.dart';
 import 'gb_register_report_generator.dart';
 
@@ -200,22 +201,7 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
             }
 
             Widget fieldLabel(String label, {bool isRequired = false}) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      label,
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-                    ),
-                    if (isRequired) ...[
-                      const SizedBox(width: 2),
-                      const Text('*', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                    ],
-                  ],
-                ),
-              );
+              return AppFieldLabel(label: label, isRequired: isRequired);
             }
 
             return Container(
@@ -229,46 +215,17 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
               ),
               child: Column(
                 children: [
-                  // Downward Dismiss Drag Handle
-                  Center(
-                    child: Container(
-                      width: 44,
-                      height: 5,
-                      margin: const EdgeInsets.only(top: 10, bottom: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                    ),
+                  // 1. FIXED HEADER
+                  AppModalHeader(
+                    icon: Icons.gavel_rounded,
+                    title: isMr ? 'नवीन GB नोंद (महासभा नोंदवही)' : 'Record Assembly Motion (GB Register)',
+                    subtitle: isMr
+                        ? 'महासभा किंवा समितीमध्ये उपस्थित केलेले प्रश्न व ठराव नोंदवा'
+                        : 'Record motions, questions and resolutions in General Body',
+                    onClose: () => Navigator.pop(sheetCtx),
                   ),
 
-                  // Header with Title and Close Button
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    decoration: const BoxDecoration(
-                      border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          isMr ? 'नवीन GB नोंद (महासभा नोंदवही)' : 'Record Assembly Motion (GB Register)',
-                          style: const TextStyle(
-                            fontSize: 17.5,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF0F172A),
-                            letterSpacing: -0.2,
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                          onPressed: () => Navigator.pop(sheetCtx),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Scrollable Body
+                  // 2. SCROLLABLE FORM BODY & BUTTONS
                   Expanded(
                     child: SingleChildScrollView(
                       padding: EdgeInsets.only(

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/survey_model.dart';
 import '../../../data/repositories/surveys_repository.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/app_modal_sheet.dart';
 
 class CreateSurveyBottomSheet extends ConsumerStatefulWidget {
   final SurveyModel? surveyToEdit;
@@ -149,30 +150,7 @@ class _CreateSurveyBottomSheetState extends ConsumerState<CreateSurveyBottomShee
   }
 
   Widget _fieldLabel(String text, {bool isRequired = false}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: RichText(
-        text: TextSpan(
-          text: text,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF334155),
-          ),
-          children: isRequired
-              ? const [
-                  TextSpan(
-                    text: ' *',
-                    style: TextStyle(
-                      color: Colors.red,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ]
-              : [],
-        ),
-      ),
-    );
+    return AppFieldLabel(label: text, isRequired: isRequired);
   }
 
   InputDecoration _inputDec({String? hintText, Widget? prefixIcon, Widget? suffixIcon}) {
@@ -219,57 +197,24 @@ class _CreateSurveyBottomSheetState extends ConsumerState<CreateSurveyBottomShee
       ),
       child: Column(
         children: [
-          // Drag Handle
-          Center(
-            child: Container(
-              width: 44,
-              height: 5,
-              margin: const EdgeInsets.only(top: 10, bottom: 8),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(3),
-              ),
-            ),
+          // 1. FIXED HEADER
+          AppModalHeader(
+            icon: Icons.poll_rounded,
+            title: isEdit
+                ? (isMr ? 'सर्व्हेक्षण संपादित करा' : 'Edit Survey')
+                : (isMr ? 'नवीन सर्व्हेक्षण तयार करा' : 'Create New Survey'),
+            subtitle: isMr
+                ? 'प्रभागातील नागरिकांचे मत जाणून घेण्यासाठी प्रश्न तयार करा'
+                : 'Design civic polls and opinion surveys for residents',
+            onClose: () => Navigator.pop(context),
           ),
-          // Top Header Bar
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.poll_rounded, color: Color(0xFF0284C7), size: 20),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    isEdit
-                        ? (isMr ? 'सर्व्हेक्षण संपादित करा' : 'Edit Survey')
-                        : (isMr ? 'नवीन सर्व्हेक्षण तयार करा' : 'Create New Survey'),
-                    style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                  onPressed: () => Navigator.pop(context),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+
+          // 2. SCROLLABLE FORM BODY & BUTTONS
           Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(20, 16, 20, MediaQuery.of(context).viewInsets.bottom + 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Survey Details Section
+            child: ListView(
+              padding: EdgeInsets.fromLTRB(18, 14, 18, MediaQuery.of(context).viewInsets.bottom + 24),
+              children: [
+                // Survey Details Section
                   _fieldLabel(isMr ? 'सर्व्हेक्षण शीर्षक' : 'Survey Title', isRequired: true),
                   TextField(
                     controller: _titleCtrl,
@@ -471,14 +416,13 @@ class _CreateSurveyBottomSheetState extends ConsumerState<CreateSurveyBottomShee
                     ),
                   ),
 
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
                 ],
               ),
             ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
   }
 
   void _addOptionToMcq(_TempQuestion q) {

@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/visitor_model.dart';
 import '../../../data/repositories/visitors_repository.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/app_modal_sheet.dart';
 import 'visitor_report_generator.dart';
 
 class VisitorDetailScreen extends ConsumerStatefulWidget {
@@ -117,46 +118,6 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
 
     String selectedPurpose = _visitor.purpose;
 
-    InputDecoration inputDec({String? hint, String? prefixText}) {
-      return InputDecoration(
-        hintText: hint,
-        prefixText: prefixText,
-        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
-        prefixStyle: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        filled: true,
-        fillColor: Colors.white,
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1.0),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
-        ),
-      );
-    }
-
-    Widget fieldLabel(String text, {bool isRequired = false}) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 5.0),
-        child: RichText(
-          text: TextSpan(
-            text: text,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-            children: isRequired
-                ? const [
-                    TextSpan(
-                      text: ' *',
-                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                    ),
-                  ]
-                : [],
-          ),
-        ),
-      );
-    }
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -179,296 +140,265 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
                 ),
               ],
             ),
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-            ),
             child: Column(
               children: [
-                // Top Drag Handle
-                Center(
-                  child: Container(
-                    width: 44,
-                    height: 5,
-                    margin: const EdgeInsets.only(top: 10, bottom: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
+                AppModalHeader(
+                  icon: Icons.edit_note_rounded,
+                  title: isMr ? 'अभ्यागत माहिती संपादित करा' : 'Edit Visitor Details',
+                  subtitle: isMr ? 'अभ्यागताचे तपशील अद्यतनित करा' : 'Update visitor details',
+                  onClose: () => Navigator.pop(ctx),
                 ),
-                // Header
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(Icons.edit_note_rounded, color: Color(0xFF0284C7), size: 20),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          isMr ? 'अभ्यागत माहिती संपादित करा' : 'Edit Visitor Details',
-                          style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.pop(ctx),
-                        icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(height: 1, color: Color(0xFFE2E8F0)),
-
-                // Form
                 Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        fieldLabel(isMr ? 'अभ्यागताचे पूर्ण नाव' : 'Visitor Full Name', isRequired: true),
-                        TextField(
-                          controller: nameCtrl,
-                          decoration: inputDec(hint: isMr ? 'उदा. रमेश पाटील' : 'e.g. Ramesh Patil'),
-                        ),
+                  child: ListView(
+                    padding: EdgeInsets.only(
+                      left: 20,
+                      right: 20,
+                      top: 16,
+                      bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+                    ),
+                    children: [
+                      AppFieldLabel(
+                        label: isMr ? 'अभ्यागताचे पूर्ण नाव' : 'Visitor Full Name',
+                        isRequired: true,
+                      ),
+                      TextField(
+                        controller: nameCtrl,
+                        decoration: appInputDecoration(hint: isMr ? 'उदा. रमेश पाटील' : 'e.g. Ramesh Patil'),
+                      ),
+                      const SizedBox(height: 14),
 
-                        const SizedBox(height: 14),
-
-                        // Side-by-side: Contact Mobile & Purpose Dropdown
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              flex: 5,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  fieldLabel(isMr ? 'मोबाईल (+91)' : 'Mobile (+91)'),
-                                  TextField(
-                                    controller: mobileCtrl,
-                                    keyboardType: TextInputType.phone,
-                                    decoration: inputDec(
-                                      prefixText: '+91 ',
-                                      hint: '9876543210',
-                                    ),
+                      // Side-by-side: Contact Mobile & Purpose Dropdown
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 5,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                AppFieldLabel(label: isMr ? 'मोबाईल (+91)' : 'Mobile (+91)'),
+                                TextField(
+                                  controller: mobileCtrl,
+                                  keyboardType: TextInputType.phone,
+                                  decoration: appInputDecoration(
+                                    prefixText: '+91 ',
+                                    hint: '9876543210',
                                   ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              flex: 6,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  fieldLabel(isMr ? 'भेटीचे कारण / स्वरूप' : 'Visit Purpose', isRequired: true),
-                                  DropdownButtonFormField<String>(
-                                    initialValue: ['Complaint', 'Meeting', 'Greeting', 'Donation', 'Help', 'Other'].contains(selectedPurpose) ? selectedPurpose : 'Meeting',
-                                    decoration: inputDec(),
-                                    items: [
-                                      DropdownMenuItem(value: 'Complaint', child: Text(isMr ? 'तक्रार (Complaint)' : 'Complaint')),
-                                      DropdownMenuItem(value: 'Meeting', child: Text(isMr ? 'भेट / चर्चा (Meeting)' : 'Meeting')),
-                                      DropdownMenuItem(value: 'Greeting', child: Text(isMr ? 'निमंत्रण / सत्कार' : 'Greeting / Invite')),
-                                      DropdownMenuItem(value: 'Help', child: Text(isMr ? 'वैयक्तिक मदत (Help)' : 'Help / Relief')),
-                                      DropdownMenuItem(value: 'Donation', child: Text(isMr ? 'देणगी / निधी (Donation)' : 'Donation')),
-                                      DropdownMenuItem(value: 'Other', child: Text(isMr ? 'इतर (Other)' : 'Other')),
-                                    ],
-                                    onChanged: (val) {
-                                      if (val != null) setModalState(() => selectedPurpose = val);
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        // Side-by-side: Area / Locality (or Venue) & Reference / Leader
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  fieldLabel(
-                                    isGreeting
-                                        ? (isMr ? 'कार्यक्रमाचे ठिकाण / पत्ता' : 'Event Venue / Address')
-                                        : (isMr ? 'क्षेत्र / परिसर' : 'Area / Locality'),
-                                  ),
-                                  TextField(
-                                    controller: areaCtrl,
-                                    decoration: inputDec(
-                                      hint: isGreeting
-                                          ? (isMr ? 'उदा. शिवाजी चौक सभागृह' : 'e.g. Shivaji Chowk Hall')
-                                          : (isMr ? 'उदा. गल्ली क्र. ४, प्रभाग १२' : 'e.g. Lane 4, Ward 12'),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  fieldLabel(isMr ? 'संदर्भ / नेता (ऐच्छिक)' : 'Reference / Leader'),
-                                  TextField(
-                                    controller: refCtrl,
-                                    decoration: inputDec(
-                                      hint: isMr ? 'उदा. सुनील शिंदे' : 'e.g. Sunil Shinde',
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        if (isGreeting) ...[
-                          const SizedBox(height: 14),
-                          // Side-by-side: Event Date & Event Time
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    fieldLabel(isMr ? 'कार्यक्रमाची तारीख' : 'Event Date'),
-                                    TextField(
-                                      controller: eventDateCtrl,
-                                      decoration: inputDec(hint: 'YYYY-MM-DD'),
-                                    ),
-                                  ],
                                 ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    fieldLabel(isMr ? 'कार्यक्रमाची वेळ' : 'Event Time'),
-                                    TextField(
-                                      controller: eventTimeCtrl,
-                                      decoration: inputDec(hint: 'उदा. 18:30'),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-
-                        if (isDonation) ...[
-                          const SizedBox(height: 14),
-                          fieldLabel(isMr ? 'अपेक्षित रक्कम (₹)' : 'Requested Amount (₹)'),
-                          TextField(
-                            controller: amountCtrl,
-                            keyboardType: TextInputType.number,
-                            decoration: inputDec(
-                              prefixText: '₹ ',
-                              hint: '5000',
+                              ],
                             ),
                           ),
-                        ],
-
-                        const SizedBox(height: 14),
-
-                        // Discussion Remarks
-                        fieldLabel(isMr ? 'चर्चा नोंदी व शेरा' : 'Discussion Notes & Remarks'),
-                        TextField(
-                          controller: remarksCtrl,
-                          maxLines: 3,
-                          decoration: inputDec(
-                            hint: isMr ? 'चर्चेचा गोषवारा, तक्रार तपशील...' : 'Discussion summary, citizen grievance details...',
-                          ),
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        SizedBox(
-                          width: double.infinity,
-                          height: 48,
-                          child: ElevatedButton(
-                            onPressed: () async {
-                              final name = nameCtrl.text.trim();
-                              if (name.isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(isMr ? 'कृपया अभ्यागताचे नाव प्रविष्ट करा' : 'Please enter visitor name')),
-                                );
-                                return;
-                              }
-                              Navigator.pop(ctx);
-                              setState(() => _isUpdating = true);
-                              try {
-                                final updates = {
-                                  'name': name,
-                                  'mobile': mobileCtrl.text.trim(),
-                                  'purpose': selectedPurpose,
-                                  'area': areaCtrl.text.trim(),
-                                  'reference': refCtrl.text.trim(),
-                                  'remarks': remarksCtrl.text.trim(),
-                                  'metadata': {
-                                    if (eventDateCtrl.text.trim().isNotEmpty) 'event_date': eventDateCtrl.text.trim(),
-                                    if (eventTimeCtrl.text.trim().isNotEmpty) 'event_time': eventTimeCtrl.text.trim(),
-                                    if (amountCtrl.text.trim().isNotEmpty) 'amount': amountCtrl.text.trim(),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            flex: 6,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                AppFieldLabel(
+                                  label: isMr ? 'भेटीचे कारण / स्वरूप' : 'Visit Purpose',
+                                  isRequired: true,
+                                ),
+                                DropdownButtonFormField<String>(
+                                  initialValue: ['Complaint', 'Meeting', 'Greeting', 'Donation', 'Help', 'Other'].contains(selectedPurpose) ? selectedPurpose : 'Meeting',
+                                  decoration: appInputDecoration(),
+                                  items: [
+                                    DropdownMenuItem(value: 'Complaint', child: Text(isMr ? 'तक्रार (Complaint)' : 'Complaint')),
+                                    DropdownMenuItem(value: 'Meeting', child: Text(isMr ? 'भेट / चर्चा (Meeting)' : 'Meeting')),
+                                    DropdownMenuItem(value: 'Greeting', child: Text(isMr ? 'निमंत्रण / सत्कार' : 'Greeting / Invite')),
+                                    DropdownMenuItem(value: 'Help', child: Text(isMr ? 'वैयक्तिक मदत (Help)' : 'Help / Relief')),
+                                    DropdownMenuItem(value: 'Donation', child: Text(isMr ? 'देणगी / निधी (Donation)' : 'Donation')),
+                                    DropdownMenuItem(value: 'Other', child: Text(isMr ? 'इतर (Other)' : 'Other')),
+                                  ],
+                                  onChanged: (val) {
+                                    if (val != null) setModalState(() => selectedPurpose = val);
                                   },
-                                };
-
-                                final repo = ref.read(visitorsRepoProvider);
-                                await repo.updateVisitor(_visitor.id, updates);
-                                setState(() {
-                                  _visitor = _visitor.copyWith(
-                                    name: name,
-                                    mobile: mobileCtrl.text.trim(),
-                                    purpose: selectedPurpose,
-                                    area: areaCtrl.text.trim(),
-                                    reference: refCtrl.text.trim(),
-                                    remarks: remarksCtrl.text.trim(),
-                                    eventDate: eventDateCtrl.text.trim(),
-                                    eventTime: eventTimeCtrl.text.trim(),
-                                    amount: amountCtrl.text.trim(),
-                                  );
-                                });
-                                widget.onVisitorUpdated?.call();
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(isMr ? 'अभ्यागत माहिती यशस्वीरित्या अद्यतनित केली!' : 'Visitor updated successfully'),
-                                      backgroundColor: const Color(0xFF0F766E),
-                                    ),
-                                  );
-                                }
-                              } catch (e) {
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Failed to update: $e'), backgroundColor: Colors.red),
-                                  );
-                                }
-                              } finally {
-                                if (mounted) setState(() => _isUpdating = false);
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF0284C7),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                              ],
                             ),
-                            child: const Text('Save Changes', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Side-by-side: Area / Locality (or Venue) & Reference / Leader
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                AppFieldLabel(
+                                  label: isGreeting
+                                      ? (isMr ? 'कार्यक्रमाचे ठिकाण / पत्ता' : 'Event Venue / Address')
+                                      : (isMr ? 'क्षेत्र / परिसर' : 'Area / Locality'),
+                                ),
+                                TextField(
+                                  controller: areaCtrl,
+                                  decoration: appInputDecoration(
+                                    hint: isGreeting
+                                        ? (isMr ? 'उदा. शिवाजी चौक सभागृह' : 'e.g. Shivaji Chowk Hall')
+                                        : (isMr ? 'उदा. गल्ली क्र. ४, प्रभाग १२' : 'e.g. Lane 4, Ward 12'),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                AppFieldLabel(label: isMr ? 'संदर्भ / नेता (ऐच्छिक)' : 'Reference / Leader'),
+                                TextField(
+                                  controller: refCtrl,
+                                  decoration: appInputDecoration(
+                                    hint: isMr ? 'उदा. सुनील शिंदे' : 'e.g. Sunil Shinde',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      if (isGreeting) ...[
+                        const SizedBox(height: 14),
+                        // Side-by-side: Event Date & Event Time
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppFieldLabel(label: isMr ? 'कार्यक्रमाची तारीख' : 'Event Date'),
+                                  TextField(
+                                    controller: eventDateCtrl,
+                                    decoration: appInputDecoration(hint: 'YYYY-MM-DD'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppFieldLabel(label: isMr ? 'कार्यक्रमाची वेळ' : 'Event Time'),
+                                  TextField(
+                                    controller: eventTimeCtrl,
+                                    decoration: appInputDecoration(hint: 'उदा. 18:30'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+
+                      if (isDonation) ...[
+                        const SizedBox(height: 14),
+                        AppFieldLabel(label: isMr ? 'अपेक्षित रक्कम (₹)' : 'Requested Amount (₹)'),
+                        TextField(
+                          controller: amountCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: appInputDecoration(
+                            prefixText: '₹ ',
+                            hint: '5000',
                           ),
                         ),
                       ],
-                    ),
+                      const SizedBox(height: 14),
+
+                      // Discussion Remarks
+                      AppFieldLabel(label: isMr ? 'चर्चा नोंदी व शेरा' : 'Discussion Notes & Remarks'),
+                      TextField(
+                        controller: remarksCtrl,
+                        maxLines: 3,
+                        decoration: appInputDecoration(
+                          hint: isMr ? 'चर्चेचा गोषवारा, तक्रार तपशील...' : 'Discussion summary, citizen grievance details...',
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            final name = nameCtrl.text.trim();
+                            if (name.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(isMr ? 'कृपया अभ्यागताचे नाव प्रविष्ट करा' : 'Please enter visitor name')),
+                              );
+                              return;
+                            }
+                            Navigator.pop(ctx);
+                            setState(() => _isUpdating = true);
+                            try {
+                              final updates = {
+                                'name': name,
+                                'mobile': mobileCtrl.text.trim(),
+                                'purpose': selectedPurpose,
+                                'area': areaCtrl.text.trim(),
+                                'reference': refCtrl.text.trim(),
+                                'remarks': remarksCtrl.text.trim(),
+                                'metadata': {
+                                  if (eventDateCtrl.text.trim().isNotEmpty) 'event_date': eventDateCtrl.text.trim(),
+                                  if (eventTimeCtrl.text.trim().isNotEmpty) 'event_time': eventTimeCtrl.text.trim(),
+                                  if (amountCtrl.text.trim().isNotEmpty) 'amount': amountCtrl.text.trim(),
+                                },
+                              };
+
+                              final repo = ref.read(visitorsRepoProvider);
+                              await repo.updateVisitor(_visitor.id, updates);
+                              setState(() {
+                                _visitor = _visitor.copyWith(
+                                  name: name,
+                                  mobile: mobileCtrl.text.trim(),
+                                  purpose: selectedPurpose,
+                                  area: areaCtrl.text.trim(),
+                                  reference: refCtrl.text.trim(),
+                                  remarks: remarksCtrl.text.trim(),
+                                  eventDate: eventDateCtrl.text.trim(),
+                                  eventTime: eventTimeCtrl.text.trim(),
+                                  amount: amountCtrl.text.trim(),
+                                );
+                              });
+                              widget.onVisitorUpdated?.call();
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(isMr ? 'अभ्यागत माहिती यशस्वीरित्या अद्यतनित केली!' : 'Visitor updated successfully'),
+                                    backgroundColor: const Color(0xFF0F766E),
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Failed to update: $e'), backgroundColor: Colors.red),
+                                );
+                              }
+                            } finally {
+                              if (mounted) setState(() => _isUpdating = false);
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0284C7),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          child: Text(
+                            isMr ? 'बदल जतन करा' : 'Save Changes',
+                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                    ],
                   ),
                 ),
               ],

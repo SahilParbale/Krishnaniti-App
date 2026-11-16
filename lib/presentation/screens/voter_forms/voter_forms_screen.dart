@@ -9,6 +9,7 @@ import '../../../data/repositories/voter_applications_repository.dart';
 import '../../providers/auth_provider.dart';
 import 'voter_forms_report_generator.dart';
 import '../../navigation/app_drawer.dart';
+import '../../widgets/app_modal_sheet.dart';
 
 class VoterFormsScreen extends ConsumerStatefulWidget {
   const VoterFormsScreen({super.key});
@@ -109,30 +110,7 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
     bool isSearchingVoter = false;
 
     Widget fieldLabel(String text, {bool isRequired = false}) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 6),
-        child: RichText(
-          text: TextSpan(
-            text: text,
-            style: const TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF334155),
-            ),
-            children: isRequired
-                ? const [
-                    TextSpan(
-                      text: ' *',
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ]
-                : [],
-          ),
-        ),
-      );
+      return AppFieldLabel(label: text, isRequired: isRequired);
     }
 
     InputDecoration inputDec({String? hintText, Widget? prefixIcon, Widget? suffixIcon}) {
@@ -180,62 +158,27 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
             ),
             child: Column(
               children: [
-                // Drag Handle
-                Center(
-                  child: Container(
-                    width: 44,
-                    height: 5,
-                    margin: const EdgeInsets.only(top: 10, bottom: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
+                // 1. FIXED HEADER
+                AppModalHeader(
+                  icon: Icons.how_to_reg_rounded,
+                  title: appToEdit == null
+                      ? (isMr ? 'नवीन अर्ज नोंदवा' : 'Log New Application')
+                      : (isMr ? 'मतदार अर्ज नोंदी सुधारा' : 'Edit Voter Application'),
+                  subtitle: isMr
+                      ? 'फॉर्म ६, ६ए, ७ किंवा ८ अंतर्गत मतदार नोंदणी अर्ज'
+                      : 'Voter registration, modification and deletion forms',
+                  onClose: () => Navigator.pop(ctx),
                 ),
-                // Header
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(7),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.how_to_reg_rounded,
-                              color: Color(0xFF0284C7),
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            appToEdit == null
-                                ? (isMr ? 'नवीन अर्ज नोंदवा' : 'Log New Application')
-                                : (isMr ? 'मतदार अर्ज नोंदी सुधारा' : 'Edit Voter Application'),
-                            style: const TextStyle(
-                              fontSize: 17.5,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF0F172A),
-                            ),
-                          ),
-                        ],
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.pop(ctx),
-                        icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(height: 1, color: Color(0xFFE2E8F0)),
+
+                // 2. SCROLLABLE BODY & BUTTONS
                 Expanded(
                   child: ListView(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.fromLTRB(
+                      18,
+                      14,
+                      18,
+                      MediaQuery.of(context).viewInsets.bottom + 24,
+                    ),
                     children: [
                       // Link Voter Search Card (When not in search mode, no voter linked, and not editing)
                       if (!isSearchMode && appToEdit == null && linkedVoterId == null) ...[

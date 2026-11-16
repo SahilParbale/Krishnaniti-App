@@ -6,6 +6,7 @@ import '../../../data/models/ward_provision_model.dart';
 import '../../../data/repositories/ward_provisions_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/app_modal_sheet.dart';
 import 'ward_provision_report_generator.dart';
 
 /// WardProvisions Screen matching EXACTLY the web page:
@@ -199,57 +200,15 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
               ),
               child: Column(
                 children: [
-                  // Drag Handle
-                  Center(
-                    child: Container(
-                      width: 44,
-                      height: 5,
-                      margin: const EdgeInsets.only(top: 10, bottom: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                    ),
+                  // 1. FIXED HEADER
+                  AppModalHeader(
+                    icon: Icons.account_balance_wallet_rounded,
+                    title: isMr ? 'नवीन तरतूद मागणी जोडा' : 'Add Provision Request',
+                    subtitle: isMr
+                        ? 'प्रभागातील प्रस्तावित कामांसाठी तरतूद मागणी नोंदवा'
+                        : 'Record civic budget provision and funding requests',
+                    onClose: () => Navigator.pop(sheetCtx),
                   ),
-                  // Header
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(7),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.account_balance_wallet_rounded,
-                                color: Color(0xFF0284C7),
-                                size: 20,
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Text(
-                              isMr ? 'नवीन तरतूद मागणी जोडा' : 'Add Provision Request',
-                              style: const TextStyle(
-                                fontSize: 17.5,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF0F172A),
-                              ),
-                            ),
-                          ],
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                          onPressed: () => Navigator.pop(sheetCtx),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(height: 1, color: Color(0xFFE2E8F0)),
                   Expanded(
                     child: ListView(
                       padding: const EdgeInsets.all(16),
@@ -498,57 +457,13 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
               ),
               child: Column(
                 children: [
-                  // Drag Handle
-                  Center(
-                    child: Container(
-                      width: 44,
-                      height: 5,
-                      margin: const EdgeInsets.only(top: 10, bottom: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                    ),
+                  // 1. FIXED HEADER
+                  AppModalHeader(
+                    icon: Icons.verified_rounded,
+                    title: isMr ? 'मंजुरी तपशील अद्यतनित करा' : 'Update Sanction Details',
+                    subtitle: item.title,
+                    onClose: () => Navigator.pop(sheetCtx),
                   ),
-                  // Header
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(7),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.verified_rounded,
-                                color: Color(0xFF0284C7),
-                                size: 20,
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Text(
-                              isMr ? 'मंजुरी तपशील अद्यतनित करा' : 'Update Sanction Details',
-                              style: const TextStyle(
-                                fontSize: 17.5,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF0F172A),
-                              ),
-                            ),
-                          ],
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                          onPressed: () => Navigator.pop(sheetCtx),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(height: 1, color: Color(0xFFE2E8F0)),
                   Expanded(
                     child: ListView(
                       padding: const EdgeInsets.all(16),

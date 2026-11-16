@@ -6,6 +6,7 @@ import '../../../data/models/social_organization_model.dart';
 import '../../../data/repositories/social_organization_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/app_modal_sheet.dart';
 import 'social_org_detail_screen.dart';
 import 'social_org_report_generator.dart';
 
@@ -174,34 +175,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
     }
 
     Widget fieldLabel(String text, {bool isRequired = false, String? optionalNote}) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 5.0),
-        child: Row(
-          children: [
-            RichText(
-              text: TextSpan(
-                text: text,
-                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-                children: isRequired
-                    ? const [
-                        TextSpan(
-                          text: ' *',
-                          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                        ),
-                      ]
-                    : [],
-              ),
-            ),
-            if (optionalNote != null) ...[
-              const SizedBox(width: 4),
-              Text(
-                '($optionalNote)',
-                style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
-              ),
-            ],
-          ],
-        ),
-      );
+      return AppFieldLabel(label: text, isRequired: isRequired, optionalHint: optionalNote);
     }
 
     showModalBottomSheet(
@@ -222,61 +196,32 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
               ),
             ],
           ),
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 8,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
-          ),
           child: Column(
             children: [
-              // Top Drag Handle
-              Center(
-                child: Container(
-                  width: 44,
-                  height: 5,
-                  margin: const EdgeInsets.only(top: 6, bottom: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                ),
+              // 1. FIXED HEADER
+              AppModalHeader(
+                icon: Icons.apartment_rounded,
+                title: orgToEdit == null
+                    ? (isMr ? 'नवीन संस्था / मंडळ नोंदवा' : 'Log New Organization / Mandal')
+                    : (isMr ? 'संस्थेची माहिती सुधारा' : 'Edit Organization Info'),
+                subtitle: isMr
+                    ? 'प्रभागातील गणेश मंडळे, क्रीडा क्लब व एनजीओ नोंदवा'
+                    : 'Register mandals, sports clubs and social NGOs',
+                onClose: () => Navigator.pop(ctx),
               ),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.apartment_rounded, color: Color(0xFF0284C7), size: 20),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      orgToEdit == null
-                          ? (isMr ? 'नवीन संस्था / मंडळ नोंदवा' : 'Log New Organization / Mandal')
-                          : (isMr ? 'संस्थेची माहिती सुधारा' : 'Edit Organization Info'),
-                      style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                    onPressed: () => Navigator.pop(ctx),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
+
+              // 2. SCROLLABLE FORM BODY & BUTTONS
               Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Row 1: Name English & Name Marathi
-                      Row(
+                child: ListView(
+                  padding: EdgeInsets.fromLTRB(
+                    18,
+                    14,
+                    18,
+                    MediaQuery.of(ctx).viewInsets.bottom + 24,
+                  ),
+                  children: [
+                    // Row 1: Name English & Name Marathi
+                    Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
@@ -780,13 +725,12 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                     ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
-    );
-  }
+      );
+    }
 
   // ===========================================================================
   // DELETE CONFIRMATION DIALOG

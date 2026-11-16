@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../data/models/election_result_model.dart';
 import '../../../data/repositories/election_results_repository.dart';
 import '../../navigation/app_drawer.dart';
+import '../../widgets/app_modal_sheet.dart';
 import 'result_analysis_report_generator.dart';
 
 class ResultAnalysisScreen extends ConsumerStatefulWidget {
@@ -1165,145 +1166,128 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
-        padding: const EdgeInsets.all(20),
+        height: MediaQuery.of(context).size.height * 0.75,
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 20,
+              offset: Offset(0, -4),
+            ),
+          ],
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+            // 1. FIXED HEADER
+            AppModalHeader(
+              icon: Icons.how_to_vote_rounded,
+              title: 'Booth No. ${booth.boothNumber}',
+              subtitle: booth.boothName,
+              onClose: () => Navigator.pop(ctx),
             ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+
+            // 2. SCROLLABLE BREAKDOWN & CLOSE BUTTON
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(20),
+                children: [
+                  // Statistics Summary
+                  Row(
                     children: [
-                      Text(
-                        'Booth No. ${booth.boothNumber}',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        booth.boothName,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                      ),
+                      _buildStatPill('Total Voters', '${booth.totalVoters > 0 ? booth.totalVoters : "-"}'),
+                      const SizedBox(width: 8),
+                      _buildStatPill('Votes Casted', '${booth.totalVotesCasted}'),
+                      const SizedBox(width: 8),
+                      _buildStatPill('Turnout %', '${booth.turnoutPercentage.toStringAsFixed(1)}%'),
                     ],
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            const Divider(),
-            const SizedBox(height: 8),
 
-            // Statistics Summary
-            Row(
-              children: [
-                _buildStatPill('Total Voters', '${booth.totalVoters > 0 ? booth.totalVoters : "-"}'),
-                const SizedBox(width: 8),
-                _buildStatPill('Votes Casted', '${booth.totalVotesCasted}'),
-                const SizedBox(width: 8),
-                _buildStatPill('Turnout %', '${booth.turnoutPercentage.toStringAsFixed(1)}%'),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-            const Text(
-              'Candidate Votes Breakdown',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
-            ),
-            const SizedBox(height: 10),
-
-            // Candidates vote list
-            ...booth.candidateVotes.entries.map((entry) {
-              final cName = entry.key;
-              final votes = entry.value;
-              final percent = booth.totalVotesCasted > 0 ? (votes / booth.totalVotesCasted) * 100 : 0.0;
-              final isWinner = booth.isWinner(cName);
-              final isSelected = cName == _selectedCandidate;
-
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            if (isWinner)
-                              const Icon(Icons.stars_rounded, size: 16, color: Color(0xFF16A34A)),
-                            if (isWinner) const SizedBox(width: 4),
-                            Text(
-                              cName,
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: isWinner || isSelected ? FontWeight.bold : FontWeight.w500,
-                                color: isWinner
-                                    ? const Color(0xFF15803D)
-                                    : (isSelected ? const Color(0xFF0284C7) : const Color(0xFF334155)),
-                              ),
-                            ),
-                          ],
-                        ),
-                        Text(
-                          '$votes votes (${percent.toStringAsFixed(1)}%)',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: isWinner ? const Color(0xFF15803D) : const Color(0xFF334155),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(3),
-                      child: LinearProgressIndicator(
-                        value: (percent / 100).clamp(0.0, 1.0),
-                        backgroundColor: const Color(0xFFF1F5F9),
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          isWinner
-                              ? const Color(0xFF16A34A)
-                              : (isSelected ? const Color(0xFF0284C7) : const Color(0xFF94A3B8)),
-                        ),
-                        minHeight: 5,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }),
-
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    child: const Text('Close'),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Candidate Votes Breakdown',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 10),
+
+                  // Candidates vote list
+                  ...booth.candidateVotes.entries.map((entry) {
+                    final cName = entry.key;
+                    final votes = entry.value;
+                    final percent = booth.totalVotesCasted > 0 ? (votes / booth.totalVotesCasted) * 100 : 0.0;
+                    final isWinner = booth.isWinner(cName);
+                    final isSelected = cName == _selectedCandidate;
+
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  if (isWinner)
+                                    const Icon(Icons.stars_rounded, size: 16, color: Color(0xFF16A34A)),
+                                  if (isWinner) const SizedBox(width: 4),
+                                  Text(
+                                    cName,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: isWinner || isSelected ? FontWeight.bold : FontWeight.w500,
+                                      color: isWinner
+                                          ? const Color(0xFF15803D)
+                                          : (isSelected ? const Color(0xFF0284C7) : const Color(0xFF334155)),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Text(
+                                '$votes votes (${percent.toStringAsFixed(1)}%)',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: isWinner ? const Color(0xFF15803D) : const Color(0xFF334155),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(3),
+                            child: LinearProgressIndicator(
+                              value: (percent / 100).clamp(0.0, 1.0),
+                              backgroundColor: const Color(0xFFF1F5F9),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                isWinner
+                                    ? const Color(0xFF16A34A)
+                                    : (isSelected ? const Color(0xFF0284C7) : const Color(0xFF94A3B8)),
+                              ),
+                              minHeight: 6,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        side: const BorderSide(color: Color(0xFFCBD5E1)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: const Text('Close', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

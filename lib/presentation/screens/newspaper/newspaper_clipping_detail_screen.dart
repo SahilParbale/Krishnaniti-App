@@ -1,7 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import '../../../data/models/newspaper_clipping_model.dart';
+import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_image_picker.dart';
 
 class NewspaperClippingDetailScreen extends StatefulWidget {
   final NewspaperClippingModel clipping;
@@ -95,57 +99,12 @@ class _NewspaperClippingDetailScreenState
   }
 
   void _showEditModal() {
-    final titleMrCtrl = TextEditingController(text: _clipping.titleMarathi);
-    final titleEnCtrl = TextEditingController(text: _clipping.title);
-    final descMrCtrl =
-        TextEditingController(text: _clipping.descriptionMarathi);
-    final descEnCtrl = TextEditingController(text: _clipping.description);
-    final actionCtrl =
-        TextEditingController(text: _clipping.actionTaken ?? '');
-    final pageCtrl =
-        TextEditingController(text: _clipping.pageNumber ?? 'Page 3');
-    String newspaper = _clipping.newspaper;
+    final titleCtrl = TextEditingController(text: _clipping.titleMarathi.isNotEmpty ? _clipping.titleMarathi : _clipping.title);
+    final descCtrl = TextEditingController(text: _clipping.descriptionMarathi.isNotEmpty ? _clipping.descriptionMarathi : _clipping.description);
+    final urlCtrl = TextEditingController(text: _clipping.imageUrl.startsWith('http') ? _clipping.imageUrl : '');
     String sentiment = _clipping.sentiment;
-
-    InputDecoration inputDec({String? hint, String? prefixText}) {
-      return InputDecoration(
-        hintText: hint,
-        prefixText: prefixText,
-        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
-        prefixStyle: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        filled: true,
-        fillColor: Colors.white,
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1.0),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
-        ),
-      );
-    }
-
-    Widget fieldLabel(String text, {bool isRequired = false}) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 5.0),
-        child: RichText(
-          text: TextSpan(
-            text: text,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-            children: isRequired
-                ? const [
-                    TextSpan(
-                      text: ' *',
-                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                    ),
-                  ]
-                : [],
-          ),
-        ),
-      );
-    }
+    DateTime selectedDate = DateTime.tryParse(_clipping.date) ?? DateTime.now();
+    XFile? pickedImage = (!_clipping.imageUrl.startsWith('http') && _clipping.imageUrl.isNotEmpty) ? XFile(_clipping.imageUrl) : null;
 
     showModalBottomSheet(
       context: context,
@@ -154,6 +113,7 @@ class _NewspaperClippingDetailScreenState
       builder: (ctx) {
         return StatefulBuilder(
           builder: (modalCtx, setModalState) {
+            final dateFormatted = DateFormat('yyyy-MM-dd').format(selectedDate);
             return Container(
               height: MediaQuery.of(context).size.height * 0.88,
               decoration: const BoxDecoration(
@@ -167,244 +127,247 @@ class _NewspaperClippingDetailScreenState
                   ),
                 ],
               ),
-              padding: EdgeInsets.only(
-                top: 8,
-                left: 20,
-                right: 20,
-                bottom: MediaQuery.of(modalCtx).viewInsets.bottom + 20,
-              ),
               child: Column(
                 children: [
-                  // Top Drag Handle
-                  Center(
-                    child: Container(
-                      width: 44,
-                      height: 5,
-                      margin: const EdgeInsets.only(top: 6, bottom: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                    ),
+                  AppModalHeader(
+                    icon: Icons.newspaper_rounded,
+                    title: 'वृत्तपत्र कात्रण संपादन / Edit Clipping',
+                    subtitle: 'कात्रण माहिती व तपशील अद्यतनित करा',
+                    onClose: () => Navigator.pop(ctx),
                   ),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(Icons.edit_note_rounded, color: Color(0xFF0284C7), size: 20),
-                      ),
-                      const SizedBox(width: 10),
-                      const Expanded(
-                        child: Text(
-                          'Edit Clipping Details',
-                          style: TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                        onPressed: () => Navigator.pop(ctx),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
                   Expanded(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Coverage Type & Newspaper side-by-side
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    fieldLabel('Coverage Type'),
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: GestureDetector(
-                                            onTap: () => setModalState(() => sentiment = 'positive'),
-                                            child: Container(
-                                              padding: const EdgeInsets.symmetric(vertical: 10),
-                                              decoration: BoxDecoration(
-                                                color: sentiment == 'positive' ? const Color(0xFF16A34A) : const Color(0xFFF1F5F9),
-                                                borderRadius: BorderRadius.circular(8),
-                                              ),
-                                              alignment: Alignment.center,
-                                              child: Text(
-                                                'Positive',
-                                                style: TextStyle(
-                                                  color: sentiment == 'positive' ? Colors.white : const Color(0xFF334155),
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 12,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Expanded(
-                                          child: GestureDetector(
-                                            onTap: () => setModalState(() => sentiment = 'negative'),
-                                            child: Container(
-                                              padding: const EdgeInsets.symmetric(vertical: 10),
-                                              decoration: BoxDecoration(
-                                                color: sentiment == 'negative' ? const Color(0xFFDC2626) : const Color(0xFFF1F5F9),
-                                                borderRadius: BorderRadius.circular(8),
-                                              ),
-                                              alignment: Alignment.center,
-                                              child: Text(
-                                                'Issue',
-                                                style: TextStyle(
-                                                  color: sentiment == 'negative' ? Colors.white : const Color(0xFF334155),
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 12,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    fieldLabel('Newspaper', isRequired: true),
-                                    DropdownButtonFormField<String>(
-                                      initialValue: newspaper,
-                                      decoration: inputDec(),
-                                      items: const [
-                                        DropdownMenuItem(value: 'Sakal', child: Text('Sakal')),
-                                        DropdownMenuItem(value: 'Lokmat', child: Text('Lokmat')),
-                                        DropdownMenuItem(value: 'Maharashtra Times', child: Text('Maharashtra Times')),
-                                        DropdownMenuItem(value: 'Pudhari', child: Text('Pudhari')),
-                                        DropdownMenuItem(value: 'Loksatta', child: Text('Loksatta')),
-                                        DropdownMenuItem(value: 'The Indian Express', child: Text('The Indian Express')),
-                                      ],
-                                      onChanged: (val) {
-                                        if (val != null) {
-                                          setModalState(() => newspaper = val);
-                                        }
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-
-                          // Headline Marathi & Headline English side-by-side
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    fieldLabel('Headline (Marathi / Regional)', isRequired: true),
-                                    TextField(
-                                      controller: titleMrCtrl,
-                                      decoration: inputDec(hint: 'Road resurfacing in Ward 12...'),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    fieldLabel('Headline (English)'),
-                                    TextField(
-                                      controller: titleEnCtrl,
-                                      decoration: inputDec(hint: 'Major development fund...'),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-
-                          // Page & Edition
-                          fieldLabel('Page & Edition'),
-                          TextField(
-                            controller: pageCtrl,
-                            decoration: inputDec(hint: 'Page 3 • Pune Metro'),
-                          ),
-                          const SizedBox(height: 12),
-
-                          // Description
-                          fieldLabel('Description / Article Summary'),
-                          TextField(
-                            controller: descMrCtrl,
-                            maxLines: 3,
-                            decoration: inputDec(hint: 'Summary of published coverage...'),
-                          ),
-                          const SizedBox(height: 12),
-
-                          // Civic Action Taken
-                          fieldLabel('Civic Action Taken'),
-                          TextField(
-                            controller: actionCtrl,
-                            maxLines: 2,
-                            decoration: inputDec(hint: 'Action taken by corporator after news...'),
-                          ),
-                          const SizedBox(height: 20),
-
-                          SizedBox(
-                            width: double.infinity,
-                            height: 48,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF0284C7),
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              ),
-                              onPressed: () {
-                                final updated = _clipping.copyWith(
-                                  titleMarathi: titleMrCtrl.text.trim(),
-                                  title: titleEnCtrl.text.trim(),
-                                  descriptionMarathi: descMrCtrl.text.trim(),
-                                  description: descEnCtrl.text.trim(),
-                                  actionTaken: actionCtrl.text.trim(),
-                                  newspaper: newspaper,
-                                  sentiment: sentiment,
-                                  pageNumber: pageCtrl.text.trim().isNotEmpty
-                                      ? pageCtrl.text.trim()
-                                      : _clipping.pageNumber,
-                                );
-                                setState(() => _clipping = updated);
-                                widget.onUpdated?.call();
-                                Navigator.pop(ctx);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Clipping updated successfully!'),
-                                    backgroundColor: Color(0xFF16A34A),
-                                  ),
-                                );
-                              },
-                              child: const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                        ],
+                    child: ListView(
+                      padding: EdgeInsets.only(
+                        left: 20,
+                        right: 20,
+                        top: 16,
+                        bottom: MediaQuery.of(modalCtx).viewInsets.bottom + 24,
                       ),
+                      children: [
+                        // 1 & 2: Type & Date side-by-side
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const AppFieldLabel(
+                                    label: 'बातमी स्वरूप (प्रकार) / Type',
+                                    isRequired: true,
+                                  ),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: GestureDetector(
+                                          onTap: () => setModalState(() => sentiment = 'positive'),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(vertical: 10.5),
+                                            decoration: BoxDecoration(
+                                              color: sentiment == 'positive' ? const Color(0xFF16A34A) : const Color(0xFFF1F5F9),
+                                              borderRadius: BorderRadius.circular(8),
+                                              border: Border.all(
+                                                color: sentiment == 'positive' ? const Color(0xFF16A34A) : const Color(0xFFCBD5E1),
+                                              ),
+                                            ),
+                                            alignment: Alignment.center,
+                                            child: Text(
+                                              'सकारात्मक / Positive',
+                                              style: TextStyle(
+                                                color: sentiment == 'positive' ? Colors.white : const Color(0xFF334155),
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 11.5,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: GestureDetector(
+                                          onTap: () => setModalState(() => sentiment = 'negative'),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(vertical: 10.5),
+                                            decoration: BoxDecoration(
+                                              color: sentiment == 'negative' ? const Color(0xFFDC2626) : const Color(0xFFF1F5F9),
+                                              borderRadius: BorderRadius.circular(8),
+                                              border: Border.all(
+                                                color: sentiment == 'negative' ? const Color(0xFFDC2626) : const Color(0xFFCBD5E1),
+                                              ),
+                                            ),
+                                            alignment: Alignment.center,
+                                            child: Text(
+                                              'समस्या / Issue',
+                                              style: TextStyle(
+                                                color: sentiment == 'negative' ? Colors.white : const Color(0xFF334155),
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 11.5,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const AppFieldLabel(
+                                    label: 'तारीख / Date',
+                                    isRequired: true,
+                                  ),
+                                  GestureDetector(
+                                    onTap: () async {
+                                      final picked = await showDatePicker(
+                                        context: modalCtx,
+                                        initialDate: selectedDate,
+                                        firstDate: DateTime(2020),
+                                        lastDate: DateTime(2035),
+                                      );
+                                      if (picked != null) {
+                                        setModalState(() {
+                                          selectedDate = picked;
+                                        });
+                                      }
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(color: const Color(0xFFCBD5E1), width: 1.0),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.calendar_today_rounded, size: 16, color: Color(0xFF0284C7)),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              dateFormatted,
+                                              style: const TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600,
+                                                color: Color(0xFF0F172A),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+
+                        // 3. Title
+                        const AppFieldLabel(
+                          label: 'बातमी शीर्षक / Headline',
+                          isRequired: true,
+                        ),
+                        TextField(
+                          controller: titleCtrl,
+                          decoration: appInputDecoration(
+                            hint: 'उदा. प्रभाग १२ मध्ये रस्त्याचे डांबरीकरण...',
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+
+                        // 4. Image Picker (Camera & Storage)
+                        AppImagePickerField(
+                          label: 'कात्रण फोटो (कॅमेरा व मोबाइल स्टोरेज)',
+                          isRequired: false,
+                          initialFiles: pickedImage != null ? [pickedImage!] : [],
+                          onFilesChanged: (files) {
+                            setModalState(() {
+                              pickedImage = files.isNotEmpty ? files.first : null;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 14),
+
+                        // 5. URL
+                        const AppFieldLabel(
+                          label: 'बातमी लिंक / वेब URL (Web URL)',
+                          isRequired: false,
+                          optionalHint: 'Optional',
+                        ),
+                        TextField(
+                          controller: urlCtrl,
+                          keyboardType: TextInputType.url,
+                          decoration: appInputDecoration(
+                            hint: 'https://example.com/news-article...',
+                            prefixIcon: const Icon(Icons.link_rounded, size: 18, color: Color(0xFF64748B)),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+
+                        // 6. Description
+                        const AppFieldLabel(
+                          label: 'बातमीचा तपशील / गोषवारा (Description)',
+                          isRequired: false,
+                          optionalHint: 'Optional',
+                        ),
+                        TextField(
+                          controller: descCtrl,
+                          maxLines: 3,
+                          decoration: appInputDecoration(
+                            hint: 'बातमीचा संक्षिप्त गोषवारा...',
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0284C7),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                            onPressed: () {
+                              final text = titleCtrl.text.trim();
+                              if (text.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('कृपया बातमी शीर्षक प्रविष्ट करा')),
+                                );
+                                return;
+                              }
+                              final updated = _clipping.copyWith(
+                                titleMarathi: text,
+                                title: text,
+                                descriptionMarathi: descCtrl.text.trim(),
+                                description: descCtrl.text.trim(),
+                                date: dateFormatted,
+                                sentiment: sentiment,
+                                imageUrl: pickedImage != null
+                                    ? pickedImage!.path
+                                    : (urlCtrl.text.trim().isNotEmpty ? urlCtrl.text.trim() : _clipping.imageUrl),
+                              );
+                              setState(() => _clipping = updated);
+                              widget.onUpdated?.call();
+                              Navigator.pop(ctx);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Clipping updated successfully!'),
+                                  backgroundColor: Color(0xFF16A34A),
+                                ),
+                              );
+                            },
+                            child: const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                      ],
                     ),
                   ),
                 ],

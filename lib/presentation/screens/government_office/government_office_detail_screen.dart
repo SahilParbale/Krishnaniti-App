@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/government_office_model.dart';
 import '../../../data/repositories/government_office_repository.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/app_modal_sheet.dart';
 
 class GovernmentOfficeDetailScreen extends ConsumerStatefulWidget {
   final GovernmentOfficeModel office;
@@ -122,44 +123,6 @@ class _GovernmentOfficeDetailScreenState extends ConsumerState<GovernmentOfficeD
     final phoneCtrl = TextEditingController(text: _currentOffice.contactNumber);
     final areaCtrl = TextEditingController(text: _currentOffice.area);
 
-    InputDecoration inputDec({required String hintText, IconData? prefixIcon}) {
-      return InputDecoration(
-        hintText: hintText,
-        hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-        prefixIcon: prefixIcon != null ? Icon(prefixIcon, size: 18, color: const Color(0xFF64748B)) : null,
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
-        ),
-      );
-    }
-
-    Widget fieldLabel(String label, {bool isRequired = false}) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 6),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-            ),
-            if (isRequired) ...[
-              const SizedBox(width: 2),
-              const Text('*', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-            ],
-          ],
-        ),
-      );
-    }
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -179,183 +142,147 @@ class _GovernmentOfficeDetailScreenState extends ConsumerState<GovernmentOfficeD
               ),
               child: Column(
                 children: [
-                  // Downward Dismiss Drag Handle
-                  Center(
-                    child: Container(
-                      width: 44,
-                      height: 5,
-                      margin: const EdgeInsets.only(top: 10, bottom: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                    ),
+                  AppModalHeader(
+                    icon: Icons.edit_note_rounded,
+                    title: isMr ? 'सरकारी कार्यालय बदला' : 'Edit Government Office',
+                    subtitle: isMr ? 'शासकीय कार्यालयाचे तपशील अद्यतनित करा' : 'Update government office details',
+                    onClose: () => Navigator.pop(sheetCtx),
                   ),
-
-                  // Header with Title and Close Button
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    decoration: const BoxDecoration(
-                      border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          isMr ? 'सरकारी कार्यालय बदला' : 'Edit Government Office',
-                          style: const TextStyle(
-                            fontSize: 17.5,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF0F172A),
-                            letterSpacing: -0.2,
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () => Navigator.pop(sheetCtx),
-                          icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Scrollable Body
                   Expanded(
-                    child: SingleChildScrollView(
+                    child: ListView(
                       padding: EdgeInsets.only(
-                        top: 14,
+                        top: 16,
                         left: 18,
                         right: 18,
                         bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 24,
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // 1. Office Name (Full Width)
-                          fieldLabel(isMr ? 'कार्याल याचे नाव' : 'Office Name', isRequired: true),
-                          TextField(
-                            controller: nameCtrl,
-                            decoration: inputDec(
-                              hintText: isMr ? 'उदा. प्रभाग कार्यालय क्र. १२' : 'e.g. PMC Ward Office No. 12',
-                              prefixIcon: Icons.apartment_rounded,
-                            ),
+                      children: [
+                        // 1. Office Name (Full Width)
+                        AppFieldLabel(label: isMr ? 'कार्यालयाचे नाव' : 'Office Name', isRequired: true),
+                        TextField(
+                          controller: nameCtrl,
+                          decoration: appInputDecoration(
+                            hint: isMr ? 'उदा. प्रभाग कार्यालय क्र. १२' : 'e.g. PMC Ward Office No. 12',
+                            prefixIcon: const Icon(Icons.apartment_rounded, size: 18, color: Color(0xFF64748B)),
                           ),
-                          const SizedBox(height: 14),
+                        ),
+                        const SizedBox(height: 14),
 
-                          // 2. Address (Full Width)
-                          fieldLabel(isMr ? 'पत्ता' : 'Address', isRequired: true),
-                          TextField(
-                            controller: addrCtrl,
-                            maxLines: 2,
-                            decoration: inputDec(
-                              hintText: isMr ? 'उदा. शनिवार वाड्यासमोर, पुणे - ४११०३०' : 'e.g. Near Shaniwar Wada, Pune - 411030',
-                              prefixIcon: Icons.location_on_outlined,
-                            ),
+                        // 2. Address (Full Width)
+                        AppFieldLabel(label: isMr ? 'पत्ता' : 'Address', isRequired: true),
+                        TextField(
+                          controller: addrCtrl,
+                          maxLines: 2,
+                          decoration: appInputDecoration(
+                            hint: isMr ? 'उदा. शनिवार वाड्यासमोर, पुणे - ४११०३०' : 'e.g. Near Shaniwar Wada, Pune - 411030',
+                            prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF64748B)),
                           ),
-                          const SizedBox(height: 14),
+                        ),
+                        const SizedBox(height: 14),
 
-                          // 3 & 4. Officer In-Charge + Contact Number (Side-by-Side)
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    fieldLabel(isMr ? 'अधिकारी / प्रमुख' : 'Officer In-charge', isRequired: true),
-                                    TextField(
-                                      controller: officerCtrl,
-                                      decoration: inputDec(
-                                        hintText: isMr ? 'उदा. श्री. रमेश गायकवाड' : 'e.g. Shri. Ramesh Gaikwad',
-                                        prefixIcon: Icons.person_outline_rounded,
-                                      ),
+                        // 3 & 4. Officer In-Charge + Contact Number (Side-by-Side)
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppFieldLabel(label: isMr ? 'अधिकारी / प्रमुख' : 'Officer In-charge', isRequired: true),
+                                  TextField(
+                                    controller: officerCtrl,
+                                    decoration: appInputDecoration(
+                                      hint: isMr ? 'उदा. श्री. रमेश गायकवाड' : 'e.g. Shri. Ramesh Gaikwad',
+                                      prefixIcon: const Icon(Icons.person_outline_rounded, size: 18, color: Color(0xFF64748B)),
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    fieldLabel(isMr ? 'संपर्क' : 'Contact', isRequired: true),
-                                    TextField(
-                                      controller: phoneCtrl,
-                                      keyboardType: TextInputType.phone,
-                                      decoration: inputDec(
-                                        hintText: isMr ? 'उदा. ०२०-२५५०११४०' : 'e.g. 020-25501140',
-                                        prefixIcon: Icons.phone_outlined,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 14),
-
-                          // 5. Location / Area (Full Width)
-                          fieldLabel(isMr ? 'ठिकाण' : 'Location / Area', isRequired: true),
-                          TextField(
-                            controller: areaCtrl,
-                            decoration: inputDec(
-                              hintText: isMr ? 'उदा. शनिवार पेठ' : 'e.g. Shaniwar Peth',
-                              prefixIcon: Icons.map_outlined,
                             ),
-                          ),
-                          const SizedBox(height: 24),
-
-                          // Submit Button
-                          SizedBox(
-                            width: double.infinity,
-                            height: 48,
-                            child: ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF0284C7),
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              ),
-                              icon: const Icon(Icons.business_rounded, size: 18),
-                              onPressed: () async {
-                                if (nameCtrl.text.trim().isEmpty || phoneCtrl.text.trim().isEmpty) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(isMr ? 'कृपया सर्व आवश्यक माहिती भरा' : 'Please fill required fields'),
-                                      behavior: SnackBarBehavior.floating,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppFieldLabel(label: isMr ? 'संपर्क' : 'Contact', isRequired: true),
+                                  TextField(
+                                    controller: phoneCtrl,
+                                    keyboardType: TextInputType.phone,
+                                    decoration: appInputDecoration(
+                                      hint: isMr ? 'उदा. ०२०-२५५०११४०' : 'e.g. 020-25501140',
+                                      prefixIcon: const Icon(Icons.phone_outlined, size: 18, color: Color(0xFF64748B)),
                                     ),
-                                  );
-                                  return;
-                                }
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
 
-                                final updated = _currentOffice.copyWith(
-                                  name: nameCtrl.text.trim(),
-                                  address: addrCtrl.text.trim(),
-                                  officerName: officerCtrl.text.trim().isNotEmpty ? officerCtrl.text.trim() : _currentOffice.officerName,
-                                  contactNumber: phoneCtrl.text.trim(),
-                                  area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : _currentOffice.area,
+                        // 5. Location / Area (Full Width)
+                        AppFieldLabel(label: isMr ? 'ठिकाण' : 'Location / Area', isRequired: true),
+                        TextField(
+                          controller: areaCtrl,
+                          decoration: appInputDecoration(
+                            hint: isMr ? 'उदा. शनिवार पेठ' : 'e.g. Shaniwar Peth',
+                            prefixIcon: const Icon(Icons.map_outlined, size: 18, color: Color(0xFF64748B)),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Submit Button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0284C7),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                            icon: const Icon(Icons.business_rounded, size: 18),
+                            onPressed: () async {
+                              if (nameCtrl.text.trim().isEmpty || phoneCtrl.text.trim().isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(isMr ? 'कृपया सर्व आवश्यक माहिती भरा' : 'Please fill required fields'),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
                                 );
+                                return;
+                              }
 
-                                final repo = ref.read(governmentOfficeRepoProvider);
-                                await repo.updateOffice(updated);
+                              final updated = _currentOffice.copyWith(
+                                name: nameCtrl.text.trim(),
+                                address: addrCtrl.text.trim(),
+                                officerName: officerCtrl.text.trim().isNotEmpty ? officerCtrl.text.trim() : _currentOffice.officerName,
+                                contactNumber: phoneCtrl.text.trim(),
+                                area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : _currentOffice.area,
+                              );
 
-                                if (sheetCtx.mounted) Navigator.pop(sheetCtx);
-                                if (mounted) {
-                                  setState(() => _currentOffice = updated);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(isMr ? 'कार्यालय माहिती यशस्वीरित्या अद्यतनित केली!' : 'Office details updated successfully!'),
-                                      backgroundColor: const Color(0xFF16A34A),
-                                      behavior: SnackBarBehavior.floating,
-                                    ),
-                                  );
-                                }
-                              },
-                              label: Text(
-                                isMr ? 'कार्यालय जतन करा' : 'Save Office',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                              ),
+                              final repo = ref.read(governmentOfficeRepoProvider);
+                              await repo.updateOffice(updated);
+
+                              if (sheetCtx.mounted) Navigator.pop(sheetCtx);
+                              if (mounted) {
+                                setState(() => _currentOffice = updated);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(isMr ? 'कार्यालय माहिती यशस्वीरित्या अद्यतनित केली!' : 'Office details updated successfully!'),
+                                    backgroundColor: const Color(0xFF16A34A),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              }
+                            },
+                            label: Text(
+                              isMr ? 'कार्यालय जतन करा' : 'Save Office',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 10),
+                      ],
                     ),
                   ),
                 ],

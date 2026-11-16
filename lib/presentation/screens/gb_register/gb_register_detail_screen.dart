@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../data/models/gb_register_entry_model.dart';
 import '../../../data/repositories/gb_register_repository.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/app_modal_sheet.dart';
 
 class GbRegisterDetailScreen extends ConsumerStatefulWidget {
   final GbRegisterEntryModel entry;
@@ -146,44 +147,6 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
               }
             }
 
-            InputDecoration inputDec({required String hintText, IconData? prefixIcon}) {
-              return InputDecoration(
-                hintText: hintText,
-                hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                prefixIcon: prefixIcon != null ? Icon(prefixIcon, size: 18, color: const Color(0xFF64748B)) : null,
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
-                ),
-              );
-            }
-
-            Widget fieldLabel(String label, {bool isRequired = false}) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      label,
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-                    ),
-                    if (isRequired) ...[
-                      const SizedBox(width: 2),
-                      const Text('*', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                    ],
-                  ],
-                ),
-              );
-            }
-
             return Container(
               height: MediaQuery.of(context).size.height * 0.90,
               decoration: const BoxDecoration(
@@ -195,265 +158,229 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
               ),
               child: Column(
                 children: [
-                  // Downward Dismiss Drag Handle
-                  Center(
-                    child: Container(
-                      width: 44,
-                      height: 5,
-                      margin: const EdgeInsets.only(top: 10, bottom: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                    ),
+                  AppModalHeader(
+                    icon: Icons.edit_note_rounded,
+                    title: isMr ? 'GB नोंद संपादित करा' : 'Edit GB Register Entry',
+                    subtitle: isMr ? 'नोंद तपशील व सद्यस्थिती अद्यतनित करा' : 'Update entry details and status',
+                    onClose: () => Navigator.pop(sheetCtx),
                   ),
-
-                  // Header with Title and Close Button
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    decoration: const BoxDecoration(
-                      border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          isMr ? 'GB नोंद संपादित करा' : 'Edit GB Register Entry',
-                          style: const TextStyle(
-                            fontSize: 17.5,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF0F172A),
-                            letterSpacing: -0.2,
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                          onPressed: () => Navigator.pop(sheetCtx),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Scrollable Body
                   Expanded(
-                    child: SingleChildScrollView(
+                    child: ListView(
                       padding: EdgeInsets.only(
-                        top: 14,
+                        top: 16,
                         left: 18,
                         right: 18,
                         bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 24,
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // 1. Meeting Date & Meeting Type (Side-by-Side)
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    fieldLabel(isMr ? 'बैठक तारीख' : 'Meeting Date', isRequired: true),
-                                    TextField(
-                                      controller: dateCtrl,
-                                      readOnly: true,
-                                      onTap: pickDate,
-                                      decoration: inputDec(
-                                        hintText: 'YYYY-MM-DD',
-                                        prefixIcon: Icons.calendar_today_outlined,
-                                      ),
+                      children: [
+                        // 1. Meeting Date & Meeting Type (Side-by-Side)
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppFieldLabel(label: isMr ? 'बैठक तारीख' : 'Meeting Date', isRequired: true),
+                                  TextField(
+                                    controller: dateCtrl,
+                                    readOnly: true,
+                                    onTap: pickDate,
+                                    decoration: appInputDecoration(
+                                      hint: 'YYYY-MM-DD',
+                                      prefixIcon: const Icon(Icons.calendar_today_outlined, size: 18, color: Color(0xFF64748B)),
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    fieldLabel(isMr ? 'बैठक प्रकार' : 'Meeting Type', isRequired: true),
-                                    DropdownButtonFormField<String>(
-                                      initialValue: meetingTypes.contains(selectedMeetingType) ? selectedMeetingType : 'GB',
-                                      isExpanded: true,
-                                      style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
-                                      decoration: inputDec(hintText: 'Select Type'),
-                                      items: meetingTypes.map((t) => DropdownMenuItem(value: t, child: Text(t, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis))).toList(),
-                                      onChanged: (val) {
-                                        if (val != null) setModalState(() => selectedMeetingType = val);
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 14),
-
-                          // 2. Subject / Issue (Full Width)
-                          fieldLabel(isMr ? 'विषय / मुद्दा' : 'Subject / Issue', isRequired: true),
-                          TextField(
-                            controller: subjectCtrl,
-                            decoration: inputDec(
-                              hintText: isMr ? 'उदा. प्रभाग १२ मध्ये पाण्याची टंचाई' : 'e.g. Water shortage in Ward 12',
-                              prefixIcon: Icons.title_rounded,
                             ),
-                          ),
-                          const SizedBox(height: 14),
-
-                          // 3. Description (Full Width)
-                          fieldLabel(isMr ? 'वर्णन' : 'Description'),
-                          TextField(
-                            controller: descCtrl,
-                            maxLines: 3,
-                            decoration: inputDec(
-                              hintText: isMr ? 'मंडलेल्या मुद्द्याचे सविस्तर वर्णन...' : 'Detailed description of the issue raised...',
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppFieldLabel(label: isMr ? 'बैठक प्रकार' : 'Meeting Type', isRequired: true),
+                                  DropdownButtonFormField<String>(
+                                    initialValue: meetingTypes.contains(selectedMeetingType) ? selectedMeetingType : 'GB',
+                                    isExpanded: true,
+                                    style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
+                                    decoration: appInputDecoration(hint: 'Select Type'),
+                                    items: meetingTypes.map((t) => DropdownMenuItem(value: t, child: Text(t, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis))).toList(),
+                                    onChanged: (val) {
+                                      if (val != null) setModalState(() => selectedMeetingType = val);
+                                    },
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 14),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
 
-                          // 4. Area & Beneficiaries (Side-by-Side)
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    fieldLabel(isMr ? 'क्षेत्र / भाग' : 'Area'),
-                                    TextField(
-                                      controller: areaCtrl,
-                                      decoration: inputDec(
-                                        hintText: isMr ? 'उदा. प्रभाग १२' : 'e.g. Ward 12',
-                                        prefixIcon: Icons.map_outlined,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    fieldLabel(isMr ? 'लाभार्थी' : 'People Benefited'),
-                                    TextField(
-                                      controller: benCtrl,
-                                      decoration: inputDec(
-                                        hintText: isMr ? 'उदा. ५००+ नागरिक' : 'e.g. 500+ residents',
-                                        prefixIcon: Icons.people_outline_rounded,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                        // 2. Subject / Issue (Full Width)
+                        AppFieldLabel(label: isMr ? 'विषय / मुद्दा' : 'Subject / Issue', isRequired: true),
+                        TextField(
+                          controller: subjectCtrl,
+                          decoration: appInputDecoration(
+                            hint: isMr ? 'उदा. प्रभाग १२ मध्ये पाण्याची टंचाई' : 'e.g. Water shortage in Ward 12',
+                            prefixIcon: const Icon(Icons.title_rounded, size: 18, color: Color(0xFF64748B)),
                           ),
-                          const SizedBox(height: 14),
+                        ),
+                        const SizedBox(height: 14),
 
-                          // 5. Department & Outcome / Status (Side-by-Side)
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    fieldLabel(isMr ? 'विभाग' : 'Department'),
-                                    TextField(
-                                      controller: deptCtrl,
-                                      decoration: inputDec(
-                                        hintText: isMr ? 'उदा. पाणी पुरवठा' : 'e.g. Water Supply',
-                                        prefixIcon: Icons.business_outlined,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    fieldLabel(isMr ? 'निकाल / स्थिती' : 'Outcome / Status', isRequired: true),
-                                    DropdownButtonFormField<String>(
-                                      initialValue: statusList.contains(selectedStatus) ? selectedStatus : 'Raised',
-                                      isExpanded: true,
-                                      style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
-                                      decoration: inputDec(hintText: 'Select Status'),
-                                      items: statusList.map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis))).toList(),
-                                      onChanged: (val) {
-                                        if (val != null) setModalState(() => selectedStatus = val);
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                        // 3. Description (Full Width)
+                        AppFieldLabel(label: isMr ? 'वर्णन' : 'Description'),
+                        TextField(
+                          controller: descCtrl,
+                          maxLines: 3,
+                          decoration: appInputDecoration(
+                            hint: isMr ? 'मंडलेल्या मुद्द्याचे सविस्तर वर्णन...' : 'Detailed description of the issue raised...',
                           ),
-                          const SizedBox(height: 14),
+                        ),
+                        const SizedBox(height: 14),
 
-                          // 6. Administrative Response (Full Width)
-                          fieldLabel(isMr ? 'प्रशासकीय उत्तर' : 'Administrative Response'),
-                          TextField(
-                            controller: respCtrl,
-                            maxLines: 2,
-                            decoration: inputDec(
-                              hintText: isMr ? 'प्रशासनाकडून मिळालेले उत्तर...' : 'Response received from administration...',
+                        // 4. Area & Beneficiaries (Side-by-Side)
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppFieldLabel(label: isMr ? 'क्षेत्र / भाग' : 'Area'),
+                                  TextField(
+                                    controller: areaCtrl,
+                                    decoration: appInputDecoration(
+                                      hint: isMr ? 'उदा. प्रभाग १२' : 'e.g. Ward 12',
+                                      prefixIcon: const Icon(Icons.map_outlined, size: 18, color: Color(0xFF64748B)),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 24),
-
-                          // Submit Button (Existing button - wired directly)
-                          SizedBox(
-                            width: double.infinity,
-                            height: 48,
-                            child: ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF0284C7),
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppFieldLabel(label: isMr ? 'लाभार्थी' : 'People Benefited'),
+                                  TextField(
+                                    controller: benCtrl,
+                                    decoration: appInputDecoration(
+                                      hint: isMr ? 'उदा. ५००+ नागरिक' : 'e.g. 500+ residents',
+                                      prefixIcon: const Icon(Icons.people_outline_rounded, size: 18, color: Color(0xFF64748B)),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              icon: const Icon(Icons.assignment_turned_in_rounded, size: 18),
-                              onPressed: () async {
-                                if (subjectCtrl.text.trim().isEmpty) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(isMr ? 'कृपया विषय प्रविष्ट करा' : 'Subject is required')),
-                                  );
-                                  return;
-                                }
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
 
-                                final updated = _currentEntry.copyWith(
-                                  meetingType: selectedMeetingType,
-                                  meetingDate: dateCtrl.text.trim().isNotEmpty ? dateCtrl.text.trim() : _currentEntry.meetingDate,
-                                  subject: subjectCtrl.text.trim(),
-                                  description: descCtrl.text.trim(),
-                                  department: deptCtrl.text.trim().isNotEmpty ? deptCtrl.text.trim() : _currentEntry.department,
-                                  area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : _currentEntry.area,
-                                  status: selectedStatus,
-                                  beneficiaries: benCtrl.text.trim().isNotEmpty ? benCtrl.text.trim() : null,
-                                  response: respCtrl.text.trim().isNotEmpty ? respCtrl.text.trim() : null,
+                        // 5. Department & Outcome / Status (Side-by-Side)
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppFieldLabel(label: isMr ? 'विभाग' : 'Department'),
+                                  TextField(
+                                    controller: deptCtrl,
+                                    decoration: appInputDecoration(
+                                      hint: isMr ? 'उदा. पाणी पुरवठा' : 'e.g. Water Supply',
+                                      prefixIcon: const Icon(Icons.business_outlined, size: 18, color: Color(0xFF64748B)),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppFieldLabel(label: isMr ? 'निकाल / स्थिती' : 'Outcome / Status', isRequired: true),
+                                  DropdownButtonFormField<String>(
+                                    initialValue: statusList.contains(selectedStatus) ? selectedStatus : 'Raised',
+                                    isExpanded: true,
+                                    style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
+                                    decoration: appInputDecoration(hint: 'Select Status'),
+                                    items: statusList.map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis))).toList(),
+                                    onChanged: (val) {
+                                      if (val != null) setModalState(() => selectedStatus = val);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+
+                        // 6. Administrative Response (Full Width)
+                        AppFieldLabel(label: isMr ? 'प्रशासकीय उत्तर' : 'Administrative Response'),
+                        TextField(
+                          controller: respCtrl,
+                          maxLines: 2,
+                          decoration: appInputDecoration(
+                            hint: isMr ? 'प्रशासनाकडून मिळालेले उत्तर...' : 'Response received from administration...',
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Submit Button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0284C7),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                            icon: const Icon(Icons.assignment_turned_in_rounded, size: 18),
+                            onPressed: () async {
+                              if (subjectCtrl.text.trim().isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(isMr ? 'कृपया विषय प्रविष्ट करा' : 'Subject is required')),
                                 );
+                                return;
+                              }
 
-                                final repo = ref.read(gbRegisterRepoProvider);
-                                await repo.updateEntry(updated);
-                                if (sheetCtx.mounted) Navigator.pop(sheetCtx);
-                                if (mounted) {
-                                  setState(() => _currentEntry = updated);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(isMr ? 'नोंद यशस्वीरित्या अद्यतनित केली!' : 'GB Register entry updated successfully'),
-                                      backgroundColor: const Color(0xFF16A34A),
-                                      behavior: SnackBarBehavior.floating,
-                                    ),
-                                  );
-                                }
-                              },
-                              label: Text(
-                                isMr ? 'बदल जतन करा' : 'Save Changes',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                              ),
+                              final updated = _currentEntry.copyWith(
+                                meetingType: selectedMeetingType,
+                                meetingDate: dateCtrl.text.trim().isNotEmpty ? dateCtrl.text.trim() : _currentEntry.meetingDate,
+                                subject: subjectCtrl.text.trim(),
+                                description: descCtrl.text.trim(),
+                                department: deptCtrl.text.trim().isNotEmpty ? deptCtrl.text.trim() : _currentEntry.department,
+                                area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : _currentEntry.area,
+                                status: selectedStatus,
+                                beneficiaries: benCtrl.text.trim().isNotEmpty ? benCtrl.text.trim() : null,
+                                response: respCtrl.text.trim().isNotEmpty ? respCtrl.text.trim() : null,
+                              );
+
+                              final repo = ref.read(gbRegisterRepoProvider);
+                              await repo.updateEntry(updated);
+                              if (sheetCtx.mounted) Navigator.pop(sheetCtx);
+                              if (mounted) {
+                                setState(() => _currentEntry = updated);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(isMr ? 'नोंद यशस्वीरित्या अद्यतनित केली!' : 'GB Register entry updated successfully'),
+                                    backgroundColor: const Color(0xFF16A34A),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              }
+                            },
+                            label: Text(
+                              isMr ? 'बदल जतन करा' : 'Save Changes',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 10),
+                      ],
                     ),
                   ),
                 ],

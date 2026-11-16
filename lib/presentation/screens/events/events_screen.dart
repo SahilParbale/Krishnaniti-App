@@ -6,6 +6,7 @@ import '../../../data/models/event_model.dart';
 import '../../../data/repositories/events_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/app_modal_sheet.dart';
 import 'event_detail_screen.dart';
 import 'event_invite_modal.dart';
 import 'event_report_generator.dart';
@@ -110,23 +111,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
     }
 
     Widget fieldLabel(String text, {bool isRequired = false}) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 5.0),
-        child: RichText(
-          text: TextSpan(
-            text: text,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-            children: isRequired
-                ? const [
-                    TextSpan(
-                      text: ' *',
-                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                    ),
-                  ]
-                : [],
-          ),
-        ),
-      );
+      return AppFieldLabel(label: text, isRequired: isRequired);
     }
 
     showModalBottomSheet(
@@ -148,64 +133,30 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                 ),
               ],
             ),
-            padding: EdgeInsets.fromLTRB(
-              20,
-              8,
-              20,
-              MediaQuery.of(ctx).viewInsets.bottom + 20,
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Top Drag Handle
-                  Center(
-                    child: Container(
-                      width: 44,
-                      height: 5,
-                      margin: const EdgeInsets.only(top: 6, bottom: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(
-                          Icons.event_available_rounded,
-                          color: Color(0xFF0284C7),
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          isMr ? 'नवीन कार्यक्रम तयार करा' : 'Create New Event',
-                          style: const TextStyle(
-                            fontSize: 17.5,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF0F172A),
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                        onPressed: () => Navigator.pop(ctx),
-                      ),
-                    ],
-                  ),
-                  const Divider(height: 16, color: Color(0xFFE2E8F0)),
-                  const SizedBox(height: 6),
+            child: Column(
+              children: [
+                // 1. FIXED HEADER
+                AppModalHeader(
+                  icon: Icons.event_available_rounded,
+                  title: isMr ? 'नवीन कार्यक्रम तयार करा' : 'Create New Event',
+                  subtitle: isMr
+                      ? 'नागरिक मेळावे, सभा, आरोग्य शिबिरे व इतर कार्यक्रम'
+                      : 'Organize ward events, citizen gatherings and health camps',
+                  onClose: () => Navigator.pop(ctx),
+                ),
 
-                  // Title
-                  fieldLabel(isMr ? 'कार्यक्रमाचे नाव / शीर्षक' : 'Event Title', isRequired: true),
+                // 2. SCROLLABLE FORM BODY & BUTTONS
+                Expanded(
+                  child: ListView(
+                    padding: EdgeInsets.fromLTRB(
+                      18,
+                      14,
+                      18,
+                      MediaQuery.of(ctx).viewInsets.bottom + 24,
+                    ),
+                    children: [
+                      // Title
+                      fieldLabel(isMr ? 'कार्यक्रमाचे नाव / शीर्षक' : 'Event Title', isRequired: true),
                   TextField(
                     controller: titleCtrl,
                     decoration: inputDec(
@@ -505,10 +456,13 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 12),
                 ],
               ),
             ),
-          );
+          ],
+        ),
+      );
         },
       ),
     );

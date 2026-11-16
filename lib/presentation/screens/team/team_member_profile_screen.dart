@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/team_model.dart';
 import '../../../data/repositories/team_repository.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/app_modal_sheet.dart';
 
 class TeamMemberProfileScreen extends ConsumerStatefulWidget {
   final TeamMemberModel member;
@@ -83,57 +84,6 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
     String priority = 'Medium';
     DateTime dueDate = DateTime.now().add(const Duration(days: 2));
 
-    Widget fieldLabel(String text, {bool isRequired = false}) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 6),
-        child: RichText(
-          text: TextSpan(
-            text: text,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF334155),
-            ),
-            children: isRequired
-                ? const [
-                    TextSpan(
-                      text: ' *',
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ]
-                : [],
-          ),
-        ),
-      );
-    }
-
-    InputDecoration inputDec({String? hintText, Widget? prefixIcon, Widget? suffixIcon}) {
-      return InputDecoration(
-        hintText: hintText,
-        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
-        prefixIcon: prefixIcon,
-        suffixIcon: suffixIcon,
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
-        ),
-      );
-    }
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -155,65 +105,20 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
             ),
             child: Column(
               children: [
-                // Drag Handle
-                Center(
-                  child: Container(
-                    width: 44,
-                    height: 5,
-                    margin: const EdgeInsets.only(top: 10, bottom: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
+                AppModalHeader(
+                  icon: Icons.assignment_add,
+                  title: isMr ? 'नवीन काम सोपवा' : 'Assign New Task',
+                  subtitle: '${_member.displayName} (${_member.role})',
+                  onClose: () => Navigator.pop(ctx),
                 ),
-                // Header
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(7),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.assignment_add, color: Color(0xFF0284C7), size: 20),
-                          ),
-                          const SizedBox(width: 10),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                isMr ? 'नवीन काम सोपवा' : 'Assign New Task',
-                                style: const TextStyle(
-                                  fontSize: 17.5,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF0F172A),
-                                ),
-                              ),
-                              Text(
-                                '${_member.displayName} (${_member.role})',
-                                style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                        onPressed: () => Navigator.pop(ctx),
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(height: 1, color: Color(0xFFE2E8F0)),
                 Expanded(
                   child: ListView(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.only(
+                      left: 16,
+                      right: 16,
+                      top: 16,
+                      bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+                    ),
                     children: [
                       // Task Title & Location side-by-side
                       Row(
@@ -224,11 +129,14 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                fieldLabel(isMr ? 'कामाचे नाव / शीर्षक' : 'Task Title', isRequired: true),
+                                AppFieldLabel(
+                                  label: isMr ? 'कामाचे नाव / शीर्षक' : 'Task Title',
+                                  isRequired: true,
+                                ),
                                 TextField(
                                   controller: titleCtrl,
-                                  decoration: inputDec(
-                                    hintText: isMr ? 'उदा. ड्रेनेज लाईन पाहणी' : 'e.g. Drainage inspection',
+                                  decoration: appInputDecoration(
+                                    hint: isMr ? 'उदा. ड्रेनेज लाईन पाहणी' : 'e.g. Drainage inspection',
                                   ),
                                 ),
                               ],
@@ -240,11 +148,13 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                fieldLabel(isMr ? 'स्थान / परिसर' : 'Location / Area'),
+                                AppFieldLabel(
+                                  label: isMr ? 'स्थान / परिसर' : 'Location / Area',
+                                ),
                                 TextField(
                                   controller: locCtrl,
-                                  decoration: inputDec(
-                                    hintText: isMr ? 'उदा. शनिवार पेठ, लेन २' : 'e.g. Shaniwar Peth',
+                                  decoration: appInputDecoration(
+                                    hint: isMr ? 'उदा. शनिवार पेठ, लेन २' : 'e.g. Shaniwar Peth',
                                   ),
                                 ),
                               ],
@@ -262,10 +172,12 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                fieldLabel(isMr ? 'प्राधान्य' : 'Priority'),
+                                AppFieldLabel(
+                                  label: isMr ? 'प्राधान्य' : 'Priority',
+                                ),
                                 DropdownButtonFormField<String>(
-                                  value: priority,
-                                  decoration: inputDec(),
+                                  initialValue: priority,
+                                  decoration: appInputDecoration(),
                                   isExpanded: true,
                                   items: [
                                     DropdownMenuItem(value: 'Low', child: Text(isMr ? 'कमी (Low)' : 'Low')),
@@ -290,7 +202,9 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                fieldLabel(isMr ? 'पूर्ण करण्याची तारीख' : 'Due Date'),
+                                AppFieldLabel(
+                                  label: isMr ? 'पूर्ण करण्याची तारीख' : 'Due Date',
+                                ),
                                 InkWell(
                                   onTap: () async {
                                     final picked = await showDatePicker(
@@ -328,12 +242,14 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
                       const SizedBox(height: 14),
 
                       // Description
-                      fieldLabel(isMr ? 'कामाचा तपशील / सूचना' : 'Description & Instructions'),
+                      AppFieldLabel(
+                        label: isMr ? 'कामाचा तपशील / सूचना' : 'Description & Instructions',
+                      ),
                       TextField(
                         controller: descCtrl,
                         maxLines: 3,
-                        decoration: inputDec(
-                          hintText: isMr
+                        decoration: appInputDecoration(
+                          hint: isMr
                               ? 'कामाचा सविस्तर तपशील, नागरिकांची तक्रार किंवा विशेष सूचना...'
                               : 'Work details, citizen grievance or instructions...',
                         ),
@@ -405,7 +321,7 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
                           },
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 10),
                     ],
                   ),
                 ),

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../data/models/work_history_model.dart';
 import '../../../data/repositories/work_history_repository.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/app_modal_sheet.dart';
 
 class WorkDetailScreen extends ConsumerStatefulWidget {
   final WorkHistoryModel work;
@@ -113,26 +114,6 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
       );
     }
 
-    Widget fieldLabel(String text, {bool isRequired = false}) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 5.0),
-        child: RichText(
-          text: TextSpan(
-            text: text,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-            children: isRequired
-                ? const [
-                    TextSpan(
-                      text: ' *',
-                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                    ),
-                  ]
-                : [],
-          ),
-        ),
-      );
-    }
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -153,65 +134,28 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                   ),
                 ],
               ),
-              padding: EdgeInsets.only(
-                top: 8,
-                left: 20,
-                right: 20,
-                bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Top Drag Handle
-                    Center(
-                      child: Container(
-                        width: 44,
-                        height: 5,
-                        margin: const EdgeInsets.only(top: 6, bottom: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                      ),
-                    ),
-                    // Header
-                    Row(
+              child: Column(
+                children: [
+                  AppModalHeader(
+                    icon: Icons.edit_note_rounded,
+                    title: isMr ? 'विकास प्रकल्प संपादित करा' : 'Edit Development Project',
+                    subtitle: isMr ? 'प्रकल्प माहिती व स्थिती अद्यतन' : 'Project Information & Status Update',
+                    onClose: () => Navigator.pop(sheetCtx),
+                  ),
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.all(18),
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(Icons.edit_note_rounded, color: Color(0xFF0284C7), size: 20),
+                        // Project Title
+                        AppFieldLabel(label: isMr ? 'कामाचे नाव / प्रकल्प शीर्षक' : 'Project Title', isRequired: true),
+                        TextField(
+                          controller: titleCtrl,
+                          decoration: inputDec(hint: isMr ? 'उदा. मुख्य रस्ता डांबरीकरण' : 'Project Title...'),
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            isMr ? 'विकास प्रकल्प संपादित करा' : 'Edit Development Project',
-                            style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                          onPressed: () => Navigator.pop(sheetCtx),
-                        ),
-                      ],
-                    ),
-                    const Divider(height: 16, color: Color(0xFFE2E8F0)),
-                    const SizedBox(height: 6),
+                        const SizedBox(height: 14),
 
-                    // Project Title
-                    fieldLabel(isMr ? 'कामाचे नाव / प्रकल्प शीर्षक' : 'Project Title', isRequired: true),
-                    TextField(
-                      controller: titleCtrl,
-                      decoration: inputDec(hint: isMr ? 'उदा. मुख्य रस्ता डांबरीकरण' : 'Project Title...'),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Description
-                    fieldLabel(isMr ? 'कामाचा तपशील / वर्णन' : 'Description'),
+                        // Description
+                        AppFieldLabel(label: isMr ? 'कामाचा तपशील / वर्णन' : 'Description'),
                     TextField(
                       controller: descCtrl,
                       maxLines: 3,
@@ -227,7 +171,7 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              fieldLabel(isMr ? 'स्थान / लँडमार्क' : 'Location / Landmark'),
+                              AppFieldLabel(label: isMr ? 'स्थान / लँडमार्क' : 'Location / Landmark'),
                               TextField(
                                 controller: locCtrl,
                                 decoration: inputDec(hint: isMr ? 'उदा. मुख्य चौक' : 'Location...'),
@@ -240,7 +184,7 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              fieldLabel(isMr ? 'परिसर / प्रभाग' : 'Area / Locality'),
+                              AppFieldLabel(label: isMr ? 'परिसर / प्रभाग' : 'Area / Locality'),
                               TextField(
                                 controller: areaCtrl,
                                 decoration: inputDec(hint: isMr ? 'उदा. प्रभाग १२' : 'Area...'),
@@ -260,7 +204,7 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              fieldLabel(isMr ? 'कामाची स्थिती' : 'Work Status', isRequired: true),
+                              AppFieldLabel(label: isMr ? 'कामाची स्थिती' : 'Work Status', isRequired: true),
                               DropdownButtonFormField<String>(
                                 initialValue: status,
                                 decoration: inputDec(),
@@ -281,7 +225,7 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              fieldLabel(isMr ? 'अंदाजित / पूर्ण तारीख' : 'Completion Date'),
+                              AppFieldLabel(label: isMr ? 'अंदाजित / पूर्ण तारीख' : 'Completion Date'),
                               TextField(
                                 controller: dateCtrl,
                                 decoration: inputDec(hint: 'YYYY-MM-DD'),
@@ -301,7 +245,7 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              fieldLabel(isMr ? 'लाभार्थी संख्या' : 'Citizens Benefited'),
+                              AppFieldLabel(label: isMr ? 'लाभार्थी संख्या' : 'Citizens Benefited'),
                               TextField(
                                 controller: benCtrl,
                                 keyboardType: TextInputType.number,
@@ -315,7 +259,7 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              fieldLabel(isMr ? 'खर्च झालेली रक्कम (₹)' : 'Expenditure (₹)'),
+                              AppFieldLabel(label: isMr ? 'खर्च झालेली रक्कम (₹)' : 'Expenditure (₹)'),
                               TextField(
                                 controller: amtCtrl,
                                 keyboardType: TextInputType.number,
@@ -376,7 +320,9 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                   ],
                 ),
               ),
-            );
+            ],
+          ),
+        );
           },
         );
       },
@@ -409,26 +355,6 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
       );
     }
 
-    Widget fieldLabel(String text, {bool isRequired = false}) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 5.0),
-        child: RichText(
-          text: TextSpan(
-            text: text,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-            children: isRequired
-                ? const [
-                    TextSpan(
-                      text: ' *',
-                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                    ),
-                  ]
-                : [],
-          ),
-        ),
-      );
-    }
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -438,9 +364,6 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
           builder: (stCtx, setModalState) {
             return Container(
               padding: EdgeInsets.only(
-                top: 8,
-                left: 20,
-                right: 20,
                 bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
               ),
               decoration: const BoxDecoration(
@@ -458,70 +381,43 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Top Drag Handle
-                  Center(
-                    child: Container(
-                      width: 44,
-                      height: 5,
-                      margin: const EdgeInsets.only(top: 6, bottom: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                    ),
+                  AppModalHeader(
+                    icon: Icons.rate_review_outlined,
+                    title: isMr ? 'नागरिक प्रतिक्रिया जोडा' : 'Add Citizen Feedback',
+                    subtitle: isMr ? 'प्रकल्पाबाबत नागरिकांचा अभिप्राय' : 'Citizen remarks on project quality',
+                    onClose: () => Navigator.pop(sheetCtx),
                   ),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(10),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AppFieldLabel(label: isMr ? 'नागरिकाचे नाव' : 'Citizen Name', isRequired: true),
+                        TextField(
+                          controller: nameCtrl,
+                          decoration: inputDec(hint: isMr ? 'उदा. सुरेश शिंदे' : 'e.g. Suresh Shinde'),
                         ),
-                        child: const Icon(Icons.rate_review_outlined, color: Color(0xFF0284C7), size: 20),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          isMr ? 'नागरिक प्रतिक्रिया जोडा' : 'Add Citizen Feedback',
-                          style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                        const SizedBox(height: 12),
+
+                        AppFieldLabel(label: isMr ? 'रेटिंग (गुणवत्ता दर्जा)' : 'Rating', isRequired: true),
+                        Row(
+                          children: List.generate(5, (index) {
+                            final starIndex = index + 1;
+                            return IconButton(
+                              icon: Icon(
+                                starIndex <= rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                                color: Colors.amber,
+                                size: 32,
+                              ),
+                              onPressed: () => setModalState(() => rating = starIndex),
+                            );
+                          }),
                         ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                        onPressed: () => Navigator.pop(sheetCtx),
-                      ),
-                    ],
-                  ),
-                  const Divider(height: 16, color: Color(0xFFE2E8F0)),
-                  const SizedBox(height: 6),
+                        const SizedBox(height: 12),
 
-                  fieldLabel(isMr ? 'नागरिकाचे नाव' : 'Citizen Name', isRequired: true),
-                  TextField(
-                    controller: nameCtrl,
-                    decoration: inputDec(hint: isMr ? 'उदा. सुरेश शिंदे' : 'e.g. Suresh Shinde'),
-                  ),
-                  const SizedBox(height: 12),
-
-                  fieldLabel(isMr ? 'रेटिंग (गुणवत्ता दर्जा)' : 'Rating', isRequired: true),
-                  Row(
-                    children: List.generate(5, (index) {
-                      final starIndex = index + 1;
-                      return IconButton(
-                        icon: Icon(
-                          starIndex <= rating ? Icons.star_rounded : Icons.star_outline_rounded,
-                          color: Colors.amber,
-                          size: 32,
-                        ),
-                        onPressed: () => setModalState(() => rating = starIndex),
-                      );
-                    }),
-                  ),
-                  const SizedBox(height: 12),
-
-                  fieldLabel(isMr ? 'अभिप्राय / शेरा' : 'Review / Comment', isRequired: true),
-                  TextField(
-                    controller: commentCtrl,
+                        AppFieldLabel(label: isMr ? 'अभिप्राय / शेरा' : 'Review / Comment', isRequired: true),
+                        TextField(
+                          controller: commentCtrl,
                     maxLines: 3,
                     decoration: inputDec(
                       hint: isMr ? 'कामाच्या गुणवत्तेबाबत आणि उपयुक्ततेबाबत शेरा...' : 'Share remarks on the quality and durability of this work...',
@@ -576,8 +472,11 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                   ),
                 ],
               ),
-            );
-          },
+            ),
+          ],
+        ),
+      );
+    },
         );
       },
     );

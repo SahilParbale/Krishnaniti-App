@@ -10,6 +10,8 @@ import '../../../data/models/complaint_model.dart';
 import '../../../data/models/staff_model.dart';
 import '../../../data/repositories/complaints_repository.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_image_picker.dart';
 
 class ComplaintDetailScreen extends ConsumerStatefulWidget {
   final ComplaintModel complaint;
@@ -1600,7 +1602,7 @@ class _StatusUpdateBottomSheet extends StatefulWidget {
 class _StatusUpdateBottomSheetState extends State<_StatusUpdateBottomSheet> {
   late String _status;
   final TextEditingController _noteController = TextEditingController();
-  final List<ComplaintAttachment> _selectedImages = [];
+  List<XFile> _selectedFiles = [];
   bool _isSaving = false;
 
   @override
@@ -1615,290 +1617,193 @@ class _StatusUpdateBottomSheetState extends State<_StatusUpdateBottomSheet> {
     super.dispose();
   }
 
-  Future<void> _pickImage(ImageSource source) async {
-    try {
-      final picker = ImagePicker();
-      final XFile? file = await picker.pickImage(source: source, imageQuality: 80);
-      if (file != null) {
-        setState(() {
-          _selectedImages.add(
-            ComplaintAttachment(
-              url: file.path,
-              type: 'image/jpeg',
-              name: file.name,
-            ),
-          );
-        });
-      }
-    } catch (_) {}
-  }
-
   @override
   Widget build(BuildContext context) {
     final isInProgress = _status == 'InProgress';
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
+      height: MediaQuery.of(context).size.height * 0.82 + (bottomInset > 0 ? 30 : 0),
+      padding: EdgeInsets.only(bottom: bottomInset),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 20,
+            offset: Offset(0, -4),
+          ),
+        ],
       ),
-      padding: EdgeInsets.fromLTRB(20, 14, 20, MediaQuery.of(context).viewInsets.bottom + 24),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Center Drag Bar
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFCBD5E1),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 14),
-
-            // Modal Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        children: [
+          AppModalHeader(
+            icon: Icons.published_with_changes_rounded,
+            title: isInProgress ? 'Update Work In Progress' : 'Mark Complaint Resolved',
+            subtitle: widget.complaintTitle,
+            onClose: () => Navigator.pop(context),
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(18),
               children: [
-                Text(
-                  isInProgress ? 'Update Work In Progress' : 'Mark Complaint Resolved',
-                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded, size: 20, color: Color(0xFF64748B)),
-                  onPressed: () => Navigator.pop(context),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 14),
-
-            // Status Selector Tabs (if showStatusSelector is true)
-            if (widget.showStatusSelector) ...[
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: InkWell(
-                        onTap: () => setState(() => _status = 'InProgress'),
-                        borderRadius: BorderRadius.circular(8),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          decoration: BoxDecoration(
-                            color: isInProgress ? Colors.white : Colors.transparent,
+                if (widget.showStatusSelector) ...[
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            onTap: () => setState(() => _status = 'InProgress'),
                             borderRadius: BorderRadius.circular(8),
-                            boxShadow: isInProgress
-                                ? const [BoxShadow(color: Color(0x0A000000), blurRadius: 4, offset: Offset(0, 1))]
-                                : null,
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            'In Progress',
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w700,
-                              color: isInProgress ? const Color(0xFF0284C7) : const Color(0xFF64748B),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              decoration: BoxDecoration(
+                                color: isInProgress ? Colors.white : Colors.transparent,
+                                borderRadius: BorderRadius.circular(8),
+                                boxShadow: isInProgress
+                                    ? const [BoxShadow(color: Color(0x0A000000), blurRadius: 4, offset: Offset(0, 1))]
+                                    : null,
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                'In Progress',
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: isInProgress ? const Color(0xFF0284C7) : const Color(0xFF64748B),
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                    Expanded(
-                      child: InkWell(
-                        onTap: () => setState(() => _status = 'Resolved'),
-                        borderRadius: BorderRadius.circular(8),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          decoration: BoxDecoration(
-                            color: !isInProgress ? Colors.white : Colors.transparent,
+                        Expanded(
+                          child: InkWell(
+                            onTap: () => setState(() => _status = 'Resolved'),
                             borderRadius: BorderRadius.circular(8),
-                            boxShadow: !isInProgress
-                                ? const [BoxShadow(color: Color(0x0A000000), blurRadius: 4, offset: Offset(0, 1))]
-                                : null,
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            'Resolved',
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w700,
-                              color: !isInProgress ? const Color(0xFF16A34A) : const Color(0xFF64748B),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              decoration: BoxDecoration(
+                                color: !isInProgress ? Colors.white : Colors.transparent,
+                                borderRadius: BorderRadius.circular(8),
+                                boxShadow: !isInProgress
+                                    ? const [BoxShadow(color: Color(0x0A000000), blurRadius: 4, offset: Offset(0, 1))]
+                                    : null,
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                'Resolved',
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: !isInProgress ? const Color(0xFF16A34A) : const Color(0xFF64748B),
+                                ),
+                              ),
                             ),
                           ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                ],
+
+                AppFieldLabel(
+                  label: isInProgress ? 'Work Progress Note' : 'Resolution Details & Completion Remarks',
+                  isRequired: true,
+                ),
+                TextField(
+                  controller: _noteController,
+                  maxLines: 4,
+                  style: const TextStyle(fontSize: 13),
+                  decoration: InputDecoration(
+                    hintText: isInProgress
+                        ? 'Describe ongoing work, materials used, estimated completion...'
+                        : 'Describe how the issue was resolved, inspection done, verified...',
+                    hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+                    ),
+                    contentPadding: const EdgeInsets.all(12),
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                AppImagePickerField(
+                  label: 'Attach Site Evidence Photos',
+                  allowMultiple: true,
+                  initialFiles: _selectedFiles,
+                  onFilesChanged: (files) {
+                    setState(() => _selectedFiles = files);
+                  },
+                ),
+                const SizedBox(height: 22),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          side: const BorderSide(color: Color(0xFFCBD5E1)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: const Text('Cancel', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w700)),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _isSaving
+                            ? null
+                            : () {
+                                final note = _noteController.text.trim();
+                                if (note.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Please enter progress remarks.')),
+                                  );
+                                  return;
+                                }
+                                final attachments = _selectedFiles.map((f) => ComplaintAttachment(
+                                  url: f.path,
+                                  type: 'image/jpeg',
+                                  name: f.name,
+                                )).toList();
+                                widget.onSubmit(note, _status, attachments);
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isInProgress ? const Color(0xFF0284C7) : const Color(0xFF16A34A),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: Text(
+                          isInProgress ? 'Save Progress' : 'Mark Resolved',
+                          style: const TextStyle(fontWeight: FontWeight.w800),
                         ),
                       ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 14),
-            ],
-
-            // Note Text Area
-            Text(
-              isInProgress ? 'Work Progress Note *' : 'Resolution Details & Completion Remarks *',
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
-            ),
-            const SizedBox(height: 6),
-            TextField(
-              controller: _noteController,
-              maxLines: 4,
-              style: const TextStyle(fontSize: 13),
-              decoration: InputDecoration(
-                hintText: isInProgress
-                    ? 'Describe ongoing work, materials used, estimated completion...'
-                    : 'Describe how the issue was resolved, inspection done, verified...',
-                hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
-                ),
-                contentPadding: const EdgeInsets.all(12),
-              ),
-            ),
-
-            const SizedBox(height: 14),
-
-            // Photos / Media Upload Section
-            const Text(
-              'Attach Site Evidence Photos',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
-            ),
-            const SizedBox(height: 8),
-
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _pickImage(ImageSource.camera),
-                    icon: const Icon(Icons.camera_alt_outlined, size: 16),
-                    label: const Text('Camera', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      side: const BorderSide(color: Color(0xFFCBD5E1)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _pickImage(ImageSource.gallery),
-                    icon: const Icon(Icons.photo_library_outlined, size: 16),
-                    label: const Text('Gallery', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      side: const BorderSide(color: Color(0xFFCBD5E1)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                ),
               ],
             ),
-
-            // Previews of selected images
-            if (_selectedImages.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              SizedBox(
-                height: 70,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _selectedImages.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 8),
-                  itemBuilder: (ctx, idx) {
-                    final img = _selectedImages[idx];
-                    return Stack(
-                      children: [
-                        Container(
-                          width: 70,
-                          height: 70,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFFCBD5E1)),
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: img.url.startsWith('/')
-                              ? Image.file(File(img.url), fit: BoxFit.cover)
-                              : Image.network(img.url, fit: BoxFit.cover),
-                        ),
-                        Positioned(
-                          top: 2,
-                          right: 2,
-                          child: InkWell(
-                            onTap: () => setState(() => _selectedImages.removeAt(idx)),
-                            child: Container(
-                              padding: const EdgeInsets.all(2),
-                              decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
-                              child: const Icon(Icons.close, color: Colors.white, size: 12),
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ),
-            ],
-
-            const SizedBox(height: 20),
-
-            // Submit Buttons
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      side: const BorderSide(color: Color(0xFFCBD5E1)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                    child: const Text('Cancel', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w700)),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _isSaving
-                        ? null
-                        : () {
-                            final note = _noteController.text.trim();
-                            if (note.isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Please enter progress remarks.')),
-                              );
-                              return;
-                            }
-                            widget.onSubmit(note, _status, _selectedImages);
-                          },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isInProgress ? const Color(0xFF0284C7) : const Color(0xFF16A34A),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                    child: Text(
-                      isInProgress ? 'Save Progress' : 'Mark Resolved',
-                      style: const TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -1930,6 +1835,7 @@ class _EditLogBottomSheetState extends State<_EditLogBottomSheet> {
   late String _status;
   late TextEditingController _noteController;
   late List<ComplaintAttachment> _images;
+  List<XFile> _newFiles = [];
 
   @override
   void initState() {
@@ -1945,63 +1851,38 @@ class _EditLogBottomSheetState extends State<_EditLogBottomSheet> {
     super.dispose();
   }
 
-  Future<void> _pickImage(ImageSource source) async {
-    try {
-      final picker = ImagePicker();
-      final XFile? file = await picker.pickImage(source: source, imageQuality: 80);
-      if (file != null) {
-        setState(() {
-          _images.add(
-            ComplaintAttachment(
-              url: file.path,
-              type: 'image/jpeg',
-              name: file.name,
-            ),
-          );
-        });
-      }
-    } catch (_) {}
-  }
-
   @override
   Widget build(BuildContext context) {
     final isInProgress = _status == 'InProgress';
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
+      height: MediaQuery.of(context).size.height * 0.82 + (bottomInset > 0 ? 30 : 0),
+      padding: EdgeInsets.only(bottom: bottomInset),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 20,
+            offset: Offset(0, -4),
+          ),
+        ],
       ),
-      padding: EdgeInsets.fromLTRB(20, 14, 20, MediaQuery.of(context).viewInsets.bottom + 24),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(color: const Color(0xFFCBD5E1), borderRadius: BorderRadius.circular(2)),
-              ),
-            ),
-            const SizedBox(height: 14),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        children: [
+          AppModalHeader(
+            icon: Icons.edit_note_rounded,
+            title: 'Edit Progress Log',
+            subtitle: isInProgress ? 'Status: In Progress' : 'Status: Resolved',
+            onClose: () => Navigator.pop(context),
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(18),
               children: [
-                const Text('Edit Progress Log', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded, size: 20, color: Color(0xFF64748B)),
-                  onPressed: () => Navigator.pop(context),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-
-            // Status Selector Tabs
+                // Status Selector Tabs
             Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(10)),
@@ -2058,51 +1939,22 @@ class _EditLogBottomSheetState extends State<_EditLogBottomSheet> {
             ),
 
             const SizedBox(height: 14),
-            const Text('Log Note *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF475569))),
-            const SizedBox(height: 6),
+            AppFieldLabel(label: 'Log Note', isRequired: true),
             TextField(
               controller: _noteController,
               maxLines: 4,
               style: const TextStyle(fontSize: 13),
               decoration: InputDecoration(
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                hintText: 'Enter log description...',
+                hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5)),
                 contentPadding: const EdgeInsets.all(12),
               ),
             ),
 
             const SizedBox(height: 14),
-            const Text('Manage Photos', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF475569))),
-            const SizedBox(height: 8),
-
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _pickImage(ImageSource.camera),
-                    icon: const Icon(Icons.camera_alt_outlined, size: 16),
-                    label: const Text('Add Camera Photo', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 9),
-                      side: const BorderSide(color: Color(0xFFCBD5E1)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _pickImage(ImageSource.gallery),
-                    icon: const Icon(Icons.photo_library_outlined, size: 16),
-                    label: const Text('Add Gallery Photo', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 9),
-                      side: const BorderSide(color: Color(0xFFCBD5E1)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                ),
-              ],
-            ),
 
             if (_images.isNotEmpty) ...[
               const SizedBox(height: 10),
@@ -2147,7 +1999,17 @@ class _EditLogBottomSheetState extends State<_EditLogBottomSheet> {
               ),
             ],
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 14),
+
+            AppImagePickerField(
+              label: 'Add More Photos',
+              allowMultiple: true,
+              initialFiles: _newFiles,
+              onFilesChanged: (files) {
+                setState(() => _newFiles = files);
+              },
+            ),
+            const SizedBox(height: 22),
 
             Row(
               children: [
@@ -2168,7 +2030,15 @@ class _EditLogBottomSheetState extends State<_EditLogBottomSheet> {
                     onPressed: () {
                       final note = _noteController.text.trim();
                       if (note.isEmpty) return;
-                      widget.onSubmit(note, _status, _images);
+                      final allAttachments = List<ComplaintAttachment>.from(_images);
+                      for (final f in _newFiles) {
+                        allAttachments.add(ComplaintAttachment(
+                          url: f.path,
+                          type: 'image/jpeg',
+                          name: f.name,
+                        ));
+                      }
+                      widget.onSubmit(note, _status, allAttachments);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF0284C7),
@@ -2184,7 +2054,9 @@ class _EditLogBottomSheetState extends State<_EditLogBottomSheet> {
           ],
         ),
       ),
-    );
+    ],
+  ),
+);
   }
 }
 

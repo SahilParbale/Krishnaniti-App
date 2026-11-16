@@ -10,6 +10,7 @@ import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/custom_navigation_provider.dart';
 import '../../providers/navigation_provider.dart';
+import '../../widgets/app_modal_sheet.dart';
 
 class ProfileSettingsScreen extends ConsumerStatefulWidget {
   final VoidCallback? onBackToHome;
@@ -1479,42 +1480,23 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
               height: MediaQuery.of(context).size.height * 0.75,
               decoration: const BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 20,
+                    offset: Offset(0, -4),
+                  ),
+                ],
               ),
               child: Column(
                 children: [
-                  // Drag Handle
-                  Container(
-                    margin: const EdgeInsets.only(top: 10, bottom: 6),
-                    width: 38,
-                    height: 4.5,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFCBD5E1),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-
-                  // Header
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.tune_rounded, color: Color(0xFF0284C7), size: 22),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            title,
-                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close_rounded, size: 20),
-                          onPressed: () => Navigator.pop(modalCtx),
-                        ),
-                      ],
-                    ),
+                  // 1. FIXED HEADER
+                  AppModalHeader(
+                    icon: Icons.tune_rounded,
+                    title: title,
+                    subtitle: isMr ? 'प्रणालीमधील विभाग निवडा' : 'Select module shortcut',
+                    onClose: () => Navigator.pop(modalCtx),
                   ),
 
                   // Search Bar

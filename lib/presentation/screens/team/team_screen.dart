@@ -7,6 +7,7 @@ import '../../../data/models/team_model.dart';
 import '../../../data/repositories/team_repository.dart';
 import '../../providers/auth_provider.dart';
 import '../../navigation/app_drawer.dart';
+import '../../widgets/app_modal_sheet.dart';
 import 'team_member_profile_screen.dart';
 import 'team_report_generator.dart';
 
@@ -314,41 +315,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     ];
 
     Widget fieldLabel(String text, {bool isRequired = false, String? optionalNote}) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 6),
-        child: Row(
-          children: [
-            RichText(
-              text: TextSpan(
-                text: text,
-                style: const TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF334155),
-                ),
-                children: isRequired
-                    ? const [
-                        TextSpan(
-                          text: ' *',
-                          style: TextStyle(
-                            color: Colors.red,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ]
-                    : [],
-              ),
-            ),
-            if (optionalNote != null) ...[
-              const SizedBox(width: 6),
-              Text(
-                '($optionalNote)',
-                style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
-              ),
-            ],
-          ],
-        ),
-      );
+      return AppFieldLabel(label: text, isRequired: isRequired, optionalHint: optionalNote);
     }
 
     InputDecoration inputDec({String? hintText, Widget? prefixIcon, Widget? suffixIcon, String? prefixText}) {
@@ -398,62 +365,27 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
             ),
             child: Column(
               children: [
-                // Drag Handle
-                Center(
-                  child: Container(
-                    width: 44,
-                    height: 5,
-                    margin: const EdgeInsets.only(top: 10, bottom: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
+                // 1. FIXED HEADER
+                AppModalHeader(
+                  icon: memberToEdit != null ? Icons.edit_rounded : Icons.person_add_rounded,
+                  title: memberToEdit != null
+                      ? (isMr ? 'सदस्याची माहिती सुधारा' : 'Edit Staff Member')
+                      : (isMr ? 'नवीन कर्मचारी / कार्यकर्ता जोडा' : 'Add Staff Member'),
+                  subtitle: isMr
+                      ? 'प्रभागातील टीम सदस्य, कार्यालयीन कर्मचारी व पक्ष पदाधिकारी'
+                      : 'Ward team staff, office coordinators and political cadre',
+                  onClose: () => Navigator.pop(ctx),
                 ),
-                // Header
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(7),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              memberToEdit != null ? Icons.edit_rounded : Icons.person_add_rounded,
-                              color: const Color(0xFF0284C7),
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            memberToEdit != null
-                                ? (isMr ? 'सदस्याची माहिती सुधारा' : 'Edit Staff Member')
-                                : (isMr ? 'नवीन कर्मचारी / कार्यकर्ता जोडा' : 'Add Staff Member'),
-                            style: const TextStyle(
-                              fontSize: 17.5,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF0F172A),
-                            ),
-                          ),
-                        ],
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                        onPressed: () => Navigator.pop(ctx),
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(height: 1, color: Color(0xFFE2E8F0)),
+
+                // 2. SCROLLABLE FORM BODY & BUTTONS
                 Expanded(
                   child: ListView(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.fromLTRB(
+                      18,
+                      14,
+                      18,
+                      MediaQuery.of(context).viewInsets.bottom + 24,
+                    ),
                     children: [
                       // Row 1: Category & Political Party
                       Row(

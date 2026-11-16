@@ -6,6 +6,7 @@ import '../../../data/models/scheme_model.dart';
 import '../../../data/repositories/schemes_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/app_modal_sheet.dart';
 import 'scheme_detail_screen.dart';
 import 'scheme_report_generator.dart';
 
@@ -248,23 +249,7 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
     }
 
     Widget fieldLabel(String text, {bool isRequired = false}) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 5.0),
-        child: RichText(
-          text: TextSpan(
-            text: text,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-            children: isRequired
-                ? const [
-                    TextSpan(
-                      text: ' *',
-                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                    ),
-                  ]
-                : [],
-          ),
-        ),
-      );
+      return AppFieldLabel(label: text, isRequired: isRequired);
     }
 
     showModalBottomSheet(
@@ -287,68 +272,30 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                   ),
                 ],
               ),
-              padding: EdgeInsets.only(
-                top: 8,
-                left: 20,
-                right: 20,
-                bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
-              ),
               child: Column(
                 children: [
-                  // Top Drag Handle
-                  Center(
-                    child: Container(
-                      width: 44,
-                      height: 5,
-                      margin: const EdgeInsets.only(top: 6, bottom: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                    ),
+                  // 1. FIXED HEADER
+                  AppModalHeader(
+                    icon: Icons.auto_awesome_rounded,
+                    title: isMr ? 'स्मार्ट योजना शोधक' : 'Smart Scheme Matcher',
+                    subtitle: isMr
+                        ? 'नागरिकांच्या पात्रतेनुसार अचूक योजना शोधा'
+                        : 'Find exact matching welfare schemes',
+                    onClose: () => Navigator.pop(sheetCtx),
                   ),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF0284C7), size: 20),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              isMr ? 'स्मार्ट योजना शोधक' : 'Smart Scheme Matcher',
-                              style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                            ),
-                            Text(
-                              isMr ? 'नागरिकांच्या पात्रतेनुसार अचूक योजना शोधा' : 'Find exact matching welfare schemes',
-                              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                        onPressed: () => Navigator.pop(sheetCtx),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
+
+                  // 2. SCROLLABLE FORM BODY & BUTTONS
                   Expanded(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Age & Gender side-by-side
-                          Row(
+                    child: ListView(
+                      padding: EdgeInsets.fromLTRB(
+                        18,
+                        14,
+                        18,
+                        MediaQuery.of(sheetCtx).viewInsets.bottom + 24,
+                      ),
+                      children: [
+                        // Age & Gender side-by-side
+                        Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Expanded(
@@ -476,14 +423,13 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                               ),
                             ),
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 12),
                         ],
                       ),
                     ),
-                  ),
-                ],
-              ),
-            );
+                  ],
+                ),
+              );
           },
         );
       },
@@ -525,23 +471,7 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
     }
 
     Widget fieldLabel(String text, {bool isRequired = false}) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 5.0),
-        child: RichText(
-          text: TextSpan(
-            text: text,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-            children: isRequired
-                ? const [
-                    TextSpan(
-                      text: ' *',
-                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                    ),
-                  ]
-                : [],
-          ),
-        ),
-      );
+      return AppFieldLabel(label: text, isRequired: isRequired);
     }
 
     showModalBottomSheet(
@@ -564,59 +494,30 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                   ),
                 ],
               ),
-              padding: EdgeInsets.only(
-                top: 8,
-                left: 20,
-                right: 20,
-                bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
-              ),
               child: Column(
                 children: [
-                  // Top Drag Handle
-                  Center(
-                    child: Container(
-                      width: 44,
-                      height: 5,
-                      margin: const EdgeInsets.only(top: 6, bottom: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                    ),
+                  // 1. FIXED HEADER
+                  AppModalHeader(
+                    icon: Icons.account_balance_rounded,
+                    title: isMr ? 'नवीन शासकीय योजना जोडा' : 'Add New Government Scheme',
+                    subtitle: isMr
+                        ? 'कल्याणकारी योजनांची पात्रता, कागदपत्रे व लाभ नोंदवा'
+                        : 'Record government welfare schemes, criteria and benefits',
+                    onClose: () => Navigator.pop(sheetCtx),
                   ),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(Icons.account_balance_rounded, color: Color(0xFF0284C7), size: 20),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          isMr ? 'नवीन शासकीय योजना जोडा' : 'Add New Government Scheme',
-                          style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                        onPressed: () => Navigator.pop(sheetCtx),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
+
+                  // 2. SCROLLABLE FORM BODY & BUTTONS
                   Expanded(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Scheme Name & Category side-by-side
-                          Row(
+                    child: ListView(
+                      padding: EdgeInsets.fromLTRB(
+                        18,
+                        14,
+                        18,
+                        MediaQuery.of(sheetCtx).viewInsets.bottom + 24,
+                      ),
+                      children: [
+                        // Scheme Name & Category side-by-side
+                        Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Expanded(
@@ -754,14 +655,13 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                               ),
                             ),
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 12),
                         ],
                       ),
                     ),
-                  ),
-                ],
-              ),
-            );
+                  ],
+                ),
+              );
           },
         );
       },
@@ -799,23 +699,7 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
     }
 
     Widget fieldLabel(String text, {bool isRequired = false}) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 5.0),
-        child: RichText(
-          text: TextSpan(
-            text: text,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-            children: isRequired
-                ? const [
-                    TextSpan(
-                      text: ' *',
-                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                    ),
-                  ]
-                : [],
-          ),
-        ),
-      );
+      return AppFieldLabel(label: text, isRequired: isRequired);
     }
 
     showModalBottomSheet(
@@ -838,67 +722,27 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                   ),
                 ],
               ),
-              padding: EdgeInsets.only(
-                top: 8,
-                left: 20,
-                right: 20,
-                bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
-              ),
               child: Column(
                 children: [
-                  // Top Drag Handle
-                  Center(
-                    child: Container(
-                      width: 44,
-                      height: 5,
-                      margin: const EdgeInsets.only(top: 6, bottom: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                    ),
+                  // 1. FIXED HEADER
+                  AppModalHeader(
+                    icon: Icons.edit_note_rounded,
+                    title: isMr ? 'अर्जाची स्थिती अद्यतनित करा' : 'Update Application Status',
+                    subtitle: app.applicantName,
+                    onClose: () => Navigator.pop(sheetCtx),
                   ),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(Icons.edit_note_rounded, color: Color(0xFF0284C7), size: 20),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              isMr ? 'अर्जाची स्थिती अद्यतनित करा' : 'Update Application Status',
-                              style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                            ),
-                            Text(
-                              app.applicantName,
-                              style: const TextStyle(fontSize: 12, color: Color(0xFF0284C7), fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                        onPressed: () => Navigator.pop(sheetCtx),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
+
+                  // 2. SCROLLABLE FORM BODY & BUTTONS
                   Expanded(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          fieldLabel(isMr ? 'स्थिती' : 'Status', isRequired: true),
+                    child: ListView(
+                      padding: EdgeInsets.fromLTRB(
+                        18,
+                        14,
+                        18,
+                        MediaQuery.of(sheetCtx).viewInsets.bottom + 24,
+                      ),
+                      children: [
+                        fieldLabel(isMr ? 'स्थिती' : 'Status', isRequired: true),
                           Row(
                             children: ['Pending', 'Approved', 'Rejected'].map((st) {
                               final isSel = currentStatus.toLowerCase() == st.toLowerCase();
@@ -987,14 +831,13 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                               ),
                             ),
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 12),
                         ],
                       ),
                     ),
-                  ),
-                ],
-              ),
-            );
+                  ],
+                ),
+              );
           },
         );
       },

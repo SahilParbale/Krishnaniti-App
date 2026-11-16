@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/opposition_model.dart';
 import '../../../data/repositories/opposition_repository.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/app_modal_sheet.dart';
 
 class OppositionDetailScreen extends ConsumerStatefulWidget {
   final OppositionMemberModel member;
@@ -83,57 +84,6 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
     }
   }
 
-  Widget _fieldLabel(String text, {bool isRequired = false}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: RichText(
-        text: TextSpan(
-          text: text,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF334155),
-          ),
-          children: isRequired
-              ? const [
-                  TextSpan(
-                    text: ' *',
-                    style: TextStyle(
-                      color: Colors.red,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ]
-              : [],
-        ),
-      ),
-    );
-  }
-
-  InputDecoration _inputDec({String? hintText, Widget? prefixIcon, Widget? suffixIcon}) {
-    return InputDecoration(
-      hintText: hintText,
-      hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
-      prefixIcon: prefixIcon,
-      suffixIcon: suffixIcon,
-      filled: true,
-      fillColor: Colors.white,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
-      ),
-    );
-  }
-
   // ===========================================================================
   // LOG CAMPAIGN ACTIVITY MODAL
   // ===========================================================================
@@ -164,60 +114,20 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
           ),
           child: Column(
             children: [
-              // Drag Handle
-              Center(
-                child: Container(
-                  width: 44,
-                  height: 5,
-                  margin: const EdgeInsets.only(top: 10, bottom: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                ),
+              AppModalHeader(
+                icon: Icons.event_note_rounded,
+                title: isMr ? 'प्रचार उपक्रमाची नोंद करा' : 'Record Campaign Activity',
+                subtitle: isMr ? 'उपक्रमाचे तपशील भरा' : 'Fill campaign activity details',
+                onClose: () => Navigator.pop(ctx),
               ),
-              // Header
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(7),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.event_note_rounded,
-                            color: Color(0xFF0284C7),
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          isMr ? 'प्रचार उपक्रमाची नोंद करा' : 'Record Campaign Activity',
-                          style: const TextStyle(
-                            fontSize: 17.5,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF0F172A),
-                          ),
-                        ),
-                      ],
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                      onPressed: () => Navigator.pop(ctx),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(height: 1, color: Color(0xFFE2E8F0)),
               Expanded(
                 child: ListView(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    top: 16,
+                    bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+                  ),
                   children: [
                     // Date & Activity Title side-by-side
                     Row(
@@ -228,7 +138,10 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _fieldLabel(isMr ? 'तारीख' : 'Activity Date', isRequired: true),
+                              AppFieldLabel(
+                                label: isMr ? 'तारीख' : 'Activity Date',
+                                isRequired: true,
+                              ),
                               InkWell(
                                 onTap: () async {
                                   final picked = await showDatePicker(
@@ -269,11 +182,14 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _fieldLabel(isMr ? 'उपक्रमाचे नाव / शीर्षक' : 'Activity Title', isRequired: true),
+                              AppFieldLabel(
+                                label: isMr ? 'उपक्रमाचे नाव / शीर्षक' : 'Activity Title',
+                                isRequired: true,
+                              ),
                               TextField(
                                 controller: titleCtrl,
-                                decoration: _inputDec(
-                                  hintText: isMr ? 'उदा. जनआक्रोश मोर्चा, शिबीर' : 'e.g. Citizen Rights March',
+                                decoration: appInputDecoration(
+                                  hint: isMr ? 'उदा. जनआक्रोश मोर्चा, शिबीर' : 'e.g. Citizen Rights March',
                                 ),
                               ),
                             ],
@@ -284,22 +200,22 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                     const SizedBox(height: 14),
 
                     // Location / Vicinity
-                    _fieldLabel(isMr ? 'स्थान / परिसर' : 'Location / Vicinity'),
+                    AppFieldLabel(label: isMr ? 'स्थान / परिसर' : 'Location / Vicinity'),
                     TextField(
                       controller: locCtrl,
-                      decoration: _inputDec(
-                        hintText: isMr ? 'उदा. सेक्टर ३ चौक, मुख्य रस्ता' : 'e.g. Sector 3 Chowk',
+                      decoration: appInputDecoration(
+                        hint: isMr ? 'उदा. सेक्टर ३ चौक, मुख्य रस्ता' : 'e.g. Sector 3 Chowk',
                       ),
                     ),
                     const SizedBox(height: 14),
 
                     // Description & Notes
-                    _fieldLabel(isMr ? 'तपशील व निरीक्षणे' : 'Activity Description & Notes'),
+                    AppFieldLabel(label: isMr ? 'तपशील व निरीक्षणे' : 'Activity Description & Notes'),
                     TextField(
                       controller: descCtrl,
                       maxLines: 3,
-                      decoration: _inputDec(
-                        hintText: isMr ? 'उपक्रमाचे स्वरूप, प्रमुख मागण्या व प्रभाव...' : 'Nature of activity, key demands, and political impact...',
+                      decoration: appInputDecoration(
+                        hint: isMr ? 'उपक्रमाचे स्वरूप, प्रमुख मागण्या व प्रभाव...' : 'Nature of activity, key demands, and political impact...',
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -366,7 +282,7 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                         },
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 10),
                   ],
                 ),
               ),
@@ -408,62 +324,22 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
           ),
           child: Column(
             children: [
-              // Drag Handle
-              Center(
-                child: Container(
-                  width: 44,
-                  height: 5,
-                  margin: const EdgeInsets.only(top: 10, bottom: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                ),
+              AppModalHeader(
+                icon: Icons.warning_amber_rounded,
+                title: storyToEdit == null
+                    ? (isMr ? 'वादग्रस्त घटना / प्रकरण नोंदवा' : 'Record Controversy / Incident')
+                    : (isMr ? 'वादग्रस्त प्रकरण संपादित करा' : 'Edit Controversy / Incident'),
+                subtitle: isMr ? 'प्रकरणाचा तपशील व पुरावा संदर्भ' : 'Incident details & evidence reference',
+                onClose: () => Navigator.pop(ctx),
               ),
-              // Header
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(7),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFDC2626).withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.warning_amber_rounded,
-                            color: Color(0xFFDC2626),
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          storyToEdit == null
-                              ? (isMr ? 'वादग्रस्त घटना / प्रकरण नोंदवा' : 'Record Controversy / Incident')
-                              : (isMr ? 'वादग्रस्त प्रकरण संपादित करा' : 'Edit Controversy / Incident'),
-                          style: const TextStyle(
-                            fontSize: 17.5,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF0F172A),
-                          ),
-                        ),
-                      ],
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                      onPressed: () => Navigator.pop(ctx),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(height: 1, color: Color(0xFFE2E8F0)),
               Expanded(
                 child: ListView(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    top: 16,
+                    bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+                  ),
                   children: [
                     // Incident Date & Source / Evidence Reference side-by-side
                     Row(
@@ -474,7 +350,10 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _fieldLabel(isMr ? 'घटनेची तारीख' : 'Incident Date', isRequired: true),
+                              AppFieldLabel(
+                                label: isMr ? 'घटनेची तारीख' : 'Incident Date',
+                                isRequired: true,
+                              ),
                               InkWell(
                                 onTap: () async {
                                   final picked = await showDatePicker(
@@ -515,11 +394,13 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _fieldLabel(isMr ? 'स्रोत / पुरावा संदर्भ' : 'Source / Reference'),
+                              AppFieldLabel(
+                                label: isMr ? 'स्रोत / पुरावा संदर्भ' : 'Source / Reference',
+                              ),
                               TextField(
                                 controller: sourceCtrl,
-                                decoration: _inputDec(
-                                  hintText: isMr ? 'उदा. बातमी, व्हिडिओ लिंक' : 'e.g. News clipping, video link',
+                                decoration: appInputDecoration(
+                                  hint: isMr ? 'उदा. बातमी, व्हिडिओ लिंक' : 'e.g. News clipping, video link',
                                 ),
                               ),
                             ],
@@ -538,11 +419,14 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _fieldLabel(isMr ? 'प्रकरणाचे शीर्षक' : 'Controversy Title', isRequired: true),
+                              AppFieldLabel(
+                                label: isMr ? 'प्रकरणाचे शीर्षक' : 'Controversy Title',
+                                isRequired: true,
+                              ),
                               TextField(
                                 controller: titleCtrl,
-                                decoration: _inputDec(
-                                  hintText: isMr ? 'उदा. बेकायदेशीर बांधकाम...' : 'e.g. Tender irregularities...',
+                                decoration: appInputDecoration(
+                                  hint: isMr ? 'उदा. बेकायदेशीर बांधकाम...' : 'e.g. Tender irregularities...',
                                 ),
                               ),
                             ],
@@ -554,7 +438,10 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _fieldLabel(isMr ? 'तीव्रता / प्रभाव' : 'Severity / Impact', isRequired: true),
+                              AppFieldLabel(
+                                label: isMr ? 'तीव्रता / प्रभाव' : 'Severity / Impact',
+                                isRequired: true,
+                              ),
                               Row(
                                 children: [
                                   _buildSeverityOption(
@@ -590,12 +477,15 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                     const SizedBox(height: 14),
 
                     // Description
-                    _fieldLabel(isMr ? 'प्रकरणाचा तपशील' : 'Controversy Details', isRequired: true),
+                    AppFieldLabel(
+                      label: isMr ? 'प्रकरणाचा तपशील' : 'Controversy Details',
+                      isRequired: true,
+                    ),
                     TextField(
                       controller: descCtrl,
                       maxLines: 3,
-                      decoration: _inputDec(
-                        hintText: isMr ? 'आरोप, स्थानिक मतदारांची प्रतिक्रिया व राजकीय रणनीती...' : 'Details, allegations, voter reaction, and strategy notes...',
+                      decoration: appInputDecoration(
+                        hint: isMr ? 'आरोप, स्थानिक मतदारांची प्रतिक्रिया व राजकीय रणनीती...' : 'Details, allegations, voter reaction, and strategy notes...',
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -670,7 +560,7 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                         },
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 10),
                   ],
                 ),
               ),
@@ -742,60 +632,20 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
           ),
           child: Column(
             children: [
-              // Drag Handle
-              Center(
-                child: Container(
-                  width: 44,
-                  height: 5,
-                  margin: const EdgeInsets.only(top: 10, bottom: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                ),
+              AppModalHeader(
+                icon: Icons.group_add_rounded,
+                title: isMr ? 'कार्यकर्ता जोडा (${_member.name})' : 'Add Cadre for ${_member.name}',
+                subtitle: isMr ? 'विरोधी गटाचा कार्यकर्ता संबद्ध करा' : 'Link or create opposition cadre',
+                onClose: () => Navigator.pop(ctx),
               ),
-              // Header
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(7),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.group_add_rounded,
-                            color: Color(0xFF0284C7),
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          isMr ? 'कार्यकर्ता जोडा (${_member.name})' : 'Add Cadre for ${_member.name}',
-                          style: const TextStyle(
-                            fontSize: 16.5,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF0F172A),
-                          ),
-                        ),
-                      ],
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                      onPressed: () => Navigator.pop(ctx),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(height: 1, color: Color(0xFFE2E8F0)),
               Expanded(
                 child: ListView(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    top: 16,
+                    bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+                  ),
                   children: [
                     // Tabs: Link Existing vs Create New
                     Container(
@@ -868,10 +718,13 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                           ),
                         )
                       else ...[
-                        _fieldLabel(isMr ? 'विरोधी कार्यकर्ता निवडा' : 'Select Opposition Cadre', isRequired: true),
+                        AppFieldLabel(
+                          label: isMr ? 'विरोधी कार्यकर्ता निवडा' : 'Select Opposition Cadre',
+                          isRequired: true,
+                        ),
                         DropdownButtonFormField<String>(
-                          value: selectedWorkerId,
-                          decoration: _inputDec(),
+                          initialValue: selectedWorkerId,
+                          decoration: appInputDecoration(),
                           isExpanded: true,
                           items: unassigned.map((w) {
                             return DropdownMenuItem<String>(
@@ -938,11 +791,14 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _fieldLabel(isMr ? 'पूर्ण नाव' : 'Cadre Full Name', isRequired: true),
+                                AppFieldLabel(
+                                  label: isMr ? 'पूर्ण नाव' : 'Cadre Full Name',
+                                  isRequired: true,
+                                ),
                                 TextField(
                                   controller: nameCtrl,
-                                  decoration: _inputDec(
-                                    hintText: isMr ? 'उदा. सचिन पवार' : 'e.g. Sachin Pawar',
+                                  decoration: appInputDecoration(
+                                    hint: isMr ? 'उदा. सचिन पवार' : 'e.g. Sachin Pawar',
                                   ),
                                 ),
                               ],
@@ -953,12 +809,14 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _fieldLabel(isMr ? 'मोबाईल नंबर' : 'Mobile Number'),
+                                AppFieldLabel(
+                                  label: isMr ? 'मोबाईल नंबर' : 'Mobile Number',
+                                ),
                                 TextField(
                                   controller: phoneCtrl,
                                   keyboardType: TextInputType.phone,
-                                  decoration: _inputDec(
-                                    hintText: '98220xxxxx',
+                                  decoration: appInputDecoration(
+                                    hint: '98220xxxxx',
                                   ),
                                 ),
                               ],
@@ -976,11 +834,13 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _fieldLabel(isMr ? 'पद / हुद्दा' : 'Role / Designation'),
+                                AppFieldLabel(
+                                  label: isMr ? 'पद / हुद्दा' : 'Role / Designation',
+                                ),
                                 TextField(
                                   controller: roleCtrl,
-                                  decoration: _inputDec(
-                                    hintText: isMr ? 'उदा. बूथ कार्यकर्ता' : 'e.g. Booth Cadre',
+                                  decoration: appInputDecoration(
+                                    hint: isMr ? 'उदा. बूथ कार्यकर्ता' : 'e.g. Booth Cadre',
                                   ),
                                 ),
                               ],
@@ -991,11 +851,13 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _fieldLabel(isMr ? 'कार्यक्षेत्र' : 'Work Area'),
+                                AppFieldLabel(
+                                  label: isMr ? 'कार्यक्षेत्र' : 'Work Area',
+                                ),
                                 TextField(
                                   controller: areaCtrl,
-                                  decoration: _inputDec(
-                                    hintText: isMr ? 'उदा. प्रभाग १२' : 'e.g. Ward 12',
+                                  decoration: appInputDecoration(
+                                    hint: isMr ? 'उदा. प्रभाग १२' : 'e.g. Ward 12',
                                   ),
                                 ),
                               ],
@@ -1069,7 +931,7 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                         ),
                       ),
                     ],
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 10),
                   ],
                 ),
               ),

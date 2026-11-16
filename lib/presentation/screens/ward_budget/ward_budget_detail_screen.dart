@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../data/models/ward_budget_model.dart';
 import '../../../data/repositories/ward_budget_repository.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/app_modal_sheet.dart';
 
 class WardBudgetDetailScreen extends ConsumerStatefulWidget {
   final WardBudgetModel budget;
@@ -125,46 +126,6 @@ class _WardBudgetDetailScreenState extends ConsumerState<WardBudgetDetailScreen>
     final years = ['2024-2025', '2023-2024', '2022-2023'];
     final statusOptions = ['Active', 'Closed'];
 
-    InputDecoration inputDec({String? hint, String? prefixText}) {
-      return InputDecoration(
-        hintText: hint,
-        prefixText: prefixText,
-        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
-        prefixStyle: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        filled: true,
-        fillColor: Colors.white,
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1.0),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
-        ),
-      );
-    }
-
-    Widget fieldLabel(String text, {bool isRequired = false}) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 5.0),
-        child: RichText(
-          text: TextSpan(
-            text: text,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-            children: isRequired
-                ? const [
-                    TextSpan(
-                      text: ' *',
-                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                    ),
-                  ]
-                : [],
-          ),
-        ),
-      );
-    }
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -185,229 +146,216 @@ class _WardBudgetDetailScreenState extends ConsumerState<WardBudgetDetailScreen>
                   ),
                 ],
               ),
-              padding: EdgeInsets.only(
-                top: 8,
-                left: 20,
-                right: 20,
-                bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Top Drag Handle
-                    Center(
-                      child: Container(
-                        width: 44,
-                        height: 5,
-                        margin: const EdgeInsets.only(top: 6, bottom: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(3),
-                        ),
+              child: Column(
+                children: [
+                  AppModalHeader(
+                    icon: Icons.edit_note_rounded,
+                    title: isMr ? 'बजेट तरतूद संपादित करा' : 'Edit Budget Allocation',
+                    subtitle: isMr ? 'बजेट तरतुदीचे तपशील अद्यतनित करा' : 'Update ward budget allocation details',
+                    onClose: () => Navigator.pop(sheetCtx),
+                  ),
+                  Expanded(
+                    child: ListView(
+                      padding: EdgeInsets.only(
+                        left: 20,
+                        right: 20,
+                        top: 16,
+                        bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 24,
                       ),
-                    ),
-                    // Header
-                    Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(Icons.edit_note_rounded, color: Color(0xFF0284C7), size: 20),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            isMr ? 'बजेट तरतूद संपादित करा' : 'Edit Budget Allocation',
-                            style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                          onPressed: () => Navigator.pop(sheetCtx),
-                        ),
-                      ],
-                    ),
-                    const Divider(height: 16, color: Color(0xFFE2E8F0)),
-                    const SizedBox(height: 6),
-
-                    // Side-by-side: Financial Year & Status
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              fieldLabel(isMr ? 'आर्थिक वर्ष' : 'Financial Year', isRequired: true),
-                              DropdownButtonFormField<String>(
-                                initialValue: fy,
-                                decoration: inputDec(),
-                                items: years.map((y) => DropdownMenuItem(value: y, child: Text(y))).toList(),
-                                onChanged: (val) {
-                                  if (val != null) setModalState(() => fy = val);
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              fieldLabel(isMr ? 'स्थिती' : 'Status', isRequired: true),
-                              DropdownButtonFormField<String>(
-                                initialValue: status,
-                                decoration: inputDec(),
-                                items: statusOptions
-                                    .map((s) => DropdownMenuItem(
-                                          value: s,
-                                          child: Text(s == 'Active' ? (isMr ? 'सक्रिय' : 'Active') : (isMr ? 'बंद' : 'Closed')),
-                                        ))
-                                    .toList(),
-                                onChanged: (val) {
-                                  if (val != null) setModalState(() => status = val);
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Side-by-side: Category Head & Area / Location
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          flex: 6,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              fieldLabel(isMr ? 'वर्गवारी / बजेट शीर्ष' : 'Category Head', isRequired: true),
-                              TextField(
-                                controller: catCtrl,
-                                decoration: inputDec(hint: isMr ? 'उदा. रस्ते देखभाल' : 'e.g. Road Maintenance'),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          flex: 5,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              fieldLabel(isMr ? 'क्षेत्र / ठिकाण' : 'Area / Location'),
-                              TextField(
-                                controller: areaCtrl,
-                                decoration: inputDec(hint: isMr ? 'उदा. शिवाजी नगर' : 'e.g. Shivaji Nagar'),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Side-by-side: Total Allocation Amount & Utilized Amount
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              fieldLabel(isMr ? 'एकूण तरतूद रक्कम (₹)' : 'Total Allocation (₹)', isRequired: true),
-                              TextField(
-                                controller: allocCtrl,
-                                keyboardType: TextInputType.number,
-                                decoration: inputDec(hint: '0', prefixText: '₹ '),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              fieldLabel(isMr ? 'खर्च झालेला निधी (₹)' : 'Utilized Amount (₹)'),
-                              TextField(
-                                controller: utilCtrl,
-                                keyboardType: TextInputType.number,
-                                decoration: inputDec(hint: '0', prefixText: '₹ '),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0284C7),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                        onPressed: () async {
-                          if (catCtrl.text.trim().isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(isMr ? 'कृपया वर्गवारी / बजेट शीर्ष प्रविष्ट करा' : 'Category head is required')),
-                            );
-                            return;
-                          }
-
-                          final totalAlloc = double.tryParse(allocCtrl.text.trim()) ?? _currentBudget.totalAllocation;
-                          final utilized = double.tryParse(utilCtrl.text.trim()) ?? _currentBudget.utilizedAmount;
-
-                          final updated = _currentBudget.copyWith(
-                            financialYear: fy,
-                            category: catCtrl.text.trim(),
-                            area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : _currentBudget.area,
-                            totalAllocation: totalAlloc,
-                            utilizedAmount: utilized,
-                            status: status,
-                            updatedAt: DateTime.now().toIso8601String(),
-                          );
-
-                          final repo = ref.read(wardBudgetRepoProvider);
-                          await repo.updateBudget(updated);
-                          if (sheetCtx.mounted) Navigator.pop(sheetCtx);
-                          if (mounted) {
-                            setState(() {
-                              _currentBudget = updated;
-                              _utilizeCtrl.text = updated.utilizedAmount.toInt().toString();
-                            });
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(isMr ? 'बजेट तरतूद यशस्वीरित्या अद्यतनित केली!' : 'Budget allocation updated successfully'),
-                                backgroundColor: const Color(0xFF16A34A),
-                              ),
-                            );
-                          }
-                        },
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        // Side-by-side: Financial Year & Status
+                        Row(
                           children: [
-                            const Icon(Icons.save_rounded, size: 18),
-                            const SizedBox(width: 8),
-                            Text(isMr ? 'बदल जतन करा' : 'Save Changes', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppFieldLabel(
+                                    label: isMr ? 'आर्थिक वर्ष' : 'Financial Year',
+                                    isRequired: true,
+                                  ),
+                                  DropdownButtonFormField<String>(
+                                    initialValue: fy,
+                                    decoration: appInputDecoration(),
+                                    items: years.map((y) => DropdownMenuItem(value: y, child: Text(y))).toList(),
+                                    onChanged: (val) {
+                                      if (val != null) setModalState(() => fy = val);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppFieldLabel(
+                                    label: isMr ? 'स्थिती' : 'Status',
+                                    isRequired: true,
+                                  ),
+                                  DropdownButtonFormField<String>(
+                                    initialValue: status,
+                                    decoration: appInputDecoration(),
+                                    items: statusOptions
+                                        .map((s) => DropdownMenuItem(
+                                              value: s,
+                                              child: Text(s == 'Active' ? (isMr ? 'सक्रिय' : 'Active') : (isMr ? 'बंद' : 'Closed')),
+                                            ))
+                                        .toList(),
+                                    onChanged: (val) {
+                                      if (val != null) setModalState(() => status = val);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
-                      ),
+                        const SizedBox(height: 14),
+
+                        // Side-by-side: Category Head & Area / Location
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              flex: 6,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppFieldLabel(
+                                    label: isMr ? 'वर्गवारी / बजेट शीर्ष' : 'Category Head',
+                                    isRequired: true,
+                                  ),
+                                  TextField(
+                                    controller: catCtrl,
+                                    decoration: appInputDecoration(hint: isMr ? 'उदा. रस्ते देखभाल' : 'e.g. Road Maintenance'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              flex: 5,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppFieldLabel(
+                                    label: isMr ? 'क्षेत्र / ठिकाण' : 'Area / Location',
+                                  ),
+                                  TextField(
+                                    controller: areaCtrl,
+                                    decoration: appInputDecoration(hint: isMr ? 'उदा. शिवाजी नगर' : 'e.g. Shivaji Nagar'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Side-by-side: Total Allocation Amount & Utilized Amount
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppFieldLabel(
+                                    label: isMr ? 'एकूण तरतूद रक्कम (₹)' : 'Total Allocation (₹)',
+                                    isRequired: true,
+                                  ),
+                                  TextField(
+                                    controller: allocCtrl,
+                                    keyboardType: TextInputType.number,
+                                    decoration: appInputDecoration(hint: '0', prefixText: '₹ '),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppFieldLabel(
+                                    label: isMr ? 'खर्च झालेला निधी (₹)' : 'Utilized Amount (₹)',
+                                  ),
+                                  TextField(
+                                    controller: utilCtrl,
+                                    keyboardType: TextInputType.number,
+                                    decoration: appInputDecoration(hint: '0', prefixText: '₹ '),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0284C7),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                            onPressed: () async {
+                              if (catCtrl.text.trim().isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(isMr ? 'कृपया वर्गवारी / बजेट शीर्ष प्रविष्ट करा' : 'Category head is required')),
+                                );
+                                return;
+                              }
+
+                              final totalAlloc = double.tryParse(allocCtrl.text.trim()) ?? _currentBudget.totalAllocation;
+                              final utilized = double.tryParse(utilCtrl.text.trim()) ?? _currentBudget.utilizedAmount;
+
+                              final updated = _currentBudget.copyWith(
+                                financialYear: fy,
+                                category: catCtrl.text.trim(),
+                                area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : _currentBudget.area,
+                                totalAllocation: totalAlloc,
+                                utilizedAmount: utilized,
+                                status: status,
+                                updatedAt: DateTime.now().toIso8601String(),
+                              );
+
+                              final repo = ref.read(wardBudgetRepoProvider);
+                              await repo.updateBudget(updated);
+                              if (sheetCtx.mounted) Navigator.pop(sheetCtx);
+                              if (mounted) {
+                                setState(() {
+                                  _currentBudget = updated;
+                                  _utilizeCtrl.text = updated.utilizedAmount.toInt().toString();
+                                });
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(isMr ? 'बजेट तरतूद यशस्वीरित्या अद्यतनित केली!' : 'Budget allocation updated successfully'),
+                                    backgroundColor: const Color(0xFF16A34A),
+                                  ),
+                                );
+                              }
+                            },
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.save_rounded, size: 18),
+                                const SizedBox(width: 8),
+                                Text(isMr ? 'बदल जतन करा' : 'Save Changes', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             );
           },

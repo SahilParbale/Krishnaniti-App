@@ -8,6 +8,7 @@ import '../../../data/repositories/visitors_repository.dart';
 import '../../../data/repositories/voters_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/app_modal_sheet.dart';
 import 'visitor_detail_screen.dart';
 import 'visitor_report_generator.dart';
 
@@ -157,23 +158,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
     }
 
     Widget fieldLabel(String text, {bool isRequired = false}) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 5.0),
-        child: RichText(
-          text: TextSpan(
-            text: text,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-            children: isRequired
-                ? const [
-                    TextSpan(
-                      text: ' *',
-                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                    ),
-                  ]
-                : [],
-          ),
-        ),
-      );
+      return AppFieldLabel(label: text, isRequired: isRequired);
     }
 
     showModalBottomSheet(
@@ -203,50 +188,15 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
             ),
             child: Column(
               children: [
-                // Top Drag Handle
-                Center(
-                  child: Container(
-                    width: 44,
-                    height: 5,
-                    margin: const EdgeInsets.only(top: 10, bottom: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
+                // 1. FIXED HEADER
+                AppModalHeader(
+                  icon: Icons.people_alt_outlined,
+                  title: isMr ? 'नवीन अभ्यागत नोंद' : 'Log New Visitor',
+                  subtitle: isMr
+                      ? 'कार्यालयामध्ये आलेल्या नागरिकांची भेट व चर्चा नोंदवा'
+                      : 'Check in office visitors, invitations and citizen grievances',
+                  onClose: () => Navigator.pop(ctx),
                 ),
-                // Header
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(Icons.people_alt_outlined, color: Color(0xFF0284C7), size: 20),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          isMr ? 'नवीन अभ्यागत नोंद' : 'Log New Visitor',
-                          style: const TextStyle(
-                            fontSize: 17.5,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF0F172A),
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.pop(ctx),
-                        icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(height: 1, color: Color(0xFFE2E8F0)),
 
                 // Form
                 Expanded(
@@ -558,47 +508,20 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                   ),
                 ],
               ),
-              padding: const EdgeInsets.only(top: 8, left: 20, right: 20, bottom: 20),
               child: Column(
                 children: [
-                  // Top Drag Handle
-                  Center(
-                    child: Container(
-                      width: 44,
-                      height: 5,
-                      margin: const EdgeInsets.only(top: 6, bottom: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                    ),
+                  AppModalHeader(
+                    icon: Icons.how_to_reg_outlined,
+                    title: isMr ? 'प्रभाग मतदार यादीतून निवडा' : 'Select Voter from Ward Register',
+                    subtitle: isMr ? 'नाव, मोबाईल किंवा ओळखपत्र क्रमांकाने शोधा' : 'Search by name, mobile or voter ID',
+                    onClose: () => Navigator.pop(ctx),
                   ),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(Icons.how_to_reg_outlined, color: Color(0xFF0284C7), size: 20),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          isMr ? 'प्रभाग मतदार यादीतून निवडा' : 'Select Voter from Ward Register',
-                          style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                        onPressed: () => Navigator.pop(ctx),
-                      ),
-                    ],
-                  ),
-                  const Divider(height: 16, color: Color(0xFFE2E8F0)),
-                  const SizedBox(height: 4),
-                  TextField(
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+                      child: Column(
+                        children: [
+                          TextField(
                     controller: voterSearchCtrl,
                     decoration: InputDecoration(
                       hintText: isMr ? 'मतदाराचे नाव किंवा EPIC क्रमांक शोधा...' : 'Type voter name or EPIC ID...',
@@ -669,7 +592,11 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                   ),
                 ],
               ),
-            );
+            ),
+          ),
+        ],
+      ),
+    );
           },
         );
       },

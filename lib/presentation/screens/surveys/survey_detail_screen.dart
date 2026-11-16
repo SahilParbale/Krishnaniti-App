@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/survey_model.dart';
 import '../../../data/repositories/surveys_repository.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/app_modal_sheet.dart';
 
 class SurveyDetailScreen extends ConsumerStatefulWidget {
   final SurveyModel survey;
@@ -585,201 +586,159 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
           ),
           child: Column(
             children: [
-              // Drag Handle
-              Center(
-                child: Container(
-                  width: 44,
-                  height: 5,
-                  margin: const EdgeInsets.only(top: 10, bottom: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                ),
+              // 1. FIXED HEADER
+              AppModalHeader(
+                icon: Icons.rate_review_rounded,
+                title: isMr ? 'नागरिक प्रतिसाद नोंदवा' : 'Record Citizen Response',
+                subtitle: isMr ? 'स्थानिक नागरिकांचे थेट मत नोंदवा' : 'Record ground feedback directly',
+                onClose: () => Navigator.pop(ctx),
               ),
-              // Header
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+              // 2. SCROLLABLE FORM & SUBMIT BUTTON
+              Expanded(
+                child: ListView(
+                  padding: EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    top: 16,
+                    bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+                  ),
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(7),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.rate_review_rounded,
-                            color: Color(0xFF0284C7),
-                            size: 20,
-                          ),
+                    ...widget.survey.questions.asMap().entries.map((entry) {
+                      final i = entry.key;
+                      final q = entry.value;
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
                         ),
-                        const SizedBox(width: 10),
-                        Column(
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              isMr ? 'नागरिक प्रतिसाद नोंदवा' : 'Record Citizen Response',
-                              style: const TextStyle(
-                                fontSize: 17.5,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF0F172A),
+                              'Q.${i + 1}. ${q.text}',
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                            ),
+                            const SizedBox(height: 8),
+                            if (q.type == SurveyQuestionType.yesNo)
+                              Row(
+                                children: [
+                                  ChoiceChip(
+                                    label: Text(isMr ? 'होय (Yes)' : 'Yes'),
+                                    selected: localAnswers[q.id] == 'Yes',
+                                    selectedColor: const Color(0xFF0284C7),
+                                    labelStyle: TextStyle(
+                                      color: localAnswers[q.id] == 'Yes' ? Colors.white : const Color(0xFF334155),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    onSelected: (sel) {
+                                      if (sel) setModalState(() => localAnswers[q.id] = 'Yes');
+                                    },
+                                  ),
+                                  const SizedBox(width: 8),
+                                  ChoiceChip(
+                                    label: Text(isMr ? 'नाही (No)' : 'No'),
+                                    selected: localAnswers[q.id] == 'No',
+                                    selectedColor: const Color(0xFFDC2626),
+                                    labelStyle: TextStyle(
+                                      color: localAnswers[q.id] == 'No' ? Colors.white : const Color(0xFF334155),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    onSelected: (sel) {
+                                      if (sel) setModalState(() => localAnswers[q.id] = 'No');
+                                    },
+                                  ),
+                                ],
+                              )
+                            else if (q.type == SurveyQuestionType.mcq)
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 6,
+                                children: q.options.map((opt) {
+                                  final isSel = localAnswers[q.id] == opt;
+                                  return ChoiceChip(
+                                    label: Text(opt),
+                                    selected: isSel,
+                                    selectedColor: const Color(0xFF0284C7),
+                                    labelStyle: TextStyle(
+                                      color: isSel ? Colors.white : const Color(0xFF334155),
+                                      fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                                    ),
+                                    onSelected: (sel) {
+                                      if (sel) setModalState(() => localAnswers[q.id] = opt);
+                                    },
+                                  );
+                                }).toList(),
+                              )
+                            else if (q.type == SurveyQuestionType.rating)
+                              Row(
+                                children: [1, 2, 3, 4, 5].map((stars) {
+                                  final isSel = (localAnswers[q.id] ?? 0) >= stars;
+                                  return IconButton(
+                                    icon: Icon(
+                                      isSel ? Icons.star_rounded : Icons.star_outline_rounded,
+                                      color: isSel ? const Color(0xFFF59E0B) : const Color(0xFFCBD5E1),
+                                      size: 30,
+                                    ),
+                                    onPressed: () {
+                                      setModalState(() => localAnswers[q.id] = stars);
+                                    },
+                                  );
+                                }).toList(),
                               ),
-                            ),
-                            Text(
-                              isMr ? 'स्थानिक नागरिकांचे थेट मत नोंदवा' : 'Record ground feedback directly',
-                              style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
-                            ),
                           ],
                         ),
-                      ],
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                      onPressed: () => Navigator.pop(ctx),
+                      );
+                    }),
+                    const SizedBox(height: 8),
+                    // Action / Submit button inside scroll view
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          final newResponse = SurveyResponseModel(
+                            id: 'resp-user-${DateTime.now().millisecondsSinceEpoch}',
+                            surveyId: widget.survey.id,
+                            answers: localAnswers,
+                            submittedAt: DateTime.now(),
+                          );
+
+                          final repo = ref.read(surveysRepoProvider);
+                          Navigator.pop(ctx);
+                          await repo.submitResponse(newResponse);
+                          await _loadResponses();
+
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  isMr
+                                      ? 'नागरिक प्रतिसाद यशस्वीरित्या नोंदवला गेला!'
+                                      : 'Citizen response recorded successfully!',
+                                ),
+                                backgroundColor: const Color(0xFF16A34A),
+                              ),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0284C7),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          elevation: 0,
+                        ),
+                        icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
+                        label: Text(
+                          isMr ? 'प्रतिसाद जतन करा' : 'Save Response',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                      ),
                     ),
                   ],
-                ),
-              ),
-              const Divider(height: 1, color: Color(0xFFE2E8F0)),
-              Expanded(
-                child: ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: widget.survey.questions.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 16),
-                  itemBuilder: (c, i) {
-                    final q = widget.survey.questions[i];
-                    return Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Q.${i + 1}. ${q.text}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
-                          const SizedBox(height: 8),
-                          if (q.type == SurveyQuestionType.yesNo)
-                            Row(
-                              children: [
-                                ChoiceChip(
-                                  label: Text(isMr ? 'होय (Yes)' : 'Yes'),
-                                  selected: localAnswers[q.id] == 'Yes',
-                                  selectedColor: const Color(0xFF0284C7),
-                                  labelStyle: TextStyle(
-                                    color: localAnswers[q.id] == 'Yes' ? Colors.white : const Color(0xFF334155),
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  onSelected: (sel) {
-                                    if (sel) setModalState(() => localAnswers[q.id] = 'Yes');
-                                  },
-                                ),
-                                const SizedBox(width: 8),
-                                ChoiceChip(
-                                  label: Text(isMr ? 'नाही (No)' : 'No'),
-                                  selected: localAnswers[q.id] == 'No',
-                                  selectedColor: const Color(0xFFDC2626),
-                                  labelStyle: TextStyle(
-                                    color: localAnswers[q.id] == 'No' ? Colors.white : const Color(0xFF334155),
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  onSelected: (sel) {
-                                    if (sel) setModalState(() => localAnswers[q.id] = 'No');
-                                  },
-                                ),
-                              ],
-                            )
-                          else if (q.type == SurveyQuestionType.mcq)
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 6,
-                              children: q.options.map((opt) {
-                                final isSel = localAnswers[q.id] == opt;
-                                return ChoiceChip(
-                                  label: Text(opt),
-                                  selected: isSel,
-                                  selectedColor: const Color(0xFF0284C7),
-                                  labelStyle: TextStyle(
-                                    color: isSel ? Colors.white : const Color(0xFF334155),
-                                    fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
-                                  ),
-                                  onSelected: (sel) {
-                                    if (sel) setModalState(() => localAnswers[q.id] = opt);
-                                  },
-                                );
-                              }).toList(),
-                            )
-                          else if (q.type == SurveyQuestionType.rating)
-                            Row(
-                              children: [1, 2, 3, 4, 5].map((stars) {
-                                final isSel = (localAnswers[q.id] ?? 0) >= stars;
-                                return IconButton(
-                                  icon: Icon(
-                                    isSel ? Icons.star_rounded : Icons.star_outline_rounded,
-                                    color: isSel ? const Color(0xFFF59E0B) : const Color(0xFFCBD5E1),
-                                    size: 30,
-                                  ),
-                                  onPressed: () {
-                                    setModalState(() => localAnswers[q.id] = stars);
-                                  },
-                                );
-                              }).toList(),
-                            ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton.icon(
-                    onPressed: () async {
-                      final newResponse = SurveyResponseModel(
-                        id: 'resp-user-${DateTime.now().millisecondsSinceEpoch}',
-                        surveyId: widget.survey.id,
-                        answers: localAnswers,
-                        submittedAt: DateTime.now(),
-                      );
-
-                      final repo = ref.read(surveysRepoProvider);
-                      Navigator.pop(ctx);
-                      await repo.submitResponse(newResponse);
-                      await _loadResponses();
-
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              isMr
-                                  ? 'नागरिक प्रतिसाद यशस्वीरित्या नोंदवला गेला!'
-                                  : 'Citizen response recorded successfully!',
-                            ),
-                            backgroundColor: const Color(0xFF16A34A),
-                          ),
-                        );
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0284C7),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      elevation: 0,
-                    ),
-                    icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
-                    label: Text(
-                      isMr ? 'प्रतिसाद जतन करा' : 'Save Response',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                    ),
-                  ),
                 ),
               ),
             ],

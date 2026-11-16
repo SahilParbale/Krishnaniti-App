@@ -8,6 +8,7 @@ import '../../../data/repositories/government_office_repository.dart';
 import '../../../data/repositories/team_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/app_modal_sheet.dart';
 import 'gov_office_report_generator.dart';
 import 'government_office_detail_screen.dart';
 
@@ -122,22 +123,7 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
   }
 
   static Widget _buildFieldLabel(String label, {bool isRequired = false}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-          ),
-          if (isRequired) ...[
-            const SizedBox(width: 2),
-            const Text('*', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-          ],
-        ],
-      ),
-    );
+    return AppFieldLabel(label: label, isRequired: isRequired);
   }
 
   static InputDecoration _inputDecoration({
@@ -206,48 +192,19 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
               ),
               child: Column(
                 children: [
-                  // Downward Dismiss Drag Handle (styled like complaints & letters)
-                  Center(
-                    child: Container(
-                      width: 44,
-                      height: 5,
-                      margin: const EdgeInsets.only(top: 10, bottom: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                    ),
+                  // 1. FIXED HEADER
+                  AppModalHeader(
+                    icon: Icons.account_balance_rounded,
+                    title: editingStaff != null
+                        ? (isMr ? 'कर्मचारी बदल करा' : 'Edit Worker')
+                        : (isMr ? 'नवीन नोंद जोडा' : 'Add New Entry'),
+                    subtitle: isMr
+                        ? 'प्रभागातील शासकीय कार्यालये व सहकारी कर्मचारी नोंदवा'
+                        : 'Record government departments, ward offices and workers',
+                    onClose: () => Navigator.pop(sheetCtx),
                   ),
 
-                  // Header with Title and Close Button
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    decoration: const BoxDecoration(
-                      border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          editingStaff != null
-                              ? (isMr ? 'कर्मचारी बदल करा' : 'Edit Worker')
-                              : (isMr ? 'नवीन नोंद जोडा' : 'Add New Entry'),
-                          style: const TextStyle(
-                            fontSize: 17.5,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF0F172A),
-                            letterSpacing: -0.2,
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () => Navigator.pop(sheetCtx),
-                          icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Scrollable Body
+                  // 2. SCROLLABLE BODY & BUTTONS
                   Expanded(
                     child: SingleChildScrollView(
                       padding: EdgeInsets.only(

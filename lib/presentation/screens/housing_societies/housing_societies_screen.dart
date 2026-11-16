@@ -6,6 +6,7 @@ import '../../../data/models/housing_society_model.dart';
 import '../../../data/repositories/housing_society_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/app_modal_sheet.dart';
 import 'housing_society_detail_screen.dart';
 import 'housing_society_report_generator.dart';
 
@@ -117,23 +118,7 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
     }
 
     Widget fieldLabel(String text, {bool isRequired = false}) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 5.0),
-        child: RichText(
-          text: TextSpan(
-            text: text,
-            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-            children: isRequired
-                ? const [
-                    TextSpan(
-                      text: ' *',
-                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                    ),
-                  ]
-                : [],
-          ),
-        ),
-      );
+      return AppFieldLabel(label: text, isRequired: isRequired);
     }
 
     showModalBottomSheet(
@@ -155,65 +140,29 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                 ),
               ],
             ),
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-              top: 8,
-              left: 20,
-              right: 20,
-            ),
             child: Column(
               children: [
-                // Top Drag Handle
-                Center(
-                  child: Container(
-                    width: 44,
-                    height: 5,
-                    margin: const EdgeInsets.only(top: 6, bottom: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
+                // 1. FIXED HEADER
+                AppModalHeader(
+                  icon: Icons.home_work_rounded,
+                  title: societyToEdit == null
+                      ? (isMr ? 'नवीन सोसायटी नोंदवा' : 'Log New Housing Society')
+                      : (isMr ? 'सोसायटी माहिती सुधारा' : 'Edit Society Info'),
+                  subtitle: isMr
+                      ? 'प्रभागातील सोसायटी चेअरमन, सेक्रेटरी व मतदारांची नोंद'
+                      : 'Register society committee details, chairman and voter base.',
+                  onClose: () => Navigator.pop(ctx),
                 ),
-                // Header
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(Icons.home_work_rounded, color: Color(0xFF0284C7), size: 20),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            societyToEdit == null
-                                ? (isMr ? 'नवीन सोसायटी नोंदवा' : 'Log New Housing Society')
-                                : (isMr ? 'सोसायटी माहिती सुधारा' : 'Edit Society Info'),
-                            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                          ),
-                          Text(
-                            isMr ? 'प्रभागातील सोसायटी चेअरमन, सेक्रेटरी व मतदारांची नोंद' : 'Register society committee details, chairman and voter base.',
-                            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                    ),
-                  ],
-                ),
-                const Divider(height: 16, color: Color(0xFFE2E8F0)),
+
+                // 2. SCROLLABLE FORM BODY & BUTTONS
                 Expanded(
                   child: ListView(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    padding: EdgeInsets.fromLTRB(
+                      18,
+                      14,
+                      18,
+                      MediaQuery.of(context).viewInsets.bottom + 24,
+                    ),
                     children: [
                       // Row 1: Society Name (English) & Society Name (Marathi)
                       Row(

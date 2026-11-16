@@ -8,6 +8,7 @@ import '../../../data/models/voter_model.dart';
 import '../../../data/repositories/voters_repository.dart';
 import '../../providers/auth_provider.dart';
 import '../../navigation/app_drawer.dart';
+import '../../widgets/app_modal_sheet.dart';
 import 'voter_profile_screen.dart';
 import 'voter_slip_generator.dart';
 
@@ -144,93 +145,73 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.only(bottom: 24),
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 20,
+              offset: Offset(0, -4),
+            ),
+          ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+            AppModalHeader(
+              icon: Icons.person_search_rounded,
+              title: 'Voter Search & Management',
+              subtitle: 'Ward 12 Digital Electoral Roll System',
+              onClose: () => Navigator.pop(ctx),
             ),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0284C7).withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(12),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+              child: Column(
+                children: [
+                  _buildHelpPoint(
+                    icon: Icons.search_rounded,
+                    title: 'Instant Multi-Search',
+                    desc:
+                        'Search instantly by name, EPIC number, address, mobile, or roll serial number.',
                   ),
-                  child: const Icon(Icons.person_search_rounded, color: Color(0xFF0284C7)),
-                ),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Voter Search & Management',
-                        style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
-                      ),
-                      Text(
-                        'Ward 12 Digital Electoral Roll System',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                    ],
+                  const SizedBox(height: 12),
+                  _buildHelpPoint(
+                    icon: Icons.badge_outlined,
+                    title: 'Official Voter Slip',
+                    desc:
+                        'Send official slip via WhatsApp in 1-tap or print PDF directly.',
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 18),
-            _buildHelpPoint(
-              icon: Icons.search_rounded,
-              title: 'Instant Multi-Search',
-              desc:
-                  'Search instantly by name, EPIC number, address, mobile, or roll serial number.',
-            ),
-            const SizedBox(height: 12),
-            _buildHelpPoint(
-              icon: Icons.badge_outlined,
-              title: 'Official Voter Slip',
-              desc:
-                  'Send official slip via WhatsApp in 1-tap or print PDF directly.',
-            ),
-            const SizedBox(height: 12),
-            _buildHelpPoint(
-              icon: Icons.family_restroom_rounded,
-              title: 'Family Grouping',
-              desc:
-                  'Group all voters by house number and view household relationships.',
-            ),
-            const SizedBox(height: 12),
-            _buildHelpPoint(
-              icon: Icons.how_to_vote_outlined,
-              title: 'Political Stance Tagging',
-              desc:
-                  'Tag voter stance as Favourable, Neutral, Against, or Undecided for ward strategy.',
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(ctx),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0284C7),
-                  padding: const EdgeInsets.symmetric(vertical: 13),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Text('Got it', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  _buildHelpPoint(
+                    icon: Icons.family_restroom_rounded,
+                    title: 'Family Grouping',
+                    desc:
+                        'Group all voters by house number and view household relationships.',
+                  ),
+                  const SizedBox(height: 12),
+                  _buildHelpPoint(
+                    icon: Icons.how_to_vote_outlined,
+                    title: 'Political Stance Tagging',
+                    desc:
+                        'Tag voter stance as Favourable, Neutral, Against, or Undecided for ward strategy.',
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0284C7),
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Got it', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -406,33 +387,6 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
     final boothCtrl = TextEditingController(text: _selectedBooth != 'All' ? _selectedBooth : '२८/शनिवार पेठ');
     final serialCtrl = TextEditingController();
 
-    Widget fieldLabel(String text, {bool isRequired = false}) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 6),
-        child: RichText(
-          text: TextSpan(
-            text: text,
-            style: const TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF334155),
-            ),
-            children: isRequired
-                ? const [
-                    TextSpan(
-                      text: ' *',
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ]
-                : [],
-          ),
-        ),
-      );
-    }
-
     InputDecoration inputDec({String? hintText, Widget? prefixIcon, String? prefixText}) {
       return InputDecoration(
         hintText: hintText,
@@ -479,57 +433,12 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
             ),
             child: Column(
               children: [
-                // Drag handle
-                Center(
-                  child: Container(
-                    width: 44,
-                    height: 5,
-                    margin: const EdgeInsets.only(top: 10, bottom: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
+                AppModalHeader(
+                  icon: Icons.person_add_rounded,
+                  title: isMr ? 'नवीन मतदार नोंदवा' : 'Add New Voter',
+                  subtitle: isMr ? 'प्रभाग १२ मतदार यादी नोंदणी' : 'Ward 12 Voter Registration',
+                  onClose: () => Navigator.pop(ctx),
                 ),
-                // Header
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(7),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.person_add_rounded,
-                              color: Color(0xFF0284C7),
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            isMr ? 'नवीन मतदार नोंदवा' : 'Add New Voter',
-                            style: const TextStyle(
-                              fontSize: 17.5,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF0F172A),
-                            ),
-                          ),
-                        ],
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                        onPressed: () => Navigator.pop(ctx),
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(height: 1, color: Color(0xFFE2E8F0)),
                 Expanded(
                   child: ListView(
                     padding: const EdgeInsets.all(16),
@@ -562,7 +471,10 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      fieldLabel(isMr ? 'ओळखपत्र क्र. (EPIC No)' : 'EPIC No', isRequired: true),
+                                      AppFieldLabel(
+                                        label: isMr ? 'ओळखपत्र क्र. (EPIC No)' : 'EPIC No',
+                                        isRequired: true,
+                                      ),
                                       TextField(
                                         controller: epicNoCtrl,
                                         textCapitalization: TextCapitalization.characters,
@@ -576,7 +488,9 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      fieldLabel(isMr ? 'मोबाईल नंबर' : 'Mobile Number'),
+                                      AppFieldLabel(
+                                        label: isMr ? 'मोबाईल नंबर' : 'Mobile Number',
+                                      ),
                                       TextField(
                                         controller: mobileCtrl,
                                         keyboardType: TextInputType.phone,
@@ -599,7 +513,10 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      fieldLabel(isMr ? 'पूर्ण नाव (इंग्रजी)' : 'Full Name (English)', isRequired: true),
+                                      AppFieldLabel(
+                                        label: isMr ? 'पूर्ण नाव (इंग्रजी)' : 'Full Name (English)',
+                                        isRequired: true,
+                                      ),
                                       TextField(
                                         controller: nameEnCtrl,
                                         decoration: inputDec(hintText: 'e.g. Ramesh Kadam'),
@@ -612,7 +529,9 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      fieldLabel(isMr ? 'पूर्ण नाव (मराठी)' : 'Full Name (Marathi)'),
+                                      AppFieldLabel(
+                                        label: isMr ? 'पूर्ण नाव (मराठी)' : 'Full Name (Marathi)',
+                                      ),
                                       TextField(
                                         controller: nameMrCtrl,
                                         decoration: inputDec(hintText: 'उदा. रमेश कदम'),
@@ -632,7 +551,10 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      fieldLabel(isMr ? 'वय (Age)' : 'Age', isRequired: true),
+                                      AppFieldLabel(
+                                        label: isMr ? 'वय (Age)' : 'Age',
+                                        isRequired: true,
+                                      ),
                                       TextField(
                                         controller: ageCtrl,
                                         keyboardType: TextInputType.number,
@@ -646,7 +568,10 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      fieldLabel(isMr ? 'लिंग (Gender)' : 'Gender', isRequired: true),
+                                      AppFieldLabel(
+                                        label: isMr ? 'लिंग (Gender)' : 'Gender',
+                                        isRequired: true,
+                                      ),
                                       DropdownButtonFormField<String>(
                                         initialValue: gender,
                                         decoration: inputDec(),
@@ -667,7 +592,9 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                             const SizedBox(height: 12),
 
                             // Caste
-                            fieldLabel(isMr ? 'जात / प्रवर्ग (Caste / Category)' : 'Caste / Category'),
+                            AppFieldLabel(
+                              label: isMr ? 'जात / प्रवर्ग (Caste / Category)' : 'Caste / Category',
+                            ),
                             TextField(
                               controller: casteCtrl,
                               decoration: inputDec(hintText: isMr ? 'उदा. मराठा, ब्राह्मण, ओबीसी, इ.' : 'e.g. Open, OBC, SC, etc.'),
@@ -697,14 +624,18 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                               ),
                             ),
                             const SizedBox(height: 12),
-                            fieldLabel(isMr ? 'पत्ता (इंग्रजी)' : 'Address (English)'),
+                            AppFieldLabel(
+                              label: isMr ? 'पत्ता (इंग्रजी)' : 'Address (English)',
+                            ),
                             TextField(
                               controller: addressEnCtrl,
                               maxLines: 2,
                               decoration: inputDec(hintText: 'e.g. Sadashiv Sadan, Shaniwar Peth, Pune'),
                             ),
                             const SizedBox(height: 12),
-                            fieldLabel(isMr ? 'पत्ता (मराठी)' : 'Address (Marathi)'),
+                            AppFieldLabel(
+                              label: isMr ? 'पत्ता (मराठी)' : 'Address (Marathi)',
+                            ),
                             TextField(
                               controller: addressMrCtrl,
                               maxLines: 2,
@@ -718,7 +649,9 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      fieldLabel(isMr ? 'घर क्र. (House No)' : 'House No'),
+                                      AppFieldLabel(
+                                        label: isMr ? 'घर क्र. (House No)' : 'House No',
+                                      ),
                                       TextField(
                                         controller: houseCtrl,
                                         decoration: inputDec(hintText: 'e.g. 42'),
@@ -731,7 +664,9 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      fieldLabel(isMr ? 'प्रभाग क्र. (Ward No)' : 'Ward No'),
+                                      AppFieldLabel(
+                                        label: isMr ? 'प्रभाग क्र. (Ward No)' : 'Ward No',
+                                      ),
                                       TextField(
                                         controller: wardCtrl,
                                         decoration: inputDec(hintText: 'e.g. 12'),
@@ -749,7 +684,9 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      fieldLabel(isMr ? 'विधानसभा क्र. (AC No)' : 'AC No'),
+                                      AppFieldLabel(
+                                        label: isMr ? 'विधानसभा क्र. (AC No)' : 'AC No',
+                                      ),
                                       TextField(
                                         controller: acCtrl,
                                         keyboardType: TextInputType.number,
@@ -763,7 +700,9 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      fieldLabel(isMr ? 'यादी भाग / केंद्र (Booth / Part No)' : 'Part / Booth No'),
+                                      AppFieldLabel(
+                                        label: isMr ? 'यादी भाग / केंद्र (Booth / Part No)' : 'Part / Booth No',
+                                      ),
                                       TextField(
                                         controller: boothCtrl,
                                         decoration: inputDec(hintText: '२८/शनिवार पेठ'),
@@ -774,7 +713,9 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                               ],
                             ),
                             const SizedBox(height: 12),
-                            fieldLabel(isMr ? 'यादीतील अनुक्रमांक (Serial No)' : 'Serial No in Electoral Roll'),
+                            AppFieldLabel(
+                              label: isMr ? 'यादीतील अनुक्रमांक (Serial No)' : 'Serial No in Electoral Roll',
+                            ),
                             TextField(
                               controller: serialCtrl,
                               keyboardType: TextInputType.number,

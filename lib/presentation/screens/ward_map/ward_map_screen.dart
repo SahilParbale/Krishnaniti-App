@@ -6,6 +6,7 @@ import '../../../data/models/ward_map_point_model.dart';
 import '../../../data/repositories/ward_map_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/app_modal_sheet.dart';
 import 'ward_map_report_generator.dart';
 
 class WardMapScreen extends ConsumerStatefulWidget {
@@ -193,70 +194,13 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
               ),
               child: Column(
                 children: [
-                  // Drag Handle
-                  Center(
-                    child: Container(
-                      width: 44,
-                      height: 5,
-                      margin: const EdgeInsets.only(top: 10, bottom: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                    ),
+                  // 1. FIXED HEADER
+                  AppModalHeader(
+                    icon: Icons.pin_drop_rounded,
+                    title: isMr ? 'नवीन ठिकाण नोंदवा' : 'Tag New Ward Location',
+                    subtitle: isMr ? 'प्रभागातील ठिकाण, केंद्र किंवा काम टॅग करा' : 'Tag location, booth or civic spot',
+                    onClose: () => Navigator.pop(sheetCtx),
                   ),
-
-                  // Header
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Icon(
-                                Icons.pin_drop_rounded,
-                                color: Color(0xFF0284C7),
-                                size: 20,
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  isMr ? 'नवीन ठिकाण नोंदवा' : 'Tag New Ward Location',
-                                  style: const TextStyle(
-                                    fontSize: 17.5,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF0F172A),
-                                  ),
-                                ),
-                                Text(
-                                  isMr ? 'प्रभागातील ठिकाण, केंद्र किंवा काम टॅग करा' : 'Tag location, booth or civic spot',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Color(0xFF64748B),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                          onPressed: () => Navigator.pop(sheetCtx),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(height: 1),
 
                   // Content
                   Expanded(

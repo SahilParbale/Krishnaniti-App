@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/social_organization_model.dart';
 import '../../../data/repositories/social_organization_repository.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/app_modal_sheet.dart';
 
 class SocialOrgDetailScreen extends ConsumerStatefulWidget {
   final SocialOrganizationModel organization;
@@ -107,46 +108,6 @@ class _SocialOrgDetailScreenState extends ConsumerState<SocialOrgDetailScreen> {
     final yearCtrl = TextEditingController(text: DateTime.now().year.toString());
     final descCtrl = TextEditingController();
 
-    InputDecoration inputDec({String? hint, String? prefixText}) {
-      return InputDecoration(
-        hintText: hint,
-        prefixText: prefixText,
-        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
-        prefixStyle: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        filled: true,
-        fillColor: Colors.white,
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1.0),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
-        ),
-      );
-    }
-
-    Widget fieldLabel(String text, {bool isRequired = false}) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 5.0),
-        child: RichText(
-          text: TextSpan(
-            text: text,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-            children: isRequired
-                ? const [
-                    TextSpan(
-                      text: ' *',
-                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                    ),
-                  ]
-                : [],
-          ),
-        ),
-      );
-    }
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -164,155 +125,130 @@ class _SocialOrgDetailScreenState extends ConsumerState<SocialOrgDetailScreen> {
             ),
           ],
         ),
-        padding: EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 8,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-        ),
         child: Column(
           children: [
-            // Top Drag Handle
-            Center(
-              child: Container(
-                width: 44,
-                height: 5,
-                margin: const EdgeInsets.only(top: 6, bottom: 12),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(3),
-                ),
-              ),
+            AppModalHeader(
+              icon: Icons.event_available_rounded,
+              title: isMr ? 'नवीन कार्यक्रम / उपक्रम जोडा' : 'Add New Event / Activity',
+              subtitle: isMr ? 'मंडळाचा उपक्रम किंवा कार्यक्रम नोंदवा' : 'Record organization event or activity',
+              onClose: () => Navigator.pop(ctx),
             ),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.event_available_rounded, color: Color(0xFF0284C7), size: 20),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    isMr ? 'नवीन कार्यक्रम / उपक्रम जोडा' : 'Add New Event / Activity',
-                    style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                  onPressed: () => Navigator.pop(ctx),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
             Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Event Title & Year side-by-side
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          flex: 7,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              fieldLabel(isMr ? 'कार्यक्रमाचे नाव' : 'Event Name', isRequired: true),
-                              TextField(
-                                controller: titleCtrl,
-                                decoration: inputDec(hint: isMr ? 'उदा. मोफत आरोग्य शिबीर, शिवजयंती' : 'e.g. Free Health Camp, Dahi Handi'),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          flex: 3,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              fieldLabel(isMr ? 'वर्ष' : 'Year', isRequired: true),
-                              TextField(
-                                controller: yearCtrl,
-                                keyboardType: TextInputType.number,
-                                decoration: inputDec(hint: '2026'),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Description
-                    fieldLabel(isMr ? 'तपशीलवार माहिती व योगदान' : 'Detailed Event Notes'),
-                    TextField(
-                      controller: descCtrl,
-                      maxLines: 3,
-                      decoration: inputDec(hint: isMr ? 'सहभागी, प्रमुख पाहुणे, पुरस्कार व सामाजिक प्रभाव...' : 'Participants, chief guests, awards, and social impact...'),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Submit
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          if (titleCtrl.text.trim().isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(isMr ? 'कृपया कार्यक्रमाचे नाव टाका.' : 'Please enter event name.')),
-                            );
-                            return;
-                          }
-
-                          final newEvent = SocialOrgEventModel(
-                            id: 'evt-${DateTime.now().millisecondsSinceEpoch}',
-                            title: titleCtrl.text.trim(),
-                            titleMr: titleCtrl.text.trim(),
-                            year: int.tryParse(yearCtrl.text.trim()) ?? DateTime.now().year,
-                            description: descCtrl.text.trim(),
-                            descriptionMr: descCtrl.text.trim(),
-                          );
-
-                          final repo = ref.read(socialOrgRepoProvider);
-                          await repo.addEvent(_org.id, newEvent);
-
-                          if (ctx.mounted) {
-                            Navigator.pop(ctx);
-                          }
-                          if (!mounted) return;
-                          _refreshOrg();
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(isMr ? 'कार्यक्रम यशस्वीरित्या जोडला!' : 'Event added successfully!'),
-                              backgroundColor: const Color(0xFF16A34A),
+              child: ListView(
+                padding: EdgeInsets.only(
+                  left: 20,
+                  right: 20,
+                  top: 16,
+                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+                ),
+                children: [
+                  // Event Title & Year side-by-side
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 7,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            AppFieldLabel(
+                              label: isMr ? 'कार्यक्रमाचे नाव' : 'Event Name',
+                              isRequired: true,
                             ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0284C7),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          elevation: 0,
-                        ),
-                        child: Text(
-                          isMr ? 'कार्यक्रम जतन करा' : 'Save Event',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                            TextField(
+                              controller: titleCtrl,
+                              decoration: appInputDecoration(
+                                hint: isMr ? 'उदा. मोफत आरोग्य शिबीर, शिवजयंती' : 'e.g. Free Health Camp, Dahi Handi',
+                              ),
+                            ),
+                          ],
                         ),
                       ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        flex: 3,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            AppFieldLabel(
+                              label: isMr ? 'वर्ष' : 'Year',
+                              isRequired: true,
+                            ),
+                            TextField(
+                              controller: yearCtrl,
+                              keyboardType: TextInputType.number,
+                              decoration: appInputDecoration(hint: '2026'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Description
+                  AppFieldLabel(label: isMr ? 'तपशीलवार माहिती व योगदान' : 'Detailed Event Notes'),
+                  TextField(
+                    controller: descCtrl,
+                    maxLines: 3,
+                    decoration: appInputDecoration(
+                      hint: isMr ? 'सहभागी, प्रमुख पाहुणे, पुरस्कार व सामाजिक प्रभाव...' : 'Participants, chief guests, awards, and social impact...',
                     ),
-                    const SizedBox(height: 10),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Submit
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        if (titleCtrl.text.trim().isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(isMr ? 'कृपया कार्यक्रमाचे नाव टाका.' : 'Please enter event name.')),
+                          );
+                          return;
+                        }
+
+                        final newEvent = SocialOrgEventModel(
+                          id: 'evt-${DateTime.now().millisecondsSinceEpoch}',
+                          title: titleCtrl.text.trim(),
+                          titleMr: titleCtrl.text.trim(),
+                          year: int.tryParse(yearCtrl.text.trim()) ?? DateTime.now().year,
+                          description: descCtrl.text.trim(),
+                          descriptionMr: descCtrl.text.trim(),
+                        );
+
+                        final repo = ref.read(socialOrgRepoProvider);
+                        await repo.addEvent(_org.id, newEvent);
+
+                        if (ctx.mounted) {
+                          Navigator.pop(ctx);
+                        }
+                        if (!mounted) return;
+                        _refreshOrg();
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(isMr ? 'कार्यक्रम यशस्वीरित्या जोडला!' : 'Event added successfully!'),
+                            backgroundColor: const Color(0xFF16A34A),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0284C7),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        isMr ? 'कार्यक्रम जतन करा' : 'Save Event',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                ],
               ),
             ),
           ],
@@ -338,46 +274,6 @@ class _SocialOrgDetailScreenState extends ConsumerState<SocialOrgDetailScreen> {
     final descCtrl = TextEditingController(text: _org.description);
     String status = _org.status;
 
-    InputDecoration inputDec({String? hint, String? prefixText}) {
-      return InputDecoration(
-        hintText: hint,
-        prefixText: prefixText,
-        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
-        prefixStyle: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        filled: true,
-        fillColor: Colors.white,
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1.0),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
-        ),
-      );
-    }
-
-    Widget fieldLabel(String text, {bool isRequired = false}) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 5.0),
-        child: RichText(
-          text: TextSpan(
-            text: text,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-            children: isRequired
-                ? const [
-                    TextSpan(
-                      text: ' *',
-                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                    ),
-                  ]
-                : [],
-          ),
-        ),
-      );
-    }
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -396,305 +292,297 @@ class _SocialOrgDetailScreenState extends ConsumerState<SocialOrgDetailScreen> {
               ),
             ],
           ),
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 8,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-          ),
           child: Column(
             children: [
-              // Top Drag Handle
-              Center(
-                child: Container(
-                  width: 44,
-                  height: 5,
-                  margin: const EdgeInsets.only(top: 6, bottom: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                ),
+              AppModalHeader(
+                icon: Icons.apartment_rounded,
+                title: isMr ? 'संस्थेची माहिती सुधारा' : 'Edit Organization Details',
+                subtitle: isMr ? 'मंडळाची माहिती व पदाधिकारी तपशील अद्यतनित करा' : 'Update organization details and office bearers',
+                onClose: () => Navigator.pop(ctx),
               ),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.apartment_rounded, color: Color(0xFF0284C7), size: 20),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      isMr ? 'संस्थेची माहिती सुधारा' : 'Edit Organization Details',
-                      style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                    onPressed: () => Navigator.pop(ctx),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
               Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Name Marathi & Name English side-by-side
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                fieldLabel(isMr ? 'संस्थेचे नाव (मराठी)' : 'Organization Name (Marathi)', isRequired: true),
-                                TextField(
-                                  controller: nameMrCtrl,
-                                  decoration: inputDec(hint: isMr ? 'उदा. बाळ गणेश मंडळ' : 'e.g. Bal Ganesh Mandal'),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                fieldLabel(isMr ? 'संस्थेचे नाव (इंग्रजी)' : 'Organization Name (English)'),
-                                TextField(
-                                  controller: nameEnCtrl,
-                                  decoration: inputDec(hint: isMr ? 'उदा. Bal Ganesh Mandal' : 'e.g. Bal Ganesh Mandal'),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Organization Type & Status side-by-side
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                fieldLabel(isMr ? 'संस्थेचा प्रकार' : 'Organization Type', isRequired: true),
-                                DropdownButtonFormField<String>(
-                                  initialValue: type,
-                                  decoration: inputDec(),
-                                  items: [
-                                    DropdownMenuItem(value: 'ganpati_mandal', child: Text(isMr ? 'गणेश मंडळ' : 'Ganesh Mandal')),
-                                    DropdownMenuItem(value: 'navratri_mandal', child: Text(isMr ? 'नवरात्र मंडळ' : 'Navratri Mandal')),
-                                    DropdownMenuItem(value: 'sports_cricket', child: Text(isMr ? 'क्रीडा क्लब' : 'Cricket / Sports')),
-                                    DropdownMenuItem(value: 'ngo', child: Text(isMr ? 'एन.जी.ओ / ट्रस्ट' : 'NGO / Trust')),
-                                    DropdownMenuItem(value: 'other', child: Text(isMr ? 'इतर मंडळ' : 'Other Mandals')),
-                                  ],
-                                  onChanged: (val) {
-                                    if (val != null) setModalState(() => type = val);
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                fieldLabel(isMr ? 'स्थिती' : 'Status'),
-                                DropdownButtonFormField<String>(
-                                  initialValue: status,
-                                  decoration: inputDec(),
-                                  items: const [
-                                    DropdownMenuItem(value: 'Active', child: Text('Active')),
-                                    DropdownMenuItem(value: 'Inactive', child: Text('Inactive')),
-                                  ],
-                                  onChanged: (val) {
-                                    if (val != null) setModalState(() => status = val);
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-
-                      // President Name & Mobile (+91) side-by-side
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                fieldLabel(isMr ? 'प्रमुख व्यक्ती / अध्यक्ष नाव' : 'President Name', isRequired: true),
-                                TextField(
-                                  controller: presNameCtrl,
-                                  decoration: inputDec(hint: isMr ? 'उदा. गणेश जाधव' : 'e.g. Ganesh Jadhav'),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                fieldLabel(isMr ? 'मोबाईल नंबर' : 'Mobile (+91)', isRequired: true),
-                                TextField(
-                                  controller: presPhoneCtrl,
-                                  keyboardType: TextInputType.phone,
-                                  maxLength: 10,
-                                  buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
-                                  decoration: inputDec(prefixText: '+91 ', hint: '98221xxxxx'),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Total Members & Established Year side-by-side
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                fieldLabel(isMr ? 'सदस्य संख्या (अंदाजे)' : 'Total Members (Approx)'),
-                                TextField(
-                                  controller: membersCtrl,
-                                  keyboardType: TextInputType.number,
-                                  decoration: inputDec(hint: '50'),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                fieldLabel(isMr ? 'स्थापना वर्ष' : 'Established Year'),
-                                TextField(
-                                  controller: estCtrl,
-                                  keyboardType: TextInputType.number,
-                                  decoration: inputDec(hint: '2015'),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Area / Location
-                      fieldLabel(isMr ? 'परिसर / प्रभाग क्षेत्र' : 'Area / Vicinity', isRequired: true),
-                      TextField(
-                        controller: areaCtrl,
-                        decoration: inputDec(hint: isMr ? 'उदा. सेक्टर ३, मुख्य चौक' : 'e.g. Sector 3, Main Chowk'),
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Nagarsevak Support Received Notes
-                      fieldLabel(isMr ? 'आपल्या वतीने मिळालेली मदत / प्रायोजकत्व' : 'Corporator Support & Sponsorship History'),
-                      TextField(
-                        controller: supportCtrl,
-                        maxLines: 2,
-                        decoration: inputDec(
-                          hint: isMr
-                              ? 'उदा. स्टेज उभारणी, साऊंड परवानगी, चषक प्रायोजकत्व...'
-                              : 'e.g. Stage setup, sound permissions, trophy sponsorship...',
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Description
-                      fieldLabel(isMr ? 'संस्थेबद्दल माहिती व उद्दिष्टे' : 'About Organization & Objectives'),
-                      TextField(
-                        controller: descCtrl,
-                        maxLines: 2,
-                        decoration: inputDec(
-                          hint: isMr
-                              ? 'सामाजिक उपक्रम, समाजकार्य व योगदान...'
-                              : 'Social initiatives, community outreach & contributions...',
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Submit Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            final name = nameMrCtrl.text.trim().isNotEmpty ? nameMrCtrl.text.trim() : nameEnCtrl.text.trim();
-                            if (name.isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(isMr ? 'कृपया संस्थेचे नाव टाका.' : 'Please enter organization name.')),
-                              );
-                              return;
-                            }
-
-                            final updated = _org.copyWith(
-                              name: name,
-                              nameMarathi: nameMrCtrl.text.trim().isNotEmpty ? nameMrCtrl.text.trim() : name,
-                              nameEnglish: nameEnCtrl.text.trim().isNotEmpty ? nameEnCtrl.text.trim() : name,
-                              type: type,
-                              presidentName: presNameCtrl.text.trim(),
-                              presidentMobile: presPhoneCtrl.text.trim(),
-                              membersCount: int.tryParse(membersCtrl.text.trim()) ?? 0,
-                              area: areaCtrl.text.trim(),
-                              establishedYear: estCtrl.text.trim(),
-                              supportReceived: supportCtrl.text.trim(),
-                              description: descCtrl.text.trim(),
-                              status: status,
-                            );
-
-                            final repo = ref.read(socialOrgRepoProvider);
-                            await repo.updateOrganization(updated);
-
-                            if (ctx.mounted) {
-                              Navigator.pop(ctx);
-                            }
-                            if (!mounted) return;
-                            _refreshOrg();
-
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(isMr ? 'माहिती अद्यतनित केली!' : 'Details updated!'),
-                                backgroundColor: const Color(0xFF16A34A),
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0284C7),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            elevation: 0,
-                          ),
-                          child: Text(
-                            isMr ? 'बदल जतन करा' : 'Save Changes',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                    ],
+                child: ListView(
+                  padding: EdgeInsets.only(
+                    left: 20,
+                    right: 20,
+                    top: 16,
+                    bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
                   ),
+                  children: [
+                    // Name Marathi & Name English side-by-side
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              AppFieldLabel(
+                                label: isMr ? 'संस्थेचे नाव (मराठी)' : 'Organization Name (Marathi)',
+                                isRequired: true,
+                              ),
+                              TextField(
+                                controller: nameMrCtrl,
+                                decoration: appInputDecoration(hint: isMr ? 'उदा. बाळ गणेश मंडळ' : 'e.g. Bal Ganesh Mandal'),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              AppFieldLabel(
+                                label: isMr ? 'संस्थेचे नाव (इंग्रजी)' : 'Organization Name (English)',
+                              ),
+                              TextField(
+                                controller: nameEnCtrl,
+                                decoration: appInputDecoration(hint: isMr ? 'उदा. Bal Ganesh Mandal' : 'e.g. Bal Ganesh Mandal'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Organization Type & Status side-by-side
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              AppFieldLabel(
+                                label: isMr ? 'संस्थेचा प्रकार' : 'Organization Type',
+                                isRequired: true,
+                              ),
+                              DropdownButtonFormField<String>(
+                                initialValue: type,
+                                decoration: appInputDecoration(),
+                                items: [
+                                  DropdownMenuItem(value: 'ganpati_mandal', child: Text(isMr ? 'गणेश मंडळ' : 'Ganesh Mandal')),
+                                  DropdownMenuItem(value: 'navratri_mandal', child: Text(isMr ? 'नवरात्र मंडळ' : 'Navratri Mandal')),
+                                  DropdownMenuItem(value: 'sports_cricket', child: Text(isMr ? 'क्रीडा क्लब' : 'Cricket / Sports')),
+                                  DropdownMenuItem(value: 'ngo', child: Text(isMr ? 'एन.जी.ओ / ट्रस्ट' : 'NGO / Trust')),
+                                  DropdownMenuItem(value: 'other', child: Text(isMr ? 'इतर मंडळ' : 'Other Mandals')),
+                                ],
+                                onChanged: (val) {
+                                  if (val != null) setModalState(() => type = val);
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              AppFieldLabel(
+                                label: isMr ? 'स्थिती' : 'Status',
+                              ),
+                              DropdownButtonFormField<String>(
+                                initialValue: status,
+                                decoration: appInputDecoration(),
+                                items: const [
+                                  DropdownMenuItem(value: 'Active', child: Text('Active')),
+                                  DropdownMenuItem(value: 'Inactive', child: Text('Inactive')),
+                                ],
+                                onChanged: (val) {
+                                  if (val != null) setModalState(() => status = val);
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+
+                    // President Name & Mobile (+91) side-by-side
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              AppFieldLabel(
+                                label: isMr ? 'प्रमुख व्यक्ती / अध्यक्ष नाव' : 'President Name',
+                                isRequired: true,
+                              ),
+                              TextField(
+                                controller: presNameCtrl,
+                                decoration: appInputDecoration(hint: isMr ? 'उदा. गणेश जाधव' : 'e.g. Ganesh Jadhav'),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              AppFieldLabel(
+                                label: isMr ? 'मोबाईल नंबर' : 'Mobile (+91)',
+                                isRequired: true,
+                              ),
+                              TextField(
+                                controller: presPhoneCtrl,
+                                keyboardType: TextInputType.phone,
+                                maxLength: 10,
+                                buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
+                                decoration: appInputDecoration(prefixText: '+91 ', hint: '98221xxxxx'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Total Members & Established Year side-by-side
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              AppFieldLabel(
+                                label: isMr ? 'सदस्य संख्या (अंदाजे)' : 'Total Members (Approx)',
+                              ),
+                              TextField(
+                                controller: membersCtrl,
+                                keyboardType: TextInputType.number,
+                                decoration: appInputDecoration(hint: '50'),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              AppFieldLabel(
+                                label: isMr ? 'स्थापना वर्ष' : 'Established Year',
+                              ),
+                              TextField(
+                                controller: estCtrl,
+                                keyboardType: TextInputType.number,
+                                decoration: appInputDecoration(hint: '2015'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Area / Location
+                    AppFieldLabel(
+                      label: isMr ? 'परिसर / प्रभाग क्षेत्र' : 'Area / Vicinity',
+                      isRequired: true,
+                    ),
+                    TextField(
+                      controller: areaCtrl,
+                      decoration: appInputDecoration(hint: isMr ? 'उदा. सेक्टर ३, मुख्य चौक' : 'e.g. Sector 3, Main Chowk'),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Nagarsevak Support Received Notes
+                    AppFieldLabel(
+                      label: isMr ? 'आपल्या वतीने मिळालेली मदत / प्रायोजकत्व' : 'Corporator Support & Sponsorship History',
+                    ),
+                    TextField(
+                      controller: supportCtrl,
+                      maxLines: 2,
+                      decoration: appInputDecoration(
+                        hint: isMr
+                            ? 'उदा. स्टेज उभारणी, साऊंड परवानगी, चषक प्रायोजकत्व...'
+                            : 'e.g. Stage setup, sound permissions, trophy sponsorship...',
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Description
+                    AppFieldLabel(
+                      label: isMr ? 'संस्थेबद्दल माहिती व उद्दिष्टे' : 'About Organization & Objectives',
+                    ),
+                    TextField(
+                      controller: descCtrl,
+                      maxLines: 2,
+                      decoration: appInputDecoration(
+                        hint: isMr
+                            ? 'सामाजिक उपक्रम, समाजकार्य व योगदान...'
+                            : 'Social initiatives, community outreach & contributions...',
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Submit Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          final name = nameMrCtrl.text.trim().isNotEmpty ? nameMrCtrl.text.trim() : nameEnCtrl.text.trim();
+                          if (name.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(isMr ? 'कृपया संस्थेचे नाव टाका.' : 'Please enter organization name.')),
+                            );
+                            return;
+                          }
+
+                          final updated = _org.copyWith(
+                            name: name,
+                            nameMarathi: nameMrCtrl.text.trim().isNotEmpty ? nameMrCtrl.text.trim() : name,
+                            nameEnglish: nameEnCtrl.text.trim().isNotEmpty ? nameEnCtrl.text.trim() : name,
+                            type: type,
+                            presidentName: presNameCtrl.text.trim(),
+                            presidentMobile: presPhoneCtrl.text.trim(),
+                            membersCount: int.tryParse(membersCtrl.text.trim()) ?? 0,
+                            area: areaCtrl.text.trim(),
+                            establishedYear: estCtrl.text.trim(),
+                            supportReceived: supportCtrl.text.trim(),
+                            description: descCtrl.text.trim(),
+                            status: status,
+                          );
+
+                          final repo = ref.read(socialOrgRepoProvider);
+                          await repo.updateOrganization(updated);
+
+                          if (ctx.mounted) {
+                            Navigator.pop(ctx);
+                          }
+                          if (!mounted) return;
+                          _refreshOrg();
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(isMr ? 'माहिती अद्यतनित केली!' : 'Details updated!'),
+                              backgroundColor: const Color(0xFF16A34A),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0284C7),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          elevation: 0,
+                        ),
+                        child: Text(
+                          isMr ? 'बदल जतन करा' : 'Save Changes',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
                 ),
               ),
             ],

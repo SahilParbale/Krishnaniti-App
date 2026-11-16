@@ -6,6 +6,7 @@ import '../../../data/repositories/complaints_repository.dart';
 import '../../../data/repositories/voters_repository.dart';
 import '../../../data/repositories/letters_repository.dart';
 import '../complaints/new_complaint_screen.dart';
+import '../../widgets/app_modal_sheet.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/navigation_provider.dart';
 
@@ -132,78 +133,73 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        height: MediaQuery.of(context).size.height * 0.70,
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 20,
+              offset: Offset(0, -4),
+            ),
+          ],
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFCBD5E1),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+            // 1. FIXED HEADER
+            AppModalHeader(
+              icon: Icons.help_outline_rounded,
+              title: 'Dashboard Overview & Help',
+              subtitle: 'Central command guide and navigation hints',
+              onClose: () => Navigator.pop(ctx),
             ),
-            const SizedBox(height: 18),
-            Row(
-              children: const [
-                Icon(Icons.help_outline_rounded, color: Color(0xFF0284C7), size: 24),
-                SizedBox(width: 10),
-                Text(
-                  'Dashboard Overview & Help',
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF0F172A),
+
+            // 2. SCROLLABLE CONTENT & BUTTON
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(20),
+                children: [
+                  _buildHelpStep(
+                    icon: Icons.dashboard_rounded,
+                    title: 'Central Command Hub',
+                    desc: 'Gives a quick summary of citizen requests, municipal letters, and ward voter count.',
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            _buildHelpStep(
-              icon: Icons.dashboard_rounded,
-              title: 'Central Command Hub',
-              desc: 'Gives a quick summary of citizen requests, municipal letters, and ward voter count.',
-            ),
-            _buildHelpStep(
-              icon: Icons.add_circle_outline_rounded,
-              title: 'Create a New Request',
-              desc: 'Tap "+ New Request" to log a citizen civic grievance or departmental petition.',
-            ),
-            _buildHelpStep(
-              icon: Icons.auto_awesome_rounded,
-              title: 'AI Daily Briefing',
-              desc: 'AI synthesized ward pulse identifying urgent bottlenecks and pending issues.',
-            ),
-            _buildHelpStep(
-              icon: Icons.bar_chart_rounded,
-              title: 'Status Overview & Clearance',
-              desc: 'Visual breakdown of pending, in-progress, and resolved issues with clearance rate.',
-            ),
-            _buildHelpStep(
-              icon: Icons.notifications_active_outlined,
-              title: 'Live Activity Feed',
-              desc: 'Real-time updates of citizen complaints with instant filtering by Pending status.',
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(ctx),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0284C7),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                child: const Text('Got it!', style: TextStyle(fontWeight: FontWeight.w700)),
+                  _buildHelpStep(
+                    icon: Icons.add_circle_outline_rounded,
+                    title: 'Create a New Request',
+                    desc: 'Tap "+ New Request" to log a citizen civic grievance or departmental petition.',
+                  ),
+                  _buildHelpStep(
+                    icon: Icons.auto_awesome_rounded,
+                    title: 'AI Daily Briefing',
+                    desc: 'AI synthesized ward pulse identifying urgent bottlenecks and pending issues.',
+                  ),
+                  _buildHelpStep(
+                    icon: Icons.bar_chart_rounded,
+                    title: 'Status Overview & Clearance',
+                    desc: 'Visual breakdown of pending, in-progress, and resolved issues with clearance rate.',
+                  ),
+                  _buildHelpStep(
+                    icon: Icons.notifications_active_outlined,
+                    title: 'Live Activity Feed',
+                    desc: 'Real-time updates of citizen complaints with instant filtering by Pending status.',
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0284C7),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: const Text('Got it!', style: TextStyle(fontWeight: FontWeight.w700)),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -280,137 +276,147 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        height: MediaQuery.of(context).size.height * 0.65,
         decoration: const BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 20,
+              offset: Offset(0, -4),
+            ),
+          ],
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFCBD5E1),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+            // 1. FIXED HEADER
+            AppModalHeader(
+              icon: Icons.assignment_outlined,
+              title: complaint.id,
+              subtitle: 'Status: ${complaint.status}',
+              onClose: () => Navigator.pop(ctx),
             ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  complaint.id,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF64748B),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
-                  decoration: BoxDecoration(
-                    color: statusBg,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: statusColor.withOpacity(0.3)),
-                  ),
-                  child: Text(
-                    complaint.status,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: statusColor,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              complaint.title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF0F172A),
-                height: 1.25,
-              ),
-            ),
-            if (complaint.description.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                complaint.description,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Color(0xFF475569),
-                  height: 1.4,
-                ),
-              ),
-            ],
-            const SizedBox(height: 14),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: Row(
+
+            // 2. SCROLLABLE DETAILS & ACTIONS
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(20),
                 children: [
-                  const Icon(Icons.location_on_outlined, size: 16, color: Color(0xFF0284C7)),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      complaint.area ?? complaint.location ?? 'Ward No. 12, Prabhag 12',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Category & Priority',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
+                        decoration: BoxDecoration(
+                          color: statusBg,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: statusColor.withOpacity(0.3)),
+                        ),
+                        child: Text(
+                          complaint.status,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: statusColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    complaint.title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF0F172A),
+                      height: 1.25,
                     ),
                   ),
-                  if (complaint.citizenName != null) ...[
-                    const SizedBox(width: 6),
+                  if (complaint.description.isNotEmpty) ...[
+                    const SizedBox(height: 8),
                     Text(
-                      '• ${complaint.citizenName}',
-                      style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                      complaint.description,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF475569),
+                        height: 1.4,
+                      ),
                     ),
                   ],
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.location_on_outlined, size: 16, color: Color(0xFF0284C7)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            complaint.area ?? complaint.location ?? 'Ward No. 12, Prabhag 12',
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                          ),
+                        ),
+                        if (complaint.citizenName != null) ...[
+                          const SizedBox(width: 6),
+                          Text(
+                            '• ${complaint.citizenName}',
+                            style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF64748B),
+                            side: const BorderSide(color: Color(0xFFCBD5E1)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                          ),
+                          child: const Text('Close', style: TextStyle(fontWeight: FontWeight.w600)),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            widget.onTabChange(1);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0284C7),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                          ),
+                          child: const Text('Open in Requests', style: TextStyle(fontWeight: FontWeight.w700)),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
-            ),
-            const SizedBox(height: 18),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF64748B),
-                      side: const BorderSide(color: Color(0xFFCBD5E1)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: const Text('Close', style: TextStyle(fontWeight: FontWeight.w600)),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      widget.onTabChange(1);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0284C7),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: const Text('Open in Requests', style: TextStyle(fontWeight: FontWeight.w700)),
-                  ),
-                ),
-              ],
             ),
           ],
         ),

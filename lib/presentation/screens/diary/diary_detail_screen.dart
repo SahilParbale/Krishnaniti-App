@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../data/models/diary_task_model.dart';
 import '../../../data/repositories/diary_tasks_repository.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/app_modal_sheet.dart';
 import 'diary_report_generator.dart';
 
 class DiaryDetailScreen extends ConsumerStatefulWidget {
@@ -162,6 +163,7 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
     String selectedPriority = _task.priority;
     String selectedStatus = _task.status;
 
+    final isMr = ref.read(isMarathiProvider);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -172,371 +174,368 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
             height: MediaQuery.of(context).size.height * 0.90,
             decoration: const BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 20,
+                  offset: Offset(0, -4),
+                ),
+              ],
             ),
             child: Column(
               children: [
-                // Modal Handle & Header
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  decoration: const BoxDecoration(
-                    border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Edit Diary Task',
-                        style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.pop(ctx),
-                        icon: const Icon(Icons.close, color: Color(0xFF64748B)),
-                      ),
-                    ],
-                  ),
+                // 1. FIXED HEADER
+                AppModalHeader(
+                  icon: Icons.edit_note_rounded,
+                  title: isMr ? 'दैनंदिनी नोंद संपादित करा' : 'Edit Diary Task',
+                  subtitle: isMr
+                      ? 'दैनिक नियोजन व माहिती अद्ययावत करा'
+                      : 'Update daily agenda, location, and details',
+                  onClose: () => Navigator.pop(ctx),
                 ),
 
-                // Form
+                // 2. SCROLLABLE FORM & SUBMIT BUTTON
                 Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Title
-                        const Text('Task Title *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                        const SizedBox(height: 6),
-                        TextField(
-                          controller: titleCtrl,
-                          decoration: InputDecoration(
-                            hintText: 'e.g. Meeting with Executive Engineer',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Priority & Status
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('Priority', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                                  const SizedBox(height: 6),
-                                  DropdownButtonFormField<String>(
-                                    value: ['Low', 'Medium', 'High'].contains(selectedPriority) ? selectedPriority : 'Medium',
-                                    decoration: InputDecoration(
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                                    ),
-                                    items: const [
-                                      DropdownMenuItem(value: 'Low', child: Text('Low (कमी)')),
-                                      DropdownMenuItem(value: 'Medium', child: Text('Medium (मध्यम)')),
-                                      DropdownMenuItem(value: 'High', child: Text('High (उच्च)')),
-                                    ],
-                                    onChanged: (val) {
-                                      if (val != null) setModalState(() => selectedPriority = val);
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('Status', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                                  const SizedBox(height: 6),
-                                  DropdownButtonFormField<String>(
-                                    value: ['Pending', 'Completed', 'InProgress'].contains(selectedStatus) ? selectedStatus : 'Pending',
-                                    decoration: InputDecoration(
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                                    ),
-                                    items: const [
-                                      DropdownMenuItem(value: 'Pending', child: Text('Pending (प्रलंबित)')),
-                                      DropdownMenuItem(value: 'InProgress', child: Text('In Progress (प्रगतीत)')),
-                                      DropdownMenuItem(value: 'Completed', child: Text('Completed (पूर्ण)')),
-                                    ],
-                                    onChanged: (val) {
-                                      if (val != null) setModalState(() => selectedStatus = val);
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Date & Time
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('Scheduled Date', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                                  const SizedBox(height: 6),
-                                  InkWell(
-                                    onTap: () async {
-                                      final picked = await showDatePicker(
-                                        context: context,
-                                        initialDate: selectedDate ?? DateTime.now(),
-                                        firstDate: DateTime(2020),
-                                        lastDate: DateTime(2030),
-                                      );
-                                      if (picked != null) {
-                                        setModalState(() => selectedDate = picked);
-                                      }
-                                    },
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-                                      decoration: BoxDecoration(
-                                        border: Border.all(color: const Color(0xFFCBD5E1)),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFF0284C7)),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            selectedDate != null ? DateFormat('dd MMM yyyy').format(selectedDate!) : 'Pick Date',
-                                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('Scheduled Time', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                                  const SizedBox(height: 6),
-                                  InkWell(
-                                    onTap: () async {
-                                      final picked = await showTimePicker(
-                                        context: context,
-                                        initialTime: selectedTime ?? const TimeOfDay(hour: 10, minute: 0),
-                                      );
-                                      if (picked != null) {
-                                        setModalState(() => selectedTime = picked);
-                                      }
-                                    },
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-                                      decoration: BoxDecoration(
-                                        border: Border.all(color: const Color(0xFFCBD5E1)),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          const Icon(Icons.access_time_rounded, size: 16, color: Color(0xFF0284C7)),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            selectedTime != null ? selectedTime!.format(context) : 'Pick Time',
-                                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Location & Office
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('Location / Address', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                                  const SizedBox(height: 6),
-                                  TextField(
-                                    controller: addrCtrl,
-                                    decoration: InputDecoration(
-                                      hintText: 'e.g. Sector 2 Market Road',
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('Office / Dept', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                                  const SizedBox(height: 6),
-                                  TextField(
-                                    controller: officeCtrl,
-                                    decoration: InputDecoration(
-                                      hintText: 'e.g. Water Supply Dept',
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Person to meet & Assigned staff
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('Person to Meet', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                                  const SizedBox(height: 6),
-                                  TextField(
-                                    controller: personCtrl,
-                                    decoration: InputDecoration(
-                                      hintText: 'e.g. Executive Engineer',
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('Assigned To', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                                  const SizedBox(height: 6),
-                                  TextField(
-                                    controller: staffCtrl,
-                                    decoration: InputDecoration(
-                                      hintText: 'e.g. Sunil Shinde (JE)',
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Description
-                        const Text('Detailed Instructions & Notes', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                        const SizedBox(height: 6),
-                        TextField(
-                          controller: descCtrl,
-                          maxLines: 3,
-                          decoration: InputDecoration(
-                            hintText: 'Agenda points, background, or action required...',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                          ),
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        // Save Button
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () async {
-                              final t = titleCtrl.text.trim();
-                              if (t.isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Please enter task title')),
-                                );
-                                return;
-                              }
-                              Navigator.pop(ctx);
-                              setState(() => _isUpdating = true);
-                              try {
-                                String? timeStr;
-                                if (selectedTime != null) {
-                                  timeStr = '${selectedTime!.hour.toString().padLeft(2, '0')}:${selectedTime!.minute.toString().padLeft(2, '0')}';
-                                }
-
-                                final updates = {
-                                  'title': t,
-                                  'description': descCtrl.text.trim(),
-                                  'priority': selectedPriority,
-                                  'status': selectedStatus,
-                                  'due_date': selectedDate != null ? DateFormat('yyyy-MM-dd').format(selectedDate!) : null,
-                                  'due_time': timeStr,
-                                  'address': addrCtrl.text.trim(),
-                                  'office_name': officeCtrl.text.trim(),
-                                  'meet_person_name': personCtrl.text.trim(),
-                                  'assigned_to': staffCtrl.text.trim(),
-                                };
-
-                                final repo = ref.read(diaryTasksRepoProvider);
-                                await repo.updateTask(_task.id, updates);
-                                setState(() {
-                                  _task = _task.copyWith(
-                                    title: t,
-                                    description: descCtrl.text.trim(),
-                                    priority: selectedPriority,
-                                    status: selectedStatus,
-                                    dueDate: selectedDate,
-                                    dueTime: timeStr,
-                                    address: addrCtrl.text.trim(),
-                                    officeName: officeCtrl.text.trim(),
-                                    meetPersonName: personCtrl.text.trim(),
-                                    assignedStaffName: staffCtrl.text.trim(),
-                                  );
-                                });
-                                widget.onTaskUpdated?.call();
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Task updated successfully'),
-                                      backgroundColor: Color(0xFF0F766E),
-                                    ),
-                                  );
-                                }
-                              } catch (e) {
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Failed to update: $e'), backgroundColor: Colors.red),
-                                  );
-                                }
-                              } finally {
-                                if (mounted) setState(() => _isUpdating = false);
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF0284C7),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            ),
-                            child: const Text('Save Changes', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-                          ),
-                        ),
-                      ],
+                  child: ListView(
+                    padding: EdgeInsets.only(
+                      left: 20,
+                      right: 20,
+                      top: 16,
+                      bottom: MediaQuery.of(context).viewInsets.bottom + 24,
                     ),
+                    children: [
+                      // Title
+                      AppFieldLabel(
+                        label: isMr ? 'कार्याचे शीर्षक' : 'Task Title',
+                        isRequired: true,
+                      ),
+                      TextField(
+                        controller: titleCtrl,
+                        decoration: appInputDecoration(
+                          hint: isMr ? 'उदा. कार्यकारी अभियंत्यांची भेट' : 'e.g. Meeting with Executive Engineer',
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Priority & Status
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                AppFieldLabel(
+                                  label: isMr ? 'प्राधान्यता' : 'Priority',
+                                ),
+                                DropdownButtonFormField<String>(
+                                  value: ['Low', 'Medium', 'High'].contains(selectedPriority) ? selectedPriority : 'Medium',
+                                  decoration: appInputDecoration(),
+                                  items: const [
+                                    DropdownMenuItem(value: 'Low', child: Text('Low (कमी)')),
+                                    DropdownMenuItem(value: 'Medium', child: Text('Medium (मध्यम)')),
+                                    DropdownMenuItem(value: 'High', child: Text('High (उच्च)')),
+                                  ],
+                                  onChanged: (val) {
+                                    if (val != null) setModalState(() => selectedPriority = val);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                AppFieldLabel(
+                                  label: isMr ? 'स्थिती' : 'Status',
+                                ),
+                                DropdownButtonFormField<String>(
+                                  value: ['Pending', 'Completed', 'InProgress'].contains(selectedStatus) ? selectedStatus : 'Pending',
+                                  decoration: appInputDecoration(),
+                                  items: const [
+                                    DropdownMenuItem(value: 'Pending', child: Text('Pending (प्रलंबित)')),
+                                    DropdownMenuItem(value: 'InProgress', child: Text('In Progress (प्रगतीत)')),
+                                    DropdownMenuItem(value: 'Completed', child: Text('Completed (पूर्ण)')),
+                                  ],
+                                  onChanged: (val) {
+                                    if (val != null) setModalState(() => selectedStatus = val);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Date & Time
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                AppFieldLabel(
+                                  label: isMr ? 'नियोजित दिनांक' : 'Scheduled Date',
+                                ),
+                                InkWell(
+                                  onTap: () async {
+                                    final picked = await showDatePicker(
+                                      context: context,
+                                      initialDate: selectedDate ?? DateTime.now(),
+                                      firstDate: DateTime(2020),
+                                      lastDate: DateTime(2030),
+                                    );
+                                    if (picked != null) {
+                                      setModalState(() => selectedDate = picked);
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: const Color(0xFFCBD5E1)),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFF0284C7)),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            selectedDate != null ? DateFormat('dd MMM yyyy').format(selectedDate!) : (isMr ? 'दिनांक निवडा' : 'Pick Date'),
+                                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                AppFieldLabel(
+                                  label: isMr ? 'नियोजित वेळ' : 'Scheduled Time',
+                                ),
+                                InkWell(
+                                  onTap: () async {
+                                    final picked = await showTimePicker(
+                                      context: context,
+                                      initialTime: selectedTime ?? const TimeOfDay(hour: 10, minute: 0),
+                                    );
+                                    if (picked != null) {
+                                      setModalState(() => selectedTime = picked);
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: const Color(0xFFCBD5E1)),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.access_time_rounded, size: 16, color: Color(0xFF0284C7)),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            selectedTime != null ? selectedTime!.format(context) : (isMr ? 'वेळ निवडा' : 'Pick Time'),
+                                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Location & Office
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                AppFieldLabel(
+                                  label: isMr ? 'ठिकाण / पत्ता' : 'Location / Address',
+                                ),
+                                TextField(
+                                  controller: addrCtrl,
+                                  decoration: appInputDecoration(
+                                    hint: isMr ? 'उदा. सेक्टर २ मार्केट रोड' : 'e.g. Sector 2 Market Road',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                AppFieldLabel(
+                                  label: isMr ? 'कार्यालय / विभाग' : 'Office / Dept',
+                                ),
+                                TextField(
+                                  controller: officeCtrl,
+                                  decoration: appInputDecoration(
+                                    hint: isMr ? 'उदा. पाणी पुरवठा विभाग' : 'e.g. Water Supply Dept',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Person to meet & Assigned staff
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                AppFieldLabel(
+                                  label: isMr ? 'भेट घ्यावयाची व्यक्ती' : 'Person to Meet',
+                                ),
+                                TextField(
+                                  controller: personCtrl,
+                                  decoration: appInputDecoration(
+                                    hint: isMr ? 'उदा. कार्यकारी अभियंता' : 'e.g. Executive Engineer',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                AppFieldLabel(
+                                  label: isMr ? 'नियुक्त कार्यकर्ता' : 'Assigned To',
+                                ),
+                                TextField(
+                                  controller: staffCtrl,
+                                  decoration: appInputDecoration(
+                                    hint: isMr ? 'उदा. सुनील शिंदे (जेई)' : 'e.g. Sunil Shinde (JE)',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Description
+                      AppFieldLabel(
+                        label: isMr ? 'तपशीलवार सूचना / मुद्दे' : 'Detailed Instructions & Notes',
+                      ),
+                      TextField(
+                        controller: descCtrl,
+                        maxLines: 3,
+                        decoration: appInputDecoration(
+                          hint: isMr ? 'अजेंडा, पार्श्वभूमी किंवा आवश्यक कृती...' : 'Agenda points, background, or action required...',
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Save Changes Button (Inside scrollable ListView so it scrolls together)
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            final t = titleCtrl.text.trim();
+                            if (t.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(isMr ? 'कृपया कार्याचे शीर्षक प्रविष्ट करा' : 'Please enter task title')),
+                              );
+                              return;
+                            }
+                            Navigator.pop(ctx);
+                            setState(() => _isUpdating = true);
+                            try {
+                              String? timeStr;
+                              if (selectedTime != null) {
+                                timeStr = '${selectedTime!.hour.toString().padLeft(2, '0')}:${selectedTime!.minute.toString().padLeft(2, '0')}';
+                              }
+
+                              final updates = {
+                                'title': t,
+                                'description': descCtrl.text.trim(),
+                                'priority': selectedPriority,
+                                'status': selectedStatus,
+                                'due_date': selectedDate != null ? DateFormat('yyyy-MM-dd').format(selectedDate!) : null,
+                                'due_time': timeStr,
+                                'address': addrCtrl.text.trim(),
+                                'office_name': officeCtrl.text.trim(),
+                                'meet_person_name': personCtrl.text.trim(),
+                                'assigned_to': staffCtrl.text.trim(),
+                              };
+
+                              final repo = ref.read(diaryTasksRepoProvider);
+                              await repo.updateTask(_task.id, updates);
+                              setState(() {
+                                _task = _task.copyWith(
+                                  title: t,
+                                  description: descCtrl.text.trim(),
+                                  priority: selectedPriority,
+                                  status: selectedStatus,
+                                  dueDate: selectedDate,
+                                  dueTime: timeStr,
+                                  address: addrCtrl.text.trim(),
+                                  officeName: officeCtrl.text.trim(),
+                                  meetPersonName: personCtrl.text.trim(),
+                                  assignedStaffName: staffCtrl.text.trim(),
+                                );
+                              });
+                              widget.onTaskUpdated?.call();
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(isMr ? 'नोंद यशस्वीरित्या अद्ययावत केली' : 'Task updated successfully'),
+                                    backgroundColor: const Color(0xFF0F766E),
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Failed to update: $e'), backgroundColor: Colors.red),
+                                );
+                              }
+                            } finally {
+                              if (mounted) setState(() => _isUpdating = false);
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0284C7),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          child: Text(
+                            isMr ? 'बदल जतन करा' : 'Save Changes',
+                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],

@@ -9,6 +9,7 @@ import '../../../data/models/voter_model.dart';
 import '../../../data/repositories/sms_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/app_modal_sheet.dart';
 
 class ConferenceMeetingModel {
   final String id;
@@ -238,27 +239,6 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
     }
   }
 
-  Widget _fieldLabel(String text, {bool isRequired = false}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            text,
-            style: const TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF334155),
-            ),
-          ),
-          if (isRequired)
-            const Text(' *', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-        ],
-      ),
-    );
-  }
-
   InputDecoration _inputDec({String? hint, Widget? prefixIcon, Widget? suffixIcon}) {
     return InputDecoration(
       hintText: hint,
@@ -318,70 +298,12 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
             ),
             child: Column(
               children: [
-                // Drag handle
-                Center(
-                  child: Container(
-                    width: 44,
-                    height: 5,
-                    margin: const EdgeInsets.only(top: 10, bottom: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
+                AppModalHeader(
+                  icon: Icons.video_call_rounded,
+                  title: isMr ? 'व्हिडिओ बैठक तयार करा' : 'Create Video Meeting',
+                  subtitle: isMr ? 'बैठकीचा विषय व वेळ निश्चित करा' : 'Set meeting topic, date & time',
+                  onClose: () => Navigator.pop(sheetContext),
                 ),
-
-                // Modal Header
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Icon(
-                              Icons.video_call_rounded,
-                              color: Color(0xFF0284C7),
-                              size: 22,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                isMr ? 'व्हिडिओ बैठक तयार करा' : 'Create Video Meeting',
-                                style: const TextStyle(
-                                  color: Color(0xFF0F172A),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 17,
-                                ),
-                              ),
-                              Text(
-                                isMr ? 'बैठकीचा विषय व वेळ निश्चित करा' : 'Set meeting topic, date & time',
-                                style: const TextStyle(
-                                  color: Color(0xFF64748B),
-                                  fontSize: 11.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                        onPressed: () => Navigator.pop(sheetContext),
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(height: 1),
 
                 // Modal Body
                 Expanded(
@@ -390,8 +312,8 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                     children: [
                       if (currentStep == 'form') ...[
                         // Step 1: Form details
-                        _fieldLabel(
-                          isMr ? 'बैठकीचा विषय / शीर्षक' : 'Meeting Title / Topic',
+                        AppFieldLabel(
+                          label: isMr ? 'बैठकीचा विषय / शीर्षक' : 'Meeting Title / Topic',
                           isRequired: true,
                         ),
                         TextField(
@@ -415,7 +337,10 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _fieldLabel(isMr ? 'तारीख' : 'Schedule Date', isRequired: true),
+                                  AppFieldLabel(
+                                    label: isMr ? 'तारीख' : 'Schedule Date',
+                                    isRequired: true,
+                                  ),
                                   InkWell(
                                     onTap: () async {
                                       final picked = await showDatePicker(
@@ -464,7 +389,10 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _fieldLabel(isMr ? 'वेळ' : 'Schedule Time', isRequired: true),
+                                  AppFieldLabel(
+                                    label: isMr ? 'वेळ' : 'Schedule Time',
+                                    isRequired: true,
+                                  ),
                                   InkWell(
                                     onTap: () async {
                                       final picked = await showTimePicker(
@@ -509,7 +437,9 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                         const SizedBox(height: 14),
 
                         // Meeting Agenda / Notes
-                        _fieldLabel(isMr ? 'अजेंडा / टिपणी (ऐच्छिक)' : 'Notes / Agenda (Optional)'),
+                        AppFieldLabel(
+                          label: isMr ? 'अजेंडा / टिपणी (ऐच्छिक)' : 'Notes / Agenda (Optional)',
+                        ),
                         TextField(
                           controller: notesController,
                           maxLines: 3,
@@ -898,77 +828,12 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Drag handle
-                Center(
-                  child: Container(
-                    width: 44,
-                    height: 5,
-                    margin: const EdgeInsets.only(top: 10, bottom: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
+                AppModalHeader(
+                  icon: Icons.send_rounded,
+                  title: isMr ? 'मतदारांना आमंत्रणे पाठवा' : 'Send Meeting Invites',
+                  subtitle: '${meeting.title} — ${meeting.meetLink}',
+                  onClose: () => Navigator.pop(sheetContext),
                 ),
-
-                // Modal Header
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Icon(
-                                Icons.send_rounded,
-                                color: Color(0xFF0284C7),
-                                size: 20,
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    isMr ? 'मतदारांना आमंत्रणे पाठवा' : 'Send Meeting Invites',
-                                    style: const TextStyle(
-                                      color: Color(0xFF0F172A),
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16.5,
-                                    ),
-                                  ),
-                                  Text(
-                                    '${meeting.title} — ${meeting.meetLink}',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      color: Color(0xFF0284C7),
-                                      fontSize: 11,
-                                      fontFamily: 'monospace',
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                        onPressed: () => Navigator.pop(sheetContext),
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(height: 1),
 
                 // Filters Box (bg-slate-50)
                 Container(

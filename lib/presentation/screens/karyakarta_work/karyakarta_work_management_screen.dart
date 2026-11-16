@@ -7,6 +7,7 @@ import '../../../data/models/karyakarta_work_model.dart';
 import '../../../data/repositories/karyakarta_work_repository.dart';
 import 'karyakarta_work_report_generator.dart';
 import '../../navigation/app_drawer.dart';
+import '../../widgets/app_modal_sheet.dart';
 
 class KaryakartaWorkManagementScreen extends ConsumerStatefulWidget {
   const KaryakartaWorkManagementScreen({super.key});
@@ -1884,26 +1885,6 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
       );
     }
 
-    Widget fieldLabel(String text, {bool isRequired = false}) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 5.0),
-        child: RichText(
-          text: TextSpan(
-            text: text,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-            children: isRequired
-                ? const [
-                    TextSpan(
-                      text: ' *',
-                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                    ),
-                  ]
-                : [],
-          ),
-        ),
-      );
-    }
-
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
@@ -1919,72 +1900,29 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
             ),
           ],
         ),
-        padding: const EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 8,
-          bottom: 20,
-        ),
         child: Column(
           children: [
-            // Top Drag Handle
-            Center(
-              child: Container(
-                width: 44,
-                height: 5,
-                margin: const EdgeInsets.only(top: 6, bottom: 12),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(3),
-                ),
-              ),
+            AppModalHeader(
+              icon: Icons.assignment_add,
+              title: 'Assign New Task',
+              subtitle: 'To: ${widget.staff.displayName}',
+              onClose: () => Navigator.pop(context),
             ),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.assignment_add, color: Color(0xFF0284C7), size: 20),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Assign New Task',
-                        style: TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                      ),
-                      Text(
-                        'To: ${widget.staff.displayName}',
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                  onPressed: () => Navigator.pop(context),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
 
             // Form Body
             Expanded(
               child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 child: Form(
                   key: _formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Task Title
-                      fieldLabel('Task Title', isRequired: true),
+                      AppFieldLabel(
+                        label: 'Task Title',
+                        isRequired: true,
+                      ),
                       TextFormField(
                         controller: _titleController,
                         style: const TextStyle(fontSize: 13),
@@ -2002,7 +1940,7 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                fieldLabel('Priority'),
+                                AppFieldLabel(label: 'Priority'),
                                 DropdownButtonFormField<String>(
                                   initialValue: _priority,
                                   decoration: inputDec(),
@@ -2023,7 +1961,7 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                fieldLabel('Due Date'),
+                                AppFieldLabel(label: 'Due Date'),
                                 InkWell(
                                   onTap: () async {
                                     final picked = await showDatePicker(
@@ -2061,7 +1999,7 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
                       const SizedBox(height: 12),
 
                       // Address / Location
-                      fieldLabel('Location / Address'),
+                      AppFieldLabel(label: 'Location / Address'),
                       TextFormField(
                         controller: _addressController,
                         style: const TextStyle(fontSize: 13),
@@ -2070,7 +2008,7 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
                       const SizedBox(height: 12),
 
                       // Description
-                      fieldLabel('Details / Instructions'),
+                      AppFieldLabel(label: 'Details / Instructions'),
                       TextFormField(
                         controller: _descController,
                         maxLines: 3,

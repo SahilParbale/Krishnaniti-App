@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/event_model.dart';
 import '../../../data/repositories/events_repository.dart';
+import '../../widgets/app_modal_sheet.dart';
 
 class EventInviteModal extends ConsumerStatefulWidget {
   final EventModel event;
@@ -157,70 +158,12 @@ class _EventInviteModalState extends ConsumerState<EventInviteModal> {
       ),
       child: Column(
         children: [
-          // Drag Handle
-          const SizedBox(height: 10),
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(2),
-            ),
+          AppModalHeader(
+            icon: Icons.send_rounded,
+            title: 'Send Event Invitations',
+            subtitle: widget.event.titleMr.isNotEmpty ? widget.event.titleMr : widget.event.title,
+            onClose: () => Navigator.pop(context),
           ),
-          const SizedBox(height: 12),
-
-          // Header
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFDCFCE7),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.send_rounded,
-                    color: Color(0xFF16A34A),
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Send Event Invitations',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF0F172A),
-                        ),
-                      ),
-                      Text(
-                        widget.event.titleMr,
-                        style: const TextStyle(
-                          fontSize: 11.5,
-                          color: Color(0xFF64748B),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 12),
-          const Divider(height: 1, color: Color(0xFFE2E8F0)),
 
           // Search & Filters Strip
           Container(

@@ -6,6 +6,7 @@ import '../../../data/models/voter_model.dart';
 import '../../../data/repositories/schemes_repository.dart';
 import '../../../data/repositories/voters_repository.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/app_modal_sheet.dart';
 import 'scheme_report_generator.dart';
 
 class SchemeDetailScreen extends ConsumerStatefulWidget {
@@ -63,46 +64,6 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
 
     final categories = ['All', 'Women', 'Student', 'Senior Citizen', 'Farmer', 'Health', 'Youth', 'Housing'];
 
-    InputDecoration inputDec({String? hint, String? prefixText}) {
-      return InputDecoration(
-        hintText: hint,
-        prefixText: prefixText,
-        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
-        prefixStyle: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        filled: true,
-        fillColor: Colors.white,
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1.0),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
-        ),
-      );
-    }
-
-    Widget fieldLabel(String text, {bool isRequired = false}) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 5.0),
-        child: RichText(
-          text: TextSpan(
-            text: text,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-            children: isRequired
-                ? const [
-                    TextSpan(
-                      text: ' *',
-                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                    ),
-                  ]
-                : [],
-          ),
-        ),
-      );
-    }
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -123,196 +84,179 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
                   ),
                 ],
               ),
-              padding: EdgeInsets.only(
-                top: 8,
-                left: 20,
-                right: 20,
-                bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
-              ),
               child: Column(
                 children: [
-                  // Top Drag Handle
-                  Center(
-                    child: Container(
-                      width: 44,
-                      height: 5,
-                      margin: const EdgeInsets.only(top: 6, bottom: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                    ),
+                  AppModalHeader(
+                    icon: Icons.edit_note_rounded,
+                    title: isMr ? 'योजनेचा तपशील सुधारा' : 'Edit Scheme Details',
+                    subtitle: isMr ? 'शासकीय योजनेचे निकष व तपशील अद्यतनित करा' : 'Update government scheme criteria and details',
+                    onClose: () => Navigator.pop(sheetCtx),
                   ),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(Icons.edit_note_rounded, color: Color(0xFF0284C7), size: 20),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          isMr ? 'योजनेचा तपशील सुधारा' : 'Edit Scheme Details',
-                          style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                        onPressed: () => Navigator.pop(sheetCtx),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
                   Expanded(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Scheme Name & Category side-by-side
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                flex: 6,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    fieldLabel(isMr ? 'योजनेचे नाव' : 'Scheme Name', isRequired: true),
-                                    TextField(
-                                      controller: nameCtrl,
-                                      decoration: inputDec(hint: isMr ? 'उदा. प्रधानमंत्री आवास योजना' : 'e.g. PM Awas Yojana'),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                flex: 4,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    fieldLabel(isMr ? 'वर्ग / विभाग' : 'Category', isRequired: true),
-                                    DropdownButtonFormField<String>(
-                                      initialValue: categories.contains(selectedCat) ? selectedCat : 'All',
-                                      decoration: inputDec(),
-                                      items: categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                                      onChanged: (val) {
-                                        if (val != null) setModalState(() => selectedCat = val);
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-
-                          // Benefits & Eligibility side-by-side
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    fieldLabel(isMr ? 'आर्थिक लाभ व अनुदान' : 'Benefits & Entitlements', isRequired: true),
-                                    TextField(
-                                      controller: benCtrl,
-                                      maxLines: 2,
-                                      decoration: inputDec(hint: isMr ? 'उदा. ₹२.५ लाख अनुदान...' : 'e.g. ₹2.5 Lakhs grant...'),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    fieldLabel(isMr ? 'पात्रता अटी' : 'Eligibility Criteria', isRequired: true),
-                                    TextField(
-                                      controller: eligCtrl,
-                                      maxLines: 2,
-                                      decoration: inputDec(hint: isMr ? 'उत्पन्न मर्यादा, वय...' : 'Income limit, age...'),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-
-                          // Documents
-                          fieldLabel(isMr ? 'आवश्यक कागदपत्रे' : 'Required Documents Checklist', isRequired: true),
-                          TextField(
-                            controller: docCtrl,
-                            maxLines: 2,
-                            decoration: inputDec(hint: isMr ? 'आधार कार्ड, रेशन कार्ड, उत्पन्न दाखला...' : 'Aadhaar, Ration card, Income proof...'),
-                          ),
-                          const SizedBox(height: 12),
-
-                          // Description
-                          fieldLabel(isMr ? 'योजनेचा तपशील व उद्दिष्ट' : 'Description & Objectives', isRequired: true),
-                          TextField(
-                            controller: descCtrl,
-                            maxLines: 2,
-                            decoration: inputDec(hint: isMr ? 'योजनेची संक्षिप्त उद्दिष्टे...' : 'Brief objective and overview...'),
-                          ),
-                          const SizedBox(height: 20),
-
-                          SizedBox(
-                            width: double.infinity,
-                            height: 48,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF0284C7),
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              ),
-                              onPressed: _isSaving
-                                  ? null
-                                  : () async {
-                                      final updated = _scheme.copyWith(
-                                        name: nameCtrl.text.trim(),
-                                        category: selectedCat,
-                                        description: descCtrl.text.trim(),
-                                        benefits: benCtrl.text.trim(),
-                                        eligibility: eligCtrl.text.trim(),
-                                        documents: docCtrl.text.trim(),
-                                      );
-                                      Navigator.pop(sheetCtx);
-                                      setState(() {
-                                        _scheme = updated;
-                                        _isSaving = true;
-                                      });
-                                      await ref.read(schemesRepoProvider).updateScheme(updated);
-                                      if (mounted) {
-                                        setState(() => _isSaving = false);
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text(isMr ? 'योजना माहिती अद्यतनित केली!' : 'Scheme updated successfully!'),
-                                            backgroundColor: const Color(0xFF16A34A),
-                                          ),
-                                        );
-                                        if (widget.onSchemeUpdated != null) widget.onSchemeUpdated!();
-                                      }
-                                    },
-                              child: Text(
-                                isMr ? 'बदल जतन करा' : 'Save Changes',
-                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                    child: ListView(
+                      padding: EdgeInsets.only(
+                        left: 20,
+                        right: 20,
+                        top: 16,
+                        bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 24,
+                      ),
+                      children: [
+                        // Scheme Name & Category side-by-side
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              flex: 6,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppFieldLabel(
+                                    label: isMr ? 'योजनेचे नाव' : 'Scheme Name',
+                                    isRequired: true,
+                                  ),
+                                  TextField(
+                                    controller: nameCtrl,
+                                    decoration: appInputDecoration(hint: isMr ? 'उदा. प्रधानमंत्री आवास योजना' : 'e.g. PM Awas Yojana'),
+                                  ),
+                                ],
                               ),
                             ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              flex: 4,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppFieldLabel(
+                                    label: isMr ? 'वर्ग / विभाग' : 'Category',
+                                    isRequired: true,
+                                  ),
+                                  DropdownButtonFormField<String>(
+                                    initialValue: categories.contains(selectedCat) ? selectedCat : 'All',
+                                    decoration: appInputDecoration(),
+                                    items: categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                                    onChanged: (val) {
+                                      if (val != null) setModalState(() => selectedCat = val);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Benefits & Eligibility side-by-side
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppFieldLabel(
+                                    label: isMr ? 'आर्थिक लाभ व अनुदान' : 'Benefits & Entitlements',
+                                    isRequired: true,
+                                  ),
+                                  TextField(
+                                    controller: benCtrl,
+                                    maxLines: 2,
+                                    decoration: appInputDecoration(hint: isMr ? 'उदा. ₹२.५ लाख अनुदान...' : 'e.g. ₹2.5 Lakhs grant...'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppFieldLabel(
+                                    label: isMr ? 'पात्रता अटी' : 'Eligibility Criteria',
+                                    isRequired: true,
+                                  ),
+                                  TextField(
+                                    controller: eligCtrl,
+                                    maxLines: 2,
+                                    decoration: appInputDecoration(hint: isMr ? 'उत्पन्न मर्यादा, वय...' : 'Income limit, age...'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Documents
+                        AppFieldLabel(
+                          label: isMr ? 'आवश्यक कागदपत्रे' : 'Required Documents Checklist',
+                          isRequired: true,
+                        ),
+                        TextField(
+                          controller: docCtrl,
+                          maxLines: 2,
+                          decoration: appInputDecoration(hint: isMr ? 'आधार कार्ड, रेशन कार्ड, उत्पन्न दाखला...' : 'Aadhaar, Ration card, Income proof...'),
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Description
+                        AppFieldLabel(
+                          label: isMr ? 'योजनेचा तपशील व उद्दिष्ट' : 'Description & Objectives',
+                          isRequired: true,
+                        ),
+                        TextField(
+                          controller: descCtrl,
+                          maxLines: 2,
+                          decoration: appInputDecoration(hint: isMr ? 'योजनेची संक्षिप्त उद्दिष्टे...' : 'Brief objective and overview...'),
+                        ),
+                        const SizedBox(height: 24),
+
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0284C7),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                            onPressed: _isSaving
+                                ? null
+                                : () async {
+                                    final updated = _scheme.copyWith(
+                                      name: nameCtrl.text.trim(),
+                                      category: selectedCat,
+                                      description: descCtrl.text.trim(),
+                                      benefits: benCtrl.text.trim(),
+                                      eligibility: eligCtrl.text.trim(),
+                                      documents: docCtrl.text.trim(),
+                                    );
+                                    Navigator.pop(sheetCtx);
+                                    setState(() {
+                                      _scheme = updated;
+                                      _isSaving = true;
+                                    });
+                                    await ref.read(schemesRepoProvider).updateScheme(updated);
+                                    if (mounted) {
+                                      setState(() => _isSaving = false);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(isMr ? 'योजना माहिती अद्यतनित केली!' : 'Scheme updated successfully!'),
+                                          backgroundColor: const Color(0xFF16A34A),
+                                        ),
+                                      );
+                                      if (widget.onSchemeUpdated != null) widget.onSchemeUpdated!();
+                                    }
+                                  },
+                            child: Text(
+                              isMr ? 'बदल जतन करा' : 'Save Changes',
+                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                            ),
                           ),
-                          const SizedBox(height: 10),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 10),
+                      ],
                     ),
                   ),
                 ],
@@ -767,28 +711,33 @@ class _SchemeApplicationSheetState extends ConsumerState<_SchemeApplicationSheet
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 20,
+                    offset: Offset(0, -4),
+                  ),
+                ],
               ),
-              padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Select Citizen / Voter', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(bCtx)),
-                    ],
+                  AppModalHeader(
+                    icon: Icons.person_search_rounded,
+                    title: 'Select Citizen / Voter',
+                    subtitle: 'Search and link voter to scheme',
+                    onClose: () => Navigator.pop(bCtx),
                   ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: voterSearchCtrl,
-                    decoration: InputDecoration(
-                      hintText: 'Search voter by name or EPIC ID...',
-                      prefixIcon: const Icon(Icons.search),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: TextField(
+                      controller: voterSearchCtrl,
+                      decoration: appInputDecoration(
+                        hint: 'Search voter by name or EPIC ID...',
+                        prefixIcon: const Icon(Icons.search, size: 20, color: Color(0xFF64748B)),
+                      ),
+                      onChanged: (_) => setModalState(() {}),
                     ),
-                    onChanged: (_) => setModalState(() {}),
                   ),
-                  const SizedBox(height: 12),
                   Expanded(
                     child: FutureBuilder<List<VoterModel>>(
                       future: ref.read(votersRepoProvider).searchVoters(
@@ -804,6 +753,7 @@ class _SchemeApplicationSheetState extends ConsumerState<_SchemeApplicationSheet
                           return const Center(child: Text('No voters found in database'));
                         }
                         return ListView.separated(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           itemCount: voters.length,
                           separatorBuilder: (_, __) => const Divider(height: 1),
                           itemBuilder: (ctx, idx) {
@@ -852,46 +802,6 @@ class _SchemeApplicationSheetState extends ConsumerState<_SchemeApplicationSheet
   Widget build(BuildContext context) {
     final isMr = ref.watch(isMarathiProvider);
 
-    InputDecoration inputDec({String? hint, String? prefixText}) {
-      return InputDecoration(
-        hintText: hint,
-        prefixText: prefixText,
-        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
-        prefixStyle: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        filled: true,
-        fillColor: Colors.white,
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1.0),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
-        ),
-      );
-    }
-
-    Widget fieldLabel(String text, {bool isRequired = false}) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 5.0),
-        child: RichText(
-          text: TextSpan(
-            text: text,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-            children: isRequired
-                ? const [
-                    TextSpan(
-                      text: ' *',
-                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                    ),
-                  ]
-                : [],
-          ),
-        ),
-      );
-    }
-
     return Container(
       height: MediaQuery.of(context).size.height * 0.88,
       decoration: const BoxDecoration(
@@ -905,235 +815,198 @@ class _SchemeApplicationSheetState extends ConsumerState<_SchemeApplicationSheet
           ),
         ],
       ),
-      padding: EdgeInsets.only(
-        top: 8,
-        left: 20,
-        right: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-      ),
       child: Column(
         children: [
-          // Top Drag Handle
-          Center(
-            child: Container(
-              width: 44,
-              height: 5,
-              margin: const EdgeInsets.only(top: 6, bottom: 12),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(3),
-              ),
-            ),
+          AppModalHeader(
+            icon: Icons.person_add_alt_1_rounded,
+            title: isMr ? 'नागरिक योजना अर्ज' : 'Citizen Scheme Application',
+            subtitle: widget.scheme.name,
+            onClose: () => Navigator.pop(context),
           ),
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.person_add_alt_1_rounded, color: Color(0xFF0284C7), size: 20),
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 16,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
+              children: [
+                // Applicant Name & Mobile Number side-by-side
+                Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      isMr ? 'नागरिक योजना अर्ज' : 'Citizen Scheme Application',
-                      style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                    Expanded(
+                      flex: 6,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          AppFieldLabel(
+                            label: isMr ? 'अर्जदाराचे नाव' : 'Applicant Name',
+                            isRequired: true,
+                          ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _nameCtrl,
+                                  decoration: appInputDecoration(hint: isMr ? 'पूर्ण नाव प्रविष्ट करा...' : 'Enter full name...'),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              InkWell(
+                                onTap: _openVoterPicker,
+                                borderRadius: BorderRadius.circular(10),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFE0F2FE),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: const Color(0xFFBAE6FD)),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: const [
+                                      Icon(Icons.person_search_rounded, size: 16, color: Color(0xFF0284C7)),
+                                      SizedBox(width: 3),
+                                      Text('Voters', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                    Text(
-                      widget.scheme.name,
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF0284C7), fontWeight: FontWeight.w600),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    const SizedBox(width: 10),
+                    Expanded(
+                      flex: 4,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          AppFieldLabel(
+                            label: isMr ? 'मोबाईल नंबर' : 'Mobile Number',
+                            isRequired: true,
+                          ),
+                          TextField(
+                            controller: _mobileCtrl,
+                            keyboardType: TextInputType.phone,
+                            maxLength: 10,
+                            buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
+                            decoration: appInputDecoration(prefixText: '+91 ', hint: '98xxxxxxxx'),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                onPressed: () => Navigator.pop(context),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Applicant Name & Mobile Number side-by-side
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        flex: 6,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            fieldLabel(isMr ? 'अर्जदाराचे नाव' : 'Applicant Name', isRequired: true),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextField(
-                                    controller: _nameCtrl,
-                                    decoration: inputDec(hint: isMr ? 'पूर्ण नाव प्रविष्ट करा...' : 'Enter full name...'),
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                InkWell(
-                                  onTap: _openVoterPicker,
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFE0F2FE),
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(color: const Color(0xFFBAE6FD)),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: const [
-                                        Icon(Icons.person_search_rounded, size: 16, color: Color(0xFF0284C7)),
-                                        SizedBox(width: 3),
-                                        Text('Voters', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        flex: 4,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            fieldLabel(isMr ? 'मोबाईल नंबर' : 'Mobile Number', isRequired: true),
-                            TextField(
-                              controller: _mobileCtrl,
-                              keyboardType: TextInputType.phone,
-                              maxLength: 10,
-                              buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
-                              decoration: inputDec(prefixText: '+91 ', hint: '98xxxxxxxx'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
+                const SizedBox(height: 14),
 
-                  // Residential Address & Expected Benefit side-by-side
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            fieldLabel(isMr ? 'पत्ता / प्रभाग क्षेत्र' : 'Address / Prabhag Area', isRequired: true),
-                            TextField(
-                              controller: _addressCtrl,
-                              decoration: inputDec(hint: isMr ? 'घर क्र., लेन, प्रभाग...' : 'House no, lane, prabhag area...'),
-                            ),
-                          ],
-                        ),
+                // Residential Address & Expected Benefit side-by-side
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          AppFieldLabel(
+                            label: isMr ? 'पत्ता / प्रभाग क्षेत्र' : 'Address / Prabhag Area',
+                            isRequired: true,
+                          ),
+                          TextField(
+                            controller: _addressCtrl,
+                            decoration: appInputDecoration(hint: isMr ? 'घर क्र., लेन, प्रभाग...' : 'House no, lane, prabhag area...'),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            fieldLabel(isMr ? 'अपेक्षित लाभ / मंजुरी टीप' : 'Expected Benefit / Note'),
-                            TextField(
-                              controller: _benefitCtrl,
-                              decoration: inputDec(hint: isMr ? 'उदा. ₹१,५००/महिना...' : 'e.g. ₹1,500/month...'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Officer Remarks / Follow-up notes
-                  fieldLabel(isMr ? 'अधिकारी / कार्यालयीन टीप' : 'Officer / Office Notes'),
-                  TextField(
-                    controller: _notesCtrl,
-                    maxLines: 2,
-                    decoration: inputDec(hint: isMr ? 'कागदपत्रे तपासली, टोकन क्रमांक...' : 'Documents verified, verification token...'),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Submit button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0284C7),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                      onPressed: _isSubmitting
-                          ? null
-                          : () async {
-                              if (_nameCtrl.text.trim().isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(isMr ? 'कृपया अर्जदाराचे नाव प्रविष्ट करा' : 'Please enter applicant name')),
-                                );
-                                return;
-                              }
-                              if (_mobileCtrl.text.trim().isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(isMr ? 'कृपया मोबाईल नंबर प्रविष्ट करा' : 'Please enter applicant mobile number')),
-                                );
-                                return;
-                              }
-
-                              setState(() => _isSubmitting = true);
-                              final nav = Navigator.of(context);
-                              final app = SchemeApplicationModel(
-                                id: 0,
-                                schemeId: widget.scheme.id,
-                                schemeName: widget.scheme.name,
-                                voterId: _selectedVoterId,
-                                applicantName: _nameCtrl.text.trim(),
-                                mobile: _mobileCtrl.text.trim(),
-                                address: _addressCtrl.text.trim(),
-                                status: 'Pending',
-                                benefit: _benefitCtrl.text.trim().isNotEmpty ? _benefitCtrl.text.trim() : null,
-                                notes: _notesCtrl.text.trim().isNotEmpty ? _notesCtrl.text.trim() : null,
-                                createdAt: DateTime.now(),
-                              );
-
-                              await ref.read(schemesRepoProvider).createApplication(app);
-                              if (!mounted) return;
-                              setState(() => _isSubmitting = false);
-                              nav.pop();
-                              widget.onApplied();
-                            },
-                      child: _isSubmitting
-                          ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                          : Text(
-                              isMr ? 'अर्ज सादर करा' : 'Submit Application',
-                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                            ),
                     ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          AppFieldLabel(label: isMr ? 'अपेक्षित लाभ / मंजुरी टीप' : 'Expected Benefit / Note'),
+                          TextField(
+                            controller: _benefitCtrl,
+                            decoration: appInputDecoration(hint: isMr ? 'उदा. ₹१,५००/महिना...' : 'e.g. ₹1,500/month...'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+
+                // Officer Remarks / Follow-up notes
+                AppFieldLabel(label: isMr ? 'अधिकारी / कार्यालयीन टीप' : 'Officer / Office Notes'),
+                TextField(
+                  controller: _notesCtrl,
+                  maxLines: 2,
+                  decoration: appInputDecoration(hint: isMr ? 'कागदपत्रे तपासली, टोकन क्रमांक...' : 'Documents verified, verification token...'),
+                ),
+                const SizedBox(height: 24),
+
+                // Submit button
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0284C7),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    onPressed: _isSubmitting
+                        ? null
+                        : () async {
+                            if (_nameCtrl.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(isMr ? 'कृपया अर्जदाराचे नाव प्रविष्ट करा' : 'Please enter applicant name')),
+                              );
+                              return;
+                            }
+                            if (_mobileCtrl.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(isMr ? 'कृपया मोबाईल नंबर प्रविष्ट करा' : 'Please enter applicant mobile number')),
+                              );
+                              return;
+                            }
+
+                            setState(() => _isSubmitting = true);
+                            final nav = Navigator.of(context);
+                            final app = SchemeApplicationModel(
+                              id: 0,
+                              schemeId: widget.scheme.id,
+                              schemeName: widget.scheme.name,
+                              voterId: _selectedVoterId,
+                              applicantName: _nameCtrl.text.trim(),
+                              mobile: _mobileCtrl.text.trim(),
+                              address: _addressCtrl.text.trim(),
+                              status: 'Pending',
+                              benefit: _benefitCtrl.text.trim().isNotEmpty ? _benefitCtrl.text.trim() : null,
+                              notes: _notesCtrl.text.trim().isNotEmpty ? _notesCtrl.text.trim() : null,
+                              createdAt: DateTime.now(),
+                            );
+
+                            await ref.read(schemesRepoProvider).createApplication(app);
+                            if (!mounted) return;
+                            setState(() => _isSubmitting = false);
+                            nav.pop();
+                            widget.onApplied();
+                          },
+                    child: _isSubmitting
+                        ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        : Text(
+                            isMr ? 'अर्ज सादर करा' : 'Submit Application',
+                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                          ),
                   ),
-                  const SizedBox(height: 10),
-                ],
-              ),
+                ),
+                const SizedBox(height: 10),
+              ],
             ),
           ),
         ],

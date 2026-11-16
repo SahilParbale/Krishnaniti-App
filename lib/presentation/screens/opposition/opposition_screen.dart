@@ -6,6 +6,7 @@ import '../../../data/models/opposition_model.dart';
 import '../../../data/repositories/opposition_repository.dart';
 import '../../providers/auth_provider.dart';
 import '../../navigation/app_drawer.dart';
+import '../../widgets/app_modal_sheet.dart';
 import 'opposition_detail_screen.dart';
 import 'opposition_report_generator.dart';
 
@@ -140,30 +141,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
     final candidatesList = _members.where((m) => m.isCandidate && m.id != memberToEdit?.id).toList();
 
     Widget fieldLabel(String text, {bool isRequired = false}) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 6),
-        child: RichText(
-          text: TextSpan(
-            text: text,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF334155),
-            ),
-            children: isRequired
-                ? const [
-                    TextSpan(
-                      text: ' *',
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ]
-                : [],
-          ),
-        ),
-      );
+      return AppFieldLabel(label: text, isRequired: isRequired);
     }
 
     InputDecoration inputDec({String? hintText, Widget? prefixIcon, Widget? suffixIcon}) {
@@ -210,62 +188,27 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
           ),
           child: Column(
             children: [
-              // Drag Handle
-              Center(
-                child: Container(
-                  width: 44,
-                  height: 5,
-                  margin: const EdgeInsets.only(top: 10, bottom: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                ),
+              // 1. FIXED HEADER
+              AppModalHeader(
+                icon: Icons.group_add_rounded,
+                title: memberToEdit == null
+                    ? (isMr ? 'नवीन विरोधी सदस्य' : 'Add Opposition Member')
+                    : (isMr ? 'विरोधी सदस्य संपादित करा' : 'Edit Opposition Member'),
+                subtitle: isMr
+                    ? 'प्रभागातील विरोधी पक्षांचे उमेदवार व कार्यकर्ते नोंदवा'
+                    : 'Track opposition candidates, workers and political presence',
+                onClose: () => Navigator.pop(ctx),
               ),
-              // Header
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(7),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.group_add_rounded,
-                            color: Color(0xFF0284C7),
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          memberToEdit == null
-                              ? (isMr ? 'नवीन विरोधी सदस्य' : 'Add Opposition Member')
-                              : (isMr ? 'विरोधी सदस्य संपादित करा' : 'Edit Opposition Member'),
-                          style: const TextStyle(
-                            fontSize: 17.5,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF0F172A),
-                          ),
-                        ),
-                      ],
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                      onPressed: () => Navigator.pop(ctx),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(height: 1, color: Color(0xFFE2E8F0)),
+
+              // 2. SCROLLABLE FORM BODY & BUTTONS
               Expanded(
                 child: ListView(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.fromLTRB(
+                    18,
+                    14,
+                    18,
+                    MediaQuery.of(context).viewInsets.bottom + 24,
+                  ),
                   children: [
                     // Record Type Switch: Worker vs Candidate
                     Container(

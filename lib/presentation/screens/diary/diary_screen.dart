@@ -6,6 +6,7 @@ import '../../../data/models/diary_task_model.dart';
 import '../../../data/repositories/diary_tasks_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/app_modal_sheet.dart';
 import 'diary_detail_screen.dart';
 import 'diary_report_generator.dart';
 
@@ -158,6 +159,7 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
   }
 
   void _openAddTaskModal() {
+    final isMr = ref.read(isMarathiProvider);
     final titleCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     final addrCtrl = TextEditingController();
@@ -180,51 +182,37 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-            ),
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
+              boxShadow: [
+                BoxShadow(color: Colors.black26, blurRadius: 20, offset: Offset(0, -4)),
+              ],
             ),
             child: Column(
               children: [
-                // Modal Handle & Header
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  decoration: const BoxDecoration(
-                    border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'New Diary Task / Visit',
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF0F172A),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.pop(ctx),
-                        icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                      ),
-                    ],
-                  ),
+                // 1. FIXED HEADER
+                AppModalHeader(
+                  icon: Icons.event_note_rounded,
+                  title: isMr ? 'नवीन डायरी कार्य / बैठक नोंद' : 'New Diary Task / Visit',
+                  subtitle: isMr
+                      ? 'दैनिक नियोजन, बैठका व क्षेत्रीय भेटींची नोंद'
+                      : 'Schedule daily agenda, officer visits and field work',
+                  onClose: () => Navigator.pop(ctx),
                 ),
 
-                // Form Content
+                // 2. SCROLLABLE FORM BODY & BUTTONS
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
+                    padding: EdgeInsets.fromLTRB(18, 14, 18, MediaQuery.of(context).viewInsets.bottom + 24),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Task Title
-                        const Text('Task / Meeting Title *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                        const SizedBox(height: 6),
+                        AppFieldLabel(label: isMr ? 'कामाचे नाव / विषय' : 'Task / Meeting Title', isRequired: true),
                         TextField(
                           controller: titleCtrl,
                           decoration: InputDecoration(
-                            hintText: 'e.g. Meeting with Executive Engineer regarding Water pipeline',
+                            hintText: isMr
+                                ? 'उदा. पाणीपुरवठ्याबाबत कार्यकारी अभियंत्यांसोबत बैठक'
+                                : 'e.g. Meeting with Executive Engineer regarding Water pipeline',
                             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                           ),
@@ -239,8 +227,7 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('Scheduled Date *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                                  const SizedBox(height: 6),
+                                  AppFieldLabel(label: isMr ? 'नियोजित तारीख' : 'Scheduled Date', isRequired: true),
                                   InkWell(
                                     onTap: () async {
                                       final picked = await showDatePicker(
@@ -279,8 +266,7 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('Time *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                                  const SizedBox(height: 6),
+                                  AppFieldLabel(label: isMr ? 'वेळ' : 'Time', isRequired: true),
                                   InkWell(
                                     onTap: () async {
                                       final picked = await showTimePicker(
@@ -318,8 +304,7 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                         const SizedBox(height: 16),
 
                         // Priority Dropdown
-                        const Text('Priority Level', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                        const SizedBox(height: 6),
+                        AppFieldLabel(label: isMr ? 'प्राधान्यता स्तर' : 'Priority Level'),
                         DropdownButtonFormField<String>(
                           value: selectedPriority,
                           decoration: InputDecoration(
@@ -345,12 +330,11 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('Address / Area', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                                  const SizedBox(height: 6),
+                                  AppFieldLabel(label: isMr ? 'पत्ता / परिसर' : 'Address / Area'),
                                   TextField(
                                     controller: addrCtrl,
                                     decoration: InputDecoration(
-                                      hintText: 'e.g. Ward Office / Lane 4',
+                                      hintText: isMr ? 'उदा. प्रभाग कार्यालय / गल्ली ४' : 'e.g. Ward Office / Lane 4',
                                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                                     ),
@@ -363,12 +347,11 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('Office / Department', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                                  const SizedBox(height: 6),
+                                  AppFieldLabel(label: isMr ? 'कार्यालय / विभाग' : 'Office / Department'),
                                   TextField(
                                     controller: officeCtrl,
                                     decoration: InputDecoration(
-                                      hintText: 'e.g. PMC Water Supply Dept',
+                                      hintText: isMr ? 'उदा. मनपा पाणीपुरवठा विभाग' : 'e.g. PMC Water Supply Dept',
                                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                                     ),
@@ -388,12 +371,11 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('Person to Meet', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                                  const SizedBox(height: 6),
+                                  AppFieldLabel(label: isMr ? 'भेटायची व्यक्ती' : 'Person to Meet'),
                                   TextField(
                                     controller: personCtrl,
                                     decoration: InputDecoration(
-                                      hintText: 'e.g. S. V. Kulkarni',
+                                      hintText: isMr ? 'उदा. एस. व्ही. कुलकर्णी' : 'e.g. S. V. Kulkarni',
                                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                                     ),
@@ -406,12 +388,11 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('Assigned Staff', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                                  const SizedBox(height: 6),
+                                  AppFieldLabel(label: isMr ? 'नेमलेला कर्मचारी' : 'Assigned Staff'),
                                   TextField(
                                     controller: staffCtrl,
                                     decoration: InputDecoration(
-                                      hintText: 'e.g. Prashant Kadam (PA)',
+                                      hintText: isMr ? 'उदा. प्रशांत कदम (पी.ए.)' : 'e.g. Prashant Kadam (PA)',
                                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                                     ),
@@ -425,13 +406,12 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                         const SizedBox(height: 16),
 
                         // Description / Notes
-                        const Text('Detailed Instructions & Notes', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                        const SizedBox(height: 6),
+                        AppFieldLabel(label: isMr ? 'सविस्तर सूचना व टिपण' : 'Detailed Instructions & Notes'),
                         TextField(
                           controller: descCtrl,
                           maxLines: 3,
                           decoration: InputDecoration(
-                            hintText: 'Agenda points, background, or action items...',
+                            hintText: isMr ? 'अजेंडा मुद्दे, पार्श्वभूमी किंवा कार्यवाहीचे मुद्दे...' : 'Agenda points, background, or action items...',
                             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                           ),
