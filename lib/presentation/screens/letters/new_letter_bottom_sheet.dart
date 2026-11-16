@@ -10,6 +10,7 @@ import '../../../data/repositories/complaints_repository.dart';
 import '../../../data/repositories/voters_repository.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_image_picker.dart';
+import '../../widgets/app_modal_sheet.dart';
 import 'letter_form_constants.dart';
 
 /// Modal Bottom Sheet that slides up from the bottom with downward-dismiss capability,
@@ -424,117 +425,111 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (ctx) {
         return StatefulBuilder(
           builder: (context, setModalState) {
             final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-            return Padding(
-              padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomInset),
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.70,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(color: Colors.black26, blurRadius: 20, offset: Offset(0, -4)),
+                ],
+              ),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        isMr ? 'अतिरिक्त माहितीचे फील्ड जोडा' : 'Add Additional Field',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close_rounded, size: 20),
-                        onPressed: () => Navigator.pop(ctx),
-                      ),
-                    ],
+                  // 1. FIXED STANDARDIZED HEADER
+                  AppModalHeader(
+                    icon: Icons.add_circle_outline_rounded,
+                    title: isMr ? 'अतिरिक्त माहितीचे फील्ड जोडा' : 'Add Additional Field',
+                    subtitle: isMr ? 'पत्रासाठी आवश्यक फील्ड निवडा' : 'Select field for certificate or letter',
+                    onClose: () => Navigator.pop(ctx),
                   ),
-                  const SizedBox(height: 10),
 
-                  // Custom field input
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: customFieldCtrl,
-                          decoration: InputDecoration(
-                            hintText: isMr ? 'किंवा नवीन फील्डचे नाव टाका...' : 'Or enter custom field name...',
-                            hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                            filled: true,
-                            fillColor: const Color(0xFFF8FAFC),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                  // 2. SCROLLABLE BODY
+                  Expanded(
+                    child: ListView(
+                      padding: EdgeInsets.fromLTRB(16, 12, 16, 16 + bottomInset),
+                      children: [
+                        // Custom field input
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: customFieldCtrl,
+                                decoration: appInputDecoration(
+                                  hint: isMr ? 'किंवा नवीन फील्डचे नाव टाका...' : 'Or enter custom field name...',
+                                ),
+                              ),
                             ),
-                          ),
+                            const SizedBox(width: 8),
+                            ElevatedButton(
+                              onPressed: () {
+                                final customName = customFieldCtrl.text.trim();
+                                if (customName.isNotEmpty) {
+                                  final key = customName.toLowerCase().replaceAll(RegExp(r'\s+'), '_');
+                                  if (!_activeDynamicFieldKeys.contains(key)) {
+                                    Navigator.pop(ctx);
+                                    setState(() {
+                                      _activeDynamicFieldKeys.add(key);
+                                      _dynamicControllers.putIfAbsent(key, () => TextEditingController());
+                                    });
+                                  }
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0284C7),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              child: Text(isMr ? 'जोडा' : 'Add', style: const TextStyle(fontWeight: FontWeight.bold)),
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        onPressed: () {
-                          final customName = customFieldCtrl.text.trim();
-                          if (customName.isNotEmpty) {
-                            final key = customName.toLowerCase().replaceAll(RegExp(r'\s+'), '_');
-                            if (!_activeDynamicFieldKeys.contains(key)) {
-                              Navigator.pop(ctx);
-                              setState(() {
-                                _activeDynamicFieldKeys.add(key);
-                                _dynamicControllers.putIfAbsent(key, () => TextEditingController());
-                              });
-                            }
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0284C7),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+
+                        const SizedBox(height: 16),
+                        Text(
+                          isMr ? 'किंवा यादीतून निवडा:' : 'Or choose from standard fields:',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
                         ),
-                        child: Text(isMr ? 'जोडा' : 'Add'),
-                      ),
-                    ],
-                  ),
+                        const SizedBox(height: 8),
 
-                  const SizedBox(height: 14),
-                  Text(
-                    isMr ? 'किंवा यादीतून निवडा:' : 'Or choose from standard fields:',
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
-                  ),
-                  const SizedBox(height: 8),
-
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 280),
-                    child: ListView.separated(
-                      shrinkWrap: true,
-                      itemCount: available.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
-                      itemBuilder: (_, idx) {
-                        final key = available[idx];
-                        final meta = kDynamicFieldDefinitions[key]!;
-                        return ListTile(
-                          dense: true,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                          leading: const Icon(Icons.add_circle_outline_rounded, color: Color(0xFF0284C7), size: 20),
-                          title: Text(
-                            isMr ? meta.mrLabel : meta.enLabel,
-                            style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
-                          ),
-                          subtitle: Text(
-                            isMr ? meta.enLabel : meta.mrLabel,
-                            style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
-                          ),
-                          onTap: () {
-                            Navigator.pop(ctx);
-                            setState(() {
-                              _activeDynamicFieldKeys.add(key);
-                              _dynamicControllers.putIfAbsent(key, () => TextEditingController());
-                            });
-                          },
-                        );
-                      },
+                        ...available.map((key) {
+                          final meta = kDynamicFieldDefinitions[key]!;
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                            ),
+                            child: ListTile(
+                              dense: true,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                              leading: const Icon(Icons.add_circle_outline_rounded, color: Color(0xFF0284C7), size: 20),
+                              title: Text(
+                                isMr ? meta.mrLabel : meta.enLabel,
+                                style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                              ),
+                              subtitle: Text(
+                                isMr ? meta.enLabel : meta.mrLabel,
+                                style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                              ),
+                              onTap: () {
+                                Navigator.pop(ctx);
+                                setState(() {
+                                  _activeDynamicFieldKeys.add(key);
+                                  _dynamicControllers.putIfAbsent(key, () => TextEditingController());
+                                });
+                              },
+                            ),
+                          );
+                        }),
+                      ],
                     ),
                   ),
                 ],
@@ -589,6 +584,14 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
     final isMr = ref.watch(isMarathiProvider);
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
+    final titleText = _activeTab == 'outgoing'
+        ? (isMr ? 'नवीन पत्र विनंती' : 'New Letter Request')
+        : (isMr ? 'आवक पत्र अपलोड करा' : 'Upload Incoming Letter');
+
+    final subtitleText = isMr
+        ? 'अधिकृत पत्र विनंत्यांचा मागोवा घ्या आणि व्यवस्थापित करा'
+        : 'Track and manage official correspondence';
+
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Container(
@@ -606,158 +609,85 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
         ),
         child: Column(
           children: [
-            // Top Downward Drag Handle
-            Center(
-              child: Container(
-                width: 44,
-                height: 5,
-                margin: const EdgeInsets.only(top: 10, bottom: 6),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(3),
-                ),
-              ),
+            // 1. FIXED STANDARDIZED HEADER
+            AppModalHeader(
+              icon: _activeTab == 'outgoing' ? Icons.mail_outline_rounded : Icons.move_to_inbox_rounded,
+              title: titleText,
+              subtitle: subtitleText,
+              onClose: () => Navigator.pop(context),
             ),
-
-            // Top Header matching LetterForm.tsx & IncomingLetterUpload.tsx
-            _buildTopCardHeader(isMr),
 
             // Tab Selector: Outgoing vs Incoming
             _buildTabSelector(isMr),
 
-            // Scrollable Form Body
-            Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(16, 12, 16, 24 + bottomInset),
-                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+            // Linked voter / Draft autosave status bar
+            if (_linkedVoterDisplay != null || _hasAnyDraft)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF8FAFC),
+                  border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+                ),
+                child: Row(
                   children: [
-                    if (_activeTab == 'outgoing')
-                      _buildOutgoingForm(isMr)
-                    else
-                      _buildIncomingForm(isMr),
-
-                    const SizedBox(height: 24),
-
-                    // Submit Action Button
-                    _buildSubmitButton(isMr),
+                    if (_linkedVoterDisplay != null) ...[
+                      const Icon(Icons.link_rounded, size: 16, color: Color(0xFF0284C7)),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${isMr ? "जोडलेले मतदार:" : "Linked:"} $_linkedVoterDisplay',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0369A1)),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: _clearLinkedVoter,
+                        child: const Icon(Icons.close_rounded, size: 14, color: Color(0xFF64748B)),
+                      ),
+                    ],
+                    const Spacer(),
+                    if (_hasAnyDraft) ...[
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(color: Color(0xFF10B981), shape: BoxShape.circle),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        isMr ? 'मसुदा सेव्ह केला' : 'Draft autosaved',
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF047857)),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: _handleClearAllDrafts,
+                        child: Text(
+                          isMr ? 'काढून टाका' : 'Clear draft',
+                          style: const TextStyle(fontSize: 11, color: Color(0xFFDC2626), decoration: TextDecoration.underline),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
+              ),
+
+            // 2. SCROLLABLE FORM BODY & SUBMIT BUTTON
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.fromLTRB(16, 12, 16, 24 + bottomInset),
+                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                children: [
+                  if (_activeTab == 'outgoing')
+                    _buildOutgoingForm(isMr)
+                  else
+                    _buildIncomingForm(isMr),
+
+                  const SizedBox(height: 24),
+
+                  // Submit Action Button (scrolls together with form)
+                  _buildSubmitButton(isMr),
+                ],
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  // ---------------------------------------------------------------------------
-  // TOP CARD HEADER
-  // ---------------------------------------------------------------------------
-  Widget _buildTopCardHeader(bool isMr) {
-    final titleText = _activeTab == 'outgoing'
-        ? (isMr ? 'नवीन पत्र विनंती' : 'New Letter Request')
-        : (isMr ? 'आवक पत्र अपलोड करा' : 'Upload Incoming Letter');
-
-    final subtitleText = isMr
-        ? 'अधिकृत पत्र विनंत्यांचा मागोवा घ्या आणि व्यवस्थापित करा'
-        : 'Track and manage official letter requests';
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: const BoxDecoration(
-        color: Color(0xFFF0F9FF),
-        border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  titleText,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
-                    letterSpacing: -0.2,
-                  ),
-                ),
-                if (_linkedVoterDisplay != null) ...[
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Text(
-                        '${isMr ? "मतदाराशी जोडले:" : "Linking to Voter:"} ',
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF0369A1)),
-                      ),
-                      Text(
-                        _linkedVoterDisplay!,
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0369A1)),
-                      ),
-                    ],
-                  ),
-                ] else ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitleText,
-                    style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ],
-            ),
-          ),
-          if (_hasAnyDraft) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFFECFDF5),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFA7F3D0)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF10B981),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 5),
-                  Text(
-                    isMr ? 'मसुदा सेव्ह केला' : 'Draft autosaved',
-                    style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Color(0xFF047857)),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            GestureDetector(
-              onTap: _handleClearAllDrafts,
-              child: Text(
-                isMr ? 'काढून टाका' : 'Clear draft',
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: Color(0xFFDC2626),
-                  decoration: TextDecoration.underline,
-                ),
-              ),
-            ),
-          ],
-          IconButton(
-            icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 28, color: Color(0xFF64748B)),
-            tooltip: 'Dismiss downwards',
-            onPressed: () => Navigator.pop(context),
-          ),
-        ],
       ),
     );
   }
@@ -1444,39 +1374,18 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Text(
-              label,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-            ),
-            if (required) ...[
-              const SizedBox(width: 2),
-              const Text('*', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-            ],
-          ],
+        AppFieldLabel(
+          label: label,
+          isRequired: required,
         ),
-        const SizedBox(height: 6),
         TextField(
           controller: controller,
           keyboardType: keyboardType,
           maxLines: maxLines,
           style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
-          decoration: InputDecoration(
-            hintText: placeholder,
-            hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+          decoration: appInputDecoration(
+            hint: placeholder,
             prefixIcon: prefixIcon != null ? Icon(prefixIcon, size: 18, color: const Color(0xFF64748B)) : null,
-            filled: true,
-            fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
-            ),
           ),
         ),
       ],
@@ -1488,34 +1397,22 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
     required String value,
     required List<DropdownMenuItem<String>> items,
     required ValueChanged<String?> onChanged,
+    bool required = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+        AppFieldLabel(
+          label: label,
+          isRequired: required,
         ),
-        const SizedBox(height: 6),
         DropdownButtonFormField<String>(
           initialValue: items.any((i) => i.value == value) ? value : null,
           items: items,
           onChanged: onChanged,
           isExpanded: true,
           style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
-            ),
-          ),
+          decoration: appInputDecoration(),
         ),
       ],
     );
@@ -1730,25 +1627,12 @@ class _VoterSearchModalSheetState extends ConsumerState<_VoterSearchModalSheet> 
       ),
       child: Column(
         children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  isMr ? 'मतदार यादीतून शोधा' : 'Search from Voter List',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded, size: 22, color: Color(0xFF64748B)),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
+          // 1. FIXED STANDARDIZED HEADER
+          AppModalHeader(
+            icon: Icons.person_search_rounded,
+            title: isMr ? 'मतदार यादीतून शोधा' : 'Search from Voter List',
+            subtitle: isMr ? 'नाव, घर क्र. किंवा पत्त्यानुसार शोधा' : 'Filter voters from electoral roll',
+            onClose: () => Navigator.pop(context),
           ),
 
           // Filters panel

@@ -9,6 +9,7 @@ import '../../../data/repositories/complaints_repository.dart';
 import '../../../data/repositories/voters_repository.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_image_picker.dart';
+import '../../widgets/app_modal_sheet.dart';
 import 'complaint_form_constants.dart';
 
 /// Modal Bottom Sheet that slides up from the bottom with downward-dismiss capability,
@@ -406,6 +407,18 @@ class _NewComplaintBottomSheetState
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final societies = kSocietiesByWard[_selectedWard] ?? [];
 
+    final titleText = widget.hidePersonalHelp
+        ? (isMr ? 'नवीन प्रभागातील समस्या' : 'Report Ward Problem')
+        : (_activeTab == 'Complaints'
+            ? (isMr ? 'नवीन तक्रार / विनंती' : 'New Request / Complaint')
+            : (isMr ? 'वैयक्तिक मदत विनंती' : 'Personal Help Request'));
+
+    final subtitleText = widget.hidePersonalHelp
+        ? (isMr ? 'प्रभागातील नागरी समस्यांची नोंद घ्या' : 'Record civic and ward-level issues')
+        : (isMr
+            ? 'अधिकृत तक्रारी आणि वैयक्तिक मदत विनंत्या व्यवस्थापित करा'
+            : 'Track and manage citizen grievances and petitions');
+
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Container(
@@ -423,175 +436,96 @@ class _NewComplaintBottomSheetState
         ),
         child: Column(
           children: [
-            // Downward Dismiss Drag Handle
-            Center(
-              child: Container(
-                width: 44,
-                height: 5,
-                margin: const EdgeInsets.only(top: 10, bottom: 6),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(3),
-                ),
-              ),
+            // 1. FIXED STANDARDIZED HEADER
+            AppModalHeader(
+              icon: widget.hidePersonalHelp
+                  ? Icons.report_problem_outlined
+                  : (_activeTab == 'Complaints' ? Icons.add_task_rounded : Icons.person_outline_rounded),
+              title: titleText,
+              subtitle: subtitleText,
+              onClose: () => Navigator.pop(context),
             ),
-
-            // Top Header matching ComplaintForm.tsx card header
-            _buildTopCardHeader(isMr),
 
             // Tab Selector (Area Complaint vs Personal Help - hidden when opened from Ward Problems)
             if (!widget.hidePersonalHelp)
               _buildTabSelector(isMr),
 
-            // Scrollable Form Body
-            Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(16, 12, 16, 24 + bottomInset),
-                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+            // Linked voter / Draft autosave status bar
+            if (_linkedVoterDisplay != null || _hasAnyDraft)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF8FAFC),
+                  border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+                ),
+                child: Row(
                   children: [
-                    // Section 1: Voter Details
-                    _buildVoterDetailsSection(isMr),
-                    const SizedBox(height: 18),
-
-                    // Section 2: Complaint Details OR Personal Request Details
-                    if (_activeTab == 'Complaints')
-                      _buildComplaintDetailsSection(isMr, societies)
-                    else
-                      _buildPersonalRequestDetailsSection(isMr),
-                    const SizedBox(height: 18),
-
-                    // Section 3: Attachments
-                    _buildAttachmentsSection(isMr),
-                    const SizedBox(height: 24),
-
-                    // Submit Action Button (Submit Complaint / Save)
-                    _buildSubmitButton(isMr),
+                    if (_linkedVoterDisplay != null) ...[
+                      const Icon(Icons.link_rounded, size: 16, color: Color(0xFF0284C7)),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${isMr ? "जोडलेले मतदार:" : "Linked:"} $_linkedVoterDisplay',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0369A1)),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: _clearLinkedVoter,
+                        child: const Icon(Icons.close_rounded, size: 14, color: Color(0xFF64748B)),
+                      ),
+                    ],
+                    const Spacer(),
+                    if (_hasAnyDraft) ...[
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(color: Color(0xFF10B981), shape: BoxShape.circle),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        isMr ? 'मसुदा सेव्ह केला' : 'Draft autosaved',
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF047857)),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: _handleClearAllDrafts,
+                        child: Text(
+                          isMr ? 'काढून टाका' : 'Clear draft',
+                          style: const TextStyle(fontSize: 11, color: Color(0xFFDC2626), decoration: TextDecoration.underline),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
+              ),
+
+            // 2. SCROLLABLE FORM BODY & SUBMIT BUTTON
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.fromLTRB(16, 12, 16, 24 + bottomInset),
+                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                children: [
+                  // Section 1: Voter Details
+                  _buildVoterDetailsSection(isMr),
+                  const SizedBox(height: 18),
+
+                  // Section 2: Complaint Details OR Personal Request Details
+                  if (_activeTab == 'Complaints')
+                    _buildComplaintDetailsSection(isMr, societies)
+                  else
+                    _buildPersonalRequestDetailsSection(isMr),
+                  const SizedBox(height: 18),
+
+                  // Section 3: Attachments
+                  _buildAttachmentsSection(isMr),
+                  const SizedBox(height: 24),
+
+                  // Submit Action Button (Submit Complaint / Save)
+                  _buildSubmitButton(isMr),
+                ],
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  // ---------------------------------------------------------------------------
-  // TOP CARD HEADER (matching ComplaintForm.tsx)
-  // ---------------------------------------------------------------------------
-  Widget _buildTopCardHeader(bool isMr) {
-    final titleText = widget.hidePersonalHelp
-        ? (isMr ? 'नवीन प्रभागातील समस्या' : 'Report Ward Problem')
-        : (_activeTab == 'Complaints'
-            ? (isMr ? 'नवीन तक्रार' : 'New Request')
-            : (isMr ? 'वैयक्तिक विनंत्या' : 'Personal Requests'));
-
-    final subtitleText = widget.hidePersonalHelp
-        ? (isMr ? 'प्रभागातील नागरी समस्यांची नोंद घ्या' : 'Record civic and ward-level issues')
-        : (isMr
-            ? 'अधिकृत तक्रारी आणि वैयक्तिक मदत विनंत्या व्यवस्थापित करा'
-            : 'Track and manage official citizen grievances');
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: const BoxDecoration(
-        color: Color(0xFFF0F9FF),
-        border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  titleText,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
-                    letterSpacing: -0.2,
-                  ),
-                ),
-                if (_linkedVoterDisplay != null) ...[
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Text(
-                        '${isMr ? "मतदाराशी जोडले:" : "Linking to Voter:"} ',
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF0369A1)),
-                      ),
-                      Text(
-                        _linkedVoterDisplay!,
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0369A1)),
-                      ),
-                    ],
-                  ),
-                ] else if (_activeTab == 'Personal Help' && !widget.hidePersonalHelp) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    isMr ? 'नवीन वैयक्तिक मदत विनंती नोंदवा' : 'Create a new manual personal help request',
-                    style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                  ),
-                ] else ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitleText,
-                    style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          if (_hasAnyDraft) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFFECFDF5),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFA7F3D0)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF10B981),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 5),
-                  Text(
-                    isMr ? 'मसुदा सेव्ह केला' : 'Draft autosaved',
-                    style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Color(0xFF047857)),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            GestureDetector(
-              onTap: _handleClearAllDrafts,
-              child: Text(
-                isMr ? 'काढून टाका' : 'Clear draft',
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: Color(0xFFDC2626),
-                  decoration: TextDecoration.underline,
-                ),
-              ),
-            ),
-          ],
-          IconButton(
-            icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 28, color: Color(0xFF64748B)),
-            tooltip: 'Dismiss downwards',
-            onPressed: () => Navigator.pop(context),
-          ),
-        ],
       ),
     );
   }
@@ -1031,16 +965,15 @@ class _NewComplaintBottomSheetState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          isMr ? 'सोसायटीचे नाव' : 'Society Name',
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+        AppFieldLabel(
+          label: isMr ? 'सोसायटीचे नाव' : 'Society Name',
+          isRequired: false,
         ),
-        const SizedBox(height: 6),
         InkWell(
           onTap: () => _openSocietySelectionSheet(societies, isMr),
           borderRadius: BorderRadius.circular(10),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(10),
@@ -1097,39 +1030,18 @@ class _NewComplaintBottomSheetState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Text(
-              label,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-            ),
-            if (required) ...[
-              const SizedBox(width: 2),
-              const Text('*', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-            ],
-          ],
+        AppFieldLabel(
+          label: label,
+          isRequired: required,
         ),
-        const SizedBox(height: 6),
         TextField(
           controller: controller,
           keyboardType: keyboardType,
           maxLines: maxLines,
           style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
-          decoration: InputDecoration(
-            hintText: placeholder,
-            hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+          decoration: appInputDecoration(
+            hint: placeholder,
             prefixIcon: prefixIcon != null ? Icon(prefixIcon, size: 18, color: const Color(0xFF64748B)) : null,
-            filled: true,
-            fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
-            ),
           ),
         ),
       ],
@@ -1141,34 +1053,22 @@ class _NewComplaintBottomSheetState
     required String value,
     required List<DropdownMenuItem<String>> items,
     required ValueChanged<String?> onChanged,
+    bool required = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+        AppFieldLabel(
+          label: label,
+          isRequired: required,
         ),
-        const SizedBox(height: 6),
         DropdownButtonFormField<String>(
           initialValue: items.any((i) => i.value == value) ? value : null,
           items: items,
           onChanged: onChanged,
           isExpanded: true,
           style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
-            ),
-          ),
+          decoration: appInputDecoration(),
         ),
       ],
     );
@@ -1385,25 +1285,12 @@ class _VoterSearchModalSheetState
       ),
       child: Column(
         children: [
-          // Header (matching ComplaintForm.tsx lines 916-921)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  isMr ? 'मतदार यादीतून शोधा' : 'Search from Voter List',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded, size: 22, color: Color(0xFF64748B)),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
+          // 1. FIXED STANDARDIZED HEADER
+          AppModalHeader(
+            icon: Icons.person_search_rounded,
+            title: isMr ? 'मतदार यादीतून शोधा' : 'Search from Voter List',
+            subtitle: isMr ? 'नाव, घर क्र. किंवा पत्त्यानुसार शोधा' : 'Filter voters from electoral roll',
+            onClose: () => Navigator.pop(context),
           ),
 
           // Filters panel (matching ComplaintForm.tsx lines 922-1014)
@@ -1668,29 +1555,16 @@ class _SocietySearchModalState extends State<_SocietySearchModal> {
       height: MediaQuery.of(context).size.height * 0.75,
       decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
-            ),
-            child: Row(
-              children: [
-                const Expanded(
-                  child: Text(
-                    'Select Housing Society',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
+          // 1. FIXED STANDARDIZED HEADER
+          AppModalHeader(
+            icon: Icons.apartment_rounded,
+            title: 'Select Housing Society',
+            subtitle: 'Housing societies in ward',
+            onClose: () => Navigator.pop(context),
           ),
           Padding(
             padding: const EdgeInsets.all(12),
