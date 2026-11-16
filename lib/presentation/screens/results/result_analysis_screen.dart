@@ -583,13 +583,17 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
-              color: iconColor,
-              letterSpacing: -0.5,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+                color: iconColor,
+                letterSpacing: -0.5,
+              ),
             ),
           ),
           const SizedBox(height: 4),

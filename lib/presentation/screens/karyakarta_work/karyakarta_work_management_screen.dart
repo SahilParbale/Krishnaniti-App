@@ -715,9 +715,13 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 2),
-            Text(
-              value,
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: textColor),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                value,
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: textColor),
+              ),
             ),
             const SizedBox(height: 2),
             Text(

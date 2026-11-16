@@ -874,6 +874,7 @@ class _TabButton extends StatelessWidget {
             Flexible(
               child: Text(
                 label,
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 12.5,
@@ -941,24 +942,30 @@ class _KpiStatCard extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Text(
-              '$count',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-                color: isSelected ? color : const Color(0xFF0F172A),
-                height: 1.1,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                '$count',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: isSelected ? color : const Color(0xFF0F172A),
+                  height: 1.1,
+                ),
               ),
             ),
             const SizedBox(height: 2),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 10.5,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? color : const Color(0xFF64748B),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected ? color : const Color(0xFF64748B),
+                ),
               ),
             ),
           ],
@@ -1292,30 +1299,32 @@ class _ComplaintCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.calendar_today_rounded, size: 12, color: Color(0xFF94A3B8)),
-                      const SizedBox(width: 4),
-                      Text(
-                        DateFormat('MMM d, h:mm a').format(complaint.createdAt),
-                        style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                      ),
-                      if (complaint.area != null && complaint.area!.isNotEmpty) ...[
-                        const SizedBox(width: 10),
-                        const Icon(Icons.location_on_outlined, size: 13, color: Color(0xFF94A3B8)),
-                        const SizedBox(width: 2),
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 120),
-                          child: Text(
-                            complaint.area!,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                          ),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        const Icon(Icons.calendar_today_rounded, size: 12, color: Color(0xFF94A3B8)),
+                        const SizedBox(width: 4),
+                        Text(
+                          DateFormat('MMM d, h:mm a').format(complaint.createdAt),
+                          style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                         ),
+                        if (complaint.area != null && complaint.area!.isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          const Icon(Icons.location_on_outlined, size: 13, color: Color(0xFF94A3B8)),
+                          const SizedBox(width: 2),
+                          Flexible(
+                            child: Text(
+                              complaint.area!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
+                  const SizedBox(width: 8),
 
                   // Quick Action arrow
                   Container(

@@ -808,9 +808,13 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  count,
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: color),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    count,
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: color),
+                  ),
                 ),
               ],
             ),

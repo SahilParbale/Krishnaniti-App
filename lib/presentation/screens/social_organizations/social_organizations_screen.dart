@@ -1085,14 +1085,24 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
             child: Icon(icon, size: 16, color: color),
           ),
           const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: color),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: color),
+            ),
           ),
           const SizedBox(height: 2),
-          Text(
-            title,
-            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+            ),
           ),
         ],
       ),

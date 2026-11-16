@@ -1032,16 +1032,24 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
             child: Icon(icon, size: 15, color: color),
           ),
           const SizedBox(height: 6),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+            ),
           ),
           const SizedBox(height: 1),
-          Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.grey.shade700),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.grey.shade700),
+            ),
           ),
         ],
       ),
@@ -1181,9 +1189,13 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          '${filtered.length} voters found',
-          style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.grey.shade700),
+        Expanded(
+          child: Text(
+            '${filtered.length} voters found',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.grey.shade700),
+          ),
         ),
         Row(
           mainAxisSize: MainAxisSize.min,
@@ -1414,17 +1426,23 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
 
               const SizedBox(height: 6),
 
-              Row(
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 4,
                 children: [
-                  Icon(Icons.how_to_vote_outlined, size: 14, color: Colors.grey.shade500),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Booth: ${voter.booth}',
-                    style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.how_to_vote_outlined, size: 14, color: Colors.grey.shade500),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Booth: ${voter.booth}',
+                        style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
                   Text('•', style: TextStyle(color: Colors.grey.shade400)),
-                  const SizedBox(width: 8),
                   Text(
                     'Age: ${voter.age} Yrs (${voter.gender})',
                     style: TextStyle(fontSize: 11, color: Colors.grey.shade600),

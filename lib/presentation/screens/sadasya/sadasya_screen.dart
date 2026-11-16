@@ -410,9 +410,13 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
             ],
           ),
           const SizedBox(height: 6),
-          Text(
-            value,
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: iconColor),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: iconColor),
+            ),
           ),
           const SizedBox(height: 2),
           Text(
