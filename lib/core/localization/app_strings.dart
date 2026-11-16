@@ -100,6 +100,12 @@ class AppStrings {
   static const String newLetterMr = 'नवीन पत्र तयार करा';
   static const String scanLetter = 'Scan Letter';
   static const String scanLetterMr = 'पत्र स्कॅन करा';
+  static const String searchAreaPlaceholder = 'Search Area...';
+  static const String searchAreaPlaceholderMr = 'क्षेत्र शोधा...';
+  static const String filterDatePlaceholder = 'Filter by Date...';
+  static const String filterDatePlaceholderMr = 'तारखेनुसार फिल्टर करा...';
+  static const String noAreasFound = 'No areas found';
+  static const String noAreasFoundMr = 'कोणतेही क्षेत्र सापडले नाही';
 
   // Common
   static const String save = 'Save';

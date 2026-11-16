@@ -28,7 +28,16 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
   bool _isOutgoing = true;
 
   final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _areaController = TextEditingController();
+  final TextEditingController _dateController = TextEditingController();
+  final FocusNode _areaFocusNode = FocusNode();
+  final FocusNode _dateFocusNode = FocusNode();
+
   String _searchQuery = '';
+  String _areaSearch = '';
+  String _dateSearch = '';
+  bool _showAreaDropdown = false;
+  bool _showDateDropdown = false;
   String _selectedStatus = 'All'; // 'All', 'Pending', 'Approved', 'Rejected'
   bool _isLoading = false;
 
@@ -186,6 +195,10 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
   @override
   void dispose() {
     _searchController.dispose();
+    _areaController.dispose();
+    _dateController.dispose();
+    _areaFocusNode.dispose();
+    _dateFocusNode.dispose();
     super.dispose();
   }
 
@@ -212,6 +225,35 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
     return _isOutgoing ? _outgoingLetters : _incomingLetters;
   }
 
+  DateTime _getLetterDate(LetterModel l) {
+    return _isOutgoing ? l.createdAt : (l.receivedDate ?? l.createdAt);
+  }
+
+  // Helper: Get Unique Areas with Counts matching Nagarsevak-Managment getAreaSuggestions
+  List<MapEntry<String, int>> get _areaSuggestions {
+    final stats = <String, int>{};
+    for (final r in _currentList) {
+      if (r.area != null && r.area!.trim().isNotEmpty) {
+        final a = r.area!.trim();
+        stats[a] = (stats[a] ?? 0) + 1;
+      }
+    }
+    final entries = stats.entries.toList();
+    entries.sort((a, b) => b.value.compareTo(a.value));
+    return entries;
+  }
+
+  // Helper: Get Unique Dates with Counts matching Nagarsevak-Managment getDateSuggestions
+  List<MapEntry<String, int>> get _dateSuggestions {
+    final stats = <String, int>{};
+    for (final r in _currentList) {
+      final d = _getLetterDate(r);
+      final dateStr = DateFormat('MMM d, yyyy').format(d);
+      stats[dateStr] = (stats[dateStr] ?? 0) + 1;
+    }
+    return stats.entries.toList();
+  }
+
   List<LetterModel> get _filteredLetters {
     return _currentList.where((l) {
       if (_isOutgoing && _selectedStatus != 'All') {
@@ -228,6 +270,28 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
             (l.description != null && l.description!.toLowerCase().contains(q));
         if (!matches) return false;
       }
+
+      if (_areaSearch.isNotEmpty) {
+        final a = _areaSearch.toLowerCase();
+        if (l.area == null || !l.area!.toLowerCase().contains(a)) {
+          return false;
+        }
+      }
+
+      if (_dateSearch.isNotEmpty) {
+        final d = _getLetterDate(l);
+        final dateStr1 = DateFormat('MMM d, yyyy').format(d).toLowerCase();
+        final dateStr2 = DateFormat('dd MMM yyyy').format(d).toLowerCase();
+        final dateStr3 = DateFormat('dd/MM/yyyy').format(d).toLowerCase();
+        final dateStr4 = DateFormat('yyyy-MM-dd').format(d).toLowerCase();
+        final ds = _dateSearch.toLowerCase();
+        final matchesDate = dateStr1.contains(ds) ||
+            dateStr2.contains(ds) ||
+            dateStr3.contains(ds) ||
+            dateStr4.contains(ds);
+        if (!matchesDate) return false;
+      }
+
       return true;
     }).toList();
   }
@@ -358,7 +422,13 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                     // Outgoing Tab Button
                     Expanded(
                       child: InkWell(
-                        onTap: () => setState(() => _isOutgoing = true),
+                        onTap: () {
+                          setState(() {
+                            _isOutgoing = true;
+                            _showAreaDropdown = false;
+                            _showDateDropdown = false;
+                          });
+                        },
                         borderRadius: BorderRadius.circular(9),
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 9),
@@ -400,7 +470,13 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                     // Incoming Tab Button
                     Expanded(
                       child: InkWell(
-                        onTap: () => setState(() => _isOutgoing = false),
+                        onTap: () {
+                          setState(() {
+                            _isOutgoing = false;
+                            _showAreaDropdown = false;
+                            _showDateDropdown = false;
+                          });
+                        },
                         borderRadius: BorderRadius.circular(9),
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 9),
@@ -443,68 +519,319 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
               ),
             ),
 
-            // Search Bar & Filters
+            // Search Bar & Advanced Filters (Search, Search by Area, Filter by Date)
             Container(
               color: Colors.white,
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Container(
-                      height: 42,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: TextField(
-                        controller: _searchController,
-                        onChanged: (val) => setState(() => _searchQuery = val.trim()),
-                        style: const TextStyle(fontSize: 13),
-                        decoration: InputDecoration(
-                          hintText: isMr ? 'पत्र, नागरिक किंवा विषय शोधा...' : 'Search letters, citizen, subject...',
-                          hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
-                          prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF94A3B8), size: 19),
-                          suffixIcon: _searchQuery.isNotEmpty
-                              ? IconButton(
-                                  icon: const Icon(Icons.close_rounded, size: 16, color: Color(0xFF64748B)),
-                                  onPressed: () {
-                                    _searchController.clear();
-                                    setState(() => _searchQuery = '');
-                                  },
-                                )
-                              : null,
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                  // Row 1: General Search & Status Dropdown
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: TextField(
+                            controller: _searchController,
+                            onChanged: (val) => setState(() => _searchQuery = val.trim()),
+                            style: const TextStyle(fontSize: 13),
+                            decoration: InputDecoration(
+                              hintText: isMr ? 'पत्र, नागरिक किंवा विषय शोधा...' : 'Search letters, citizen, subject...',
+                              hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12.5),
+                              prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF94A3B8), size: 18),
+                              suffixIcon: _searchQuery.isNotEmpty
+                                  ? IconButton(
+                                      icon: const Icon(Icons.close_rounded, size: 16, color: Color(0xFF64748B)),
+                                      padding: EdgeInsets.zero,
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        setState(() => _searchQuery = '');
+                                      },
+                                    )
+                                  : null,
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(vertical: 9),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+
+                      // Status filter for Outgoing letters
+                      if (_isOutgoing) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          height: 40,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: _selectedStatus,
+                              icon: const Icon(Icons.arrow_drop_down_rounded, color: Color(0xFF64748B), size: 20),
+                              items: [
+                                DropdownMenuItem(value: 'All', child: Text(isMr ? 'सर्व स्थिती' : 'All Status', style: const TextStyle(fontSize: 12))),
+                                DropdownMenuItem(value: 'Pending', child: Text(isMr ? 'प्रलंबित' : 'Pending', style: const TextStyle(fontSize: 12))),
+                                DropdownMenuItem(value: 'Approved', child: Text(isMr ? 'मंजूर' : 'Approved', style: const TextStyle(fontSize: 12))),
+                                DropdownMenuItem(value: 'Rejected', child: Text(isMr ? 'नाकारले' : 'Rejected', style: const TextStyle(fontSize: 12))),
+                              ],
+                              onChanged: (val) {
+                                if (val != null) setState(() => _selectedStatus = val);
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
 
-                  // Status filter for Outgoing letters
-                  if (_isOutgoing) ...[
-                    const SizedBox(width: 8),
+                  const SizedBox(height: 8),
+
+                  // Row 2: Search by Area & Filter by Date (matching Nagarsevak-Managment)
+                  Row(
+                    children: [
+                      // Area Search Input with suggestions dropdown
+                      Expanded(
+                        child: Container(
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: _showAreaDropdown || _areaSearch.isNotEmpty
+                                  ? const Color(0xFF0284C7)
+                                  : const Color(0xFFE2E8F0),
+                            ),
+                          ),
+                          child: TextField(
+                            controller: _areaController,
+                            focusNode: _areaFocusNode,
+                            onChanged: (val) {
+                              setState(() {
+                                _areaSearch = val.trim();
+                                _showAreaDropdown = true;
+                                _showDateDropdown = false;
+                              });
+                            },
+                            onTap: () {
+                              setState(() {
+                                _showAreaDropdown = true;
+                                _showDateDropdown = false;
+                              });
+                            },
+                            style: const TextStyle(fontSize: 12.5),
+                            decoration: InputDecoration(
+                              hintText: isMr ? AppStrings.searchAreaPlaceholderMr : AppStrings.searchAreaPlaceholder,
+                              hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                              prefixIcon: const Icon(Icons.location_on_outlined, color: Color(0xFF0284C7), size: 16),
+                              suffixIcon: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (_areaSearch.isNotEmpty)
+                                    GestureDetector(
+                                      onTap: () {
+                                        _areaController.clear();
+                                        setState(() {
+                                          _areaSearch = '';
+                                          _showAreaDropdown = false;
+                                        });
+                                      },
+                                      child: const Padding(
+                                        padding: EdgeInsets.symmetric(horizontal: 4),
+                                        child: Icon(Icons.close_rounded, size: 15, color: Color(0xFF64748B)),
+                                      ),
+                                    ),
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _showAreaDropdown = !_showAreaDropdown;
+                                        _showDateDropdown = false;
+                                      });
+                                    },
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(right: 6),
+                                      child: Icon(
+                                        _showAreaDropdown ? Icons.arrow_drop_up_rounded : Icons.arrow_drop_down_rounded,
+                                        size: 20,
+                                        color: const Color(0xFF64748B),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(vertical: 9),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(width: 8),
+
+                      // Date Search Input with suggestions dropdown & calendar picker
+                      Expanded(
+                        child: Container(
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: _showDateDropdown || _dateSearch.isNotEmpty
+                                  ? const Color(0xFF0284C7)
+                                  : const Color(0xFFE2E8F0),
+                            ),
+                          ),
+                          child: TextField(
+                            controller: _dateController,
+                            focusNode: _dateFocusNode,
+                            onChanged: (val) {
+                              setState(() {
+                                _dateSearch = val.trim();
+                                _showDateDropdown = true;
+                                _showAreaDropdown = false;
+                              });
+                            },
+                            onTap: () {
+                              setState(() {
+                                _showDateDropdown = true;
+                                _showAreaDropdown = false;
+                              });
+                            },
+                            style: const TextStyle(fontSize: 12.5),
+                            decoration: InputDecoration(
+                              hintText: isMr ? AppStrings.filterDatePlaceholderMr : AppStrings.filterDatePlaceholder,
+                              hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                              prefixIcon: const Icon(Icons.calendar_today_outlined, color: Color(0xFF0284C7), size: 15),
+                              suffixIcon: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (_dateSearch.isNotEmpty)
+                                    GestureDetector(
+                                      onTap: () {
+                                        _dateController.clear();
+                                        setState(() {
+                                          _dateSearch = '';
+                                          _showDateDropdown = false;
+                                        });
+                                      },
+                                      child: const Padding(
+                                        padding: EdgeInsets.symmetric(horizontal: 4),
+                                        child: Icon(Icons.close_rounded, size: 15, color: Color(0xFF64748B)),
+                                      ),
+                                    ),
+                                  GestureDetector(
+                                    onTap: () => _pickCustomDate(context, isMr),
+                                    child: const Padding(
+                                      padding: EdgeInsets.only(right: 6),
+                                      child: Icon(Icons.date_range_rounded, size: 18, color: Color(0xFF0284C7)),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(vertical: 9),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // Area Suggestions Dropdown (matching getAreaSuggestions() from Nagarsevak-Managment)
+                  if (_showAreaDropdown) ...[
+                    const SizedBox(height: 6),
                     Container(
-                      height: 42,
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      constraints: const BoxConstraints(maxHeight: 180),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: const Color(0xFFE2E8F0)),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x14000000),
+                            blurRadius: 8,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
                       ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _selectedStatus,
-                          items: const [
-                            DropdownMenuItem(value: 'All', child: Text('All Status', style: TextStyle(fontSize: 12.5))),
-                            DropdownMenuItem(value: 'Pending', child: Text('Pending', style: TextStyle(fontSize: 12.5))),
-                            DropdownMenuItem(value: 'Approved', child: Text('Approved', style: TextStyle(fontSize: 12.5))),
-                            DropdownMenuItem(value: 'Rejected', child: Text('Rejected', style: TextStyle(fontSize: 12.5))),
+                      child: _buildAreaSuggestionsList(isMr),
+                    ),
+                  ],
+
+                  // Date Suggestions Dropdown (matching getDateSuggestions() from Nagarsevak-Managment)
+                  if (_showDateDropdown) ...[
+                    const SizedBox(height: 6),
+                    Container(
+                      constraints: const BoxConstraints(maxHeight: 180),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x14000000),
+                            blurRadius: 8,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: _buildDateSuggestionsList(isMr),
+                    ),
+                  ],
+
+                  // Active Filter Chips / Clear All Row
+                  if (_areaSearch.isNotEmpty || _dateSearch.isNotEmpty || (_isOutgoing && _selectedStatus != 'All')) ...[
+                    const SizedBox(height: 8),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          if (_areaSearch.isNotEmpty)
+                            _buildActiveFilterChip(
+                              label: '${isMr ? 'क्षेत्र: ' : 'Area: '}$_areaSearch',
+                              onDelete: () {
+                                _areaController.clear();
+                                setState(() => _areaSearch = '');
+                              },
+                            ),
+                          if (_dateSearch.isNotEmpty) ...[
+                            const SizedBox(width: 6),
+                            _buildActiveFilterChip(
+                              label: '${isMr ? 'तारीख: ' : 'Date: '}$_dateSearch',
+                              onDelete: () {
+                                _dateController.clear();
+                                setState(() => _dateSearch = '');
+                              },
+                            ),
                           ],
-                          onChanged: (val) {
-                            if (val != null) setState(() => _selectedStatus = val);
-                          },
-                        ),
+                          if (_isOutgoing && _selectedStatus != 'All') ...[
+                            const SizedBox(width: 6),
+                            _buildActiveFilterChip(
+                              label: '${isMr ? 'स्थिती: ' : 'Status: '}$_selectedStatus',
+                              onDelete: () => setState(() => _selectedStatus = 'All'),
+                            ),
+                          ],
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: _clearAllFilters,
+                            child: Text(
+                              isMr ? 'सर्व साफ करा' : 'Clear all',
+                              style: const TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFFDC2626),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -516,36 +843,63 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
 
             // Letters List
             Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0284C7)))
-                  : filtered.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFF1F5F9),
-                                  shape: BoxShape.circle,
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: () {
+                  if (_showAreaDropdown || _showDateDropdown) {
+                    setState(() {
+                      _showAreaDropdown = false;
+                      _showDateDropdown = false;
+                    });
+                  }
+                },
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0284C7)))
+                    : filtered.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFF1F5F9),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.mail_outline_rounded, size: 36, color: Color(0xFF94A3B8)),
                                 ),
-                                child: const Icon(Icons.mail_outline_rounded, size: 36, color: Color(0xFF94A3B8)),
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                isMr ? AppStrings.noDataFoundMr : AppStrings.noDataFound,
-                                style: const TextStyle(color: Color(0xFF64748B), fontSize: 14, fontWeight: FontWeight.w600),
-                              ),
-                            ],
-                          ),
-                        )
+                                const SizedBox(height: 12),
+                                Text(
+                                  isMr ? AppStrings.noDataFoundMr : AppStrings.noDataFound,
+                                  style: const TextStyle(color: Color(0xFF64748B), fontSize: 14, fontWeight: FontWeight.w600),
+                                ),
+                                if (_searchQuery.isNotEmpty || _areaSearch.isNotEmpty || _dateSearch.isNotEmpty || (_isOutgoing && _selectedStatus != 'All')) ...[
+                                  const SizedBox(height: 10),
+                                  OutlinedButton.icon(
+                                    onPressed: _clearAllFilters,
+                                    icon: const Icon(Icons.filter_alt_off_rounded, size: 16),
+                                    label: Text(
+                                      isMr ? 'फिल्टर साफ करा' : 'Clear Filters',
+                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                    ),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: const Color(0xFF0284C7),
+                                      side: const BorderSide(color: Color(0xFF0284C7)),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          )
                       : RefreshIndicator(
                           onRefresh: _fetchLetters,
                           color: const Color(0xFF0284C7),
                           child: ListView.separated(
                             padding: const EdgeInsets.fromLTRB(16, 14, 16, 88),
                             itemCount: filtered.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 12),
+                            separatorBuilder: (_, _) => const SizedBox(height: 12),
                             itemBuilder: (ctx, idx) {
                               final item = filtered[idx];
                               return _LetterCard(
@@ -557,6 +911,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                             },
                           ),
                         ),
+              ),
             ),
           ],
         ),
@@ -575,6 +930,235 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
             style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
           ),
         ),
+      ),
+    );
+  }
+
+  Future<void> _pickCustomDate(BuildContext context, bool isMr) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2035),
+      builder: (ctx, child) {
+        return Theme(
+          data: Theme.of(ctx).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF0284C7),
+              onPrimary: Colors.white,
+              onSurface: Color(0xFF0F172A),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      final formatted = DateFormat('MMM d, yyyy').format(picked);
+      _dateController.text = formatted;
+      setState(() {
+        _dateSearch = formatted;
+        _showDateDropdown = false;
+        _showAreaDropdown = false;
+      });
+    }
+  }
+
+  void _clearAllFilters() {
+    _searchController.clear();
+    _areaController.clear();
+    _dateController.clear();
+    setState(() {
+      _searchQuery = '';
+      _areaSearch = '';
+      _dateSearch = '';
+      _selectedStatus = 'All';
+      _showAreaDropdown = false;
+      _showDateDropdown = false;
+    });
+  }
+
+  Widget _buildAreaSuggestionsList(bool isMr) {
+    final suggestions = _areaSuggestions;
+    final filtered = _areaSearch.isEmpty
+        ? suggestions
+        : suggestions.where((s) => s.key.toLowerCase().contains(_areaSearch.toLowerCase())).toList();
+
+    if (filtered.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Text(
+          isMr ? AppStrings.noAreasFoundMr : AppStrings.noAreasFound,
+          style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B), fontStyle: FontStyle.italic),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      shrinkWrap: true,
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      itemCount: filtered.length,
+      separatorBuilder: (_, _) => const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
+      itemBuilder: (ctx, idx) {
+        final item = filtered[idx];
+        return InkWell(
+          onTap: () {
+            _areaController.text = item.key;
+            setState(() {
+              _areaSearch = item.key;
+              _showAreaDropdown = false;
+            });
+            _areaFocusNode.unfocus();
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.location_on_outlined, size: 14, color: Color(0xFF0284C7)),
+                    const SizedBox(width: 6),
+                    Text(
+                      item.key,
+                      style: const TextStyle(fontSize: 12.5, color: Color(0xFF334155), fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE0F2FE),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '${item.value}',
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF0284C7)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDateSuggestionsList(bool isMr) {
+    final suggestions = _dateSuggestions;
+    final filtered = _dateSearch.isEmpty
+        ? suggestions
+        : suggestions.where((d) => d.key.toLowerCase().contains(_dateSearch.toLowerCase())).toList();
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Quick button to pick any custom date via DatePicker
+        InkWell(
+          onTap: () {
+            setState(() => _showDateDropdown = false);
+            _pickCustomDate(context, isMr);
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              children: [
+                const Icon(Icons.calendar_month_rounded, size: 16, color: Color(0xFF0284C7)),
+                const SizedBox(width: 8),
+                Text(
+                  isMr ? 'कॅलेंडरमधून निवडा...' : 'Choose from calendar...',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0284C7)),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const Divider(height: 1, thickness: 1, color: Color(0xFFE2E8F0)),
+        if (filtered.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Text(
+              isMr ? 'कोणतीही तारीख सापडली नाही' : 'No dates found',
+              style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B), fontStyle: FontStyle.italic),
+            ),
+          )
+        else
+          Flexible(
+            child: ListView.separated(
+              shrinkWrap: true,
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              itemCount: filtered.length,
+              separatorBuilder: (_, _) => const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
+              itemBuilder: (ctx, idx) {
+                final item = filtered[idx];
+                return InkWell(
+                  onTap: () {
+                    _dateController.text = item.key;
+                    setState(() {
+                      _dateSearch = item.key;
+                      _showDateDropdown = false;
+                    });
+                    _dateFocusNode.unfocus();
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.schedule_rounded, size: 14, color: Color(0xFF64748B)),
+                            const SizedBox(width: 6),
+                            Text(
+                              item.key,
+                              style: const TextStyle(fontSize: 12.5, color: Color(0xFF334155), fontWeight: FontWeight.w500),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE0F2FE),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '${item.value}',
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF0284C7)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildActiveFilterChip({required String label, required VoidCallback onDelete}) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(8, 3, 4, 3),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFCBD5E1)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+          ),
+          const SizedBox(width: 4),
+          GestureDetector(
+            onTap: onDelete,
+            child: const Icon(Icons.cancel_rounded, size: 14, color: Color(0xFF64748B)),
+          ),
+        ],
       ),
     );
   }
