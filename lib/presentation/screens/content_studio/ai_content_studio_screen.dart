@@ -340,12 +340,36 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                               dividerColor: Colors.transparent,
                               tabs: [
                                 const Tab(
-                                  icon: Icon(Icons.edit_note_rounded, size: 18),
-                                  text: 'Create Content (Studio)',
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.edit_note_rounded, size: 16),
+                                      SizedBox(width: 6),
+                                      Flexible(
+                                        child: Text(
+                                          'Create Content',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                                 Tab(
-                                  icon: const Icon(Icons.history_rounded, size: 18),
-                                  text: 'History & Drafts (${_allHistory.length})',
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(Icons.history_rounded, size: 16),
+                                      const SizedBox(width: 6),
+                                      Flexible(
+                                        child: Text(
+                                          'History (${_allHistory.length})',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
@@ -460,26 +484,32 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
               children: [
                 Icon(icon, size: 12, color: color),
                 const SizedBox(width: 4),
-                Text(
-                  count,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: color,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    count,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 2),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 10,
-                color: Color(0xFF64748B),
-                fontWeight: FontWeight.w500,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: Color(0xFF64748B),
+                  fontWeight: FontWeight.w500,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),

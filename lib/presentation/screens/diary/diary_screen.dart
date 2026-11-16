@@ -896,12 +896,16 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
               color: isActive ? const Color(0xFF0284C7) : const Color(0xFF64748B),
             ),
             const SizedBox(width: 5),
-            Text(
-              '$label ($count)',
-              style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
-                color: isActive ? const Color(0xFF0284C7) : const Color(0xFF64748B),
+            Flexible(
+              child: Text(
+                '$label ($count)',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
+                  color: isActive ? const Color(0xFF0284C7) : const Color(0xFF64748B),
+                ),
               ),
             ),
           ],

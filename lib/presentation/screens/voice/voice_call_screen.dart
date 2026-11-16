@@ -272,8 +272,38 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
                 indicatorSize: TabBarIndicatorSize.tab,
                 dividerColor: Colors.transparent,
                 tabs: const [
-                  Tab(icon: Icon(Icons.phone, size: 16), text: 'Voice Call'),
-                  Tab(icon: Icon(Icons.history, size: 16), text: 'Call History'),
+                  Tab(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.phone, size: 16),
+                        SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            'Voice Call',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Tab(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.history, size: 16),
+                        SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            'Call History',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),

@@ -413,7 +413,13 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
                             children: [
                               Icon(Icons.send_rounded, size: 15),
                               SizedBox(width: 6),
-                              Text('Send SMS'),
+                              Flexible(
+                                child: Text(
+                                  'Send SMS',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -423,7 +429,13 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
                             children: [
                               Icon(Icons.history_rounded, size: 15),
                               SizedBox(width: 6),
-                              Text('History & Reports'),
+                              Flexible(
+                                child: Text(
+                                  'History & Reports',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
                             ],
                           ),
                         ),

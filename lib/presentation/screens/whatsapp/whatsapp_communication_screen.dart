@@ -1426,11 +1426,24 @@ class _WhatsAppCommunicationScreenState
           children: [
             Icon(icon, size: 16, color: color),
             const SizedBox(height: 4),
-            Text(
-              value,
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: color),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                value,
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: color),
+              ),
             ),
-            Text(label, style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B))),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                label,
+                style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
       ),

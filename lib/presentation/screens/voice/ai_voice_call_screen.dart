@@ -339,8 +339,38 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
                 indicatorSize: TabBarIndicatorSize.tab,
                 dividerColor: Colors.transparent,
                 tabs: const [
-                  Tab(icon: Icon(Icons.record_voice_over, size: 16), text: 'AI Call Broadcast'),
-                  Tab(icon: Icon(Icons.history, size: 16), text: 'Call History'),
+                  Tab(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.record_voice_over, size: 16),
+                        SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            'AI Call Broadcast',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Tab(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.history, size: 16),
+                        SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            'Call History',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),

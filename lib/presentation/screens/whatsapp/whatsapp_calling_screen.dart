@@ -425,7 +425,13 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
                             children: [
                               Icon(Icons.phone, size: 14),
                               SizedBox(width: 5),
-                              Text('Make Call'),
+                              Flexible(
+                                child: Text(
+                                  'Make Call',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -435,7 +441,13 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
                             children: [
                               Icon(Icons.history, size: 14),
                               SizedBox(width: 5),
-                              Text('Call History'),
+                              Flexible(
+                                child: Text(
+                                  'Call History',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
                             ],
                           ),
                         ),
