@@ -922,9 +922,13 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text(
-                                        isMr ? 'एकूण मागणी' : 'Total Requested',
-                                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                                      Expanded(
+                                        child: Text(
+                                          isMr ? 'एकूण मागणी' : 'Total Requested',
+                                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
                                       ),
                                       Container(
                                         padding: const EdgeInsets.all(6),
@@ -938,9 +942,13 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                                     ],
                                   ),
                                   const SizedBox(height: 8),
-                                  Text(
-                                    _formatCurrency(totalRequested),
-                                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      _formatCurrency(totalRequested),
+                                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                                    ),
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
@@ -979,9 +987,13 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text(
-                                        isMr ? 'एकूण मंजूर' : 'Total Sanctioned',
-                                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                                      Expanded(
+                                        child: Text(
+                                          isMr ? 'एकूण मंजूर' : 'Total Sanctioned',
+                                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
                                       ),
                                       Container(
                                         padding: const EdgeInsets.all(6),
@@ -995,9 +1007,13 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                                     ],
                                   ),
                                   const SizedBox(height: 8),
-                                  Text(
-                                    _formatCurrency(totalSanctioned),
-                                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      _formatCurrency(totalSanctioned),
+                                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                                    ),
                                   ),
                                   const SizedBox(height: 6),
                                   ClipRRect(

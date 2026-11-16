@@ -772,11 +772,15 @@ class _WardBudgetDetailScreenState extends ConsumerState<WardBudgetDetailScreen>
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 4),
-            Text(
-              amount,
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: color),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                amount,
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: color),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         ),

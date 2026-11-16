@@ -601,7 +601,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                                       padding: const EdgeInsets.symmetric(vertical: 9),
                                     ),
                                     icon: const Icon(Icons.download_rounded, size: 16),
-                                    label: Text(isMr ? 'PDF अहवाल' : 'Download Report', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                                    label: FittedBox(fit: BoxFit.scaleDown, child: Text(isMr ? 'PDF अहवाल' : 'Download Report', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold))),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
@@ -617,7 +617,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                                       padding: const EdgeInsets.symmetric(vertical: 9),
                                     ),
                                     icon: const Icon(Icons.description_outlined, size: 16, color: Color(0xFF0284C7)),
-                                    label: Text(isMr ? 'अहवाल तयार करा' : 'Generate Ahwal', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                                    label: FittedBox(fit: BoxFit.scaleDown, child: Text(isMr ? 'अहवाल तयार करा' : 'Generate Ahwal', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold))),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
@@ -1238,10 +1238,15 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  '${isMr ? "अहवाल तक्ता" : "Report View"} (${items.length})',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
+                Expanded(
+                  child: Text(
+                    '${isMr ? "अहवाल तक्ता" : "Report View"} (${items.length})',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
+                const SizedBox(width: 8),
                 ElevatedButton.icon(
                   onPressed: () {
                     WorkReportGenerator.generateAndPrintWorkReport(

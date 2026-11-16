@@ -835,26 +835,35 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Row(
-                                children: [
-                                  const Icon(Icons.star_rounded, color: Colors.amber, size: 24),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    isMr ? 'नागरिक प्रतिसाद व रेटिंग' : 'Citizen Feedback & Ratings',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF0F172A),
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.star_rounded, color: Colors.amber, size: 22),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        isMr ? 'नागरिक प्रतिसाद व रेटिंग' : 'Citizen Feedback & Ratings',
+                                        style: const TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF0F172A),
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
+                              const SizedBox(width: 6),
                               TextButton.icon(
-                                icon: const Icon(Icons.add_comment_outlined, size: 16),
+                                icon: const Icon(Icons.add_comment_outlined, size: 15),
                                 label: Text(isMr ? '+ मत नोंदवा' : '+ Review'),
                                 style: TextButton.styleFrom(
                                   foregroundColor: const Color(0xFF0284C7),
-                                  textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                  textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                  visualDensity: VisualDensity.compact,
                                 ),
                                 onPressed: _showAddFeedbackModal,
                               ),
@@ -1051,11 +1060,15 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                   style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    value,
+                    style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),

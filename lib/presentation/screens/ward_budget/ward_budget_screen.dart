@@ -688,83 +688,81 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                         child: LayoutBuilder(
                           builder: (context, constraints) {
                             final isWide = constraints.maxWidth >= 600;
-                            return Flex(
-                              direction: isWide ? Axis.horizontal : Axis.vertical,
-                              children: [
-                                // Allocated Card
-                                Expanded(
-                                  flex: isWide ? 1 : 0,
-                                  child: _overviewCard(
-                                    title: isMr ? 'एकूण वाटप' : 'Total Allocated',
-                                    amount: numFormat.format(totalAllocated),
-                                    icon: Icons.account_balance_wallet_outlined,
-                                    iconColor: const Color(0xFF0284C7),
-                                    iconBgColor: const Color(0xFFEFF6FF),
-                                    footerWidget: Row(
-                                      children: [
-                                        const Icon(Icons.trending_up, size: 14, color: Color(0xFF64748B)),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          'Financial Year $_selectedYear',
-                                          style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                                        ),
-                                      ],
-                                    ),
+                            final cardAllocated = _overviewCard(
+                              title: isMr ? 'एकूण वाटप' : 'Total Allocated',
+                              amount: numFormat.format(totalAllocated),
+                              icon: Icons.account_balance_wallet_outlined,
+                              iconColor: const Color(0xFF0284C7),
+                              iconBgColor: const Color(0xFFEFF6FF),
+                              footerWidget: Row(
+                                children: [
+                                  const Icon(Icons.trending_up, size: 14, color: Color(0xFF64748B)),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Financial Year $_selectedYear',
+                                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                                   ),
-                                ),
-                                SizedBox(width: isWide ? 12 : 0, height: isWide ? 0 : 12),
-
-                                // Utilized Card
-                                Expanded(
-                                  flex: isWide ? 1 : 0,
-                                  child: _overviewCard(
-                                    title: isMr ? 'खर्च झालेला निधी' : 'Total Utilized',
-                                    amount: numFormat.format(totalUtilized),
-                                    icon: Icons.pie_chart_outline_rounded,
-                                    iconColor: const Color(0xFF6366F1),
-                                    iconBgColor: const Color(0xFFEEF2FF),
-                                    footerWidget: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        ClipRRect(
-                                          borderRadius: BorderRadius.circular(4),
-                                          child: LinearProgressIndicator(
-                                            value: (utilizationPercentage / 100).clamp(0.0, 1.0),
-                                            minHeight: 6,
-                                            backgroundColor: const Color(0xFFE2E8F0),
-                                            valueColor: AlwaysStoppedAnimation<Color>(
-                                              _getPctColor(utilizationPercentage),
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          '${utilizationPercentage.toStringAsFixed(1)}% utilized',
-                                          style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(width: isWide ? 12 : 0, height: isWide ? 0 : 12),
-
-                                // Remaining Card
-                                Expanded(
-                                  flex: isWide ? 1 : 0,
-                                  child: _overviewCard(
-                                    title: isMr ? 'शिल्लक उपलब्ध निधी' : 'Remaining Available',
-                                    amount: numFormat.format(totalRemaining),
-                                    icon: Icons.savings_outlined,
-                                    iconColor: const Color(0xFF16A34A),
-                                    iconBgColor: const Color(0xFFF0FDF4),
-                                    footerWidget: Text(
-                                      isMr ? 'पुढील प्रभाग विकास कामांसाठी उपलब्ध' : 'Available for ward works',
-                                      style: const TextStyle(fontSize: 11, color: Color(0xFF16A34A), fontWeight: FontWeight.w500),
-                                    ),
-                                  ),
-                                ),
-                              ],
+                                ],
+                              ),
                             );
+                            final cardUtilized = _overviewCard(
+                              title: isMr ? 'खर्च झालेला निधी' : 'Total Utilized',
+                              amount: numFormat.format(totalUtilized),
+                              icon: Icons.pie_chart_outline_rounded,
+                              iconColor: const Color(0xFF6366F1),
+                              iconBgColor: const Color(0xFFEEF2FF),
+                              footerWidget: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(4),
+                                    child: LinearProgressIndicator(
+                                      value: (utilizationPercentage / 100).clamp(0.0, 1.0),
+                                      minHeight: 6,
+                                      backgroundColor: const Color(0xFFE2E8F0),
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        _getPctColor(utilizationPercentage),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${utilizationPercentage.toStringAsFixed(1)}% utilized',
+                                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                  ),
+                                ],
+                              ),
+                            );
+                            final cardRemaining = _overviewCard(
+                              title: isMr ? 'शिल्लक उपलब्ध निधी' : 'Remaining Available',
+                              amount: numFormat.format(totalRemaining),
+                              icon: Icons.savings_outlined,
+                              iconColor: const Color(0xFF16A34A),
+                              iconBgColor: const Color(0xFFF0FDF4),
+                              footerWidget: Text(
+                                isMr ? 'पुढील प्रभाग विकास कामांसाठी उपलब्ध' : 'Available for ward works',
+                                style: const TextStyle(fontSize: 11, color: Color(0xFF16A34A), fontWeight: FontWeight.w500),
+                              ),
+                            );
+                            return isWide
+                                ? Row(
+                                    children: [
+                                      Expanded(child: cardAllocated),
+                                      const SizedBox(width: 12),
+                                      Expanded(child: cardUtilized),
+                                      const SizedBox(width: 12),
+                                      Expanded(child: cardRemaining),
+                                    ],
+                                  )
+                                : Column(
+                                    children: [
+                                      cardAllocated,
+                                      const SizedBox(height: 12),
+                                      cardUtilized,
+                                      const SizedBox(height: 12),
+                                      cardRemaining,
+                                    ],
+                                  );
                           },
                         ),
                       ),
@@ -1223,13 +1221,17 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+          Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
           const SizedBox(height: 2),
-          Text(
-            value,
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),

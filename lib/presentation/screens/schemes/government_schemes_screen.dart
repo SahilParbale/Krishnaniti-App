@@ -1165,27 +1165,34 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 14.5,
-                  fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
-                  color: isActive ? const Color(0xFF0284C7) : const Color(0xFF64748B),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
+                    color: isActive ? const Color(0xFF0284C7) : const Color(0xFF64748B),
+                  ),
                 ),
               ),
               const SizedBox(width: 6),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: isActive ? const Color(0xFFE0F2FE) : const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text(
-                  '$count',
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.bold,
-                    color: isActive ? const Color(0xFF0284C7) : const Color(0xFF64748B),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    '$count',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.bold,
+                      color: isActive ? const Color(0xFF0284C7) : const Color(0xFF64748B),
+                    ),
                   ),
                 ),
               ),

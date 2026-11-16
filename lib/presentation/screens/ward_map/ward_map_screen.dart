@@ -640,7 +640,7 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
     return GestureDetector(
       onTap: () => setState(() => _viewMode = mode),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 6),
         decoration: BoxDecoration(
           color: isSel ? const Color(0xFF0284C7) : Colors.transparent,
           borderRadius: BorderRadius.circular(9),
@@ -648,14 +648,17 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: isSel ? Colors.white : const Color(0xFF64748B)),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: isSel ? FontWeight.bold : FontWeight.w600,
-                color: isSel ? Colors.white : const Color(0xFF64748B),
+            Icon(icon, size: 15, color: isSel ? Colors.white : const Color(0xFF64748B)),
+            const SizedBox(width: 3),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: isSel ? FontWeight.bold : FontWeight.w600,
+                  color: isSel ? Colors.white : const Color(0xFF64748B),
+                ),
               ),
             ),
           ],

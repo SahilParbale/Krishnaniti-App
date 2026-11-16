@@ -1120,9 +1120,12 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
         ),
         child: Column(
           children: [
-            Text(
-              count,
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                count,
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color),
+              ),
             ),
             const SizedBox(height: 2),
             Text(

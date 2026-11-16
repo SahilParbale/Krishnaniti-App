@@ -806,23 +806,29 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFE0F2FE),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: const Color(0xFFBAE6FD)),
-                            ),
-                            child: Text(
-                              '${isMr ? "उपलब्ध सुधारणा" : "Total Items"}: ${filtered.length}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF0284C7),
+                          Flexible(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE0F2FE),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFFBAE6FD)),
+                              ),
+                              child: Text(
+                                '${isMr ? "उपलब्ध सुधारणा" : "Total Items"}: ${filtered.length}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF0284C7),
+                                ),
                               ),
                             ),
                           ),
+                          const SizedBox(width: 8),
                           Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               // View Mode Toggle (Grid / Report Table)
                               Container(
@@ -873,16 +879,19 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                               // PDF Export Button
                               OutlinedButton.icon(
                                 style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                                   minimumSize: Size.zero,
                                   side: const BorderSide(color: Color(0xFFCBD5E1)),
                                   backgroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 ),
-                                icon: const Icon(Icons.picture_as_pdf_outlined, size: 16, color: Color(0xFFDC2626)),
-                                label: Text(
-                                  isMr ? 'PDF अहवाल' : 'PDF',
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+                                icon: const Icon(Icons.picture_as_pdf_outlined, size: 15, color: Color(0xFFDC2626)),
+                                label: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    isMr ? 'PDF अहवाल' : 'PDF',
+                                    style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+                                  ),
                                 ),
                                 onPressed: () {
                                   ImprovementReportGenerator.generateAndPrintImprovementReport(

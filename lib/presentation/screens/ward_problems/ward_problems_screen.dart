@@ -543,22 +543,27 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFE0F2FE),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: const Color(0xFFBAE6FD)),
-                            ),
-                            child: Text(
-                              '${isMr ? "एकूण समस्या" : "Total Issues"}: ${filtered.length}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF0284C7),
+                          Flexible(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE0F2FE),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFFBAE6FD)),
+                              ),
+                              child: Text(
+                                '${isMr ? "एकूण समस्या" : "Total Issues"}: ${filtered.length}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF0284C7),
+                                ),
                               ),
                             ),
                           ),
+                          const SizedBox(width: 8),
                           Row(
                             children: [
                               // View Mode Toggle (Grid / Report Table)
@@ -819,9 +824,13 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                         children: [
                           const Icon(Icons.person_outline, size: 14, color: Color(0xFF1D4ED8)),
                           const SizedBox(width: 4),
-                          Text(
-                            'Assigned: ${c.assignedStaffName}${c.assignedStaffMobile != null && c.assignedStaffMobile!.isNotEmpty ? " | ${c.assignedStaffMobile}" : ""}',
-                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF1D4ED8)),
+                          Flexible(
+                            child: Text(
+                              'Assigned: ${c.assignedStaffName}${c.assignedStaffMobile != null && c.assignedStaffMobile!.isNotEmpty ? " | ${c.assignedStaffMobile}" : ""}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF1D4ED8)),
+                            ),
                           ),
                         ],
                       ),
