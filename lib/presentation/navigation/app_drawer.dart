@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/auth_provider.dart';
+import '../screens/landing/landing_screen.dart';
 
 class NagarsevakAppDrawer extends ConsumerStatefulWidget {
   final int currentTabIndex;
@@ -814,6 +815,10 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
                   onTap: () {
                     Navigator.of(context).pop();
                     ref.read(authStateProvider.notifier).signOut();
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => const LandingScreen()),
+                      (route) => false,
+                    );
                   },
                 ),
 

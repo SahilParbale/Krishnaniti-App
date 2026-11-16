@@ -11,6 +11,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/custom_navigation_provider.dart';
 import '../../providers/navigation_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
+import '../landing/landing_screen.dart';
 
 class ProfileSettingsScreen extends ConsumerStatefulWidget {
   final VoidCallback? onBackToHome;
@@ -1050,6 +1051,12 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
     );
     if (confirm == true) {
       ref.read(authStateProvider.notifier).signOut();
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const LandingScreen()),
+          (route) => false,
+        );
+      }
     }
   }
 

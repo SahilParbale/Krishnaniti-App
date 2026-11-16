@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/krishnaniti_logo.dart';
+import '../../navigation/main_scaffold.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   final String? initialRole;
@@ -21,7 +22,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   String _subRole = 'nagarsevak'; // 'nagarsevak' or 'staff'
 
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController(text: 'password123');
+  final TextEditingController _passwordController = TextEditingController(text: 'Password@123');
   bool _obscurePassword = true;
 
   @override
@@ -49,6 +50,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   void _updateDefaultCredentials() {
+    _passwordController.text = 'Password@123';
     if (_activeRole == 'nagarsevak') {
       _emailController.text = _subRole == 'nagarsevak'
           ? 'demo_nagarsevak@demo.com'
@@ -62,7 +64,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
-  void _handleLogin() {
+  Future<void> _handleLogin() async {
     HapticFeedback.mediumImpact();
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
@@ -77,7 +79,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       return;
     }
 
-    ref.read(authStateProvider.notifier).signIn(email, password);
+    await ref.read(authStateProvider.notifier).signIn(
+      email,
+      password,
+      role: _activeRole,
+      isStaff: _subRole == 'staff',
+    );
+
+    if (mounted) {
+      final user = ref.read(currentUserProvider);
+      if (user != null) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const MainScaffold()),
+          (route) => false,
+        );
+      }
+    }
   }
 
   void _showForgotPasswordSheet(BuildContext context, bool isMr) {
@@ -169,6 +186,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final isLoading = authState.isLoading;
 
     ref.listen(authStateProvider, (previous, next) {
+      if (next.hasValue && next.value != null) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const MainScaffold()),
+          (route) => false,
+        );
+      }
       if (next.hasError) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -531,7 +554,82 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 18),
+
+                // Demo Credentials Highlight Card
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0FDF4),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFBBF7D0)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.verified_user_rounded, color: Color(0xFF16A34A), size: 17),
+                          const SizedBox(width: 7),
+                          Text(
+                            isMr ? 'डेमो लॉगिन माहिती (Demo Credentials)' : 'Demo Credentials (१-क्लिक लॉगिन)',
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF15803D),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Text('ID: ', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Color(0xFF334155))),
+                          Expanded(
+                            child: Text(
+                              _emailController.text,
+                              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Color(0xFF0F172A)),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: const [
+                          Text('Password: ', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Color(0xFF334155))),
+                          Text('Password@123', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: Color(0xFF0284C7))),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 34,
+                        child: OutlinedButton.icon(
+                          onPressed: isLoading
+                              ? null
+                              : () {
+                                  _updateDefaultCredentials();
+                                  _handleLogin();
+                                },
+                          icon: const Icon(Icons.bolt_rounded, size: 16, color: Color(0xFF16A34A)),
+                          label: Text(
+                            isMr ? 'डेमोद्वारे थेट प्रवेश करा' : '1-Tap Demo Sign In',
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF15803D)),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFF86EFAC)),
+                            backgroundColor: Colors.white,
+                            padding: EdgeInsets.zero,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 18),
 
                 // 4. Primary Mobile Login Button (Height 52, thumb-reachable)
                 SizedBox(

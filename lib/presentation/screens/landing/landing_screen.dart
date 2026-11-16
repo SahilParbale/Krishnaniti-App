@@ -111,6 +111,21 @@ class _LandingScreenState extends ConsumerState<LandingScreen> {
     }
   }
 
+  Future<void> _handleDirectDemoLogin() async {
+    HapticFeedback.mediumImpact();
+    await ref.read(authStateProvider.notifier).signIn(
+      'demo_nagarsevak@demo.com',
+      'Password@123',
+      role: 'nagarsevak',
+    );
+    if (mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const MainScaffold()),
+        (route) => false,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMr = ref.watch(isMarathiProvider);
@@ -334,7 +349,7 @@ class _LandingScreenState extends ConsumerState<LandingScreen> {
 
                     // Quick Demo Login Chip
                     InkWell(
-                      onTap: () => _navigateToLogin(role: 'nagarsevak'),
+                      onTap: _handleDirectDemoLogin,
                       borderRadius: BorderRadius.circular(8),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),

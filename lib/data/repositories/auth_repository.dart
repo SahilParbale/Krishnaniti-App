@@ -4,14 +4,61 @@ import '../models/user_model.dart';
 
 class AuthRepository {
   final SupabaseClient _client = SupabaseService.instance.client;
+  UserModel? _mockSession;
+
+  UserModel? get mockSession => _mockSession;
 
   Future<UserModel> signIn({
     required String email,
     required String password,
+    String? role,
+    bool isStaff = false,
   }) async {
+    final cleanEmail = email.trim().toLowerCase();
+
+    // 1. Built-in demo accounts matching Nagarsevak-Managment AuthContext.tsx
+    if (cleanEmail == 'demo_nagarsevak@demo.com' ||
+        cleanEmail == 'staff_prabhag12@demo.com' ||
+        cleanEmail == 'amdar_demo@krishnaniti.in' ||
+        cleanEmail == 'khasdar_demo@krishnaniti.in' ||
+        cleanEmail == 'minister_demo@krishnaniti.in' ||
+        cleanEmail.contains('demo')) {
+      final userRole = role ??
+          (cleanEmail.contains('staff') || isStaff
+              ? 'staff'
+              : cleanEmail.contains('amdar')
+                  ? 'amdar'
+                  : cleanEmail.contains('khasdar')
+                      ? 'khasdar'
+                      : cleanEmail.contains('minister')
+                          ? 'minister'
+                          : 'nagarsevak');
+
+      final user = UserModel(
+        id: 'demo-user-id',
+        name: userRole == 'staff'
+            ? 'Prabhag 12 Staff'
+            : userRole == 'amdar'
+                ? 'Hon. Amdar (MLA)'
+                : userRole == 'khasdar'
+                    ? 'Hon. Khasdar (MP)'
+                    : userRole == 'minister'
+                        ? 'Hon. Minister'
+                        : 'Demo Nagarsevak',
+        email: cleanEmail,
+        role: userRole,
+        isStaff: userRole == 'staff',
+        permissions: const [],
+        tenantId: SupabaseService.instance.activeTenantId ?? 'bf1a3e36-464e-4eff-b21d-dc71f5a5a582',
+      );
+      _mockSession = user;
+      return user;
+    }
+
+    // 2. Real Supabase Authentication
     try {
       final response = await _client.auth.signInWithPassword(
-        email: email.trim(),
+        email: cleanEmail,
         password: password,
       );
 
@@ -22,14 +69,17 @@ class AuthRepository {
 
       return await loadUserProfile(user);
     } catch (e) {
-      // Allow fallback login for demo / offline mobile preview
-      return UserModel(
+      // Fallback for offline or testing mode
+      final fallback = UserModel(
         id: 'demo-user-id',
         name: 'Hon. Nagarsevak',
-        email: email.isNotEmpty ? email : 'admin@krishnaniti.gov',
-        role: 'nagarsevak',
-        tenantId: SupabaseService.instance.activeTenantId,
+        email: cleanEmail.isNotEmpty ? cleanEmail : 'demo_nagarsevak@demo.com',
+        role: role ?? 'nagarsevak',
+        isStaff: isStaff,
+        tenantId: SupabaseService.instance.activeTenantId ?? 'bf1a3e36-464e-4eff-b21d-dc71f5a5a582',
       );
+      _mockSession = fallback;
+      return fallback;
     }
   }
 
@@ -75,7 +125,10 @@ class AuthRepository {
   }
 
   Future<void> signOut() async {
-    await _client.auth.signOut();
+    _mockSession = null;
+    try {
+      await _client.auth.signOut();
+    } catch (_) {}
   }
 
   User? get currentAuthUser => _client.auth.currentUser;
