@@ -51,9 +51,9 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
 
   // SMS Gateway state
   String _selectedSmsProvider = 'Fast2SMS';
-  final TextEditingController _smsApiKeyCtrl = TextEditingController(text: 'f2s_live_8391038592019482');
-  final TextEditingController _smsSenderIdCtrl = TextEditingController(text: 'PUNENG');
-  final TextEditingController _smsDltEntityCtrl = TextEditingController(text: '1701159823412341234');
+  final TextEditingController _smsApiKeyCtrl = TextEditingController();
+  final TextEditingController _smsSenderIdCtrl = TextEditingController();
+  final TextEditingController _smsDltEntityCtrl = TextEditingController();
   bool _obscureSmsKey = true;
 
   // Security Logs
@@ -118,43 +118,28 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
           .eq('id', tenantId)
           .maybeSingle();
 
-      if (response != null && response['config'] != null) {
-        final cfg = Map<String, dynamic>.from(response['config'] as Map);
+      if (response != null) {
+        final cfg = response['config'] != null ? Map<String, dynamic>.from(response['config'] as Map) : <String, dynamic>{};
         _rawConfig = cfg;
 
-        _nameEnglishCtrl.text = cfg['nagarsevak_name_english']?.toString() ?? 'Rahul Patil';
-        _nameMarathiCtrl.text = cfg['nagarsevak_name_marathi']?.toString() ?? 'राहुल पाटील';
-        _wardNameCtrl.text = cfg['ward_name']?.toString() ?? 'Kasba - Vishrambaug Wada';
-        _wardNumCtrl.text = cfg['ward_number']?.toString() ?? '12';
-        _officeAddressCtrl.text = cfg['office_address']?.toString() ?? 'Ward Office No. 12, Kelkar Road, Pune 411030';
-        _officeHoursCtrl.text = cfg['office_hours']?.toString() ?? '10:00 AM - 06:00 PM (Mon-Sat)';
-        _phoneCtrl.text = cfg['phone_number']?.toString() ?? '+91 98220 12345';
-        _emailCtrl.text = cfg['email_address']?.toString() ?? 'office@ward12pune.gov.in';
-        _socialLinkCtrl.text = cfg['social_media_link']?.toString() ?? 'https://facebook.com/ward12nagarsevak';
-        _partyNameCtrl.text = cfg['party_name']?.toString() ?? 'Nagarsevak Vikas Aghadi';
+        final tenantName = response['name']?.toString() ?? '';
+        _nameEnglishCtrl.text = cfg['nagarsevak_name_english']?.toString() ?? tenantName;
+        _nameMarathiCtrl.text = cfg['nagarsevak_name_marathi']?.toString() ?? '';
+        _wardNameCtrl.text = cfg['ward_name']?.toString() ?? '';
+        _wardNumCtrl.text = cfg['ward_number']?.toString() ?? '';
+        _officeAddressCtrl.text = cfg['office_address']?.toString() ?? '';
+        _officeHoursCtrl.text = cfg['office_hours']?.toString() ?? '';
+        _phoneCtrl.text = cfg['phone_number']?.toString() ?? '';
+        _emailCtrl.text = cfg['email_address']?.toString() ?? '';
+        _socialLinkCtrl.text = cfg['social_media_link']?.toString() ?? '';
+        _partyNameCtrl.text = cfg['party_name']?.toString() ?? '';
         _profileImageUrl = cfg['profile_image_url']?.toString() ?? '';
         _partyLogoUrl = cfg['party_logo_url']?.toString() ?? '';
-      } else {
-        _setFallbackDefaults();
       }
     } catch (_) {
-      _setFallbackDefaults();
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
-  }
-
-  void _setFallbackDefaults() {
-    _nameEnglishCtrl.text = 'Rahul Patil';
-    _nameMarathiCtrl.text = 'राहुल पाटील';
-    _wardNameCtrl.text = 'Kasba - Vishrambaug Wada';
-    _wardNumCtrl.text = '12';
-    _officeAddressCtrl.text = 'Ward Office No. 12, Kelkar Road, Pune 411030';
-    _officeHoursCtrl.text = '10:00 AM - 06:00 PM (Mon-Sat)';
-    _phoneCtrl.text = '+91 98220 12345';
-    _emailCtrl.text = 'office@ward12pune.gov.in';
-    _socialLinkCtrl.text = 'https://facebook.com/ward12nagarsevak';
-    _partyNameCtrl.text = 'Nagarsevak Vikas Aghadi';
   }
 
   Future<void> _saveSettings() async {
@@ -283,64 +268,18 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
 
       if (mounted) {
         setState(() {
-          _securityLogs = list.isNotEmpty ? list : _getSeedSecurityLogs();
+          _securityLogs = list;
           _isLoadingLogs = false;
         });
       }
     } catch (_) {
       if (mounted) {
         setState(() {
-          _securityLogs = _getSeedSecurityLogs();
+          _securityLogs = [];
           _isLoadingLogs = false;
         });
       }
     }
-  }
-
-  List<Map<String, dynamic>> _getSeedSecurityLogs() {
-    final now = DateTime.now();
-    return [
-      {
-        'id': 'log-01',
-        'email': 'nagarsevak.ward12@pune.gov.in',
-        'ip_address': '103.211.54.12',
-        'browser': 'Chrome 122',
-        'os': 'Windows 11',
-        'device_type': 'Desktop',
-        'status': 'SUCCESS',
-        'created_at': now.subtract(const Duration(minutes: 25)).toIso8601String(),
-      },
-      {
-        'id': 'log-02',
-        'email': 'nagarsevak.ward12@pune.gov.in',
-        'ip_address': '49.36.128.45',
-        'browser': 'Nagarsevak Mobile App',
-        'os': 'Android 14',
-        'device_type': 'Mobile',
-        'status': 'SUCCESS',
-        'created_at': now.subtract(const Duration(hours: 14)).toIso8601String(),
-      },
-      {
-        'id': 'log-03',
-        'email': 'rahul.patil.office@gmail.com',
-        'ip_address': '103.211.54.12',
-        'browser': 'Chrome 121',
-        'os': 'Windows 11',
-        'device_type': 'Desktop',
-        'status': 'SUCCESS',
-        'created_at': now.subtract(const Duration(days: 1, hours: 4)).toIso8601String(),
-      },
-      {
-        'id': 'log-04',
-        'email': 'nagarsevak.ward12@pune.gov.in',
-        'ip_address': '157.34.88.90',
-        'browser': 'Mobile Safari 17',
-        'os': 'iOS 17.4',
-        'device_type': 'Mobile',
-        'status': 'SUCCESS',
-        'created_at': now.subtract(const Duration(days: 3)).toIso8601String(),
-      },
-    ];
   }
 
   Future<void> _loadSupportTickets() async {
@@ -359,40 +298,18 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
 
       if (mounted) {
         setState(() {
-          _supportTickets = list.isNotEmpty ? list : _getSeedSupportTickets();
+          _supportTickets = list;
           _isLoadingTickets = false;
         });
       }
     } catch (_) {
       if (mounted) {
         setState(() {
-          _supportTickets = _getSeedSupportTickets();
+          _supportTickets = [];
           _isLoadingTickets = false;
         });
       }
     }
-  }
-
-  List<Map<String, dynamic>> _getSeedSupportTickets() {
-    final now = DateTime.now();
-    return [
-      {
-        'id': 'TKT-1094',
-        'title': 'SMS DLT sender ID header verification check',
-        'description': 'Requested verification of official municipal sender ID for ward civic notifications.',
-        'priority': 'High',
-        'status': 'Resolved',
-        'created_at': now.subtract(const Duration(days: 2)).toIso8601String(),
-      },
-      {
-        'id': 'TKT-1082',
-        'title': 'High resolution banner upload optimization',
-        'description': 'Field gallery images upload compression check for festival event dossiers.',
-        'priority': 'Medium',
-        'status': 'Resolved',
-        'created_at': now.subtract(const Duration(days: 6)).toIso8601String(),
-      },
-    ];
   }
 
   Future<void> _submitSupportTicket() async {
@@ -420,7 +337,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
         'priority': _supportPriority,
         'status': 'Pending',
         'tenant_id': tenantId,
-        'user_id': user?.email ?? 'nagarsevak.ward12@pune.gov.in',
+        'user_id': user?.id ?? user?.email ?? '',
         'user_name': user?.name ?? _nameEnglishCtrl.text.trim(),
         'created_at': DateTime.now().toIso8601String(),
       };

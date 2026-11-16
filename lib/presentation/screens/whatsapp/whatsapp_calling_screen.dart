@@ -40,36 +40,6 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
   // Bot Status
   final String _botStatus = 'connected'; // Connected bot indicator
 
-  // Seed sample records for fallback
-  final List<WhatsAppBroadcastModel> _seedLogs = [
-    WhatsAppBroadcastModel(
-      id: 'wacall-001',
-      title: 'WhatsApp Voice Call - Ramesh Kulkarni',
-      message: 'WhatsApp Call initiated to Ramesh Kulkarni (+91 9822011223)',
-      sentAt: DateTime.now().subtract(const Duration(hours: 2)),
-      channel: 'wa_call',
-      recipients: 1,
-      sentCount: 1,
-      deliveredCount: 1,
-      failedCount: 0,
-      status: 'COMPLETED',
-      category: 'WhatsApp Call',
-    ),
-    WhatsAppBroadcastModel(
-      id: 'wacall-002',
-      title: 'WhatsApp Voice Call - Suresh Patil',
-      message: 'WhatsApp Call initiated to Suresh Patil (+91 9822044556)',
-      sentAt: DateTime.now().subtract(const Duration(days: 1)),
-      channel: 'wa_call',
-      recipients: 1,
-      sentCount: 1,
-      deliveredCount: 1,
-      failedCount: 0,
-      status: 'COMPLETED',
-      category: 'WhatsApp Call',
-    ),
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -141,14 +111,14 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
 
       if (mounted) {
         setState(() {
-          _callLogs = list.isNotEmpty ? list : List.from(_seedLogs);
+          _callLogs = list;
           _isLoadingHistory = false;
         });
       }
     } catch (_) {
       if (mounted) {
         setState(() {
-          _callLogs = List.from(_seedLogs);
+          _callLogs = [];
           _isLoadingHistory = false;
         });
       }

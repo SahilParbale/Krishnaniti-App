@@ -90,14 +90,6 @@ class _NewComplaintBottomSheetState
 
   bool _isSubmitting = false;
   bool _isAiAnalyzing = false;
-
-  static final List<StaffModel> _fallbackStaffList = [
-    StaffModel(id: 'staff-1', name: 'Sunil Shinde', role: 'Electrical JE', mobile: '9822012345'),
-    StaffModel(id: 'staff-2', name: 'Santosh Gaikwad', role: 'Sanitation Sup.', mobile: '9822023456'),
-    StaffModel(id: 'staff-3', name: 'Pradeep Joshi', role: 'Water Works Dept', mobile: '9822034567'),
-    StaffModel(id: 'staff-4', name: 'Anand Jadhav', role: 'Road Engineering', mobile: '9822045678'),
-    StaffModel(id: 'staff-5', name: 'Mahesh Patil', role: 'Ward Officer', mobile: '9822056789'),
-  ];
   List<StaffModel> _staffList = [];
 
   bool get _hasAnyDraft =>
@@ -117,7 +109,6 @@ class _NewComplaintBottomSheetState
         : (widget.initialTab == 'Personal Help' ? 'Personal Help' : 'Complaints');
     _selectedCategory = 'Other';
     _selectedPersonalType = 'Personal Help';
-    _staffList = List.from(_fallbackStaffList);
 
     if (widget.prefillVoterId != null) {
       _selectedVoterId = widget.prefillVoterId;

@@ -98,40 +98,6 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
   String? _copiedMeetingId;
   List<ConferenceMeetingModel> _meetings = [];
 
-  // Seed data matching Nagarsevak-Managment
-  final List<ConferenceMeetingModel> _seedMeetings = [
-    ConferenceMeetingModel(
-      id: 'conf-101',
-      title: 'Ward 12 Water Supply & Road Infrastructure Review Meeting',
-      meetLink: 'https://meet.jit.si/nagarsevak-water-review-782a',
-      scheduledAt: DateTime.now().add(const Duration(hours: 3)),
-      createdAt: DateTime.now().subtract(const Duration(days: 1)),
-      status: 'scheduled',
-      invitedCount: 35,
-      notes: 'Direct citizen grievance review with Shaniwar Peth and Kasba Peth residents.',
-    ),
-    ConferenceMeetingModel(
-      id: 'conf-102',
-      title: 'Housing Society Chairman & Secretary Digital Conference',
-      meetLink: 'https://meet.jit.si/nagarsevak-society-sync-941b',
-      scheduledAt: DateTime.now().add(const Duration(days: 1, hours: 2)),
-      createdAt: DateTime.now().subtract(const Duration(days: 2)),
-      status: 'scheduled',
-      invitedCount: 48,
-      notes: 'Discussion with society executives on waste management and solar power subsidies.',
-    ),
-    ConferenceMeetingModel(
-      id: 'conf-103',
-      title: 'Youth Club & Festival Security Coordination Meeting',
-      meetLink: 'https://meet.jit.si/nagarsevak-mandal-security-23c',
-      scheduledAt: DateTime.now().subtract(const Duration(days: 3)),
-      createdAt: DateTime.now().subtract(const Duration(days: 4)),
-      status: 'ended',
-      invitedCount: 62,
-      notes: 'Online coordination conference held successfully with festival mandal committees.',
-    ),
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -193,14 +159,14 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
 
       if (mounted) {
         setState(() {
-          _meetings = list.isNotEmpty ? list : List.from(_seedMeetings);
+          _meetings = list;
           _isLoading = false;
         });
       }
     } catch (_) {
       if (mounted) {
         setState(() {
-          _meetings = List.from(_seedMeetings);
+          _meetings = [];
           _isLoading = false;
         });
       }

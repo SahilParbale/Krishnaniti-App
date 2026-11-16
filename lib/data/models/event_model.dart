@@ -186,6 +186,45 @@ class EventRsvpModel {
       respondedAt: respondedAt ?? this.respondedAt,
     );
   }
+
+  factory EventRsvpModel.fromJson(Map<String, dynamic> json) {
+    RsvpStatus parseStatus(String? s) {
+      if (s == null) return RsvpStatus.going;
+      final lower = s.toLowerCase();
+      if (lower.contains('not')) return RsvpStatus.notGoing;
+      if (lower.contains('maybe')) return RsvpStatus.maybe;
+      return RsvpStatus.going;
+    }
+
+    DateTime parseDate(dynamic d) {
+      if (d == null) return DateTime.now();
+      if (d is DateTime) return d;
+      return DateTime.tryParse(d.toString()) ?? DateTime.now();
+    }
+
+    return EventRsvpModel(
+      id: json['id']?.toString() ?? '',
+      voterName: json['voter_name']?.toString() ?? json['name']?.toString() ?? '',
+      voterNameMr: json['voter_name_mr']?.toString() ?? json['voter_name']?.toString() ?? '',
+      mobile: json['mobile']?.toString() ?? '',
+      address: json['address']?.toString() ?? '',
+      status: parseStatus(json['status']?.toString()),
+      responseSource: json['response_source']?.toString() ?? 'Direct',
+      respondedAt: parseDate(json['responded_at'] ?? json['created_at']),
+    );
+  }
+
+  Map<String, dynamic> toJson({String? tenantId, String? eventId}) {
+    return {
+      if (eventId != null) 'event_id': eventId,
+      'voter_name': voterName,
+      'mobile': mobile,
+      'address': address,
+      'status': status.id,
+      'response_source': responseSource,
+      if (tenantId != null) 'tenant_id': tenantId,
+    };
+  }
 }
 
 /// Main Event Model
@@ -221,6 +260,65 @@ class EventModel {
     required this.createdAt,
     this.rsvps = const [],
   });
+
+  factory EventModel.fromJson(Map<String, dynamic> json) {
+    EventType parseType(String? t) {
+      if (t == null) return EventType.other;
+      final lower = t.toLowerCase();
+      if (lower.contains('inaugur')) return EventType.inauguration;
+      if (lower.contains('meet')) return EventType.publicMeeting;
+      if (lower.contains('rally')) return EventType.rally;
+      if (lower.contains('health')) return EventType.healthCamp;
+      if (lower.contains('door')) return EventType.doorToDoor;
+      if (lower.contains('cultur')) return EventType.cultural;
+      return EventType.other;
+    }
+
+    DateTime parseDate(dynamic d) {
+      if (d == null) return DateTime.now();
+      if (d is DateTime) return d;
+      return DateTime.tryParse(d.toString()) ?? DateTime.now();
+    }
+
+    List<EventRsvpModel> parseRsvps(dynamic list) {
+      if (list is List) {
+        return list.map((item) => EventRsvpModel.fromJson(Map<String, dynamic>.from(item as Map))).toList();
+      }
+      return const [];
+    }
+
+    return EventModel(
+      id: json['id']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      titleMr: json['title_mr']?.toString() ?? json['title']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
+      eventDate: parseDate(json['event_date'] ?? json['created_at']),
+      eventTime: json['event_time']?.toString() ?? '',
+      location: json['location']?.toString() ?? '',
+      locationMr: json['location_mr']?.toString() ?? json['location']?.toString() ?? '',
+      type: parseType(json['type']?.toString()),
+      status: json['status']?.toString() ?? 'Planned',
+      area: json['area']?.toString() ?? '',
+      targetAudience: json['target_audience']?.toString() ?? 'All',
+      createdAt: parseDate(json['created_at']),
+      rsvps: parseRsvps(json['event_rsvps']),
+    );
+  }
+
+  Map<String, dynamic> toJson({String? tenantId}) {
+    return {
+      'title': title,
+      'description': description,
+      'event_date': eventDate.toIso8601String().split('T')[0],
+      'event_time': eventTime,
+      'location': location,
+      'type': type.id,
+      'status': status,
+      'area': area,
+      'target_audience': targetAudience,
+      if (tenantId != null) 'tenant_id': tenantId,
+    };
+  }
 
   int get goingCount =>
       rsvps.where((r) => r.status == RsvpStatus.going).length;

@@ -41,36 +41,6 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
   bool _isLoadingHistory = false;
   List<WhatsAppBroadcastModel> _aiCallLogs = [];
 
-  // Seed history
-  final List<WhatsAppBroadcastModel> _seedLogs = [
-    WhatsAppBroadcastModel(
-      id: 'ai-001',
-      title: 'AI Voice Broadcast - Water Supply & Road Repair Feedback',
-      message: 'Automated AI voice broadcast to record citizen feedback on development works and water supply in Ward 12.',
-      sentAt: DateTime.now().subtract(const Duration(hours: 4)),
-      channel: 'ai_call',
-      recipients: 450,
-      sentCount: 450,
-      deliveredCount: 432,
-      failedCount: 18,
-      status: 'COMPLETED',
-      category: 'AI Voice Call',
-    ),
-    WhatsAppBroadcastModel(
-      id: 'ai-002',
-      title: 'AI Voice Broadcast - Ladki Bahin Scheme Camp Info',
-      message: 'Direct voice broadcast informing citizens about special registration camps for the Ladki Bahin Scheme.',
-      sentAt: DateTime.now().subtract(const Duration(days: 2)),
-      channel: 'ai_call',
-      recipients: 1200,
-      sentCount: 1200,
-      deliveredCount: 1180,
-      failedCount: 20,
-      status: 'COMPLETED',
-      category: 'AI Voice Call',
-    ),
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -137,14 +107,14 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
 
       if (mounted) {
         setState(() {
-          _aiCallLogs = list.isNotEmpty ? list : List.from(_seedLogs);
+          _aiCallLogs = list;
           _isLoadingHistory = false;
         });
       }
     } catch (_) {
       if (mounted) {
         setState(() {
-          _aiCallLogs = List.from(_seedLogs);
+          _aiCallLogs = [];
           _isLoadingHistory = false;
         });
       }

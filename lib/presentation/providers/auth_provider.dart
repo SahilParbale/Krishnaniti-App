@@ -10,15 +10,12 @@ class AuthNotifier extends Notifier<AsyncValue<UserModel?>> {
   @override
   AsyncValue<UserModel?> build() {
     final repo = ref.watch(authRepositoryProvider);
-    final user = repo.currentAuthUser;
-    if (user != null) {
-      repo.loadUserProfile(user).then((profile) {
-        state = AsyncValue.data(profile);
-      }).catchError((e, st) {
-        state = const AsyncValue.data(null);
-      });
-    }
-    return const AsyncValue.data(null);
+    repo.restorePersistedSession().then((user) {
+      state = AsyncValue.data(user);
+    }).catchError((e, st) {
+      state = const AsyncValue.data(null);
+    });
+    return const AsyncValue.loading();
   }
 
   Future<void> signIn(String email, String password, {String? role, bool isStaff = false}) async {

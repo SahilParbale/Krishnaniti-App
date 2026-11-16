@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../core/services/supabase_service.dart';
 import '../models/ward_provision_model.dart';
 
 final wardProvisionsRepoProvider = Provider<WardProvisionsRepository>((ref) {
@@ -6,196 +8,142 @@ final wardProvisionsRepoProvider = Provider<WardProvisionsRepository>((ref) {
 });
 
 class WardProvisionsRepository {
-  static final List<WardProvisionModel> _provisions = [
-    WardProvisionModel(
-      id: 'prov-1',
-      title: 'Prabhag 12 Arterial Cement Concrete Road & Storm Drainage Overhaul',
-      description:
-          'Comprehensive CC road resurfacing and underground storm water box drain construction along 1.8 km arterial stretch connecting Shaniwar Wada to Bajirao Road.',
-      requestedAmount: 4500000,
-      sanctionedAmount: 4500000,
-      requestedDate: '2024-04-12',
-      sanctionedDate: '2024-05-18',
-      status: 'Approved',
-      financialYear: '2024-2025',
-      category: 'Roads & Civil',
-      area: 'Shaniwar Peth',
-      letterReference: 'PMC/RDS/2024/1042',
-    ),
-    WardProvisionModel(
-      id: 'prov-2',
-      title: 'Replacement of Corroded 250mm Potable Water Supply Mainline',
-      description:
-          'Procurement and laying of 250mm ductile iron potable water pipeline to resolve chronic low pressure and water contamination across 6 residential societies.',
-      requestedAmount: 2800000,
-      sanctionedAmount: 2250000,
-      requestedDate: '2024-05-20',
-      sanctionedDate: '2024-06-30',
-      status: 'Partially Approved',
-      financialYear: '2024-2025',
-      category: 'Water Supply',
-      area: 'Ward 12 Central',
-      letterReference: 'PMC/WTR/2024/718',
-    ),
-    WardProvisionModel(
-      id: 'prov-3',
-      title: 'High-Mast Energy Efficient LED Lighting Towers at 6 Intersections',
-      description:
-          'Erection of six 16-meter high mast lighting towers with automatic sunset timer switches to enhance nocturnal public transit safety.',
-      requestedAmount: 1200000,
-      sanctionedAmount: 1200000,
-      requestedDate: '2024-06-05',
-      sanctionedDate: '2024-07-10',
-      status: 'Approved',
-      financialYear: '2024-2025',
-      category: 'Street Lighting',
-      area: 'Bazaar Ward',
-      letterReference: 'PMC/ELEC/2024/319',
-    ),
-    WardProvisionModel(
-      id: 'prov-4',
-      title: 'Establishment of Municipal Dialysis & Preventive Healthcare Sub-Centre',
-      description:
-          'Civil modification and equipment acquisition for an 8-station affordable hemodialysis unit and basic pathology testing lab at PMC dispensary.',
-      requestedAmount: 3500000,
-      sanctionedAmount: null,
-      requestedDate: '2024-08-15',
-      sanctionedDate: null,
-      status: 'Pending',
-      financialYear: '2024-2025',
-      category: 'Health & Medical',
-      area: 'Ward 12 North',
-      letterReference: 'PMC/HLT/2024/552',
-    ),
-    WardProvisionModel(
-      id: 'prov-5',
-      title: 'Renovation & Modernization of Sambhaji Park Jogging Track & Open Gym',
-      description:
-          'Laying of non-slip synthetic jogging pathway, solar illumination studs, and senior-friendly hydraulic outdoor fitness equipment.',
-      requestedAmount: 1650000,
-      sanctionedAmount: 1650000,
-      requestedDate: '2024-07-01',
-      sanctionedDate: '2024-08-04',
-      status: 'Approved',
-      financialYear: '2024-2025',
-      category: 'Parks & Recreation',
-      area: 'Central Ward',
-      letterReference: 'PMC/PRK/2024/204',
-    ),
-    WardProvisionModel(
-      id: 'prov-6',
-      title: 'Desilting of Underground Hume Pipe Outfalls & Silt Chambers',
-      description:
-          'Special pre-monsoon mechanized hydraulic vacuum desilting across all primary stormwater hume pipes in Prabhag 12.',
-      requestedAmount: 850000,
-      sanctionedAmount: 850000,
-      requestedDate: '2024-04-02',
-      sanctionedDate: '2024-04-25',
-      status: 'Approved',
-      financialYear: '2024-2025',
-      category: 'Drainage & Sanitation',
-      area: 'Ward 12',
-      letterReference: 'PMC/DRN/2024/110',
-    ),
-    WardProvisionModel(
-      id: 'prov-7',
-      title: 'Construction of Elevated Pedestrian Skywalk at Bajirao Junction',
-      description:
-          'Citizen-demanded foot-over-bridge with escalators connecting Shaniwar Wada precinct to City Post Chowk to mitigate major traffic congestion.',
-      requestedAmount: 6000000,
-      sanctionedAmount: null,
-      requestedDate: '2024-09-10',
-      sanctionedDate: null,
-      status: 'Pending',
-      financialYear: '2024-2025',
-      category: 'Roads & Civil',
-      area: 'Shaniwar Peth',
-      letterReference: 'PMC/TP/2024/889',
-    ),
-    WardProvisionModel(
-      id: 'prov-8',
-      title: 'Installation of Smart Digital Traffic Signals with Solar Back-Up',
-      description:
-          'AI-adaptive traffic controller signals installed across 4 main chowks in Prabhag 12 with 4-hour battery inverter backup.',
-      requestedAmount: 2400000,
-      sanctionedAmount: 2400000,
-      requestedDate: '2023-05-10',
-      sanctionedDate: '2023-06-15',
-      status: 'Approved',
-      financialYear: '2023-2024',
-      category: 'Street Lighting',
-      area: 'Ward 12 Central',
-      letterReference: 'PMC/TRF/2023/402',
-    ),
-    WardProvisionModel(
-      id: 'prov-9',
-      title: 'Underground Electrical Cable Ducting & Shifting of Roadside Transformers',
-      description:
-          'Converting hazardous overhead power lines to underground trench ducts and shifting two road-blocking transformers.',
-      requestedAmount: 3800000,
-      sanctionedAmount: 3000000,
-      requestedDate: '2023-08-14',
-      sanctionedDate: '2023-09-28',
-      status: 'Partially Approved',
-      financialYear: '2023-2024',
-      category: 'Roads & Civil',
-      area: 'Shaniwar Peth',
-      letterReference: 'PMC/MSE/2023/194',
-    ),
-    WardProvisionModel(
-      id: 'prov-10',
-      title: 'Community Waste Segregation & Bio-Composting Facility',
-      description:
-          'Establishment of mechanical organic shredders and composting bins processing 3 tons of municipal wet waste per day.',
-      requestedAmount: 1400000,
-      sanctionedAmount: 1400000,
-      requestedDate: '2023-07-20',
-      sanctionedDate: '2023-08-22',
-      status: 'Approved',
-      financialYear: '2023-2024',
-      category: 'Drainage & Sanitation',
-      area: 'Bazaar Ward',
-      letterReference: 'PMC/SWM/2023/076',
-    ),
-  ];
+  final SupabaseClient _client = SupabaseService.instance.client;
+  String? get _tenantId => SupabaseService.instance.activeTenantId;
 
-  Future<List<WardProvisionModel>> getProvisions({String? year}) async {
-    await Future.delayed(const Duration(milliseconds: 200));
-    if (year != null && year.isNotEmpty && year != 'All') {
-      return _provisions.where((p) => p.financialYear == year).toList();
+  Future<List<WardProvisionModel>> getProvisions({
+    String? year,
+    String? category,
+    String? status,
+    String? query,
+  }) async {
+    try {
+      var dbQuery = _client.from('ward_provisions').select('*');
+
+      if (_tenantId != null && _tenantId!.isNotEmpty) {
+        dbQuery = dbQuery.eq('tenant_id', _tenantId!);
+      }
+
+      if (year != null && year.isNotEmpty && year != 'All') {
+        dbQuery = dbQuery.eq('financial_year', year);
+      }
+
+      if (category != null && category.isNotEmpty && category != 'All') {
+        dbQuery = dbQuery.eq('category', category);
+      }
+
+      if (status != null && status.isNotEmpty && status != 'All') {
+        dbQuery = dbQuery.eq('status', status);
+      }
+
+      final response = await dbQuery.order('created_at', ascending: false);
+      var list = (response as List<dynamic>)
+          .map((item) => WardProvisionModel.fromJson(item as Map<String, dynamic>))
+          .toList();
+
+      if (query != null && query.trim().isNotEmpty) {
+        final q = query.trim().toLowerCase();
+        list = list.where((p) {
+          return p.title.toLowerCase().contains(q) ||
+              p.description.toLowerCase().contains(q) ||
+              p.letterReference.toLowerCase().contains(q) ||
+              p.area.toLowerCase().contains(q) ||
+              p.category.toLowerCase().contains(q);
+        }).toList();
+      }
+
+      return list;
+    } catch (_) {
+      return [];
     }
-    return List.from(_provisions);
   }
 
   Future<WardProvisionModel?> getProvisionById(String id) async {
-    await Future.delayed(const Duration(milliseconds: 100));
     try {
-      return _provisions.firstWhere((p) => p.id == id);
+      var query = _client.from('ward_provisions').select('*').eq('id', id);
+      if (_tenantId != null && _tenantId!.isNotEmpty) {
+        query = query.eq('tenant_id', _tenantId!);
+      }
+      final response = await query.maybeSingle();
+      if (response == null) return null;
+      return WardProvisionModel.fromJson(response);
     } catch (_) {
       return null;
     }
   }
 
-  Future<WardProvisionModel> addProvision(WardProvisionModel newProvision) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    _provisions.insert(0, newProvision);
-    return newProvision;
+  Future<WardProvisionModel> addProvision(WardProvisionModel provision) async {
+    final payload = {
+      'title': provision.title,
+      'description': provision.description,
+      'requested_amount': provision.requestedAmount,
+      'sanctioned_amount': provision.sanctionedAmount,
+      'requested_date': provision.requestedDate.isNotEmpty ? provision.requestedDate : null,
+      'sanctioned_date': provision.sanctionedDate,
+      'status': provision.status,
+      'financial_year': provision.financialYear,
+      'category': provision.category,
+      'area': provision.area,
+      'letter_reference': provision.letterReference,
+      'tenant_id': _tenantId,
+      'created_at': DateTime.now().toIso8601String(),
+    };
+
+    final res = await _client.from('ward_provisions').insert(payload).select().single();
+    return WardProvisionModel.fromJson(res);
   }
 
-  Future<WardProvisionModel> updateProvision(WardProvisionModel updated) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    final idx = _provisions.indexWhere((p) => p.id == updated.id);
-    if (idx != -1) {
-      _provisions[idx] = updated;
+  Future<WardProvisionModel> updateProvision(WardProvisionModel updatedProvision) async {
+    final payload = {
+      'title': updatedProvision.title,
+      'description': updatedProvision.description,
+      'requested_amount': updatedProvision.requestedAmount,
+      'sanctioned_amount': updatedProvision.sanctionedAmount,
+      'requested_date': updatedProvision.requestedDate.isNotEmpty ? updatedProvision.requestedDate : null,
+      'sanctioned_date': updatedProvision.sanctionedDate,
+      'status': updatedProvision.status,
+      'financial_year': updatedProvision.financialYear,
+      'category': updatedProvision.category,
+      'area': updatedProvision.area,
+      'letter_reference': updatedProvision.letterReference,
+      'updated_at': DateTime.now().toIso8601String(),
+    };
+
+    var query = _client.from('ward_provisions').update(payload).eq('id', updatedProvision.id);
+    if (_tenantId != null && _tenantId!.isNotEmpty) {
+      query = query.eq('tenant_id', _tenantId!);
     }
-    return updated;
+    await query;
+    return updatedProvision;
   }
 
   Future<bool> deleteProvision(String id) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    final countBefore = _provisions.length;
-    _provisions.removeWhere((p) => p.id == id);
-    return _provisions.length < countBefore;
+    try {
+      var query = _client.from('ward_provisions').delete().eq('id', id);
+      if (_tenantId != null && _tenantId!.isNotEmpty) {
+        query = query.eq('tenant_id', _tenantId!);
+      }
+      await query;
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<Map<String, dynamic>> getStatistics({String? year}) async {
+    final list = await getProvisions(year: year);
+    final totalCount = list.length;
+    final totalRequested = list.fold<double>(0.0, (acc, p) => acc + p.requestedAmount);
+    final totalSanctioned = list.fold<double>(0.0, (acc, p) => acc + (p.sanctionedAmount ?? 0.0));
+    final approvedCount = list.where((p) => p.status == 'Approved').length;
+    final pendingCount = list.where((p) => p.status == 'Pending').length;
+
+    return {
+      'totalCount': totalCount,
+      'totalRequested': totalRequested,
+      'totalSanctioned': totalSanctioned,
+      'approvedCount': approvedCount,
+      'pendingCount': pendingCount,
+    };
   }
 }
-

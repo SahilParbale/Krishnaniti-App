@@ -121,17 +121,17 @@ class NewspaperClippingModel {
     return NewspaperClippingModel(
       id: json['id']?.toString() ?? '',
       title: json['title'] ?? '',
-      titleMarathi: json['titleMarathi'] ?? '',
-      newspaper: json['newspaper'] ?? 'Sakal',
-      date: json['date'] ?? '',
+      titleMarathi: json['title_marathi'] ?? json['titleMarathi'] ?? json['title'] ?? '',
+      newspaper: json['newspaper'] ?? json['source'] ?? 'Sakal',
+      date: json['date'] ?? json['created_at']?.toString().split('T').first ?? '',
       sentiment: json['sentiment'] ?? 'positive',
-      imageUrl: json['imageUrl'] ?? '',
-      pageNumber: json['pageNumber'] ?? 'Page 3',
+      imageUrl: json['image_url'] ?? json['imageUrl'] ?? '',
+      pageNumber: json['page_number'] ?? json['pageNumber'] ?? 'Page 3',
       edition: json['edition'] ?? 'Pune City Edition',
       description: json['description'] ?? '',
-      descriptionMarathi: json['descriptionMarathi'] ?? '',
-      actionTaken: json['actionTaken'],
-      journalistName: json['journalistName'],
+      descriptionMarathi: json['description_marathi'] ?? json['descriptionMarathi'] ?? json['description'] ?? '',
+      actionTaken: json['action_taken'] ?? json['actionTaken'],
+      journalistName: json['journalist_name'] ?? json['journalistName'],
     );
   }
 }

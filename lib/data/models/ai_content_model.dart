@@ -278,6 +278,67 @@ class AiContentHistoryItem {
       wardNumber: wardNumber ?? this.wardNumber,
     );
   }
+
+  factory AiContentHistoryItem.fromJson(Map<String, dynamic> json) {
+    AiContentType type = AiContentType.socialMediaCaption;
+    final cTypeStr = json['content_type']?.toString().toLowerCase() ?? '';
+    if (cTypeStr.contains('speech')) {
+      type = AiContentType.speech;
+    } else if (cTypeStr.contains('press')) {
+      type = AiContentType.pressRelease;
+    } else if (cTypeStr.contains('letter') || cTypeStr.contains('notice')) {
+      type = AiContentType.letterNotice;
+    } else if (cTypeStr.contains('email')) {
+      type = AiContentType.email;
+    } else if (cTypeStr.contains('work') || cTypeStr.contains('report')) {
+      type = AiContentType.workReport;
+    }
+
+    AiToneType tone = AiToneType.professional;
+    final toneStr = json['tone']?.toString().toLowerCase() ?? '';
+    if (toneStr.contains('enthusiastic')) {
+      tone = AiToneType.enthusiastic;
+    } else if (toneStr.contains('formal')) {
+      tone = AiToneType.formal;
+    } else if (toneStr.contains('urgent')) {
+      tone = AiToneType.urgent;
+    } else if (toneStr.contains('emotional')) {
+      tone = AiToneType.emotional;
+    } else if (toneStr.contains('assertive') || toneStr.contains('professional')) {
+      tone = AiToneType.professional;
+    }
+
+    AiLanguageType lang = AiLanguageType.marathi;
+    final langStr = json['language']?.toString().toLowerCase() ?? '';
+    if (langStr.contains('hindi')) {
+      lang = AiLanguageType.hindi;
+    } else if (langStr.contains('english')) {
+      lang = AiLanguageType.english;
+    }
+
+    return AiContentHistoryItem(
+      id: json['id']?.toString() ?? '',
+      title: json['title'] ?? '',
+      contentType: type,
+      tone: tone,
+      language: lang,
+      generatedContent: json['generated_content'] ?? '',
+      createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ?? DateTime.now(),
+      isFavorite: json['is_favorite'] == true,
+      wardNumber: json['ward_number'] ?? 'प्रभाग क्र. १२',
+    );
+  }
+
+  Map<String, dynamic> toJson({String? tenantId}) {
+    return {
+      'title': title,
+      'content_type': contentType.id,
+      'tone': tone.id,
+      'language': language.id,
+      'generated_content': generatedContent,
+      if (tenantId != null) 'tenant_id': tenantId,
+    };
+  }
 }
 
 /// Political quick prompt template for Nagar Sevak

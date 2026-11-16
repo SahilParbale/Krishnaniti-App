@@ -153,5 +153,48 @@ class GalleryItemModel {
       createdAt: createdAt ?? this.createdAt,
     );
   }
+
+  factory GalleryItemModel.fromJson(Map<String, dynamic> json) {
+    GalleryCategory cat = GalleryCategory.event;
+    final catStr = json['category']?.toString().toLowerCase();
+    if (catStr == 'work') {
+      cat = GalleryCategory.work;
+    } else if (catStr == 'award') {
+      cat = GalleryCategory.award;
+    } else if (catStr == 'campaign') {
+      cat = GalleryCategory.campaign;
+    }
+
+    return GalleryItemModel(
+      id: json['id']?.toString() ?? '',
+      title: json['title'] ?? '',
+      titleMr: json['title_mr'] ?? json['title'] ?? '',
+      category: cat,
+      imageUrl: json['image_url'] ?? json['imageUrl'] ?? '',
+      description: json['description'] ?? '',
+      descriptionMr: json['description_mr'] ?? json['description'] ?? '',
+      date: DateTime.tryParse(json['date']?.toString() ?? '') ?? DateTime.now(),
+      location: json['location'] ?? 'Ward 12',
+      tags: (json['tags'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
+      isFavorite: json['is_favorite'] == true || json['isFavorite'] == true,
+      viewsCount: (json['views_count'] as num?)?.toInt() ?? (json['viewsCount'] as num?)?.toInt() ?? 0,
+      createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ?? DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toJson({String? tenantId}) {
+    return {
+      'title': title,
+      'category': category.id,
+      'image_url': imageUrl,
+      'description': description,
+      'date': date.toIso8601String().split('T').first,
+      'location': location,
+      'tags': tags,
+      'is_favorite': isFavorite,
+      'views_count': viewsCount,
+      if (tenantId != null) 'tenant_id': tenantId,
+    };
+  }
 }
 

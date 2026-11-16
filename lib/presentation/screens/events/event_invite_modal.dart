@@ -32,13 +32,20 @@ class _EventInviteModalState extends ConsumerState<EventInviteModal> {
   int? _maxAge;
   bool _isSending = false;
 
-  late List<ConstituentInviteContact> _allVoters;
+  List<ConstituentInviteContact> _allVoters = [];
 
   @override
   void initState() {
     super.initState();
+    _loadVoters();
+  }
+
+  Future<void> _loadVoters() async {
     final repo = ref.read(eventsRepoProvider);
-    _allVoters = repo.getVotersForInvites();
+    final list = await repo.getVotersForInvites();
+    if (mounted) {
+      setState(() => _allVoters = list);
+    }
   }
 
   @override

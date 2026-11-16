@@ -27,13 +27,20 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   bool get wantKeepAlive => true;
 
   bool _isLoading = true;
-  Map<String, int> _complaintStats = {'total': 128, 'pending': 32, 'inProgress': 76, 'resolved': 20};
-  int _voterCount = 42560;
-  int _lettersCount = 14;
+  Map<String, int> _complaintStats = {'total': 0, 'pending': 0, 'inProgress': 0, 'resolved': 0};
+  int _voterCount = 0;
+  int _lettersCount = 0;
   List<ComplaintModel> _recentActivity = [];
   String _activityFilter = 'all'; // 'all' or 'pending' matching Dashboard.tsx
-  final String _dailyBriefing =
-      'Prabhag 12 Overview: 32 pending citizen requests require priority attention, concentrated around drainage bottlenecks and water supply near Shivaji Chowk. 20 works resolved this week with 88% citizen clearance rating.';
+  String get _dailyBriefing {
+    final pending = _complaintStats['pending'] ?? 0;
+    final resolved = _complaintStats['resolved'] ?? 0;
+    final total = _complaintStats['total'] ?? 0;
+    if (total == 0) {
+      return 'Welcome to Nagarsevak Management Dashboard. All live civic grievance feeds, voter records, and requests are synced with the centralized municipal database.';
+    }
+    return 'Ward Summary: $pending pending citizen requests require priority attention. $resolved works have been resolved successfully with active monitoring.';
+  }
 
   @override
   void initState() {
@@ -49,76 +56,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
       final lRepo = ref.read(lettersRepoProvider);
 
       final results = await Future.wait([
-        cRepo.getComplaintStats().catchError((_) => {'total': 128, 'pending': 32, 'inProgress': 76, 'resolved': 20}),
-        vRepo.getVotersCount().catchError((_) => 42560),
-        lRepo.getLettersCount().catchError((_) => 14),
+        cRepo.getComplaintStats().catchError((_) => {'total': 0, 'pending': 0, 'inProgress': 0, 'resolved': 0}),
+        vRepo.getVotersCount().catchError((_) => 0),
+        lRepo.getLettersCount().catchError((_) => 0),
         cRepo.getComplaints(limit: 10).catchError((_) => <ComplaintModel>[]),
       ]);
 
       if (mounted) {
         setState(() {
           _complaintStats = results[0] as Map<String, int>;
-          _voterCount = (results[1] as int) > 0 ? (results[1] as int) : 42560;
-          _lettersCount = (results[2] as int) > 0 ? (results[2] as int) : 14;
-          final loadedComplaints = results[3] as List<ComplaintModel>;
-
-          if (loadedComplaints.isNotEmpty) {
-            _recentActivity = loadedComplaints;
-          } else {
-            // Default realistic mock records matching Nagarsevak-Managment
-            _recentActivity = [
-              ComplaintModel(
-                id: 'c-101',
-                title: 'Water pipe leakage near Sambhaji Park',
-                description: 'Main distribution line cracked causing low water pressure in Sector 3.',
-                category: 'Water Supply',
-                status: 'Pending',
-                area: 'Lane 3, Shivajinagar',
-                citizenName: 'Suresh Patil',
-                createdAt: DateTime.now().subtract(const Duration(minutes: 42)),
-              ),
-              ComplaintModel(
-                id: 'c-102',
-                title: 'Streetlight blinking on Lane 4',
-                description: '3 pole lights flashing erratically near Ganpati Temple.',
-                category: 'Electrical',
-                status: 'Pending',
-                area: 'Prabhag 12, Lane 4',
-                citizenName: 'Sunita Deshmukh',
-                createdAt: DateTime.now().subtract(const Duration(hours: 2, minutes: 15)),
-              ),
-              ComplaintModel(
-                id: 'c-103',
-                title: 'Garbage collection irregular near Shivaji Chowk',
-                description: 'Waste pickup truck missed morning round on Monday and Tuesday.',
-                category: 'Sanitation',
-                status: 'InProgress',
-                area: 'Shivaji Chowk Market',
-                citizenName: 'Rahul Shinde',
-                createdAt: DateTime.now().subtract(const Duration(hours: 5)),
-              ),
-              ComplaintModel(
-                id: 'c-104',
-                title: 'Drainage chamber overflowing at Corner',
-                description: 'Sewage overflowing onto footpath, needs suction tanker.',
-                category: 'Drainage',
-                status: 'Pending',
-                area: 'Sector 2, Corner Road',
-                citizenName: 'Kavita Jadhav',
-                createdAt: DateTime.now().subtract(const Duration(hours: 8)),
-              ),
-              ComplaintModel(
-                id: 'c-105',
-                title: 'Tree branch trimming near Bus Stop',
-                description: 'Overhanging tree branches blocking view of traffic signal.',
-                category: 'Garden Dept',
-                status: 'Resolved',
-                area: 'Shivaji Bus Stop',
-                citizenName: 'Anil Kulkarni',
-                createdAt: DateTime.now().subtract(const Duration(days: 1)),
-              ),
-            ];
-          }
+          _voterCount = results[1] as int;
+          _lettersCount = results[2] as int;
+          _recentActivity = results[3] as List<ComplaintModel>;
           _isLoading = false;
         });
       }

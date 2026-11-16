@@ -1,4 +1,8 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../core/constants/app_config.dart';
 import '../../core/services/supabase_service.dart';
 import '../models/user_model.dart';
 
@@ -6,7 +10,40 @@ class AuthRepository {
   final SupabaseClient _client = SupabaseService.instance.client;
   UserModel? _mockSession;
 
+  static const String _sessionStorageKey = 'nagarsevak_active_session_v1';
+
   UserModel? get mockSession => _mockSession;
+
+  /// Restores any persisted session on app launch
+  Future<UserModel?> restorePersistedSession() async {
+    // 1. Check live Supabase Auth session first
+    final currentSupabaseUser = _client.auth.currentUser;
+    if (currentSupabaseUser != null) {
+      try {
+        final profile = await loadUserProfile(currentSupabaseUser);
+        return profile;
+      } catch (_) {
+        // Fallback to local cached profile if offline
+      }
+    }
+
+    // 2. Check local persistent storage for demo or cached sessions
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final sessionJson = prefs.getString(_sessionStorageKey);
+      if (sessionJson != null && sessionJson.isNotEmpty) {
+        final map = jsonDecode(sessionJson) as Map<String, dynamic>;
+        final user = UserModel.fromJson(map);
+        _mockSession = user;
+        if (user.tenantId != null && user.tenantId!.isNotEmpty) {
+          SupabaseService.instance.setActiveTenant(user.tenantId);
+        }
+        return user;
+      }
+    } catch (_) {}
+
+    return null;
+  }
 
   Future<UserModel> signIn({
     required String email,
@@ -17,12 +54,12 @@ class AuthRepository {
     final cleanEmail = email.trim().toLowerCase();
 
     // 1. Built-in demo accounts matching Nagarsevak-Managment AuthContext.tsx
+    // Demo accounts allow testing without separate Supabase Auth signups
     if (cleanEmail == 'demo_nagarsevak@demo.com' ||
         cleanEmail == 'staff_prabhag12@demo.com' ||
         cleanEmail == 'amdar_demo@krishnaniti.in' ||
         cleanEmail == 'khasdar_demo@krishnaniti.in' ||
-        cleanEmail == 'minister_demo@krishnaniti.in' ||
-        cleanEmail.contains('demo')) {
+        cleanEmail == 'minister_demo@krishnaniti.in') {
       final userRole = role ??
           (cleanEmail.contains('staff') || isStaff
               ? 'staff'
@@ -33,6 +70,10 @@ class AuthRepository {
                       : cleanEmail.contains('minister')
                           ? 'minister'
                           : 'nagarsevak');
+
+      // The Krishnaniti demo tenant UUID in database
+      const demoTenantId = AppConfig.defaultTenantId;
+      SupabaseService.instance.setActiveTenant(demoTenantId);
 
       final user = UserModel(
         id: 'demo-user-id',
@@ -49,38 +90,50 @@ class AuthRepository {
         role: userRole,
         isStaff: userRole == 'staff',
         permissions: const [],
-        tenantId: SupabaseService.instance.activeTenantId ?? 'bf1a3e36-464e-4eff-b21d-dc71f5a5a582',
+        tenantId: demoTenantId,
       );
+
       _mockSession = user;
+      await _persistSession(user);
       return user;
     }
 
     // 2. Real Supabase Authentication
-    try {
-      final response = await _client.auth.signInWithPassword(
-        email: cleanEmail,
-        password: password,
-      );
+    // Connects to live Supabase backend sharing exact credentials with web app
+    final response = await _client.auth.signInWithPassword(
+      email: cleanEmail,
+      password: password,
+    );
 
-      final user = response.user;
-      if (user == null) {
-        throw Exception('Authentication failed. User session is null.');
-      }
-
-      return await loadUserProfile(user);
-    } catch (e) {
-      // Fallback for offline or testing mode
-      final fallback = UserModel(
-        id: 'demo-user-id',
-        name: 'Hon. Nagarsevak',
-        email: cleanEmail.isNotEmpty ? cleanEmail : 'demo_nagarsevak@demo.com',
-        role: role ?? 'nagarsevak',
-        isStaff: isStaff,
-        tenantId: SupabaseService.instance.activeTenantId ?? 'bf1a3e36-464e-4eff-b21d-dc71f5a5a582',
-      );
-      _mockSession = fallback;
-      return fallback;
+    final user = response.user;
+    if (user == null) {
+      throw Exception('Authentication failed. User session is null.');
     }
+
+    final profile = await loadUserProfile(user);
+
+    // 3. Log successful login to login_logs table (matching web AuthContext)
+    try {
+      await _client.from('login_logs').insert({
+        'user_id': user.id,
+        'email': user.email,
+        'device_type': 'Mobile',
+        'browser': 'Flutter Mobile App',
+        'os': Platform.isAndroid
+            ? 'Android'
+            : Platform.isIOS
+                ? 'iOS'
+                : Platform.operatingSystem,
+        'user_agent': 'Krishnaniti-Mobile/1.0.0',
+        'tenant_id': profile.tenantId,
+        'status': 'success'
+      });
+    } catch (e) {
+      // Non-blocking for login flow
+    }
+
+    await _persistSession(profile);
+    return profile;
   }
 
   Future<UserModel> loadUserProfile(User sessionUser) async {
@@ -91,7 +144,7 @@ class AuthRepository {
         .eq('id', sessionUser.id)
         .maybeSingle();
 
-    // 2. Fetch role from user_tenant_mapping
+    // 2. Fetch role & tenant_id from user_tenant_mapping
     final mappingRes = await _client
         .from('user_tenant_mapping')
         .select('role, tenant_id')
@@ -99,7 +152,7 @@ class AuthRepository {
         .maybeSingle();
 
     final dbRole = mappingRes?['role'] ?? (staffRes != null ? 'staff' : 'nagarsevak');
-    final tenantId = mappingRes?['tenant_id'] ?? SupabaseService.instance.activeTenantId;
+    final tenantId = mappingRes?['tenant_id'] ?? SupabaseService.instance.activeTenantId ?? AppConfig.defaultTenantId;
 
     SupabaseService.instance.setActiveTenant(tenantId);
 
@@ -124,8 +177,20 @@ class AuthRepository {
     );
   }
 
+  Future<void> _persistSession(UserModel user) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_sessionStorageKey, jsonEncode(user.toJson()));
+    } catch (_) {}
+  }
+
   Future<void> signOut() async {
     _mockSession = null;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_sessionStorageKey);
+    } catch (_) {}
+
     try {
       await _client.auth.signOut();
     } catch (_) {}

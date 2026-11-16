@@ -30,34 +30,6 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
   bool _isLoadingHistory = false;
   List<WhatsAppBroadcastModel> _callHistory = [];
 
-  // Realistic seed call history if database returns empty
-  final List<WhatsAppBroadcastModel> _seedCallLogs = [
-    WhatsAppBroadcastModel(
-      id: 'call-001',
-      title: 'Manual Voice Call - Ramesh Kulkarni',
-      message: 'Direct phone call placed to Ramesh Kulkarni (9822011223)',
-      sentAt: DateTime.now().subtract(const Duration(hours: 3)),
-      channel: 'call',
-      recipients: 1,
-      sentCount: 1,
-      deliveredCount: 1,
-      failedCount: 0,
-      status: 'COMPLETED',
-    ),
-    WhatsAppBroadcastModel(
-      id: 'call-002',
-      title: 'Manual Voice Call - Suresh Patil',
-      message: 'Direct phone call placed to Suresh Patil (9822044556)',
-      sentAt: DateTime.now().subtract(const Duration(days: 1)),
-      channel: 'call',
-      recipients: 1,
-      sentCount: 1,
-      deliveredCount: 1,
-      failedCount: 0,
-      status: 'COMPLETED',
-    ),
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -119,14 +91,14 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
 
       if (mounted) {
         setState(() {
-          _callHistory = list.isNotEmpty ? list : List.from(_seedCallLogs);
+          _callHistory = list;
           _isLoadingHistory = false;
         });
       }
     } catch (_) {
       if (mounted) {
         setState(() {
-          _callHistory = List.from(_seedCallLogs);
+          _callHistory = [];
           _isLoadingHistory = false;
         });
       }

@@ -44,151 +44,9 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
   List<LetterModel> _outgoingLetters = [];
   List<LetterModel> _incomingLetters = [];
 
-  // Default Mock Outgoing Letters matching Nagarsevak-Managment
-  final List<LetterModel> _defaultOutgoingLetters = [
-    LetterModel(
-      id: 'REQ-LTR-101',
-      title: 'College Engineering Scholarship Recommendation',
-      letterType: 'Recommendation Letter',
-      department: 'Education Desk',
-      recipient: 'Rohit Vinod Pawar',
-      sender: 'Nagarsevak Office',
-      userId: 'Rohit Vinod Pawar',
-      area: 'Sector 3',
-      details: {
-        'name': 'Rohit Vinod Pawar',
-        'subject': 'Higher Education Engineering Scholarship Endorsement',
-        'address': 'Flat 402, Sai Shraddha Apts, Ward 12, Sector 3',
-        'purpose': 'College fees endorsement for merit scholarship',
-        'mobile': '9822044556',
-        'school_name': 'COEP Technological University',
-        'class_or_course_name': 'B.Tech Computer Engg',
-        'financial_condition': 'Needy / Garju',
-      },
-      status: 'Pending',
-      isIncoming: false,
-      createdAt: DateTime.now().subtract(const Duration(hours: 3)),
-    ),
-    LetterModel(
-      id: 'REQ-LTR-102',
-      title: 'Residence Proof for CM Relief Fund Hospitalization',
-      letterType: 'Residence Proof Certificate',
-      department: 'Welfare Desk',
-      recipient: 'Parvati Bai Kamble',
-      sender: 'Nagarsevak Office',
-      userId: 'Parvati Bai Kamble',
-      area: 'Shivaji Nagar',
-      details: {
-        'name': 'Parvati Bai Kamble',
-        'subject': 'CM Medical Relief Fund Address Verification',
-        'address': 'House No. 45, Shivaji Nagar, Ward 12',
-        'purpose': 'Open heart surgery financial assistance at Sancheti Hospital',
-        'mobile': '9822011223',
-        'age': '62',
-        'years_of_residency': '28',
-        'ward_no': '12',
-        'hospital_name': 'Sancheti Hospital',
-      },
-      status: 'Approved',
-      isIncoming: false,
-      createdAt: DateTime.now().subtract(const Duration(days: 1, hours: 2)),
-    ),
-    LetterModel(
-      id: 'REQ-LTR-103',
-      title: 'Commercial Electricity Meter Connection NOC',
-      letterType: 'Commercial Electricity Meter NOC',
-      department: 'Trade & Commerce',
-      recipient: 'Amit Suresh Deshmukh',
-      sender: 'Nagarsevak Office',
-      userId: 'Amit Suresh Deshmukh',
-      area: 'MG Road',
-      details: {
-        'name': 'Amit Suresh Deshmukh',
-        'subject': 'New 3-Phase Commercial Electricity Meter NOC',
-        'address': 'Shop No. 12, MG Road Market Complex, Ward 12',
-        'purpose': 'MSEDCL New Power Connection',
-        'mobile': '9876543212',
-        'mseb_branch_name': 'MSEDCL Central Substation',
-        'city_name': 'Pune',
-      },
-      status: 'Approved',
-      isIncoming: false,
-      createdAt: DateTime.now().subtract(const Duration(days: 2)),
-    ),
-    LetterModel(
-      id: 'REQ-LTR-104',
-      title: 'Police Department Recruitment Character Verification',
-      letterType: 'Character Certificate',
-      department: 'General Admin',
-      recipient: 'Swapnil Ganesh Mane',
-      sender: 'Nagarsevak Office',
-      userId: 'Swapnil Ganesh Mane',
-      area: 'Sector 4',
-      details: {
-        'name': 'Swapnil Ganesh Mane',
-        'subject': 'Police Recruitment Bonafide Verification',
-        'address': 'Lane 4, Near Ganpati Mandir, Sector 4, Ward 12',
-        'purpose': 'Government employment document verification',
-        'mobile': '9822033445',
-        'years_known': '12',
-        'reason_for_certificate': 'Police Recruitment Verification',
-      },
-      status: 'Pending',
-      isIncoming: false,
-      createdAt: DateTime.now().subtract(const Duration(days: 3)),
-    ),
-  ];
-
-  // Default Mock Incoming Letters matching Nagarsevak-Managment
-  final List<LetterModel> _defaultIncomingLetters = [
-    LetterModel(
-      id: 'INC-LTR-201',
-      title: 'Municipal Corporation Notice: Pre-Monsoon Drainage Desilting',
-      letterType: 'Municipal Circular',
-      department: 'PMC Drainage Dept',
-      description: 'Official circular from Municipal Drainage Division regarding desilting schedule for Prabhag 12.',
-      area: 'Prabhag 12 Ward Office',
-      fileType: 'application/pdf',
-      status: 'Received',
-      isIncoming: true,
-      receivedDate: DateTime.now().subtract(const Duration(days: 1)),
-      createdAt: DateTime.now().subtract(const Duration(days: 1)),
-    ),
-    LetterModel(
-      id: 'INC-LTR-202',
-      title: 'MSEDCL Substation Maintenance & Feeder Shutdown Notice',
-      letterType: 'Power Board Notice',
-      department: 'MSEDCL Division',
-      description: 'Intimation of scheduled maintenance shutdown of 11KV overhead feeder line on Station Road.',
-      area: 'Station Road',
-      fileType: 'image/jpeg',
-      letterUrl: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=800',
-      status: 'Received',
-      isIncoming: true,
-      receivedDate: DateTime.now().subtract(const Duration(days: 3)),
-      createdAt: DateTime.now().subtract(const Duration(days: 3)),
-    ),
-    LetterModel(
-      id: 'INC-LTR-203',
-      title: 'Citizen Delegation Memorandum: Children Community Garden Swings',
-      letterType: 'Citizen Petition',
-      department: 'Garden Dept',
-      description: 'Joint memorandum signed by 45 residents of Shanti Nagar requesting swings, benches & solar lights.',
-      area: 'Shanti Nagar',
-      fileType: 'image/jpeg',
-      letterUrl: 'https://images.unsplash.com/photo-1568667256549-094345857637?w=800',
-      status: 'Received',
-      isIncoming: true,
-      receivedDate: DateTime.now().subtract(const Duration(days: 5)),
-      createdAt: DateTime.now().subtract(const Duration(days: 5)),
-    ),
-  ];
-
   @override
   void initState() {
     super.initState();
-    _outgoingLetters = List.from(_defaultOutgoingLetters);
-    _incomingLetters = List.from(_defaultIncomingLetters);
     _fetchLetters();
   }
 
@@ -211,8 +69,8 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
 
       if (mounted) {
         setState(() {
-          if (outRes.isNotEmpty) _outgoingLetters = outRes;
-          if (inRes.isNotEmpty) _incomingLetters = inRes;
+          _outgoingLetters = outRes;
+          _incomingLetters = inRes;
           _isLoading = false;
         });
       }

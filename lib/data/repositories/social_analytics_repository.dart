@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/services/supabase_service.dart';
 import '../models/social_post_model.dart';
 
 final socialAnalyticsRepoProvider = Provider<SocialAnalyticsRepository>((ref) {
@@ -129,45 +130,6 @@ class SocialAnalyticsRepository {
     ),
   ];
 
-  final List<VoterBirthdayModel> _birthdays = [
-    const VoterBirthdayModel(
-      id: 'MH12-V-08492',
-      name: 'Santosh R. Deshmukh',
-      nameMarathi: 'संतोष रामचंद्र देशमुख',
-      mobile: '+919822014589',
-      area: 'Shaniwar Peth',
-      boothNumber: 'Booth 12-A (Bhave High School)',
-      age: 48,
-    ),
-    const VoterBirthdayModel(
-      id: 'MH12-V-12054',
-      name: 'Sunita Vijay Kulkarni',
-      nameMarathi: 'सुनिता विजय कुलकर्णी',
-      mobile: '+919422315678',
-      area: 'Sadashiv Peth',
-      boothNumber: 'Booth 12-C (SP College)',
-      age: 39,
-    ),
-    const VoterBirthdayModel(
-      id: 'MH12-V-33910',
-      name: 'Aniket M. Jagtap',
-      nameMarathi: 'अनिकेत महेश जगताप',
-      mobile: '+919921045612',
-      area: 'Budhwar Peth',
-      boothNumber: 'Booth 12-B (City High School)',
-      age: 26,
-    ),
-    const VoterBirthdayModel(
-      id: 'MH12-V-45129',
-      name: 'Prakash D. Shinde',
-      nameMarathi: 'प्रकाश दत्तात्रय शिंदे',
-      mobile: '+919850123890',
-      area: 'Kasba Peth',
-      boothNumber: 'Booth 12-D (Kasba Ganpati School)',
-      age: 54,
-    ),
-  ];
-
   Future<List<SocialPostModel>> getPosts() async {
     // Simulate lightweight async loading
     await Future.delayed(const Duration(milliseconds: 250));
@@ -175,8 +137,35 @@ class SocialAnalyticsRepository {
   }
 
   Future<List<VoterBirthdayModel>> getBirthdays() async {
-    await Future.delayed(const Duration(milliseconds: 150));
-    return List.from(_birthdays);
+    try {
+      final client = SupabaseService.instance.client;
+      final tenantId = SupabaseService.instance.activeTenantId;
+      var query = client
+          .from('voters')
+          .select('id, name_english, name_marathi, mobile, address_english, address_marathi, part_no, age')
+          .not('mobile', 'is', null)
+          .neq('mobile', '');
+
+      if (tenantId != null && tenantId.isNotEmpty) {
+        query = query.eq('tenant_id', tenantId);
+      }
+
+      final response = await query.limit(20);
+      return (response as List<dynamic>).map((v) {
+        final map = Map<String, dynamic>.from(v as Map);
+        return VoterBirthdayModel(
+          id: map['id']?.toString() ?? '',
+          name: map['name_english']?.toString() ?? map['name_marathi']?.toString() ?? '',
+          nameMarathi: map['name_marathi']?.toString() ?? map['name_english']?.toString() ?? '',
+          mobile: map['mobile']?.toString() ?? '',
+          area: map['address_marathi']?.toString() ?? map['address_english']?.toString() ?? '',
+          boothNumber: 'Booth ${map['part_no'] ?? '-'}',
+          age: map['age'] is int ? map['age'] : int.tryParse(map['age']?.toString() ?? '0') ?? 0,
+        );
+      }).toList();
+    } catch (_) {
+      return [];
+    }
   }
 
   Future<SocialAnalyticsSummary> getSummary() async {

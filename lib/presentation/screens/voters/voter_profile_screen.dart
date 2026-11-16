@@ -65,7 +65,7 @@ class _VoterProfileScreenState extends ConsumerState<VoterProfileScreen> {
 
   Future<void> _toggleFriendRelative() async {
     final repo = ref.read(votersRepoProvider);
-    await repo.toggleFriendRelative(_voter.id);
+    await repo.toggleFriendRelative(_voter.id, _voter.isFriendRelative);
     setState(() {
       _voter = _voter.copyWith(isFriendRelative: !_voter.isFriendRelative);
     });

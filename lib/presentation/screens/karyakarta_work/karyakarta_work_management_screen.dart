@@ -58,10 +58,10 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
         area: _selectedArea,
       );
       final summary = await repo.getSummaryStats(category: _activeTab);
-      final unassignedTasks = repo.getUnassignedTasks();
-      final unassignedComplaints = repo.getUnassignedComplaints();
-      final allStaff = repo.getAllStaffList();
-      final areas = repo.getAvailableAreas();
+      final unassignedTasks = await repo.getUnassignedTasks();
+      final unassignedComplaints = await repo.getUnassignedComplaints();
+      final allStaff = await repo.getAllStaffList();
+      final areas = await repo.getAvailableAreas();
 
       if (mounted) {
         setState(() {

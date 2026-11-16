@@ -30,15 +30,6 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
   List<StaffModel> _staffList = [];
   String? _assignedStaffId;
 
-  // Fallback Mock Staff List matching web version
-  final List<StaffModel> _defaultStaffList = [
-    StaffModel(id: 'staff-1', name: 'Sunil Shinde', role: 'Electrical JE', mobile: '9822012345'),
-    StaffModel(id: 'staff-2', name: 'Santosh Gaikwad', role: 'Sanitation Supervisor', mobile: '9822023456'),
-    StaffModel(id: 'staff-3', name: 'Pradeep Joshi', role: 'Water Works Dept', mobile: '9822034567'),
-    StaffModel(id: 'staff-4', name: 'Anand Jadhav', role: 'Road Engineering', mobile: '9822045678'),
-    StaffModel(id: 'staff-5', name: 'Prashant Kadam', role: 'Welfare Desk', mobile: '9822056789'),
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -48,11 +39,10 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
   }
 
   Future<void> _loadInitialData() async {
-    _staffList = List.from(_defaultStaffList);
     try {
       final repo = ref.read(complaintsRepoProvider);
       final staff = await repo.getStaffList();
-      if (staff.isNotEmpty && mounted) {
+      if (mounted) {
         setState(() {
           _staffList = staff;
         });

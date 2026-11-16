@@ -86,14 +86,7 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
   final _bearerMobileCtrl = TextEditingController(text: '+91 ');
   DateTime _receivedDate = DateTime.now();
 
-  // Staff Dropdown (ALWAYS visible with presets)
-  static final List<StaffModel> _fallbackStaffList = [
-    StaffModel(id: 'staff-1', name: 'Sunil Shinde', role: 'Electrical JE', mobile: '9822012345'),
-    StaffModel(id: 'staff-2', name: 'Santosh Gaikwad', role: 'Sanitation Sup.', mobile: '9822023456'),
-    StaffModel(id: 'staff-3', name: 'Pradeep Joshi', role: 'Water Works Dept', mobile: '9822034567'),
-    StaffModel(id: 'staff-4', name: 'Anand Jadhav', role: 'Road Engineering', mobile: '9822045678'),
-    StaffModel(id: 'staff-5', name: 'Mahesh Patil', role: 'Ward Officer', mobile: '9822056789'),
-  ];
+  // Staff Dropdown (loaded from Supabase staff table)
   List<StaffModel> _staffList = [];
   String? _selectedStaffId;
 
@@ -126,7 +119,6 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
   void initState() {
     super.initState();
     _activeTab = widget.initialTab == 'incoming' ? 'incoming' : 'outgoing';
-    _staffList = List.from(_fallbackStaffList);
     _syncDynamicFields(_selectedLetterType);
 
     if (widget.prefillVoterId != null) {

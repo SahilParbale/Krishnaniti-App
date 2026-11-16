@@ -389,14 +389,23 @@ class ComplaintsRepository {
         query = query.eq('tenant_id', _tenantId!);
       }
 
-      final response = await query;
-      final list = response as List<dynamic>;
+      var personalQuery = _client.from('personal_requests').select('status');
+      if (_tenantId != null) {
+        personalQuery = personalQuery.eq('tenant_id', _tenantId!);
+      }
+
+      final responses = await Future.wait([
+        query.then((r) => r as List<dynamic>).catchError((_) => <dynamic>[]),
+        personalQuery.then((r) => r as List<dynamic>).catchError((_) => <dynamic>[]),
+      ]);
+
+      final allRows = [...responses[0], ...responses[1]];
 
       int pending = 0;
       int inProgress = 0;
       int resolved = 0;
 
-      for (final item in list) {
+      for (final item in allRows) {
         final status = item['status']?.toString();
         if (status == 'Pending') {
           pending++;
@@ -408,13 +417,68 @@ class ComplaintsRepository {
       }
 
       return {
-        'total': list.length,
+        'total': allRows.length,
         'pending': pending,
         'inProgress': inProgress,
         'resolved': resolved,
       };
     } catch (_) {
       return {'total': 0, 'pending': 0, 'inProgress': 0, 'resolved': 0};
+    }
+  }
+
+  Future<List<ComplaintModel>> getPersonalRequests({
+    String? statusFilter,
+    String? searchQuery,
+    int limit = 100,
+  }) async {
+    try {
+      var query = _client.from('personal_requests').select('''
+        *,
+        voter:voters (
+          name_marathi,
+          name_english,
+          mobile
+        ),
+        staff:staff (
+          name,
+          mobile
+        )
+      ''');
+
+      if (_tenantId != null && _tenantId!.isNotEmpty) {
+        query = query.eq('tenant_id', _tenantId!);
+      }
+
+      if (statusFilter != null && statusFilter != 'All' && statusFilter.isNotEmpty) {
+        query = query.eq('status', statusFilter);
+      }
+
+      final response = await query.order('created_at', ascending: false).limit(limit);
+
+      return (response as List<dynamic>).map((item) {
+        final map = Map<String, dynamic>.from(item as Map);
+        map['id'] = 'pr-${map['id']}';
+        return ComplaintModel.fromJson(map);
+      }).toList();
+    } catch (_) {
+      try {
+        var query = _client.from('personal_requests').select('*');
+        if (_tenantId != null && _tenantId!.isNotEmpty) {
+          query = query.eq('tenant_id', _tenantId!);
+        }
+        if (statusFilter != null && statusFilter != 'All' && statusFilter.isNotEmpty) {
+          query = query.eq('status', statusFilter);
+        }
+        final response = await query.order('created_at', ascending: false).limit(limit);
+        return (response as List<dynamic>).map((item) {
+          final map = Map<String, dynamic>.from(item as Map);
+          map['id'] = 'pr-${map['id']}';
+          return ComplaintModel.fromJson(map);
+        }).toList();
+      } catch (_) {
+        return [];
+      }
     }
   }
 
@@ -629,13 +693,11 @@ class ComplaintsRepository {
         }
       } catch (_) {}
 
-      if (allProblems.isNotEmpty) {
-        allProblems.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-        return allProblems;
-      }
-    } catch (_) {}
-
-    return _getFallbackWardProblems();
+      allProblems.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return allProblems;
+    } catch (_) {
+      return [];
+    }
   }
 
   Future<ComplaintModel> createWardProblem({
@@ -650,151 +712,24 @@ class ComplaintsRepository {
     String? assignedTo,
     List<String> photos = const [],
   }) async {
-    try {
-      final payload = {
-        'title': title,
-        'problem': title,
-        'description': description,
-        'category': category.isEmpty ? 'SelfIdentified' : category,
-        'status': 'Pending',
-        'ward': 'Ward 12',
-        'area': area,
-        'location': location,
-        if (citizenName != null) 'citizen_name': citizenName,
-        if (citizenMobile != null) 'citizen_mobile': citizenMobile,
-        if (voterId != null) 'voter_id': voterId,
-        if (assignedTo != null) 'assigned_to': assignedTo,
-        'photos': photos,
-        'tenant_id': _tenantId,
-        'created_at': DateTime.now().toIso8601String(),
-      };
-      final res = await _client.from('complaints').insert(payload).select().single();
-      return ComplaintModel.fromJson(res);
-    } catch (_) {
-      return ComplaintModel(
-        id: 'wp-${DateTime.now().millisecondsSinceEpoch}',
-        title: title,
-        description: description,
-        category: category.isEmpty ? 'SelfIdentified' : category,
-        status: 'Pending',
-        ward: 'Ward 12',
-        area: area,
-        location: location,
-        citizenName: citizenName,
-        citizenMobile: citizenMobile,
-        createdAt: DateTime.now(),
-      );
-    }
-  }
-
-  List<ComplaintModel> _getFallbackWardProblems() {
-    return [
-      ComplaintModel(
-        id: 'wp-101',
-        title: 'Water pressure severely low in Sector 3 residential lanes',
-        description:
-            'Main supply pipeline valve malfunctioning near Sambhaji Park booster pump. Water not reaching 2nd and 3rd floors during morning supply hours.',
-        category: 'SelfIdentified',
-        status: 'Pending',
-        ward: 'Ward 12',
-        area: 'Shivajinagar, Sector 3',
-        location: 'Near Sambhaji Park Booster Station',
-        citizenName: 'Suresh Baban Patil',
-        citizenMobile: '9822014589',
-        createdAt: DateTime.now().subtract(const Duration(hours: 3)),
-      ),
-      ComplaintModel(
-        id: 'wp-102',
-        title: 'Overflowing storm drainage chamber causing foul smell and puddle',
-        description:
-            'Chamber choked due to plastic waste and silt. Drainage water overflowing onto main market road during evening peak rush.',
-        category: 'SelfIdentified',
-        status: 'InProgress',
-        ward: 'Ward 12',
-        area: 'Shivaji Chowk Market',
-        location: 'Opposite Old Vegetable Mandi Gate',
-        citizenName: 'Kishor Dnyaneshwar Shinde',
-        citizenMobile: '9890123456',
-        assignedStaffName: 'Mahesh Jadhav (Civil Engg)',
-        assignedStaffMobile: '9823055112',
-        createdAt: DateTime.now().subtract(const Duration(hours: 14)),
-      ),
-      ComplaintModel(
-        id: 'wp-103',
-        title: 'Three consecutive high-mast streetlights dark on Lane 4',
-        description:
-            'Underground cable shorted during recent tree trimming. The entire internal crossroad is pitch dark, creating safety hazard for women and senior citizens.',
-        category: 'SelfIdentified',
-        status: 'Pending',
-        ward: 'Ward 12',
-        area: 'Lane 4, Prabhag 12',
-        location: 'Near Ganpati Mandir Crossroads',
-        citizenName: 'Sunita Anand Deshmukh',
-        citizenMobile: '9764501234',
-        createdAt: DateTime.now().subtract(const Duration(days: 1, hours: 2)),
-      ),
-      ComplaintModel(
-        id: 'wp-104',
-        title: 'Chronic illegal garbage dumping spot on Canal Ring Road',
-        description:
-            'Uncontrolled waste dumping by commercial shops at night. Requires immediate JCB clearance, daily garbage bin placement, and CCTV warning board.',
-        category: 'SelfIdentified',
-        status: 'Assigned',
-        ward: 'Ward 12',
-        area: 'Canal Ring Road',
-        location: 'Behind Municipal Water Tank No. 2',
-        citizenName: 'Ganesh Ramchandra Kadam',
-        citizenMobile: '9850123987',
-        assignedStaffName: 'Sachin Thorat (Sanitation Inspector)',
-        assignedStaffMobile: '9822188443',
-        createdAt: DateTime.now().subtract(const Duration(days: 1, hours: 18)),
-      ),
-      ComplaintModel(
-        id: 'wp-105',
-        title: 'Damaged speed breaker with exposed reinforcement rebars',
-        description:
-            'Concrete broken by heavy construction transit trucks. Two wheelers skidding frequently during school dispersal hours.',
-        category: 'SelfIdentified',
-        status: 'Resolved',
-        ward: 'Ward 12',
-        area: 'Gaothan Main Road',
-        location: 'In front of Municipal School No. 14',
-        citizenName: 'Anil Eknath Gaikwad',
-        citizenMobile: '9822890123',
-        assignedStaffName: 'Mahesh Jadhav (Civil Engg)',
-        assignedStaffMobile: '9823055112',
-        createdAt: DateTime.now().subtract(const Duration(days: 3)),
-      ),
-      ComplaintModel(
-        id: 'wp-106',
-        title: 'Haphazard low-hanging internet cables tangled across electrical pole',
-        description:
-            'Multiple private telecom optical fiber cables hanging within 7 feet of road level. Fire hazard risk during summer.',
-        category: 'SelfIdentified',
-        status: 'InProgress',
-        ward: 'Ward 12',
-        area: 'Siddheshwar Nagar',
-        location: 'Pole No. 42, Cross Lane 2',
-        citizenName: 'Rahul Vinayak Joshi',
-        citizenMobile: '9923456789',
-        createdAt: DateTime.now().subtract(const Duration(days: 4)),
-      ),
-      ComplaintModel(
-        id: 'wp-107',
-        title: 'Open unattended manhole without cover near playground',
-        description:
-            'Cement cover broken last week during drainage desilting. Currently covered only with loose tree branches. Extreme hazard for children.',
-        category: 'SelfIdentified',
-        status: 'Resolved',
-        ward: 'Ward 12',
-        area: 'Sambhaji Park Layout',
-        location: 'Adjacent to Children Play Area',
-        citizenName: 'Pravin Narayan More',
-        citizenMobile: '9822334455',
-        assignedStaffName: 'Sachin Thorat (Sanitation Inspector)',
-        assignedStaffMobile: '9822188443',
-        createdAt: DateTime.now().subtract(const Duration(days: 6)),
-      ),
-    ];
+    final payload = {
+      'title': title,
+      'problem': title,
+      'description': description,
+      'category': category.isEmpty ? 'SelfIdentified' : category,
+      'status': 'Pending',
+      'ward': 'Ward 12',
+      'area': area,
+      'location': location,
+      if (citizenName != null) 'citizen_name': citizenName,
+      if (citizenMobile != null) 'citizen_mobile': citizenMobile,
+      if (voterId != null) 'voter_id': voterId,
+      if (assignedTo != null) 'assigned_to': assignedTo,
+      'photos': photos,
+      'tenant_id': _tenantId,
+      'created_at': DateTime.now().toIso8601String(),
+    };
+    final res = await _client.from('complaints').insert(payload).select().single();
+    return ComplaintModel.fromJson(res);
   }
 }
