@@ -33,13 +33,22 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
 
   Future<void> _loadProvisions() async {
     setState(() => _loading = true);
-    final repo = ref.read(wardProvisionsRepoProvider);
-    final data = await repo.getProvisions(year: _year);
-    if (mounted) {
-      setState(() {
-        _provisions = data;
-        _loading = false;
-      });
+    try {
+      final repo = ref.read(wardProvisionsRepoProvider);
+      final data = await repo.getProvisions(year: _year);
+      if (mounted) {
+        setState(() {
+          _provisions = data;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _provisions = [];
+          _loading = false;
+        });
+      }
     }
   }
 
@@ -749,6 +758,8 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                           // FY Selector
                           AppDropdown<String>(
                             value: _year,
+                            height: 40,
+                            isExpanded: false,
                             prefixIcon: const Icon(Icons.calendar_today_outlined, size: 14, color: Color(0xFF0284C7)),
                             items: const [
                               DropdownMenuItem(value: '2024-2025', child: Text('FY 2024-2025')),
@@ -766,8 +777,9 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                           // Download Report
                           Expanded(
                             child: AppPdfButton(
-                              label: isMr ? 'PDF अहवाल' : 'Download PDF',
+                              label: 'Reports',
                               style: AppPdfButtonStyle.tonal,
+                              tooltip: 'Reports',
                               onPressed: () {
                                 WardProvisionReportGenerator.generateAndPrintProvisionReport(
                                   provisions: _provisions,

@@ -767,6 +767,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                             AppDropdown<String>(
                               value: _selectedYear,
                               height: 48,
+                              isExpanded: false,
                               prefixIcon: const Icon(Icons.calendar_month_rounded, color: Color(0xFF0284C7), size: 18),
                               items: _years.map((y) {
                                 return DropdownMenuItem(

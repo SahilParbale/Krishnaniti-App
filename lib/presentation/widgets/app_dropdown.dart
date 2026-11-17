@@ -10,6 +10,7 @@ class AppDropdown<T> extends StatelessWidget {
   final String? hintText;
   final Widget? prefixIcon;
   final double height;
+  final double? width;
   final bool isDense;
   final bool isExpanded;
   final Color? backgroundColor;
@@ -25,6 +26,7 @@ class AppDropdown<T> extends StatelessWidget {
     String? hintText,
     this.prefixIcon,
     this.height = 40,
+    this.width,
     this.isDense = true,
     this.isExpanded = true,
     this.backgroundColor,
@@ -34,61 +36,72 @@ class AppDropdown<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: height,
-      padding: padding ?? const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        color: backgroundColor ?? Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: borderColor ?? AppColors.slate300,
-          width: 1,
-        ),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<T>(
-          value: value,
-          items: items,
-          onChanged: onChanged,
-          isDense: isDense,
-          isExpanded: isExpanded,
-          dropdownColor: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          elevation: 6,
-          icon: const Icon(
-            Icons.keyboard_arrow_down_rounded,
-            color: AppColors.brandPrimary,
-            size: 20,
-          ),
-          hint: hintText != null
-              ? Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (prefixIcon != null) ...[
-                      prefixIcon!,
-                      const SizedBox(width: 6),
-                    ],
-                    Flexible(
-                      child: Text(
-                        hintText!,
-                        style: const TextStyle(
-                          fontSize: 12.5,
-                          color: AppColors.textMuted,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Automatically safeguard against unbounded width exceptions (e.g. inside an unconstrained Row)
+        final safeIsExpanded = (width != null || constraints.hasBoundedWidth) ? isExpanded : false;
+
+        final dropdownWidget = DropdownButtonHideUnderline(
+          child: DropdownButton<T>(
+            value: value,
+            items: items,
+            onChanged: onChanged,
+            isDense: isDense,
+            isExpanded: safeIsExpanded,
+            dropdownColor: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            elevation: 6,
+            icon: const Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: AppColors.brandPrimary,
+              size: 20,
+            ),
+            hint: hintText != null
+                ? Text(
+                    hintText!,
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      color: AppColors.textMuted,
+                      fontWeight: FontWeight.w500,
                     ),
+                    overflow: TextOverflow.ellipsis,
+                  )
+                : null,
+            style: const TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        );
+
+        return Container(
+          width: width,
+          height: height,
+          padding: padding ?? const EdgeInsets.symmetric(horizontal: 10),
+          decoration: BoxDecoration(
+            color: backgroundColor ?? Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: borderColor ?? AppColors.slate300,
+              width: 1,
+            ),
+          ),
+          child: prefixIcon != null
+              ? Row(
+                  mainAxisSize: safeIsExpanded ? MainAxisSize.max : MainAxisSize.min,
+                  children: [
+                    prefixIcon!,
+                    const SizedBox(width: 6),
+                    if (safeIsExpanded)
+                      Expanded(child: dropdownWidget)
+                    else
+                      dropdownWidget,
                   ],
                 )
-              : null,
-          style: const TextStyle(
-            fontSize: 12.5,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
-        ),
-      ),
+              : dropdownWidget,
+        );
+      },
     );
   }
 }
