@@ -6,6 +6,7 @@ import '../../../data/models/ward_budget_model.dart';
 import '../../../data/repositories/ward_budget_repository.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_dropdown.dart';
 
 class WardBudgetDetailScreen extends ConsumerStatefulWidget {
   final WardBudgetModel budget;
@@ -170,13 +171,10 @@ class _WardBudgetDetailScreenState extends ConsumerState<WardBudgetDetailScreen>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  AppFieldLabel(
-                                    label: isMr ? 'आर्थिक वर्ष' : 'Financial Year',
-                                    isRequired: true,
-                                  ),
-                                  DropdownButtonFormField<String>(
-                                    initialValue: fy,
-                                    decoration: appInputDecoration(),
+                                  AppDropdownFormField<String>(
+                                label: isMr ? 'आर्थिक वर्ष' : 'Financial Year',
+                                isRequired: true,
+                                value: fy,
                                     items: years.map((y) => DropdownMenuItem(value: y, child: Text(y))).toList(),
                                     onChanged: (val) {
                                       if (val != null) setModalState(() => fy = val);
@@ -190,13 +188,10 @@ class _WardBudgetDetailScreenState extends ConsumerState<WardBudgetDetailScreen>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  AppFieldLabel(
-                                    label: isMr ? 'स्थिती' : 'Status',
-                                    isRequired: true,
-                                  ),
-                                  DropdownButtonFormField<String>(
-                                    initialValue: status,
-                                    decoration: appInputDecoration(),
+                                  AppDropdownFormField<String>(
+                                label: isMr ? 'स्थिती' : 'Status',
+                                isRequired: true,
+                                value: status,
                                     items: statusOptions
                                         .map((s) => DropdownMenuItem(
                                               value: s,

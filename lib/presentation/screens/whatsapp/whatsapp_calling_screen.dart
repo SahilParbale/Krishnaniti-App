@@ -686,7 +686,8 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
               Row(
                 children: [
                   AppPdfButton.outlined(
-                    label: 'PDF Report',
+                    label: 'Reports',
+                    tooltip: 'Reports',
                     isLoading: _isExportingPdf,
                     onPressed: _exportPdfReport,
                   ),

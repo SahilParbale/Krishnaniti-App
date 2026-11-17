@@ -9,6 +9,7 @@ import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_date_picker.dart';
 import '../../widgets/app_pdf_button.dart';
 import 'diary_report_generator.dart';
+import '../../widgets/app_dropdown.dart';
 
 class DiaryDetailScreen extends ConsumerStatefulWidget {
   final DiaryTaskModel task;
@@ -227,12 +228,9 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                AppFieldLabel(
+                                AppDropdownFormField<String>(
                                   label: isMr ? 'प्राधान्यता' : 'Priority',
-                                ),
-                                DropdownButtonFormField<String>(
                                   value: ['Low', 'Medium', 'High'].contains(selectedPriority) ? selectedPriority : 'Medium',
-                                  decoration: appInputDecoration(),
                                   items: const [
                                     DropdownMenuItem(value: 'Low', child: Text('Low (कमी)')),
                                     DropdownMenuItem(value: 'Medium', child: Text('Medium (मध्यम)')),
@@ -250,12 +248,9 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                AppFieldLabel(
+                                AppDropdownFormField<String>(
                                   label: isMr ? 'स्थिती' : 'Status',
-                                ),
-                                DropdownButtonFormField<String>(
                                   value: ['Pending', 'Completed', 'InProgress'].contains(selectedStatus) ? selectedStatus : 'Pending',
-                                  decoration: appInputDecoration(),
                                   items: const [
                                     DropdownMenuItem(value: 'Pending', child: Text('Pending (प्रलंबित)')),
                                     DropdownMenuItem(value: 'InProgress', child: Text('In Progress (प्रगतीत)')),

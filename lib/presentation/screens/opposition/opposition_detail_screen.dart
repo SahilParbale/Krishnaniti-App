@@ -7,6 +7,7 @@ import '../../../data/repositories/opposition_repository.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_date_picker.dart';
+import '../../widgets/app_dropdown.dart';
 
 class OppositionDetailScreen extends ConsumerStatefulWidget {
   final OppositionMemberModel member;
@@ -719,13 +720,10 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                           ),
                         )
                       else ...[
-                        AppFieldLabel(
-                          label: isMr ? 'विरोधी कार्यकर्ता निवडा' : 'Select Opposition Cadre',
-                          isRequired: true,
-                        ),
-                        DropdownButtonFormField<String>(
-                          initialValue: selectedWorkerId,
-                          decoration: appInputDecoration(),
+                        AppDropdownFormField<String>(
+                                label: isMr ? 'विरोधी कार्यकर्ता निवडा' : 'Select Opposition Cadre',
+                                isRequired: true,
+                                value: selectedWorkerId,
                           isExpanded: true,
                           items: unassigned.map((w) {
                             return DropdownMenuItem<String>(

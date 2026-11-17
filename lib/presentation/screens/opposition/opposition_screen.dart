@@ -10,6 +10,7 @@ import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
 import 'opposition_detail_screen.dart';
 import 'opposition_report_generator.dart';
+import '../../widgets/app_dropdown.dart';
 
 class OppositionScreen extends ConsumerStatefulWidget {
   const OppositionScreen({super.key});
@@ -286,10 +287,10 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              fieldLabel(isMr ? 'पक्ष' : 'Party', isRequired: true),
-                              DropdownButtonFormField<String>(
+                              AppDropdownFormField<String>(
+                                label: isMr ? 'पक्ष' : 'Party',
+                                isRequired: true,
                                 value: party,
-                                decoration: inputDec(),
                                 items: const [
                                   DropdownMenuItem(value: 'INC', child: Text('Congress (INC)')),
                                   DropdownMenuItem(value: 'NCP', child: Text('NCP')),
@@ -421,10 +422,9 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                         ],
                       ),
                       const SizedBox(height: 14),
-                      fieldLabel(isMr ? 'उमेदवारी स्थिती' : 'Candidacy Status'),
-                      DropdownButtonFormField<String>(
-                        value: candidacyStatus,
-                        decoration: inputDec(),
+                      AppDropdownFormField<String>(
+                                label: isMr ? 'उमेदवारी स्थिती' : 'Candidacy Status',
+                                value: candidacyStatus,
                         items: const [
                           DropdownMenuItem(value: 'Declared', child: Text('Declared')),
                           DropdownMenuItem(value: 'Contesting', child: Text('Contesting')),
@@ -440,10 +440,9 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                     ] else ...[
                       // If Worker: Option to link to candidate
                       if (candidatesList.isNotEmpty) ...[
-                        fieldLabel(isMr ? 'उमेदवाराशी जोडा (पर्यायी)' : 'Link to Candidate (Optional)'),
-                        DropdownButtonFormField<String>(
-                          value: selectedCandidateId,
-                          decoration: inputDec(),
+                        AppDropdownFormField<String>(
+                                label: isMr ? 'उमेदवाराशी जोडा (पर्यायी)' : 'Link to Candidate (Optional)',
+                                value: selectedCandidateId,
                           items: [
                             DropdownMenuItem(value: null, child: Text(isMr ? 'कोणाशीही जोडलेले नाही' : 'Not linked to any candidate')),
                             ...candidatesList.map((c) => DropdownMenuItem(value: c.id, child: Text('${c.name} (${c.party})'))),

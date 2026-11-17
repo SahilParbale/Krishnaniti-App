@@ -12,6 +12,7 @@ import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
 import 'visitor_detail_screen.dart';
 import 'visitor_report_generator.dart';
+import '../../widgets/app_dropdown.dart';
 
 class VisitorsScreen extends ConsumerStatefulWidget {
   const VisitorsScreen({super.key});
@@ -281,10 +282,10 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  fieldLabel(isMr ? 'भेटीचे कारण / स्वरूप' : 'Visit Purpose', isRequired: true),
-                                  DropdownButtonFormField<String>(
-                                    initialValue: selectedPurpose,
-                                    decoration: inputDec(),
+                                  AppDropdownFormField<String>(
+                                label: isMr ? 'भेटीचे कारण / स्वरूप' : 'Visit Purpose',
+                                isRequired: true,
+                                value: selectedPurpose,
                                     items: [
                                       DropdownMenuItem(value: 'Complaint', child: Text(isMr ? 'तक्रार (Complaint)' : 'Complaint')),
                                       DropdownMenuItem(value: 'Meeting', child: Text(isMr ? 'भेट / चर्चा (Meeting)' : 'Meeting')),
@@ -772,29 +773,24 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                   ),
                   if (_uniqueAreas.isNotEmpty) ...[
                     const SizedBox(width: 8),
-                    PopupMenuButton<String>(
-                      initialValue: _selectedArea,
-                      tooltip: 'Filter by Area',
-                      icon: Container(
-                        padding: const EdgeInsets.all(9),
-                        decoration: BoxDecoration(
-                          color: _selectedArea != 'All' ? const Color(0xFFE0F2FE) : const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: _selectedArea != 'All' ? const Color(0xFF0284C7) : const Color(0xFFCBD5E1),
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.location_on_outlined,
-                          size: 18,
-                          color: _selectedArea != 'All' ? const Color(0xFF0284C7) : const Color(0xFF475569),
-                        ),
+                    AppDropdown<String>(
+                      value: _selectedArea,
+                      height: 42,
+                      isExpanded: false,
+                      backgroundColor: _selectedArea == 'All' ? const Color(0xFFF8FAFC) : const Color(0xFFE0F2FE),
+                      borderColor: _selectedArea == 'All' ? const Color(0xFFCBD5E1) : const Color(0xFF0284C7),
+                      prefixIcon: Icon(
+                        Icons.location_on_outlined,
+                        size: 17,
+                        color: _selectedArea == 'All' ? const Color(0xFF64748B) : const Color(0xFF0284C7),
                       ),
-                      onSelected: (val) => setState(() => _selectedArea = val),
-                      itemBuilder: (ctx) => [
-                        const PopupMenuItem(value: 'All', child: Text('All Areas (सर्व परिसर)')),
-                        ..._uniqueAreas.map((a) => PopupMenuItem(value: a, child: Text(a))),
+                      items: [
+                        DropdownMenuItem(value: 'All', child: Text(isMr ? 'सर्व भाग' : 'All Areas')),
+                        ..._uniqueAreas.map((a) => DropdownMenuItem(value: a, child: Text(a))),
                       ],
+                      onChanged: (val) {
+                        if (val != null) setState(() => _selectedArea = val);
+                      },
                     ),
                   ],
                   const SizedBox(width: 8),

@@ -10,6 +10,7 @@ import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
 import 'improvement_detail_screen.dart';
 import 'improvement_report_generator.dart';
+import '../../widgets/app_dropdown.dart';
 
 /// PossibleImprovements Screen matching EXACTLY the web page:
 /// Nagarsevak-Managment/src/pages/ward/PossibleImprovements.tsx
@@ -372,12 +373,9 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                         const SizedBox(height: 14),
 
                         // 5. Status (Full Width Dropdown - matching PossibleImprovements.tsx lines 613-623)
-                        AppFieldLabel(
-                          label: isMr ? 'सद्यस्थिती' : 'Status',
-                        ),
-                        DropdownButtonFormField<String>(
-                          initialValue: status,
-                          decoration: inputDec(),
+                        AppDropdownFormField<String>(
+                                label: isMr ? 'सद्यस्थिती' : 'Status',
+                                value: status,
                           items: [
                             DropdownMenuItem(value: 'Pending', child: Text(isMr ? 'प्रलंबित (Pending)' : 'Pending')),
                             DropdownMenuItem(value: 'Planned', child: Text(isMr ? 'नियोजित (Planned)' : 'Planned')),
@@ -842,7 +840,8 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                               const SizedBox(width: 8),
                               // PDF Export Button
                               AppPdfButton.outlined(
-                                label: isMr ? 'PDF अहवाल' : 'PDF',
+                                label: 'Reports',
+                                tooltip: 'Reports',
                                 onPressed: () {
                                   ImprovementReportGenerator.generateAndPrintImprovementReport(
                                     improvements: filtered,
@@ -1186,7 +1185,8 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
                 ),
                 AppPdfButton.outlined(
-                  label: isMr ? 'PDF अहवाल' : 'Download PDF',
+                  label: 'Reports',
+                  tooltip: 'Reports',
                   onPressed: () {
                     ImprovementReportGenerator.generateAndPrintImprovementReport(
                       improvements: items,

@@ -253,12 +253,11 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    fieldLabel(isMr ? 'बैठक प्रकार' : 'Meeting Type', isRequired: true),
-                                    DropdownButtonFormField<String>(
-                                      initialValue: meetingType,
-                                      isExpanded: true,
-                                      style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
-                                      decoration: inputDec(hintText: 'Select Type'),
+                                    AppDropdownFormField<String>(
+                                      label: isMr ? 'बैठक प्रकार' : 'Meeting Type',
+                                      isRequired: true,
+                                      value: meetingType,
+                                      hintText: 'Select Type',
                                       items: _meetingTypes
                                           .where((t) => t != 'All')
                                           .map((t) => DropdownMenuItem(
@@ -403,12 +402,11 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    fieldLabel(isMr ? 'निकाल / स्थिती' : 'Outcome / Status', isRequired: true),
-                                    DropdownButtonFormField<String>(
-                                      initialValue: status,
-                                      isExpanded: true,
-                                      style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
-                                      decoration: inputDec(hintText: 'Select Status'),
+                                    AppDropdownFormField<String>(
+                                      label: isMr ? 'निकाल / स्थिती' : 'Outcome / Status',
+                                      isRequired: true,
+                                      value: status,
+                                      hintText: 'Select Status',
                                       items: _statusList
                                           .where((s) => s != 'All')
                                           .map((s) => DropdownMenuItem(

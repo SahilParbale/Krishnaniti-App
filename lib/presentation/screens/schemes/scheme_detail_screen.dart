@@ -9,6 +9,7 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
 import 'scheme_report_generator.dart';
+import '../../widgets/app_dropdown.dart';
 
 class SchemeDetailScreen extends ConsumerStatefulWidget {
   final SchemeModel scheme;
@@ -128,13 +129,10 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  AppFieldLabel(
-                                    label: isMr ? 'वर्ग / विभाग' : 'Category',
-                                    isRequired: true,
-                                  ),
-                                  DropdownButtonFormField<String>(
-                                    initialValue: categories.contains(selectedCat) ? selectedCat : 'All',
-                                    decoration: appInputDecoration(),
+                                  AppDropdownFormField<String>(
+                                label: isMr ? 'वर्ग / विभाग' : 'Category',
+                                isRequired: true,
+                                value: categories.contains(selectedCat) ? selectedCat : 'All',
                                     items: categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
                                     onChanged: (val) {
                                       if (val != null) setModalState(() => selectedCat = val);

@@ -409,10 +409,10 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                fieldLabel(isMr ? 'अर्जाचा प्रकार' : 'Form Type', isRequired: true),
-                                DropdownButtonFormField<String>(
-                                  initialValue: formType,
-                                  decoration: inputDec(),
+                                AppDropdownFormField<String>(
+                                label: isMr ? 'अर्जाचा प्रकार' : 'Form Type',
+                                isRequired: true,
+                                value: formType,
                                   isExpanded: true,
                                   items: [
                                     DropdownMenuItem(value: 'Form 6', child: Text(isMr ? 'नमुना ६ (नवीन नोंदणी)' : 'Form 6 (New Reg)', style: const TextStyle(fontSize: 12))),
@@ -432,10 +432,10 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                fieldLabel(isMr ? 'अर्जाची स्थिती' : 'Status', isRequired: true),
-                                DropdownButtonFormField<String>(
-                                  initialValue: status,
-                                  decoration: inputDec(),
+                                AppDropdownFormField<String>(
+                                label: isMr ? 'अर्जाची स्थिती' : 'Status',
+                                isRequired: true,
+                                value: status,
                                   isExpanded: true,
                                   items: [
                                     DropdownMenuItem(value: 'Submitted', child: Text(isMr ? 'दाखल (Submitted)' : 'Submitted', style: const TextStyle(fontSize: 12))),

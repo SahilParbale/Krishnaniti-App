@@ -9,6 +9,7 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
 import 'ward_map_report_generator.dart';
+import '../../widgets/app_dropdown.dart';
 
 class WardMapScreen extends ConsumerStatefulWidget {
   const WardMapScreen({super.key});
@@ -233,10 +234,10 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _fieldLabel(isMr ? 'वर्गवारी' : 'Category', isRequired: true),
-                                  DropdownButtonFormField<String>(
-                                    initialValue: cat,
-                                    decoration: _inputDec(),
+                                  AppDropdownFormField<String>(
+                                label: isMr ? 'वर्गवारी' : 'Category',
+                                isRequired: true,
+                                value: cat,
                                     items: [
                                       DropdownMenuItem(value: 'Booth', child: Text(isMr ? 'मतदान केंद्र' : 'Booth')),
                                       DropdownMenuItem(value: 'CivilWorks', child: Text(isMr ? 'विकासकाम' : 'Civil Works')),

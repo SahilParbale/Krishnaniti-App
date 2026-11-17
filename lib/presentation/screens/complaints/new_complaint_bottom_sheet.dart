@@ -11,6 +11,7 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/app_image_picker.dart';
 import '../../widgets/app_modal_sheet.dart';
 import 'complaint_form_constants.dart';
+import '../../widgets/app_dropdown.dart';
 
 /// Modal Bottom Sheet that slides up from the bottom with downward-dismiss capability,
 /// matching the EXACT form fields, labels, placeholders, and structure of Nagarsevak-Managment
@@ -1049,17 +1050,12 @@ class _NewComplaintBottomSheetState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AppFieldLabel(
+        AppDropdownFormField<String>(
           label: label,
           isRequired: required,
-        ),
-        DropdownButtonFormField<String>(
-          initialValue: items.any((i) => i.value == value) ? value : null,
+          value: items.any((i) => i.value == value) ? value : null,
           items: items,
           onChanged: onChanged,
-          isExpanded: true,
-          style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
-          decoration: appInputDecoration(),
         ),
       ],
     );
@@ -1357,8 +1353,9 @@ class _VoterSearchModalSheetState
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: DropdownButtonFormField<String>(
-                        initialValue: _selectedGender,
+                      child: AppDropdown<String>(
+                        value: _selectedGender,
+                        height: 44,
                         items: [
                           DropdownMenuItem(value: '', child: Text(isMr ? 'सर्व लिंग' : 'All Genders', style: const TextStyle(fontSize: 12))),
                           const DropdownMenuItem(value: 'M', child: Text('Male', style: TextStyle(fontSize: 12))),
@@ -1369,15 +1366,6 @@ class _VoterSearchModalSheetState
                           setState(() => _selectedGender = val ?? '');
                           _executeSearch();
                         },
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: Colors.white,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
-                          ),
-                        ),
                       ),
                     ),
                   ],

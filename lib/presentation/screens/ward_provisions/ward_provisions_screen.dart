@@ -309,10 +309,9 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _fieldLabel(isMr ? 'आर्थिक वर्ष' : 'Financial Year'),
-                                  DropdownButtonFormField<String>(
-                                    value: finYear,
-                                    decoration: _inputDec(),
+                                  AppDropdownFormField<String>(
+                                label: isMr ? 'आर्थिक वर्ष' : 'Financial Year',
+                                value: finYear,
                                     items: const [
                                       DropdownMenuItem(value: '2024-2025', child: Text('FY 2024-2025', style: TextStyle(fontSize: 13))),
                                       DropdownMenuItem(value: '2023-2024', child: Text('FY 2023-2024', style: TextStyle(fontSize: 13))),

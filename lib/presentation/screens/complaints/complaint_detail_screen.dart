@@ -587,7 +587,8 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           AppPdfButton.outlined(
-                            label: isMr ? 'डॉकेट' : 'Docket',
+                            label: 'Reports',
+                            tooltip: 'Reports',
                             onPressed: () => ComplaintReportGenerator.generateAndPrintSingleComplaintDocket(_complaint),
                           ),
                           const SizedBox(width: 6),

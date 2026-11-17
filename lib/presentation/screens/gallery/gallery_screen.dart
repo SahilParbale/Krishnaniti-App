@@ -14,6 +14,7 @@ import '../../widgets/app_pdf_button.dart';
 import '../../widgets/app_date_picker.dart';
 import 'gallery_detail_screen.dart';
 import 'gallery_report_generator.dart';
+import '../../widgets/app_dropdown.dart';
 
 class GalleryScreen extends ConsumerStatefulWidget {
   const GalleryScreen({super.key});
@@ -173,13 +174,9 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                AppFieldLabel(
-                                  label: isMr ? 'श्रेणी' : 'Category',
-                                  isRequired: false,
-                                ),
-                                DropdownButtonFormField<GalleryCategory>(
-                                  initialValue: selectedCat,
-                                  decoration: inputDec(),
+                                AppDropdownFormField<GalleryCategory>(
+                                label: isMr ? 'श्रेणी' : 'Category',
+                                value: selectedCat,
                                   isExpanded: true,
                                   items: GalleryCategory.values.map((c) {
                                     return DropdownMenuItem(

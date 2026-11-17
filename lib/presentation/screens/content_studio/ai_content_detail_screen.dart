@@ -422,7 +422,8 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
               ),
               const SizedBox(height: 12),
               AppPdfButton.outlined(
-                label: 'Download Official Letterhead PDF',
+                label: 'Reports',
+                tooltip: 'Reports',
                 isCompact: false,
                 onPressed: _handlePrintPdf,
               ),

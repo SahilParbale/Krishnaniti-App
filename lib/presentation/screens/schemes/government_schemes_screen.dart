@@ -10,6 +10,7 @@ import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
 import 'scheme_detail_screen.dart';
 import 'scheme_report_generator.dart';
+import '../../widgets/app_dropdown.dart';
 
 class GovernmentSchemesScreen extends ConsumerStatefulWidget {
   final VoidCallback? onBackToHome;
@@ -317,10 +318,10 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    fieldLabel(isMr ? 'लिंग' : 'Gender', isRequired: true),
-                                    DropdownButtonFormField<String>(
-                                      initialValue: gender,
-                                      decoration: inputDec(),
+                                    AppDropdownFormField<String>(
+                                label: isMr ? 'लिंग' : 'Gender',
+                                isRequired: true,
+                                value: gender,
                                       items: [
                                         DropdownMenuItem(value: 'Male', child: Text(isMr ? 'पुरुष' : 'Male')),
                                         DropdownMenuItem(value: 'Female', child: Text(isMr ? 'महिला' : 'Female')),
@@ -540,10 +541,10 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    fieldLabel(isMr ? 'वर्ग / विभाग' : 'Category', isRequired: true),
-                                    DropdownButtonFormField<String>(
-                                      initialValue: selectedCat,
-                                      decoration: inputDec(),
+                                    AppDropdownFormField<String>(
+                                label: isMr ? 'वर्ग / विभाग' : 'Category',
+                                isRequired: true,
+                                value: selectedCat,
                                       items: categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
                                       onChanged: (val) {
                                         if (val != null) setModalState(() => selectedCat = val);

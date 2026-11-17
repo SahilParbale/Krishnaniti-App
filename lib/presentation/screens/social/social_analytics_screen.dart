@@ -6,6 +6,7 @@ import '../../../data/models/social_post_model.dart';
 import '../../../data/repositories/social_analytics_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../widgets/app_pdf_button.dart';
+import '../../widgets/app_dropdown.dart';
 import 'social_analytics_report_generator.dart';
 import 'social_post_detail_screen.dart';
 
@@ -320,11 +321,10 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                         Row(
                           children: [
                             const Text('Sort: ', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-                            DropdownButton<String>(
+                            AppDropdown<String>(
                               value: _sortBy,
-                              isDense: true,
-                              underline: const SizedBox(),
-                              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
+                              height: 36,
+                              isExpanded: false,
                               items: const [
                                 DropdownMenuItem(value: 'newest', child: Text('Newest First')),
                                 DropdownMenuItem(value: 'likes', child: Text('Most Liked')),

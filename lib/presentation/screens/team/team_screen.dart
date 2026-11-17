@@ -11,6 +11,7 @@ import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
 import 'team_member_profile_screen.dart';
 import 'team_report_generator.dart';
+import '../../widgets/app_dropdown.dart';
 
 class TeamScreen extends ConsumerStatefulWidget {
   const TeamScreen({super.key});
@@ -396,10 +397,10 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                fieldLabel(isMr ? 'श्रेणी / विभाग' : 'Category', isRequired: true),
-                                DropdownButtonFormField<String>(
-                                  initialValue: category,
-                                  decoration: inputDec(),
+                                AppDropdownFormField<String>(
+                                label: isMr ? 'श्रेणी / विभाग' : 'Category',
+                                isRequired: true,
+                                value: category,
                                   isExpanded: true,
                                   items: [
                                     DropdownMenuItem(
@@ -427,11 +428,9 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                fieldLabel(isMr ? 'राजकीय पक्ष (पक्ष)' : 'Political Party', optionalNote: isMr ? 'ऐच्छिक' : 'Optional'),
-                                DropdownButtonFormField<String>(
-                                  initialValue: paksh,
-                                  decoration: inputDec(),
-                                  isExpanded: true,
+                                AppDropdownFormField<String>(
+                                  label: isMr ? 'राजकीय पक्ष (पक्ष)' : 'Political Party',
+                                  value: paksh,
                                   items: [
                                     DropdownMenuItem(value: '', child: Text(isMr ? 'पक्ष निवडा' : 'Select Party', style: const TextStyle(fontSize: 12.5))),
                                     DropdownMenuItem(value: 'BJP', child: Text(isMr ? 'भाजप (भारतीय जनता पक्ष)' : 'BJP (Bharatiya Janata Party)', style: const TextStyle(fontSize: 12.5))),
@@ -593,11 +592,9 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                fieldLabel(isMr ? 'पक्ष आघाडी / सेल' : 'Party Wing', optionalNote: isMr ? 'ऐच्छिक' : 'Optional'),
-                                DropdownButtonFormField<String>(
-                                  initialValue: partyWingsList.contains(partyWing) ? partyWing : '',
-                                  decoration: inputDec(),
-                                  isExpanded: true,
+                                AppDropdownFormField<String>(
+                                  label: isMr ? 'पक्ष आघाडी / सेल' : 'Party Wing',
+                                  value: partyWingsList.contains(partyWing) ? partyWing : '',
                                   items: [
                                     DropdownMenuItem(value: '', child: Text(isMr ? 'आघाडी निवडा' : 'Select Wing', style: const TextStyle(fontSize: 12.5))),
                                     ...partyWingsList.map((w) => DropdownMenuItem(value: w, child: Text(w, style: const TextStyle(fontSize: 12.5)))),
@@ -614,13 +611,11 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                fieldLabel(isMr ? 'पद (आघाडीतील पद)' : 'Designation / Post', optionalNote: isMr ? 'ऐच्छिक' : 'Optional'),
-                                DropdownButtonFormField<String>(
-                                  initialValue: partyPostsList.any((p) => p.startsWith(pad) && pad.isNotEmpty)
+                                AppDropdownFormField<String>(
+                                  label: isMr ? 'पद (आघाडीतील पद)' : 'Designation / Post',
+                                  value: partyPostsList.any((p) => p.startsWith(pad) && pad.isNotEmpty)
                                       ? partyPostsList.firstWhere((p) => p.startsWith(pad))
                                       : '',
-                                  decoration: inputDec(),
-                                  isExpanded: true,
                                   items: [
                                     DropdownMenuItem(value: '', child: Text(isMr ? 'पद निवडा' : 'Select Post', style: const TextStyle(fontSize: 12.5))),
                                     ...partyPostsList.map((p) => DropdownMenuItem(value: p, child: Text(p, style: const TextStyle(fontSize: 12.5)))),

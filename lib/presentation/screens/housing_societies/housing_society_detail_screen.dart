@@ -6,6 +6,7 @@ import '../../../data/models/housing_society_model.dart';
 import '../../../data/repositories/housing_society_repository.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_dropdown.dart';
 
 class HousingSocietyDetailScreen extends ConsumerStatefulWidget {
   final HousingSocietyModel society;
@@ -293,12 +294,9 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                AppFieldLabel(
-                                  label: isMr ? 'स्थिती' : 'Status',
-                                ),
-                                DropdownButtonFormField<String>(
-                                  initialValue: status,
-                                  decoration: appInputDecoration(),
+                                AppDropdownFormField<String>(
+                                label: isMr ? 'स्थिती' : 'Status',
+                                value: status,
                                   items: [
                                     DropdownMenuItem(value: 'Active', child: Text(isMr ? 'सक्रिय (Active)' : 'Active')),
                                     DropdownMenuItem(value: 'Inactive', child: Text(isMr ? 'निष्क्रिय (Inactive)' : 'Inactive')),

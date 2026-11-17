@@ -6,6 +6,7 @@ import '../../../data/models/social_organization_model.dart';
 import '../../../data/repositories/social_organization_repository.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_dropdown.dart';
 
 class SocialOrgDetailScreen extends ConsumerStatefulWidget {
   final SocialOrganizationModel organization;
@@ -355,13 +356,10 @@ class _SocialOrgDetailScreenState extends ConsumerState<SocialOrgDetailScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              AppFieldLabel(
+                              AppDropdownFormField<String>(
                                 label: isMr ? 'संस्थेचा प्रकार' : 'Organization Type',
                                 isRequired: true,
-                              ),
-                              DropdownButtonFormField<String>(
-                                initialValue: type,
-                                decoration: appInputDecoration(),
+                                value: type,
                                 items: [
                                   DropdownMenuItem(value: 'ganpati_mandal', child: Text(isMr ? 'गणेश मंडळ' : 'Ganesh Mandal')),
                                   DropdownMenuItem(value: 'navratri_mandal', child: Text(isMr ? 'नवरात्र मंडळ' : 'Navratri Mandal')),
@@ -381,12 +379,9 @@ class _SocialOrgDetailScreenState extends ConsumerState<SocialOrgDetailScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              AppFieldLabel(
+                              AppDropdownFormField<String>(
                                 label: isMr ? 'स्थिती' : 'Status',
-                              ),
-                              DropdownButtonFormField<String>(
-                                initialValue: status,
-                                decoration: appInputDecoration(),
+                                value: status,
                                 items: const [
                                   DropdownMenuItem(value: 'Active', child: Text('Active')),
                                   DropdownMenuItem(value: 'Inactive', child: Text('Inactive')),

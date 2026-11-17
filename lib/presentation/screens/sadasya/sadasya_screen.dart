@@ -12,6 +12,7 @@ import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
 import 'sadasya_profile_screen.dart';
 import 'sadasya_report_generator.dart';
+import '../../widgets/app_dropdown.dart';
 
 class SadasyaScreen extends ConsumerStatefulWidget {
   const SadasyaScreen({super.key});
@@ -1230,10 +1231,9 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                fieldLabel(isMr ? 'लिंग' : 'Gender'),
-                                DropdownButtonFormField<String>(
-                                  initialValue: gender,
-                                  decoration: inputDec(),
+                                AppDropdownFormField<String>(
+                                label: isMr ? 'लिंग' : 'Gender',
+                                value: gender,
                                   items: [
                                     DropdownMenuItem(value: 'M', child: Text(isMr ? 'पुरुष' : 'Male')),
                                     DropdownMenuItem(value: 'F', child: Text(isMr ? 'महिला' : 'Female')),
@@ -1795,10 +1795,9 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _fieldLabel(isMr ? 'लिंग' : 'Gender'),
-                    DropdownButtonFormField<String>(
-                      initialValue: _manualGender,
-                      decoration: _inputDec(),
+                    AppDropdownFormField<String>(
+                                label: isMr ? 'लिंग' : 'Gender',
+                                value: _manualGender,
                       items: [
                         DropdownMenuItem(value: 'M', child: Text(isMr ? 'पुरुष' : 'Male')),
                         DropdownMenuItem(value: 'F', child: Text(isMr ? 'महिला' : 'Female')),

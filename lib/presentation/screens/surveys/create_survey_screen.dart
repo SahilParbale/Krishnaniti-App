@@ -4,6 +4,7 @@ import '../../../data/models/survey_model.dart';
 import '../../../data/repositories/surveys_repository.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_dropdown.dart';
 
 class CreateSurveyBottomSheet extends ConsumerStatefulWidget {
   final SurveyModel? surveyToEdit;
@@ -239,10 +240,9 @@ class _CreateSurveyBottomSheetState extends ConsumerState<CreateSurveyBottomShee
                   const SizedBox(height: 14),
 
                   // Area Dropdown (Sample Target and Survey Status removed)
-                  _fieldLabel(isMr ? 'प्रभाग / परिसर' : 'Ward / Area'),
-                  DropdownButtonFormField<String>(
-                    initialValue: _selectedArea,
-                    decoration: _inputDec(),
+                  AppDropdownFormField<String>(
+                                label: isMr ? 'प्रभाग / परिसर' : 'Ward / Area',
+                                value: _selectedArea,
                     items: _prabhagAreas.map((a) {
                       return DropdownMenuItem(value: a, child: Text(a, style: const TextStyle(fontSize: 13)));
                     }).toList(),
@@ -336,10 +336,9 @@ class _CreateSurveyBottomSheetState extends ConsumerState<CreateSurveyBottomShee
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    _fieldLabel(isMr ? 'प्रकार' : 'Type'),
-                                    DropdownButtonFormField<SurveyQuestionType>(
-                                      initialValue: q.type,
-                                      decoration: _inputDec(),
+                                    AppDropdownFormField<SurveyQuestionType>(
+                                label: isMr ? 'प्रकार' : 'Type',
+                                value: q.type,
                                       isExpanded: true,
                                       items: const [
                                         DropdownMenuItem(value: SurveyQuestionType.yesNo, child: Text('Yes / No', style: TextStyle(fontSize: 12))),

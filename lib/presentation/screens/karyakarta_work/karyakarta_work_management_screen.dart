@@ -589,37 +589,25 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
         // Area Filter Dropdown
         Expanded(
           flex: 2,
-          child: Container(
+          child: AppDropdown<String>(
+            value: _selectedArea,
             height: 42,
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFCBD5E1)),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: _selectedArea,
-                isExpanded: true,
-                icon: const Icon(Icons.keyboard_arrow_down, size: 18, color: Color(0xFF64748B)),
-                style: const TextStyle(fontSize: 12, color: Color(0xFF0F172A), fontWeight: FontWeight.w500),
-                items: [
-                  const DropdownMenuItem(value: 'All', child: Text('All Areas')),
-                  ..._areas.map((a) => DropdownMenuItem(value: a, child: Text(a))),
-                ],
-                onChanged: (val) {
-                  if (val != null) {
-                    setState(() => _selectedArea = val);
-                    _loadData();
-                  }
-                },
-              ),
-            ),
+            isExpanded: true,
+            items: [
+              const DropdownMenuItem(value: 'All', child: Text('All Areas')),
+              ..._areas.map((a) => DropdownMenuItem(value: a, child: Text(a))),
+            ],
+            onChanged: (val) {
+              if (val != null) {
+                setState(() => _selectedArea = val);
+                _loadData();
+              }
+            },
           ),
         ),
         const SizedBox(width: 8),
         AppPdfButton.outlined(
-          label: 'Report',
+          label: 'Reports',
           onPressed: _showReportPreviewDialog,
         ),
       ],
@@ -1295,33 +1283,22 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 // Reassign dropdown
-                Container(
-                  height: 28,
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: const Color(0xFFCBD5E1)),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: task.assignedStaffId ?? '',
-                      hint: const Text('Assign...', style: TextStyle(fontSize: 10)),
-                      icon: const Icon(Icons.arrow_drop_down, size: 16),
-                      style: const TextStyle(fontSize: 10.5, color: Color(0xFF0F172A)),
-                      items: [
-                        const DropdownMenuItem(value: '', child: Text('Unassigned')),
-                        ..._allStaff.map(
-                          (s) => DropdownMenuItem(value: s.id, child: Text(s.name)),
-                        ),
-                      ],
-                      onChanged: (val) {
-                        if (val != null && val != task.assignedStaffId) {
-                          _handleReassignTask(task.id, val);
-                        }
-                      },
+                AppDropdown<String>(
+                  value: task.assignedStaffId ?? '',
+                  height: 30,
+                  isExpanded: false,
+                  hintText: 'Assign...',
+                  items: [
+                    const DropdownMenuItem(value: '', child: Text('Unassigned')),
+                    ..._allStaff.map(
+                      (s) => DropdownMenuItem(value: s.id, child: Text(s.name)),
                     ),
-                  ),
+                  ],
+                  onChanged: (val) {
+                    if (val != null && val != task.assignedStaffId) {
+                      _handleReassignTask(task.id, val);
+                    }
+                  },
                 ),
 
                 // Status advance button
@@ -1460,33 +1437,22 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 // Reassign dropdown
-                Container(
-                  height: 28,
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: const Color(0xFFCBD5E1)),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: complaint.assignedTo ?? '',
-                      hint: const Text('Assign...', style: TextStyle(fontSize: 10)),
-                      icon: const Icon(Icons.arrow_drop_down, size: 16),
-                      style: const TextStyle(fontSize: 10.5, color: Color(0xFF0F172A)),
-                      items: [
-                        const DropdownMenuItem(value: '', child: Text('Unassigned')),
-                        ..._allStaff.map(
-                          (s) => DropdownMenuItem(value: s.id, child: Text(s.name)),
-                        ),
-                      ],
-                      onChanged: (val) {
-                        if (val != null && val != complaint.assignedTo) {
-                          _handleReassignComplaint(complaint.id, val);
-                        }
-                      },
+                AppDropdown<String>(
+                  value: complaint.assignedTo ?? '',
+                  height: 30,
+                  isExpanded: false,
+                  hintText: 'Assign...',
+                  items: [
+                    const DropdownMenuItem(value: '', child: Text('Unassigned')),
+                    ..._allStaff.map(
+                      (s) => DropdownMenuItem(value: s.id, child: Text(s.name)),
                     ),
-                  ),
+                  ],
+                  onChanged: (val) {
+                    if (val != null && val != complaint.assignedTo) {
+                      _handleReassignComplaint(complaint.id, val);
+                    }
+                  },
                 ),
 
                 // Status advance button
@@ -1633,32 +1599,24 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
             ),
           ),
           const SizedBox(width: 8),
-          Container(
+          AppDropdown<String>(
+            value: '',
             height: 32,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF0FDF4),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFF86EFAC)),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: '',
-                hint: const Text('— Assign —', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF15803D))),
-                icon: const Icon(Icons.arrow_drop_down, size: 16, color: Color(0xFF15803D)),
-                items: [
-                  const DropdownMenuItem(value: '', child: Text('— Assign —', style: TextStyle(color: Color(0xFF94A3B8)))),
-                  ..._allStaff.map(
-                    (s) => DropdownMenuItem(value: s.id, child: Text('${s.name} (${s.category})')),
-                  ),
-                ],
-                onChanged: (val) {
-                  if (val != null && val.isNotEmpty) {
-                    _handleReassignTask(task.id, val);
-                  }
-                },
+            isExpanded: false,
+            backgroundColor: const Color(0xFFF0FDF4),
+            borderColor: const Color(0xFF86EFAC),
+            hintText: '— Assign —',
+            items: [
+              const DropdownMenuItem(value: '', child: Text('— Assign —', style: TextStyle(color: Color(0xFF94A3B8)))),
+              ..._allStaff.map(
+                (s) => DropdownMenuItem(value: s.id, child: Text('${s.name} (${s.category})')),
               ),
-            ),
+            ],
+            onChanged: (val) {
+              if (val != null && val.isNotEmpty) {
+                _handleReassignTask(task.id, val);
+              }
+            },
           ),
         ],
       ),
@@ -1701,32 +1659,24 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
             ),
           ),
           const SizedBox(width: 8),
-          Container(
+          AppDropdown<String>(
+            value: '',
             height: 32,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF0FDF4),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFF86EFAC)),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: '',
-                hint: const Text('— Assign —', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF15803D))),
-                icon: const Icon(Icons.arrow_drop_down, size: 16, color: Color(0xFF15803D)),
-                items: [
-                  const DropdownMenuItem(value: '', child: Text('— Assign —', style: TextStyle(color: Color(0xFF94A3B8)))),
-                  ..._allStaff.map(
-                    (s) => DropdownMenuItem(value: s.id, child: Text('${s.name} (${s.category})')),
-                  ),
-                ],
-                onChanged: (val) {
-                  if (val != null && val.isNotEmpty) {
-                    _handleReassignComplaint(complaint.id, val);
-                  }
-                },
+            isExpanded: false,
+            backgroundColor: const Color(0xFFF0FDF4),
+            borderColor: const Color(0xFF86EFAC),
+            hintText: '— Assign —',
+            items: [
+              const DropdownMenuItem(value: '', child: Text('— Assign —', style: TextStyle(color: Color(0xFF94A3B8)))),
+              ..._allStaff.map(
+                (s) => DropdownMenuItem(value: s.id, child: Text('${s.name} (${s.category})')),
               ),
-            ),
+            ],
+            onChanged: (val) {
+              if (val != null && val.isNotEmpty) {
+                _handleReassignComplaint(complaint.id, val);
+              }
+            },
           ),
         ],
       ),
@@ -1922,10 +1872,9 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                AppFieldLabel(label: 'Priority'),
-                                DropdownButtonFormField<String>(
-                                  initialValue: _priority,
-                                  decoration: inputDec(),
+                                AppDropdownFormField<String>(
+                                  label: 'Priority',
+                                  value: _priority,
                                   items: const [
                                     DropdownMenuItem(value: 'Low', child: Text('Low')),
                                     DropdownMenuItem(value: 'Medium', child: Text('Medium')),

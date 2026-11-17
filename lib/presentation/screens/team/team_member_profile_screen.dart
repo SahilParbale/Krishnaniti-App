@@ -8,6 +8,7 @@ import '../../../data/repositories/team_repository.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_date_picker.dart';
+import '../../widgets/app_dropdown.dart';
 
 class TeamMemberProfileScreen extends ConsumerStatefulWidget {
   final TeamMemberModel member;
@@ -173,12 +174,9 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                AppFieldLabel(
-                                  label: isMr ? 'प्राधान्य' : 'Priority',
-                                ),
-                                DropdownButtonFormField<String>(
-                                  initialValue: priority,
-                                  decoration: appInputDecoration(),
+                                AppDropdownFormField<String>(
+                                label: isMr ? 'प्राधान्य' : 'Priority',
+                                value: priority,
                                   isExpanded: true,
                                   items: [
                                     DropdownMenuItem(value: 'Low', child: Text(isMr ? 'कमी (Low)' : 'Low')),

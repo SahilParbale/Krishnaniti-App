@@ -339,10 +339,10 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            fieldLabel(isMr ? 'कार्यक्रमाचा प्रकार' : 'Event Type', isRequired: true),
-                            DropdownButtonFormField<EventType>(
-                              initialValue: selectedType,
-                              decoration: inputDec(),
+                            AppDropdownFormField<EventType>(
+                                label: isMr ? 'कार्यक्रमाचा प्रकार' : 'Event Type',
+                                isRequired: true,
+                                value: selectedType,
                               isExpanded: true,
                               items: EventType.values.map((t) {
                                 return DropdownMenuItem(
@@ -374,10 +374,10 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            fieldLabel(isMr ? 'लक्षित वर्ग / समाज' : 'Target Audience', isRequired: true),
-                            DropdownButtonFormField<String>(
-                              initialValue: targetAudience,
-                              decoration: inputDec(),
+                            AppDropdownFormField<String>(
+                                label: isMr ? 'लक्षित वर्ग / समाज' : 'Target Audience',
+                                isRequired: true,
+                                value: targetAudience,
                               isExpanded: true,
                               items: [
                                 DropdownMenuItem(value: 'All', child: Text(isMr ? 'सर्व (All)' : 'All Citizens', style: const TextStyle(fontSize: 12.5))),

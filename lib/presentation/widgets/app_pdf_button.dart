@@ -21,34 +21,34 @@ class AppPdfButton extends StatelessWidget {
 
   const AppPdfButton({
     super.key,
-    this.label = 'PDF Report',
+    this.label = 'Reports',
     required this.onPressed,
     this.style = AppPdfButtonStyle.outlined,
     this.isCompact = true,
     this.isLoading = false,
-    this.tooltip,
+    this.tooltip = 'Reports',
     this.icon = Icons.picture_as_pdf_rounded,
   });
 
   /// Convenient constructor for primary filled button (e.g. at the bottom of sheets)
   const AppPdfButton.primary({
     super.key,
-    required this.label,
+    this.label = 'Reports',
     required this.onPressed,
     this.isCompact = false,
     this.isLoading = false,
-    this.tooltip,
+    this.tooltip = 'Reports',
     this.icon = Icons.picture_as_pdf_rounded,
   }) : style = AppPdfButtonStyle.primary;
 
   /// Convenient constructor for compact outlined pill button (e.g. in filter rows)
   const AppPdfButton.outlined({
     super.key,
-    this.label = 'PDF',
+    this.label = 'Reports',
     required this.onPressed,
     this.isCompact = true,
     this.isLoading = false,
-    this.tooltip,
+    this.tooltip = 'Reports',
     this.icon = Icons.picture_as_pdf_rounded,
   }) : style = AppPdfButtonStyle.outlined;
 
@@ -56,10 +56,10 @@ class AppPdfButton extends StatelessWidget {
   const AppPdfButton.icon({
     super.key,
     required this.onPressed,
-    this.tooltip = 'Download PDF Report',
+    this.tooltip = 'Reports',
     this.isLoading = false,
     this.icon = Icons.picture_as_pdf_rounded,
-  })  : label = '',
+  })  : label = 'Reports',
         style = AppPdfButtonStyle.iconOnly,
         isCompact = true;
 
@@ -87,7 +87,7 @@ class AppPdfButton extends StatelessWidget {
                   height: 16,
                   child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.brandPrimary),
                 )
-              : Icon(icon, size: isCompact ? 18 : 20, color: const Color(0xFFDC2626)),
+              : Icon(icon, size: isCompact ? 18 : 20, color: AppColors.brandPrimary),
         ),
       );
 
@@ -139,7 +139,7 @@ class AppPdfButton extends StatelessWidget {
                     height: 15,
                     child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.brandPrimary),
                   )
-                : Icon(icon, size: isCompact ? 16 : 18, color: const Color(0xFFDC2626)),
+                : Icon(icon, size: isCompact ? 16 : 18, color: AppColors.brandPrimary),
             label: Text(
               label,
               style: TextStyle(
@@ -173,19 +173,20 @@ class AppPdfButton extends StatelessWidget {
                     height: 15,
                     child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.brandPrimary),
                   )
-                : Icon(icon, size: isCompact ? 16 : 18, color: const Color(0xFFDC2626)),
+                : Icon(icon, size: isCompact ? 16 : 18, color: AppColors.brandPrimary),
             label: Text(
               label,
               style: TextStyle(
                 fontSize: isCompact ? 12 : 13,
                 fontWeight: FontWeight.w700,
-                color: AppColors.brandDark,
+                color: AppColors.brandPrimary,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
             style: OutlinedButton.styleFrom(
               backgroundColor: Colors.white,
+              foregroundColor: AppColors.brandPrimary,
               side: const BorderSide(color: AppColors.brandBorder),
               padding: EdgeInsets.symmetric(horizontal: isCompact ? 10 : 14),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

@@ -104,6 +104,7 @@ class AppDropdownFormField<T> extends StatelessWidget {
   final String? hintText;
   final Widget? prefixIcon;
   final Color? fillColor;
+  final bool isExpanded;
 
   const AppDropdownFormField({
     super.key,
@@ -113,10 +114,12 @@ class AppDropdownFormField<T> extends StatelessWidget {
     required this.items,
     required this.onChanged,
     this.validator,
-    this.hintText,
+    String? hint,
+    String? hintText,
     this.prefixIcon,
     this.fillColor,
-  });
+    this.isExpanded = true,
+  }) : hintText = hintText ?? hint;
 
   @override
   Widget build(BuildContext context) {
@@ -151,10 +154,11 @@ class AppDropdownFormField<T> extends StatelessWidget {
             ),
           ),
         DropdownButtonFormField<T>(
-          initialValue: value,
+          value: value,
           items: items,
           onChanged: onChanged,
           validator: validator,
+          isExpanded: isExpanded,
           dropdownColor: Colors.white,
           borderRadius: BorderRadius.circular(12),
           elevation: 6,

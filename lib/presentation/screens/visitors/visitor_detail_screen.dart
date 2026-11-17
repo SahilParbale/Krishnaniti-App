@@ -8,6 +8,7 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
 import 'visitor_report_generator.dart';
+import '../../widgets/app_dropdown.dart';
 
 class VisitorDetailScreen extends ConsumerStatefulWidget {
   final VisitorModel visitor;
@@ -195,13 +196,10 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                AppFieldLabel(
+                                AppDropdownFormField<String>(
                                   label: isMr ? 'भेटीचे कारण / स्वरूप' : 'Visit Purpose',
                                   isRequired: true,
-                                ),
-                                DropdownButtonFormField<String>(
-                                  initialValue: ['Complaint', 'Meeting', 'Greeting', 'Donation', 'Help', 'Other'].contains(selectedPurpose) ? selectedPurpose : 'Meeting',
-                                  decoration: appInputDecoration(),
+                                  value: ['Complaint', 'Meeting', 'Greeting', 'Donation', 'Help', 'Other'].contains(selectedPurpose) ? selectedPurpose : 'Meeting',
                                   items: [
                                     DropdownMenuItem(value: 'Complaint', child: Text(isMr ? 'तक्रार (Complaint)' : 'Complaint')),
                                     DropdownMenuItem(value: 'Meeting', child: Text(isMr ? 'भेट / चर्चा (Meeting)' : 'Meeting')),

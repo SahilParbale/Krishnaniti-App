@@ -7,6 +7,7 @@ import '../../../data/repositories/gb_register_repository.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_date_picker.dart';
+import '../../widgets/app_dropdown.dart';
 
 class GbRegisterDetailScreen extends ConsumerStatefulWidget {
   final GbRegisterEntryModel entry;
@@ -187,12 +188,11 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  AppFieldLabel(label: isMr ? 'बैठक प्रकार' : 'Meeting Type', isRequired: true),
-                                  DropdownButtonFormField<String>(
-                                    initialValue: meetingTypes.contains(selectedMeetingType) ? selectedMeetingType : 'GB',
-                                    isExpanded: true,
-                                    style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
-                                    decoration: appInputDecoration(hint: 'Select Type'),
+                                  AppDropdownFormField<String>(
+                                    label: isMr ? 'बैठक प्रकार' : 'Meeting Type',
+                                    isRequired: true,
+                                    value: meetingTypes.contains(selectedMeetingType) ? selectedMeetingType : 'GB',
+                                    hintText: 'Select Type',
                                     items: meetingTypes.map((t) => DropdownMenuItem(value: t, child: Text(t, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis))).toList(),
                                     onChanged: (val) {
                                       if (val != null) setModalState(() => selectedMeetingType = val);
@@ -288,12 +288,11 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  AppFieldLabel(label: isMr ? 'निकाल / स्थिती' : 'Outcome / Status', isRequired: true),
-                                  DropdownButtonFormField<String>(
-                                    initialValue: statusList.contains(selectedStatus) ? selectedStatus : 'Raised',
-                                    isExpanded: true,
-                                    style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
-                                    decoration: appInputDecoration(hint: 'Select Status'),
+                                  AppDropdownFormField<String>(
+                                    label: isMr ? 'निकाल / स्थिती' : 'Outcome / Status',
+                                    isRequired: true,
+                                    value: statusList.contains(selectedStatus) ? selectedStatus : 'Raised',
+                                    hintText: 'Select Status',
                                     items: statusList.map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis))).toList(),
                                     onChanged: (val) {
                                       if (val != null) setModalState(() => selectedStatus = val);

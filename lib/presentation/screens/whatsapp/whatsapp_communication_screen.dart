@@ -8,6 +8,7 @@ import '../../../data/repositories/whatsapp_repository.dart';
 import 'whatsapp_history_report_generator.dart';
 import '../../navigation/app_drawer.dart';
 import '../../widgets/app_pdf_button.dart';
+import '../../widgets/app_dropdown.dart';
 
 // WhatsApp brand colors
 const _kWaGreen = Color(0xFF25D366);
@@ -704,8 +705,8 @@ class _WhatsAppCommunicationScreenState
                 ),
                 const SizedBox(width: 4),
                 AppPdfButton.outlined(
-                  label: 'Report',
-                  tooltip: 'Download WhatsApp Broadcast Report PDF',
+                  label: 'Reports',
+                  tooltip: 'Reports',
                   onPressed: _generatePdfReport,
                 ),
               ],
@@ -1337,8 +1338,8 @@ class _WhatsAppCommunicationScreenState
                                   ],
                                 ),
                                 AppPdfButton.outlined(
-                                  label: 'Download PDF',
-                                  tooltip: 'Download WhatsApp Broadcast Report PDF',
+                                  label: 'Reports',
+                                  tooltip: 'Reports',
                                   onPressed: _generatePdfReport,
                                 ),
                               ],
@@ -1626,22 +1627,12 @@ class _WhatsAppCommunicationScreenState
     required List<DropdownMenuItem<String>> items,
     required ValueChanged<String?> onChanged,
   }) {
-    return Container(
+    return AppDropdown<String>(
+      value: value,
       height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFCBD5E1)),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: value,
-          isExpanded: true,
-          style: const TextStyle(fontSize: 11.5, color: Color(0xFF0F172A)),
-          items: items,
-          onChanged: onChanged,
-        ),
-      ),
+      isExpanded: true,
+      items: items,
+      onChanged: onChanged,
     );
   }
 

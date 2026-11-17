@@ -10,6 +10,7 @@ import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
 import 'social_org_detail_screen.dart';
 import 'social_org_report_generator.dart';
+import '../../widgets/app_dropdown.dart';
 
 class SocialOrganizationsScreen extends ConsumerStatefulWidget {
   const SocialOrganizationsScreen({super.key});
@@ -262,10 +263,10 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                fieldLabel(isMr ? 'संस्थेचा प्रकार' : 'Organization Type', isRequired: true),
-                                DropdownButtonFormField<String>(
-                                  initialValue: type,
-                                  decoration: inputDec(),
+                                AppDropdownFormField<String>(
+                                label: isMr ? 'संस्थेचा प्रकार' : 'Organization Type',
+                                isRequired: true,
+                                value: type,
                                   isExpanded: true,
                                   items: [
                                     DropdownMenuItem(value: 'ngo', child: Text(isMr ? 'एन.जी.ओ / सामाजिक संस्था' : 'NGO / Social Foundation', style: const TextStyle(fontSize: 12.5))),

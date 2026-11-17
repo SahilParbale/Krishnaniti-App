@@ -1721,7 +1721,8 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         AppPdfButton.outlined(
-                          label: isMr ? 'PDF रिपोर्ट' : 'PDF Report',
+                          label: 'Reports',
+                          tooltip: 'Reports',
                           onPressed: () => ConferenceMeetingReportGenerator.generateAndPrintMeetingReport(meetings: list),
                         ),
                         const SizedBox(width: 8),

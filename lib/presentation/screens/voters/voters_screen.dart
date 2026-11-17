@@ -12,6 +12,7 @@ import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
 import 'voter_profile_screen.dart';
 import 'voter_slip_generator.dart';
+import '../../widgets/app_dropdown.dart';
 
 class VotersScreen extends ConsumerStatefulWidget {
   const VotersScreen({super.key});
@@ -569,13 +570,10 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      AppFieldLabel(
-                                        label: isMr ? 'लिंग (Gender)' : 'Gender',
-                                        isRequired: true,
-                                      ),
-                                      DropdownButtonFormField<String>(
-                                        initialValue: gender,
-                                        decoration: inputDec(),
+                                      AppDropdownFormField<String>(
+                                label: isMr ? 'लिंग (Gender)' : 'Gender',
+                                isRequired: true,
+                                value: gender,
                                         items: [
                                           DropdownMenuItem(value: 'M', child: Text(isMr ? 'पुरुष (Male)' : 'Male')),
                                           DropdownMenuItem(value: 'F', child: Text(isMr ? 'महिला (Female)' : 'Female')),

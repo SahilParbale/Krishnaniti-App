@@ -6,6 +6,7 @@ import '../../../data/models/improvement_model.dart';
 import '../../../data/repositories/improvements_repository.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_dropdown.dart';
 
 class ImprovementDetailScreen extends ConsumerStatefulWidget {
   final ImprovementModel improvement;
@@ -187,12 +188,9 @@ class _ImprovementDetailScreenState extends ConsumerState<ImprovementDetailScree
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  AppFieldLabel(
-                                    label: isMr ? 'स्थिती' : 'Status',
-                                  ),
-                                  DropdownButtonFormField<String>(
-                                    initialValue: status,
-                                    decoration: appInputDecoration(),
+                                  AppDropdownFormField<String>(
+                                label: isMr ? 'स्थिती' : 'Status',
+                                value: status,
                                     items: [
                                       DropdownMenuItem(value: 'Pending', child: Text(isMr ? 'प्रलंबित' : 'Pending')),
                                       DropdownMenuItem(value: 'Planned', child: Text(isMr ? 'नियोजित' : 'Planned')),

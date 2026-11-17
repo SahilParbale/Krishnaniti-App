@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../data/models/work_history_model.dart';
 import '../../../data/repositories/work_history_repository.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
 import 'ahwal_report_generator.dart';
@@ -206,10 +207,10 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              AppFieldLabel(label: isMr ? 'कामाची स्थिती' : 'Work Status', isRequired: true),
-                              DropdownButtonFormField<String>(
-                                initialValue: status,
-                                decoration: inputDec(),
+                              AppDropdownFormField<String>(
+                                label: isMr ? 'कामाची स्थिती' : 'Work Status',
+                                isRequired: true,
+                                value: status,
                                 items: [
                                   DropdownMenuItem(value: 'Planned', child: Text(isMr ? 'नियोजित (Planned)' : 'Planned')),
                                   DropdownMenuItem(value: 'InProgress', child: Text(isMr ? 'सुरू (In Progress)' : 'In Progress')),
