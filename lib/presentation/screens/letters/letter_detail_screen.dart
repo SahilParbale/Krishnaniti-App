@@ -11,6 +11,7 @@ import '../../../data/models/letter_model.dart';
 import '../../providers/auth_provider.dart';
 import '../dashboard/dashboard_screen.dart';
 import 'letter_form_constants.dart';
+import '../../widgets/app_pdf_button.dart';
 
 class LetterDetailScreen extends ConsumerStatefulWidget {
   final LetterModel letter;
@@ -785,42 +786,22 @@ class _LetterDetailScreenState extends ConsumerState<LetterDetailScreen> {
 
           const SizedBox(height: 12),
 
-          // PDF Generation Action Bar
+          // PDF Generation Action Bar (Themed Components)
           Row(
             children: [
               Expanded(
-                child: ElevatedButton.icon(
+                child: AppPdfButton(
+                  label: isMr ? AppStrings.printPdfMrMr : AppStrings.printPdfMr,
+                  style: AppPdfButtonStyle.primary,
                   onPressed: () => _generateAndPrintPDF('mr'),
-                  icon: const Icon(Icons.print_outlined, size: 15),
-                  label: Text(
-                    isMr ? AppStrings.printPdfMrMr : AppStrings.printPdfMr,
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4F46E5),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: ElevatedButton.icon(
+                child: AppPdfButton(
+                  label: isMr ? AppStrings.printPdfEnMr : AppStrings.printPdfEn,
+                  style: AppPdfButtonStyle.outlined,
                   onPressed: () => _generateAndPrintPDF('en'),
-                  icon: const Icon(Icons.print_outlined, size: 15),
-                  label: Text(
-                    isMr ? AppStrings.printPdfEnMr : AppStrings.printPdfEn,
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF059669),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
                 ),
               ),
             ],

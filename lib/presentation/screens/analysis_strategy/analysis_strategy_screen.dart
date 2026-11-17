@@ -7,6 +7,8 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../navigation/app_drawer.dart';
+import '../../widgets/app_dropdown.dart';
+import '../../widgets/app_pdf_button.dart';
 
 class AreaMetrics {
   final String areaName;
@@ -656,27 +658,22 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
           Row(
             children: [
               Expanded(
-                child: ElevatedButton.icon(
+                child: AppPdfButton(
+                  label: 'Download PDF Report',
+                  style: AppPdfButtonStyle.primary,
                   onPressed: _exportPdfReport,
-                  icon: const Icon(Icons.picture_as_pdf, size: 16),
-                  label: const Text('Download PDF Report'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E293B),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: _shareViaWhatsApp,
-                  icon: const Icon(Icons.share, size: 16),
+                  icon: const Icon(Icons.share_rounded, size: 16),
                   label: const Text('Share on WhatsApp'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF25D366),
+                    backgroundColor: const Color(0xFF16A34A),
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                 ),
               ),
@@ -1006,30 +1003,23 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
           ),
           const SizedBox(height: 8),
 
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey[300]!),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                isExpanded: true,
-                hint: const Text('Select Area...', style: TextStyle(fontSize: 13)),
-                items: _allAreas.map((a) {
-                  return DropdownMenuItem<String>(
-                    value: a,
-                    child: Text(a, style: const TextStyle(fontSize: 13)),
-                  );
-                }).toList(),
-                onChanged: (val) {
-                  if (val != null) {
-                    _searchController.text = val;
-                    _generateReport(val);
-                  }
-                },
-              ),
-            ),
+          AppDropdown<String>(
+            value: null,
+            hintText: 'Select Area...',
+            prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF0284C7)),
+            height: 44,
+            items: _allAreas.map((a) {
+              return DropdownMenuItem<String>(
+                value: a,
+                child: Text(a, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+              );
+            }).toList(),
+            onChanged: (val) {
+              if (val != null) {
+                _searchController.text = val;
+                _generateReport(val);
+              }
+            },
           ),
 
           const SizedBox(height: 24),

@@ -6,6 +6,7 @@ import '../../../data/models/gb_register_entry_model.dart';
 import '../../../data/repositories/gb_register_repository.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_date_picker.dart';
 
 class GbRegisterDetailScreen extends ConsumerStatefulWidget {
   final GbRegisterEntryModel entry;
@@ -122,23 +123,11 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
               } catch (_) {
                 initial = DateTime.now();
               }
-              final picked = await showDatePicker(
+              final picked = await showThemedDatePicker(
                 context: sheetCtx,
                 initialDate: initial,
                 firstDate: DateTime(2020),
                 lastDate: DateTime(2035),
-                builder: (context, child) {
-                  return Theme(
-                    data: Theme.of(context).copyWith(
-                      colorScheme: const ColorScheme.light(
-                        primary: Color(0xFF0284C7),
-                        onPrimary: Colors.white,
-                        onSurface: Color(0xFF0F172A),
-                      ),
-                    ),
-                    child: child!,
-                  );
-                },
               );
               if (picked != null) {
                 setModalState(() {

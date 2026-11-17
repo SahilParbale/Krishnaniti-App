@@ -7,6 +7,7 @@ import '../../../data/models/team_model.dart';
 import '../../../data/repositories/team_repository.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_date_picker.dart';
 
 class TeamMemberProfileScreen extends ConsumerStatefulWidget {
   final TeamMemberModel member;
@@ -207,7 +208,7 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
                                 ),
                                 InkWell(
                                   onTap: () async {
-                                    final picked = await showDatePicker(
+                                    final picked = await showThemedDatePicker(
                                       context: context,
                                       initialDate: dueDate,
                                       firstDate: DateTime.now(),

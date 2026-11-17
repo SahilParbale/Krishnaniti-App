@@ -6,6 +6,8 @@ import '../../../data/models/election_result_model.dart';
 import '../../../data/repositories/election_results_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_dropdown.dart';
+import '../../widgets/app_pdf_button.dart';
 import 'result_analysis_report_generator.dart';
 
 class ResultAnalysisScreen extends ConsumerStatefulWidget {
@@ -342,10 +344,9 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
                     visualDensity: VisualDensity.compact,
                     onPressed: _showHelpGuide,
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.picture_as_pdf_rounded, color: Color(0xFFDC2626), size: 20),
+                  const SizedBox(width: 4),
+                  AppPdfButton.icon(
                     tooltip: 'Download PDF Report',
-                    visualDensity: VisualDensity.compact,
                     onPressed: _exportPdfReport,
                   ),
                 ],
@@ -374,33 +375,21 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
                           style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
                         ),
                         const SizedBox(height: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF8FAFC),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: const Color(0xFFCBD5E1)),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              isExpanded: true,
-                              value: _availableWards.contains(_selectedWard) ? _selectedWard : null,
-                              hint: const Text('Select Ward', style: TextStyle(fontSize: 13)),
-                              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF0284C7)),
-                              items: _availableWards.map((w) {
-                                return DropdownMenuItem(
-                                  value: w,
-                                  child: Text(
-                                    w,
-                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: _onWardChanged,
-                            ),
-                          ),
+                        AppDropdown<String>(
+                          value: _availableWards.contains(_selectedWard) ? _selectedWard : null,
+                          hint: 'Select Ward',
+                          items: _availableWards.map((w) {
+                            return DropdownMenuItem(
+                              value: w,
+                              child: Text(
+                                w,
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: _onWardChanged,
                         ),
                       ],
                     ),
@@ -418,33 +407,22 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
                           style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
                         ),
                         const SizedBox(height: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF8FAFC),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: const Color(0xFFCBD5E1)),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              isExpanded: true,
-                              value: _availableCandidates.contains(_selectedCandidate) ? _selectedCandidate : null,
-                              hint: const Text('Select Candidate', style: TextStyle(fontSize: 13)),
-                              icon: const Icon(Icons.person_pin_rounded, color: Color(0xFF0284C7)),
-                              items: _availableCandidates.map((c) {
-                                return DropdownMenuItem(
-                                  value: c,
-                                  child: Text(
-                                    c,
-                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0284C7)),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: _onCandidateChanged,
-                            ),
-                          ),
+                        AppDropdown<String>(
+                          value: _availableCandidates.contains(_selectedCandidate) ? _selectedCandidate : null,
+                          hint: 'Select Candidate',
+                          prefixIcon: const Icon(Icons.person_pin_rounded, color: Color(0xFF0284C7), size: 18),
+                          items: _availableCandidates.map((c) {
+                            return DropdownMenuItem(
+                              value: c,
+                              child: Text(
+                                c,
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0284C7)),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: _onCandidateChanged,
                         ),
                       ],
                     ),
@@ -663,20 +641,9 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                OutlinedButton.icon(
+                AppPdfButton.outlined(
+                  label: 'PDF Report',
                   onPressed: _exportPdfReport,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF0284C7),
-                    side: const BorderSide(color: Color(0xFFBAE6FD)),
-                    backgroundColor: const Color(0xFFF0F9FF),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  icon: const Icon(Icons.picture_as_pdf_outlined, size: 16),
-                  label: const Text(
-                    'PDF Report',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                  ),
                 ),
               ],
             ),

@@ -10,6 +10,7 @@ import '../../../data/repositories/sms_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_date_picker.dart';
 
 class ConferenceMeetingModel {
   final String id;
@@ -309,7 +310,7 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                                   ),
                                   InkWell(
                                     onTap: () async {
-                                      final picked = await showDatePicker(
+                                      final picked = await showThemedDatePicker(
                                         context: modalCtx,
                                         initialDate: selectedDate,
                                         firstDate: DateTime.now().subtract(const Duration(days: 1)),

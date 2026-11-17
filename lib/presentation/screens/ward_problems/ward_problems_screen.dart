@@ -9,6 +9,7 @@ import '../../providers/auth_provider.dart';
 import '../complaints/complaint_detail_screen.dart';
 import '../complaints/new_complaint_bottom_sheet.dart';
 import 'ward_problems_report_generator.dart';
+import '../../widgets/app_pdf_button.dart';
 
 /// WardWiseProblem Screen matching EXACTLY the web page:
 /// Nagarsevak-Managment/src/pages/ward/WardWiseProblem.tsx
@@ -612,20 +613,10 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              // PDF Export Button
-                              OutlinedButton.icon(
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                  minimumSize: Size.zero,
-                                  side: const BorderSide(color: Color(0xFFCBD5E1)),
-                                  backgroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                ),
-                                icon: const Icon(Icons.picture_as_pdf_outlined, size: 16, color: Color(0xFFDC2626)),
-                                label: Text(
-                                  isMr ? 'PDF अहवाल' : 'PDF',
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
-                                ),
+                              // PDF Export Button (Themed Component)
+                              AppPdfButton(
+                                label: isMr ? 'PDF अहवाल' : 'PDF Report',
+                                style: AppPdfButtonStyle.outlined,
                                 onPressed: () {
                                   WardProblemsReportGenerator.generateAndPrintReport(
                                     problems: filtered,

@@ -7,6 +7,9 @@ import '../../../data/repositories/events_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_dropdown.dart';
+import '../../widgets/app_pdf_button.dart';
+import '../../widgets/app_date_picker.dart';
 import 'event_detail_screen.dart';
 import 'event_invite_modal.dart';
 import 'event_report_generator.dart';
@@ -213,7 +216,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                             fieldLabel(isMr ? 'तारीख' : 'Date', isRequired: true),
                             InkWell(
                               onTap: () async {
-                                final picked = await showDatePicker(
+                                final picked = await showThemedDatePicker(
                                   context: ctx,
                                   initialDate: selectedDate,
                                   firstDate: DateTime.now().subtract(const Duration(days: 30)),
@@ -639,6 +642,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
   }
 
   Widget _buildSearchAndFiltersCard(List<EventModel> filtered) {
+    final isMr = ref.watch(isMarathiProvider);
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -696,8 +700,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                         });
                       },
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.picture_as_pdf_rounded, color: Color(0xFFDC2626), size: 20),
+                    AppPdfButton.icon(
                       tooltip: 'Official PDF Report',
                       onPressed: () => EventReportGenerator.generateAndPrintReport(events: filtered),
                     ),
@@ -714,27 +717,15 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
             children: [
               // Area Dropdown
               Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _selectedArea,
-                      isExpanded: true,
-                      icon: const Icon(Icons.arrow_drop_down_rounded),
-                      items: [
-                        const DropdownMenuItem(value: 'all', child: Text('All Areas', style: TextStyle(fontSize: 12))),
-                        ..._allAreas.map((a) => DropdownMenuItem(value: a, child: Text(a, style: const TextStyle(fontSize: 12)))),
-                      ],
-                      onChanged: (val) {
-                        if (val != null) setState(() => _selectedArea = val);
-                      },
-                    ),
-                  ),
+                child: AppDropdown<String>(
+                  value: _selectedArea,
+                  items: [
+                    DropdownMenuItem(value: 'all', child: Text(isMr ? 'सर्व परिसर' : 'All Areas', style: const TextStyle(fontSize: 12))),
+                    ..._allAreas.map((a) => DropdownMenuItem(value: a, child: Text(a, style: const TextStyle(fontSize: 12)))),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) setState(() => _selectedArea = val);
+                  },
                 ),
               ),
             ],

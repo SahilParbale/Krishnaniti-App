@@ -7,6 +7,8 @@ import '../../../data/repositories/ward_budget_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_dropdown.dart';
+import '../../widgets/app_pdf_button.dart';
 import 'ward_budget_detail_screen.dart';
 import 'ward_budget_report_generator.dart';
 
@@ -746,64 +748,44 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                             // Area Dropdown
                             Expanded(
                               flex: 2,
-                              child: Container(
+                              child: AppDropdown<String>(
+                                value: _areas.contains(_selectedArea) ? _selectedArea : 'All',
                                 height: 48,
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                                ),
-                                child: DropdownButtonHideUnderline(
-                                  child: DropdownButton<String>(
-                                    value: _areas.contains(_selectedArea) ? _selectedArea : 'All',
-                                    isExpanded: true,
-                                    style: const TextStyle(fontSize: 12.5, color: Color(0xFF334155)),
-                                    items: _areas.map((a) {
-                                      return DropdownMenuItem(
-                                        value: a,
-                                        child: Text(
-                                          a == 'All' ? (isMr ? 'सर्व परिसर' : 'All Areas') : a,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      );
-                                    }).toList(),
-                                    onChanged: (val) {
-                                      if (val != null) setState(() => _selectedArea = val);
-                                    },
-                                  ),
-                                ),
+                                items: _areas.map((a) {
+                                  return DropdownMenuItem(
+                                    value: a,
+                                    child: Text(
+                                      a == 'All' ? (isMr ? 'सर्व परिसर' : 'All Areas') : a,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: (val) {
+                                  if (val != null) setState(() => _selectedArea = val);
+                                },
                               ),
                             ),
                             const SizedBox(width: 8),
                             // Financial Year Selector
-                            Container(
+                            AppDropdown<String>(
+                              value: _selectedYear,
                               height: 48,
-                              padding: const EdgeInsets.symmetric(horizontal: 10),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: const Color(0xFFE2E8F0)),
-                              ),
-                              child: DropdownButtonHideUnderline(
-                                child: DropdownButton<String>(
-                                  value: _selectedYear,
-                                  icon: const Icon(Icons.calendar_month_rounded, color: Color(0xFF0284C7), size: 18),
-                                  style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.bold, fontSize: 12),
-                                  items: _years.map((y) {
-                                    return DropdownMenuItem(
-                                      value: y,
-                                      child: Text(y == 'All' ? (isMr ? 'सर्व वर्षे' : 'All FY') : 'FY $y'),
-                                    );
-                                  }).toList(),
-                                  onChanged: (val) {
-                                    if (val != null) {
-                                      setState(() => _selectedYear = val);
-                                      _loadData();
-                                    }
-                                  },
-                                ),
-                              ),
+                              prefixIcon: const Icon(Icons.calendar_month_rounded, color: Color(0xFF0284C7), size: 18),
+                              items: _years.map((y) {
+                                return DropdownMenuItem(
+                                  value: y,
+                                  child: Text(
+                                    y == 'All' ? (isMr ? 'सर्व वर्षे' : 'All FY') : 'FY $y',
+                                    style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.bold, fontSize: 12),
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (val) {
+                                if (val != null) {
+                                  setState(() => _selectedYear = val);
+                                  _loadData();
+                                }
+                              },
                             ),
                             const SizedBox(width: 8),
                             // View Mode Switcher
@@ -831,25 +813,15 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                             ),
                             const SizedBox(width: 8),
                             // Download PDF
-                            InkWell(
-                              onTap: () {
+                            AppPdfButton.icon(
+                              tooltip: isMr ? 'बजेट अहवाल डाउनलोड करा' : 'Download Budget PDF',
+                              onPressed: () {
                                 WardBudgetReportGenerator.generateAndPrintBudgetReport(
                                   budgets: displayed,
                                   year: _selectedYear,
                                   areaFilter: _selectedArea != 'All' ? _selectedArea : null,
                                 );
                               },
-                              borderRadius: BorderRadius.circular(10),
-                              child: Container(
-                                height: 48,
-                                padding: const EdgeInsets.symmetric(horizontal: 10),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                                ),
-                                child: const Icon(Icons.download_rounded, size: 20, color: Color(0xFF0284C7)),
-                              ),
                             ),
                           ],
                         ),

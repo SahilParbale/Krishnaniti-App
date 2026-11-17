@@ -7,6 +7,9 @@ import '../../../data/repositories/gb_register_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_dropdown.dart';
+import '../../widgets/app_pdf_button.dart';
+import '../../widgets/app_date_picker.dart';
 import 'gb_register_detail_screen.dart';
 import 'gb_register_report_generator.dart';
 
@@ -156,23 +159,11 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
               } catch (_) {
                 initial = DateTime.now();
               }
-              final picked = await showDatePicker(
+              final picked = await showThemedDatePicker(
                 context: sheetCtx,
                 initialDate: initial,
                 firstDate: DateTime(2020),
                 lastDate: DateTime(2035),
-                builder: (context, child) {
-                  return Theme(
-                    data: Theme.of(context).copyWith(
-                      colorScheme: const ColorScheme.light(
-                        primary: Color(0xFF0284C7),
-                        onPrimary: Colors.white,
-                        onSurface: Color(0xFF0F172A),
-                      ),
-                    ),
-                    child: child!,
-                  );
-                },
               );
               if (picked != null) {
                 setModalState(() {
@@ -763,25 +754,15 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                                   ),
                                 ),
                                 const SizedBox(width: 6),
-                                InkWell(
-                                  onTap: () {
+                                AppPdfButton.icon(
+                                  tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download PDF Report',
+                                  onPressed: () {
                                     GbRegisterReportGenerator.generateAndPrintGbReport(
                                       entries: displayed,
                                       meetingTypeFilter: _selectedMeetingType != 'All' ? _selectedMeetingType : null,
                                       statusFilter: _selectedStatus != 'All' ? _selectedStatus : null,
                                     );
                                   },
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: Container(
-                                    height: 44,
-                                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                                    ),
-                                    child: const Icon(Icons.download_rounded, size: 20, color: Color(0xFF0284C7)),
-                                  ),
                                 ),
                               ],
                             ),
@@ -827,61 +808,38 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                             Row(
                               children: [
                                 Expanded(
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                                    ),
-                                    child: DropdownButtonHideUnderline(
-                                      child: DropdownButton<String>(
-                                        value: _selectedStatus,
-                                        isExpanded: true,
-                                        style: const TextStyle(fontSize: 12.5, color: Color(0xFF334155)),
-                                        items: _statusList.map((s) {
-                                          return DropdownMenuItem(
-                                            value: s,
-                                            child: Text(
-                                              s == 'All' ? (isMr ? 'सर्व स्थिती' : 'All Status') : (isMr ? _getStatusLabelMr(s) : s),
-                                            ),
-                                          );
-                                        }).toList(),
-                                        onChanged: (val) {
-                                          if (val != null) setState(() => _selectedStatus = val);
-                                        },
-                                      ),
-                                    ),
+                                  child: AppDropdown<String>(
+                                    value: _selectedStatus,
+                                    items: _statusList.map((s) {
+                                      return DropdownMenuItem(
+                                        value: s,
+                                        child: Text(
+                                          s == 'All' ? (isMr ? 'सर्व स्थिती' : 'All Status') : (isMr ? _getStatusLabelMr(s) : s),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      );
+                                    }).toList(),
+                                    onChanged: (val) {
+                                      if (val != null) setState(() => _selectedStatus = val);
+                                    },
                                   ),
                                 ),
                                 const SizedBox(width: 8),
                                 Expanded(
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                                    ),
-                                    child: DropdownButtonHideUnderline(
-                                      child: DropdownButton<String>(
-                                        value: _areas.contains(_selectedArea) ? _selectedArea : 'All',
-                                        isExpanded: true,
-                                        style: const TextStyle(fontSize: 12.5, color: Color(0xFF334155)),
-                                        items: _areas.map((a) {
-                                          return DropdownMenuItem(
-                                            value: a,
-                                            child: Text(
-                                              a == 'All' ? (isMr ? 'सर्व प्रभाग/परिसर' : 'All Areas') : a,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          );
-                                        }).toList(),
-                                        onChanged: (val) {
-                                          if (val != null) setState(() => _selectedArea = val);
-                                        },
-                                      ),
-                                    ),
+                                  child: AppDropdown<String>(
+                                    value: _areas.contains(_selectedArea) ? _selectedArea : 'All',
+                                    items: _areas.map((a) {
+                                      return DropdownMenuItem(
+                                        value: a,
+                                        child: Text(
+                                          a == 'All' ? (isMr ? 'सर्व प्रभाग/परिसर' : 'All Areas') : a,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      );
+                                    }).toList(),
+                                    onChanged: (val) {
+                                      if (val != null) setState(() => _selectedArea = val);
+                                    },
                                   ),
                                 ),
                               ],

@@ -10,6 +10,8 @@ import '../dashboard/dashboard_screen.dart';
 import 'letter_detail_screen.dart';
 import 'new_letter_bottom_sheet.dart';
 import '../../navigation/app_drawer.dart';
+import '../../widgets/app_dropdown.dart';
+import '../../widgets/app_date_picker.dart';
 
 class LettersScreen extends ConsumerStatefulWidget {
   final ValueChanged<int>? onTabChange;
@@ -420,32 +422,24 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                         ),
                       ),
 
-                      // Status filter for Outgoing letters
+                      // Status filter for Outgoing letters (Themed Component)
                       if (_isOutgoing) ...[
                         const SizedBox(width: 8),
-                        Container(
+                        AppDropdown<String>(
+                          value: _selectedStatus,
                           height: 40,
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF8FAFC),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: const Color(0xFFE2E8F0)),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: _selectedStatus,
-                              icon: const Icon(Icons.arrow_drop_down_rounded, color: Color(0xFF64748B), size: 20),
-                              items: [
-                                DropdownMenuItem(value: 'All', child: Text(isMr ? 'सर्व स्थिती' : 'All Status', style: const TextStyle(fontSize: 12))),
-                                DropdownMenuItem(value: 'Pending', child: Text(isMr ? 'प्रलंबित' : 'Pending', style: const TextStyle(fontSize: 12))),
-                                DropdownMenuItem(value: 'Approved', child: Text(isMr ? 'मंजूर' : 'Approved', style: const TextStyle(fontSize: 12))),
-                                DropdownMenuItem(value: 'Rejected', child: Text(isMr ? 'नाकारले' : 'Rejected', style: const TextStyle(fontSize: 12))),
-                              ],
-                              onChanged: (val) {
-                                if (val != null) setState(() => _selectedStatus = val);
-                              },
-                            ),
-                          ),
+                          isExpanded: false,
+                          backgroundColor: const Color(0xFFF8FAFC),
+                          borderColor: const Color(0xFFE2E8F0),
+                          items: [
+                            DropdownMenuItem(value: 'All', child: Text(isMr ? 'सर्व स्थिती' : 'All Status', style: const TextStyle(fontSize: 12))),
+                            DropdownMenuItem(value: 'Pending', child: Text(isMr ? 'प्रलंबित' : 'Pending', style: const TextStyle(fontSize: 12))),
+                            DropdownMenuItem(value: 'Approved', child: Text(isMr ? 'मंजूर' : 'Approved', style: const TextStyle(fontSize: 12))),
+                            DropdownMenuItem(value: 'Rejected', child: Text(isMr ? 'नाकारले' : 'Rejected', style: const TextStyle(fontSize: 12))),
+                          ],
+                          onChanged: (val) {
+                            if (val != null) setState(() => _selectedStatus = val);
+                          },
                         ),
                       ],
                     ],
@@ -793,23 +787,11 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
   }
 
   Future<void> _pickCustomDate(BuildContext context, bool isMr) async {
-    final picked = await showDatePicker(
+    final picked = await showThemedDatePicker(
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime(2035),
-      builder: (ctx, child) {
-        return Theme(
-          data: Theme.of(ctx).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF0284C7),
-              onPrimary: Colors.white,
-              onSurface: Color(0xFF0F172A),
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
 
     if (picked != null) {

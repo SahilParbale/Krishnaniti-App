@@ -12,6 +12,7 @@ import '../../../data/repositories/complaints_repository.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_image_picker.dart';
+import '../../widgets/app_dropdown.dart';
 
 class ComplaintDetailScreen extends ConsumerStatefulWidget {
   final ComplaintModel complaint;
@@ -332,24 +333,14 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
                 ),
                 const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFCBD5E1)),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      isExpanded: true,
-                      value: selectedCategory,
-                      items: categories
-                          .map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 13))))
-                          .toList(),
-                      onChanged: (val) {
-                        if (val != null) setModalState(() => selectedCategory = val);
-                      },
-                    ),
-                  ),
+                AppDropdown<String>(
+                  value: selectedCategory,
+                  items: categories
+                      .map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 13))))
+                      .toList(),
+                  onChanged: (val) {
+                    if (val != null) setModalState(() => selectedCategory = val);
+                  },
                 ),
               ],
             ),
@@ -1291,42 +1282,28 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
           ),
           const SizedBox(height: 8),
 
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFCBD5E1)),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                isExpanded: true,
-                value: _staffList.any((s) => s.id == _assignedStaffId) ? _assignedStaffId : null,
-                hint: Text(
-                  isMr ? AppStrings.selectStaffMr : AppStrings.selectStaff,
-                  style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+          AppDropdown<String>(
+            value: _staffList.any((s) => s.id == _assignedStaffId) ? _assignedStaffId : null,
+            hint: isMr ? AppStrings.selectStaffMr : AppStrings.selectStaff,
+            items: _staffList.map((s) {
+              return DropdownMenuItem<String>(
+                value: s.id,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(s.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0F172A))),
+                    if (s.role != null)
+                      Text('(${s.role})', style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B))),
+                  ],
                 ),
-                items: _staffList.map((s) {
-                  return DropdownMenuItem<String>(
-                    value: s.id,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(s.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0F172A))),
-                        if (s.role != null)
-                          Text('(${s.role})', style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B))),
-                      ],
-                    ),
-                  );
-                }).toList(),
-                onChanged: (val) {
-                  if (val != null) {
-                    final staff = _staffList.firstWhere((s) => s.id == val);
-                    _assignStaff(staff);
-                  }
-                },
-              ),
-            ),
+              );
+            }).toList(),
+            onChanged: (val) {
+              if (val != null) {
+                final staff = _staffList.firstWhere((s) => s.id == val);
+                _assignStaff(staff);
+              }
+            },
           ),
         ],
       ),

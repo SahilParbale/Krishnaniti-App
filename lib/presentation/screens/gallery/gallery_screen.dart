@@ -10,6 +10,8 @@ import '../../providers/auth_provider.dart';
 import '../../navigation/app_drawer.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_image_picker.dart';
+import '../../widgets/app_pdf_button.dart';
+import '../../widgets/app_date_picker.dart';
 import 'gallery_detail_screen.dart';
 import 'gallery_report_generator.dart';
 
@@ -238,7 +240,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                       ),
                       InkWell(
                         onTap: () async {
-                          final picked = await showDatePicker(
+                          final picked = await showThemedDatePicker(
                             context: ctx,
                             initialDate: selectedDate,
                             firstDate: DateTime(2020),
@@ -613,8 +615,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                         });
                       },
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.picture_as_pdf_rounded, color: Color(0xFFDC2626), size: 20),
+                    AppPdfButton.icon(
                       tooltip: 'Official PDF Catalog',
                       onPressed: () => GalleryReportGenerator.generateAndPrintReport(items: filtered),
                     ),

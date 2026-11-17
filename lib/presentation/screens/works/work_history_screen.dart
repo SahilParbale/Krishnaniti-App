@@ -8,6 +8,7 @@ import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_image_picker.dart';
+import '../../widgets/app_pdf_button.dart';
 import 'ahwal_report_generator.dart';
 import 'work_detail_screen.dart';
 import 'work_report_generator.dart';
@@ -587,22 +588,15 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                             Row(
                               children: [
                                 Expanded(
-                                  child: OutlinedButton.icon(
+                                  child: AppPdfButton(
+                                    label: isMr ? 'PDF अहवाल' : 'Download Report',
+                                    style: AppPdfButtonStyle.tonal,
                                     onPressed: () {
                                       WorkReportGenerator.generateAndPrintWorkReport(
                                         works: filtered,
                                         areaFilter: _areaSearchCtrl.text.isNotEmpty ? _areaSearchCtrl.text : 'All Areas',
                                       );
                                     },
-                                    style: OutlinedButton.styleFrom(
-                                      backgroundColor: const Color(0xFFF0F9FF),
-                                      foregroundColor: const Color(0xFF0284C7),
-                                      side: const BorderSide(color: Color(0xFFBAE6FD)),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                      padding: const EdgeInsets.symmetric(vertical: 9),
-                                    ),
-                                    icon: const Icon(Icons.download_rounded, size: 16),
-                                    label: Text(isMr ? 'PDF अहवाल' : 'Download Report', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
@@ -713,18 +707,9 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                                     onPressed: _toggleSelectionMode,
                                     child: Text(isMr ? 'रद्द' : 'Cancel', style: const TextStyle(color: Color(0xFF64748B), fontSize: 12)),
                                   ),
-                                  ElevatedButton.icon(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF0284C7),
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                    ),
-                                    icon: const Icon(Icons.picture_as_pdf, size: 15),
-                                    label: Text(
-                                      isMr ? 'अहवाल पहा' : 'Preview',
-                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                                    ),
+                                  AppPdfButton.primary(
+                                    label: isMr ? 'अहवाल पहा' : 'Preview',
+                                    isCompact: true,
                                     onPressed: _selectedWorkIds.isEmpty
                                         ? null
                                         : () {
@@ -1243,26 +1228,14 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                   '${isMr ? "अहवाल तक्ता" : "Report View"} (${items.length})',
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
                 ),
-                ElevatedButton.icon(
+                AppPdfButton.outlined(
+                  label: isMr ? 'PDF अहवाल' : 'Download PDF',
                   onPressed: () {
                     WorkReportGenerator.generateAndPrintWorkReport(
                       works: items,
                       areaFilter: _areaSearchCtrl.text.isNotEmpty ? _areaSearchCtrl.text : 'All Areas',
                     );
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF0F9FF),
-                    foregroundColor: const Color(0xFF0284C7),
-                    elevation: 0,
-                    side: const BorderSide(color: Color(0xFFBAE6FD)),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  icon: const Icon(Icons.download_rounded, size: 16),
-                  label: Text(
-                    isMr ? 'PDF अहवाल' : 'Download PDF',
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                  ),
                 ),
               ],
             ),

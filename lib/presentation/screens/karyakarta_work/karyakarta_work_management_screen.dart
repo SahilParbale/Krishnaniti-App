@@ -8,6 +8,9 @@ import '../../../data/repositories/karyakarta_work_repository.dart';
 import 'karyakarta_work_report_generator.dart';
 import '../../navigation/app_drawer.dart';
 import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_dropdown.dart';
+import '../../widgets/app_pdf_button.dart';
+import '../../widgets/app_date_picker.dart';
 
 class KaryakartaWorkManagementScreen extends ConsumerStatefulWidget {
   const KaryakartaWorkManagementScreen({super.key});
@@ -411,17 +414,9 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                       ),
                     ],
                   ),
-                  TextButton.icon(
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      visualDensity: VisualDensity.compact,
-                    ),
+                  AppPdfButton.outlined(
+                    label: 'Download PDF',
                     onPressed: _generatePdfReport,
-                    icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
-                    label: const Text(
-                      'Download PDF',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
-                    ),
                   ),
                 ],
               ),
@@ -623,26 +618,9 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
           ),
         ),
         const SizedBox(width: 8),
-        InkWell(
-          onTap: _showReportPreviewDialog,
-          borderRadius: BorderRadius.circular(10),
-          child: Container(
-            height: 42,
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFCBD5E1)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: const [
-                Icon(Icons.picture_as_pdf_outlined, size: 16, color: Color(0xFFDC2626)),
-                SizedBox(width: 5),
-                Text('Report', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-              ],
-            ),
-          ),
+        AppPdfButton.outlined(
+          label: 'Report',
+          onPressed: _showReportPreviewDialog,
         ),
       ],
     );
@@ -1968,7 +1946,7 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
                                 AppFieldLabel(label: 'Due Date'),
                                 InkWell(
                                   onTap: () async {
-                                    final picked = await showDatePicker(
+                                    final picked = await showThemedDatePicker(
                                       context: context,
                                       initialDate: _dueDate ?? DateTime.now(),
                                       firstDate: DateTime.now().subtract(const Duration(days: 30)),

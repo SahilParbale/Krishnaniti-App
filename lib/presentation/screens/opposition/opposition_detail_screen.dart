@@ -6,6 +6,7 @@ import '../../../data/models/opposition_model.dart';
 import '../../../data/repositories/opposition_repository.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_date_picker.dart';
 
 class OppositionDetailScreen extends ConsumerStatefulWidget {
   final OppositionMemberModel member;
@@ -144,7 +145,7 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                               ),
                               InkWell(
                                 onTap: () async {
-                                  final picked = await showDatePicker(
+                                  final picked = await showThemedDatePicker(
                                     context: ctx,
                                     initialDate: selectedDate,
                                     firstDate: DateTime(2020),
@@ -356,7 +357,7 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                               ),
                               InkWell(
                                 onTap: () async {
-                                  final picked = await showDatePicker(
+                                  final picked = await showThemedDatePicker(
                                     context: ctx,
                                     initialDate: selectedDate,
                                     firstDate: DateTime(2020),

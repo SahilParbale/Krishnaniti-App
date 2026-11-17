@@ -6,6 +6,8 @@ import '../../../data/models/sms_campaign_model.dart';
 import '../../../data/models/voter_model.dart';
 import '../../../data/repositories/sms_repository.dart';
 import '../../navigation/app_drawer.dart';
+import '../../widgets/app_dropdown.dart';
+import '../../widgets/app_pdf_button.dart';
 import 'sms_history_report_generator.dart';
 
 class SmsCommunicationScreen extends ConsumerStatefulWidget {
@@ -444,26 +446,9 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
                   ),
                 ),
                 const SizedBox(width: 8),
-                InkWell(
-                  onTap: _generatePdfReport,
-                  borderRadius: BorderRadius.circular(10),
-                  child: Container(
-                    height: 38,
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFEF2F2),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFFFECACA)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Icon(Icons.picture_as_pdf_outlined, size: 16, color: Color(0xFFDC2626)),
-                        SizedBox(width: 4),
-                        Text('Report', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFDC2626))),
-                      ],
-                    ),
-                  ),
+                AppPdfButton.outlined(
+                  label: 'Report',
+                  onPressed: _generatePdfReport,
                 ),
               ],
             ),
@@ -707,97 +692,67 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
                     children: [
                       // Age Filter
                       Expanded(
-                        child: Container(
+                        child: AppDropdown<String>(
+                          value: _ageFilter,
                           height: 38,
                           padding: const EdgeInsets.symmetric(horizontal: 8),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFFCBD5E1)),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: _ageFilter,
-                              isExpanded: true,
-                              style: const TextStyle(fontSize: 11.5, color: Colors.white),
-                              items: const [
-                                DropdownMenuItem(value: 'All', child: Text('All Ages')),
-                                DropdownMenuItem(value: '18-25', child: Text('Age 18-25')),
-                                DropdownMenuItem(value: '26-40', child: Text('Age 26-40')),
-                                DropdownMenuItem(value: '41-60', child: Text('Age 41-60')),
-                                DropdownMenuItem(value: '60+', child: Text('Age 60+')),
-                              ],
-                              onChanged: (v) {
-                                if (v != null) {
-                                  setState(() => _ageFilter = v);
-                                  _loadVoters();
-                                }
-                              },
-                            ),
-                          ),
+                          items: const [
+                            DropdownMenuItem(value: 'All', child: Text('All Ages', style: TextStyle(fontSize: 12))),
+                            DropdownMenuItem(value: '18-25', child: Text('Age 18-25', style: TextStyle(fontSize: 12))),
+                            DropdownMenuItem(value: '26-40', child: Text('Age 26-40', style: TextStyle(fontSize: 12))),
+                            DropdownMenuItem(value: '41-60', child: Text('Age 41-60', style: TextStyle(fontSize: 12))),
+                            DropdownMenuItem(value: '60+', child: Text('Age 60+', style: TextStyle(fontSize: 12))),
+                          ],
+                          onChanged: (v) {
+                            if (v != null) {
+                              setState(() => _ageFilter = v);
+                              _loadVoters();
+                            }
+                          },
                         ),
                       ),
                       const SizedBox(width: 8),
 
                       // Gender Filter
                       Expanded(
-                        child: Container(
+                        child: AppDropdown<String>(
+                          value: _genderFilter,
                           height: 38,
                           padding: const EdgeInsets.symmetric(horizontal: 8),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFFCBD5E1)),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: _genderFilter,
-                              isExpanded: true,
-                              style: const TextStyle(fontSize: 11.5, color: Colors.white),
-                              items: const [
-                                DropdownMenuItem(value: 'All', child: Text('All Genders')),
-                                DropdownMenuItem(value: 'M', child: Text('Male')),
-                                DropdownMenuItem(value: 'F', child: Text('Female')),
-                              ],
-                              onChanged: (v) {
-                                if (v != null) {
-                                  setState(() => _genderFilter = v);
-                                  _loadVoters();
-                                }
-                              },
-                            ),
-                          ),
+                          items: const [
+                            DropdownMenuItem(value: 'All', child: Text('All Genders', style: TextStyle(fontSize: 12))),
+                            DropdownMenuItem(value: 'M', child: Text('Male', style: TextStyle(fontSize: 12))),
+                            DropdownMenuItem(value: 'F', child: Text('Female', style: TextStyle(fontSize: 12))),
+                          ],
+                          onChanged: (v) {
+                            if (v != null) {
+                              setState(() => _genderFilter = v);
+                              _loadVoters();
+                            }
+                          },
                         ),
                       ),
                       const SizedBox(width: 8),
 
                       // Booth Filter
                       Expanded(
-                        child: Container(
+                        child: AppDropdown<String>(
+                          value: _boothFilter,
                           height: 38,
                           padding: const EdgeInsets.symmetric(horizontal: 8),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFFCBD5E1)),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: _boothFilter,
-                              isExpanded: true,
-                              style: const TextStyle(fontSize: 11.5, color: Colors.white),
-                              items: const [
-                                DropdownMenuItem(value: 'All', child: Text('All Booths')),
-                                DropdownMenuItem(value: '28', child: Text('Booth 28 (Shaniwar Peth)')),
-                                DropdownMenuItem(value: '29', child: Text('Booth 29 (Kasba Peth)')),
-                                DropdownMenuItem(value: '30', child: Text('Booth 30 (Raviwar Peth)')),
-                                DropdownMenuItem(value: '31', child: Text('Booth 31 (Somwar Peth)')),
-                              ],
-                              onChanged: (v) {
-                                if (v != null) {
-                                  setState(() => _boothFilter = v);
-                                  _loadVoters();
-                                }
-                              },
-                            ),
-                          ),
+                          items: const [
+                            DropdownMenuItem(value: 'All', child: Text('All Booths', style: TextStyle(fontSize: 12))),
+                            DropdownMenuItem(value: '28', child: Text('Booth 28', style: TextStyle(fontSize: 12))),
+                            DropdownMenuItem(value: '29', child: Text('Booth 29', style: TextStyle(fontSize: 12))),
+                            DropdownMenuItem(value: '30', child: Text('Booth 30', style: TextStyle(fontSize: 12))),
+                            DropdownMenuItem(value: '31', child: Text('Booth 31', style: TextStyle(fontSize: 12))),
+                          ],
+                          onChanged: (v) {
+                            if (v != null) {
+                              setState(() => _boothFilter = v);
+                              _loadVoters();
+                            }
+                          },
                         ),
                       ),
                     ],

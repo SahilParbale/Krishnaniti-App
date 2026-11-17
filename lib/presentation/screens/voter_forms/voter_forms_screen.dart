@@ -10,6 +10,8 @@ import '../../providers/auth_provider.dart';
 import 'voter_forms_report_generator.dart';
 import '../../navigation/app_drawer.dart';
 import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_dropdown.dart';
+import '../../widgets/app_pdf_button.dart';
 
 class VoterFormsScreen extends ConsumerStatefulWidget {
   const VoterFormsScreen({super.key});
@@ -1051,15 +1053,9 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
                     'Approval Rate: ${_stats['total'] > 0 ? ((_stats['approved'] / _stats['total']) * 100).round() : 0}%',
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF16A34A)),
                   ),
-                  TextButton.icon(
+                  AppPdfButton.outlined(
+                    label: 'PDF Report',
                     onPressed: () => VoterFormsReportGenerator.generateAndPrintReport(applications: _applications),
-                    icon: const Icon(Icons.picture_as_pdf_outlined, size: 16, color: Color(0xFFDC2626)),
-                    label: const Text('PDF Report', style: TextStyle(fontSize: 12, color: Color(0xFFDC2626), fontWeight: FontWeight.bold)),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      backgroundColor: const Color(0xFFFEF2F2),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
                   ),
                 ],
               ),
@@ -1216,66 +1212,42 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
             children: [
               // Status Filter Dropdown
               Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _selectedStatus,
-                      isExpanded: true,
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF1E293B), fontWeight: FontWeight.w600),
-                      items: const [
-                        DropdownMenuItem(value: 'All', child: Text('All Status')),
-                        DropdownMenuItem(value: 'Submitted', child: Text('Submitted')),
-                        DropdownMenuItem(value: 'Pending', child: Text('Pending')),
-                        DropdownMenuItem(value: 'Approved', child: Text('Approved')),
-                        DropdownMenuItem(value: 'Rejected', child: Text('Rejected')),
-                      ],
-                      onChanged: (val) {
-                        if (val != null) {
-                          setState(() => _selectedStatus = val);
-                          _loadApplications();
-                        }
-                      },
-                    ),
-                  ),
+                child: AppDropdown<String>(
+                  value: _selectedStatus,
+                  items: const [
+                    DropdownMenuItem(value: 'All', child: Text('All Status')),
+                    DropdownMenuItem(value: 'Submitted', child: Text('Submitted')),
+                    DropdownMenuItem(value: 'Pending', child: Text('Pending')),
+                    DropdownMenuItem(value: 'Approved', child: Text('Approved')),
+                    DropdownMenuItem(value: 'Rejected', child: Text('Rejected')),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() => _selectedStatus = val);
+                      _loadApplications();
+                    }
+                  },
                 ),
               ),
               const SizedBox(width: 8),
 
               // Form Type Filter Dropdown
               Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _selectedFormType,
-                      isExpanded: true,
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF1E293B), fontWeight: FontWeight.w600),
-                      items: const [
-                        DropdownMenuItem(value: 'All', child: Text('All Forms')),
-                        DropdownMenuItem(value: 'Form 6', child: Text('Form 6 (New)')),
-                        DropdownMenuItem(value: 'Form 7', child: Text('Form 7 (Deletion)')),
-                        DropdownMenuItem(value: 'Form 8', child: Text('Form 8 (Update)')),
-                        DropdownMenuItem(value: 'Search', child: Text('Roll Search')),
-                      ],
-                      onChanged: (val) {
-                        if (val != null) {
-                          setState(() => _selectedFormType = val);
-                          _loadApplications();
-                        }
-                      },
-                    ),
-                  ),
+                child: AppDropdown<String>(
+                  value: _selectedFormType,
+                  items: const [
+                    DropdownMenuItem(value: 'All', child: Text('All Forms')),
+                    DropdownMenuItem(value: 'Form 6', child: Text('Form 6 (New)')),
+                    DropdownMenuItem(value: 'Form 7', child: Text('Form 7 (Deletion)')),
+                    DropdownMenuItem(value: 'Form 8', child: Text('Form 8 (Update)')),
+                    DropdownMenuItem(value: 'Search', child: Text('Roll Search')),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() => _selectedFormType = val);
+                      _loadApplications();
+                    }
+                  },
                 ),
               ),
             ],

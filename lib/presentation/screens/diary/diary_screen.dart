@@ -7,6 +7,9 @@ import '../../../data/repositories/diary_tasks_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_dropdown.dart';
+import '../../widgets/app_pdf_button.dart';
+import '../../widgets/app_date_picker.dart';
 import 'diary_detail_screen.dart';
 import 'diary_report_generator.dart';
 
@@ -235,7 +238,7 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                                   AppFieldLabel(label: isMr ? 'नियोजित तारीख' : 'Scheduled Date', isRequired: true),
                                   InkWell(
                                     onTap: () async {
-                                      final picked = await showDatePicker(
+                                      final picked = await showThemedDatePicker(
                                         context: context,
                                         initialDate: selectedDate,
                                         firstDate: DateTime(2020),
@@ -309,13 +312,9 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                         const SizedBox(height: 16),
 
                         // Priority Dropdown
-                        AppFieldLabel(label: isMr ? 'प्राधान्यता स्तर' : 'Priority Level'),
-                        DropdownButtonFormField<String>(
+                        AppDropdownFormField<String>(
+                          label: isMr ? 'प्राधान्यता स्तर' : 'Priority Level',
                           value: selectedPriority,
-                          decoration: InputDecoration(
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
                           items: const [
                             DropdownMenuItem(value: 'Low', child: Text('Low (कमी प्राधान्यता)')),
                             DropdownMenuItem(value: 'Medium', child: Text('Medium (मध्यम प्राधान्यता)')),
@@ -677,7 +676,7 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                             ),
                             InkWell(
                               onTap: () async {
-                                final picked = await showDatePicker(
+                                final picked = await showThemedDatePicker(
                                   context: context,
                                   initialDate: _selectedTimelineDate,
                                   firstDate: DateTime(2020),
@@ -709,8 +708,9 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    InkWell(
-                      onTap: () {
+                    AppPdfButton.icon(
+                      tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download PDF Report',
+                      onPressed: () {
                         DiaryReportGenerator.generateAndPrintTasksReport(
                           tasks: filtered,
                           filterTitle: _activeTab == 'timeline'
@@ -718,16 +718,6 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                               : 'Tab: $_activeTab | Priority: $_selectedPriority',
                         );
                       },
-                      borderRadius: BorderRadius.circular(10),
-                      child: Container(
-                        padding: const EdgeInsets.all(9),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                        ),
-                        child: const Icon(Icons.picture_as_pdf_outlined, size: 20, color: Color(0xFF0284C7)),
-                      ),
                     ),
                   ],
                 ),
@@ -798,23 +788,14 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                       ),
                     ],
                     const SizedBox(width: 8),
-                    InkWell(
-                      onTap: () {
+                    AppPdfButton.icon(
+                      tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download PDF Report',
+                      onPressed: () {
                         DiaryReportGenerator.generateAndPrintTasksReport(
                           tasks: filtered,
                           filterTitle: 'Tab: $_activeTab | Priority: $_selectedPriority',
                         );
                       },
-                      borderRadius: BorderRadius.circular(10),
-                      child: Container(
-                        padding: const EdgeInsets.all(9),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                        ),
-                        child: const Icon(Icons.picture_as_pdf_outlined, size: 20, color: Color(0xFF0284C7)),
-                      ),
                     ),
                   ],
                 ),

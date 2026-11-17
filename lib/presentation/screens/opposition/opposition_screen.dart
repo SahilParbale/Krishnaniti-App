@@ -7,6 +7,7 @@ import '../../../data/repositories/opposition_repository.dart';
 import '../../providers/auth_provider.dart';
 import '../../navigation/app_drawer.dart';
 import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_pdf_button.dart';
 import 'opposition_detail_screen.dart';
 import 'opposition_report_generator.dart';
 
@@ -760,8 +761,8 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                           tooltip: 'Table View',
                         ),
                         Container(width: 1, height: 20, color: const Color(0xFFE2E8F0)),
-                        IconButton(
-                          icon: const Icon(Icons.picture_as_pdf_outlined, size: 20, color: Color(0xFFDC2626)),
+                        const SizedBox(width: 4),
+                        AppPdfButton.icon(
                           tooltip: 'Download PDF Report',
                           onPressed: () {
                             OppositionReportGenerator.generateAndPrintReport(

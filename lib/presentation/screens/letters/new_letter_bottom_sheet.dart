@@ -11,6 +11,7 @@ import '../../../data/repositories/voters_repository.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_image_picker.dart';
 import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_date_picker.dart';
 import 'letter_form_constants.dart';
 
 /// Modal Bottom Sheet that slides up from the bottom with downward-dismiss capability,
@@ -548,23 +549,11 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
   }
 
   Future<void> _pickReceivedDate() async {
-    final picked = await showDatePicker(
+    final picked = await showThemedDatePicker(
       context: context,
       initialDate: _receivedDate,
       firstDate: DateTime(2020),
       lastDate: DateTime.now().add(const Duration(days: 30)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF0284C7),
-              onPrimary: Colors.white,
-              onSurface: Color(0xFF0F172A),
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
     if (picked != null) {
       setState(() => _receivedDate = picked);

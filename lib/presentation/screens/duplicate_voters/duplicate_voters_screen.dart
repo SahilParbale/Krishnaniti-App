@@ -7,6 +7,7 @@ import '../../../data/repositories/duplicate_voters_repository.dart';
 import '../voters/voter_profile_screen.dart';
 import 'duplicate_voters_report_generator.dart';
 import '../../navigation/app_drawer.dart';
+import '../../widgets/app_pdf_button.dart';
 
 class DuplicateVotersScreen extends ConsumerStatefulWidget {
   const DuplicateVotersScreen({super.key});
@@ -251,15 +252,11 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
                         ),
                       ),
                       const SizedBox(width: 4),
-                      TextButton.icon(
+                      AppPdfButton.outlined(
+                        label: 'PDF Report',
                         onPressed: () => DuplicateVotersReportGenerator.generateAndPrintReport(
                           duplicateGroups: _duplicateGroups,
                           totalAffectedVoters: totalAffected,
-                        ),
-                        icon: const Icon(Icons.picture_as_pdf_outlined, size: 16, color: Color(0xFFDC2626)),
-                        label: const Text('PDF Report', style: TextStyle(fontSize: 12, color: Color(0xFFDC2626))),
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         ),
                       ),
                     ],

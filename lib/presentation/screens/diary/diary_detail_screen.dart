@@ -6,6 +6,7 @@ import '../../../data/models/diary_task_model.dart';
 import '../../../data/repositories/diary_tasks_repository.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_date_picker.dart';
 import 'diary_report_generator.dart';
 
 class DiaryDetailScreen extends ConsumerStatefulWidget {
@@ -282,7 +283,7 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                                 ),
                                 InkWell(
                                   onTap: () async {
-                                    final picked = await showDatePicker(
+                                    final picked = await showThemedDatePicker(
                                       context: context,
                                       initialDate: selectedDate ?? DateTime.now(),
                                       firstDate: DateTime(2020),

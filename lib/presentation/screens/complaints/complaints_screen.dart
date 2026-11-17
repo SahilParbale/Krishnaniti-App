@@ -9,6 +9,7 @@ import '../../providers/auth_provider.dart';
 import 'new_complaint_bottom_sheet.dart';
 import 'complaint_detail_screen.dart';
 import '../../navigation/app_drawer.dart';
+import '../../widgets/app_dropdown.dart';
 
 class ComplaintsScreen extends ConsumerStatefulWidget {
   final VoidCallback? onBackToHome;
@@ -352,41 +353,27 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                   ),
                   const SizedBox(width: 8),
 
-                  // Area Filter Dropdown
-                  Container(
+                  // Area Filter Dropdown (Themed Component)
+                  AppDropdown<String>(
+                    value: _selectedArea,
                     height: 42,
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    decoration: BoxDecoration(
-                      color: _selectedArea == 'All' ? const Color(0xFFF8FAFC) : const Color(0xFFE0F2FE),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: _selectedArea == 'All' ? const Color(0xFFE2E8F0) : const Color(0xFF0284C7),
-                      ),
+                    isExpanded: false,
+                    backgroundColor: _selectedArea == 'All' ? const Color(0xFFF8FAFC) : const Color(0xFFE0F2FE),
+                    borderColor: _selectedArea == 'All' ? const Color(0xFFCBD5E1) : const Color(0xFF0284C7),
+                    prefixIcon: Icon(
+                      Icons.location_on_outlined,
+                      size: 17,
+                      color: _selectedArea == 'All' ? const Color(0xFF64748B) : const Color(0xFF0284C7),
                     ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: _selectedArea,
-                        icon: Icon(
-                          Icons.location_on_outlined,
-                          size: 17,
-                          color: _selectedArea == 'All' ? const Color(0xFF64748B) : const Color(0xFF0284C7),
-                        ),
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w600,
-                          color: _selectedArea == 'All' ? const Color(0xFF334155) : const Color(0xFF0284C7),
-                        ),
-                        items: _availableAreas.map((area) {
-                          return DropdownMenuItem<String>(
-                            value: area,
-                            child: Text(area == 'All' ? (isMr ? 'सर्व भाग' : 'All Areas') : area),
-                          );
-                        }).toList(),
-                        onChanged: (val) {
-                          if (val != null) setState(() => _selectedArea = val);
-                        },
-                      ),
-                    ),
+                    items: _availableAreas.map((area) {
+                      return DropdownMenuItem<String>(
+                        value: area,
+                        child: Text(area == 'All' ? (isMr ? 'सर्व भाग' : 'All Areas') : area),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) setState(() => _selectedArea = val);
+                    },
                   ),
                 ],
               ),

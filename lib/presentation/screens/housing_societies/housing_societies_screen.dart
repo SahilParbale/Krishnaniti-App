@@ -7,6 +7,8 @@ import '../../../data/repositories/housing_society_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_dropdown.dart';
+import '../../widgets/app_pdf_button.dart';
 import 'housing_society_detail_screen.dart';
 import 'housing_society_report_generator.dart';
 
@@ -648,8 +650,8 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                           onPressed: () => setState(() => _viewMode = 1),
                         ),
                         Container(width: 1, height: 24, color: const Color(0xFFE2E8F0)),
-                        IconButton(
-                          icon: const Icon(Icons.picture_as_pdf_outlined, size: 20, color: Color(0xFFDC2626)),
+                        const SizedBox(width: 4),
+                        AppPdfButton.icon(
                           tooltip: 'Download PDF Report',
                           onPressed: () => HousingSocietyReportGenerator.generateAndPrintReport(societies: _societies),
                         ),
@@ -868,61 +870,37 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
             children: [
               // Area Filter Dropdown
               Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _selectedArea,
-                      isExpanded: true,
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF1E293B), fontWeight: FontWeight.w600),
-                      items: [
-                        const DropdownMenuItem(value: 'all', child: Text('All Areas')),
-                        ..._areas.map((a) => DropdownMenuItem(value: a, child: Text(a, overflow: TextOverflow.ellipsis))),
-                      ],
-                      onChanged: (val) {
-                        if (val != null) {
-                          setState(() => _selectedArea = val);
-                          _loadData();
-                        }
-                      },
-                    ),
-                  ),
+                child: AppDropdown<String>(
+                  value: _selectedArea,
+                  items: [
+                    const DropdownMenuItem(value: 'all', child: Text('All Areas')),
+                    ..._areas.map((a) => DropdownMenuItem(value: a, child: Text(a, overflow: TextOverflow.ellipsis))),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() => _selectedArea = val);
+                      _loadData();
+                    }
+                  },
                 ),
               ),
               const SizedBox(width: 8),
 
               // Status Filter Dropdown
               Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _selectedStatus,
-                      isExpanded: true,
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF1E293B), fontWeight: FontWeight.w600),
-                      items: const [
-                        DropdownMenuItem(value: 'all', child: Text('All Status')),
-                        DropdownMenuItem(value: 'Active', child: Text('Active')),
-                        DropdownMenuItem(value: 'Inactive', child: Text('Inactive')),
-                      ],
-                      onChanged: (val) {
-                        if (val != null) {
-                          setState(() => _selectedStatus = val);
-                          _loadData();
-                        }
-                      },
-                    ),
-                  ),
+                child: AppDropdown<String>(
+                  value: _selectedStatus,
+                  items: const [
+                    DropdownMenuItem(value: 'all', child: Text('All Status')),
+                    DropdownMenuItem(value: 'Active', child: Text('Active')),
+                    DropdownMenuItem(value: 'Inactive', child: Text('Inactive')),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() => _selectedStatus = val);
+                      _loadData();
+                    }
+                  },
                 ),
               ),
             ],

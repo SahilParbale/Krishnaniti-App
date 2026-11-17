@@ -7,6 +7,8 @@ import '../../../data/repositories/ward_provisions_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_dropdown.dart';
+import '../../widgets/app_pdf_button.dart';
 import 'ward_provision_report_generator.dart';
 
 /// WardProvisions Screen matching EXACTLY the web page:
@@ -746,60 +748,33 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                       child: Row(
                         children: [
                           // FY Selector
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: const Color(0xFFCBD5E1)),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.calendar_today_outlined, size: 14, color: Color(0xFF64748B)),
-                                const SizedBox(width: 6),
-                                DropdownButton<String>(
-                                  value: _year,
-                                  underline: const SizedBox(),
-                                  icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 18),
-                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
-                                  items: const [
-                                    DropdownMenuItem(value: '2024-2025', child: Text('FY 2024-2025')),
-                                    DropdownMenuItem(value: '2023-2024', child: Text('FY 2023-2024')),
-                                  ],
-                                  onChanged: (val) {
-                                    if (val != null) {
-                                      setState(() => _year = val);
-                                      _loadProvisions();
-                                    }
-                                  },
-                                ),
-                              ],
-                            ),
+                          AppDropdown<String>(
+                            value: _year,
+                            prefixIcon: const Icon(Icons.calendar_today_outlined, size: 14, color: Color(0xFF0284C7)),
+                            items: const [
+                              DropdownMenuItem(value: '2024-2025', child: Text('FY 2024-2025')),
+                              DropdownMenuItem(value: '2023-2024', child: Text('FY 2023-2024')),
+                            ],
+                            onChanged: (val) {
+                              if (val != null) {
+                                setState(() => _year = val);
+                                _loadProvisions();
+                              }
+                            },
                           ),
                           const SizedBox(width: 8),
 
                           // Download Report
                           Expanded(
-                            child: OutlinedButton.icon(
+                            child: AppPdfButton(
+                              label: isMr ? 'PDF अहवाल' : 'Download PDF',
+                              style: AppPdfButtonStyle.tonal,
                               onPressed: () {
                                 WardProvisionReportGenerator.generateAndPrintProvisionReport(
                                   provisions: _provisions,
                                   year: _year,
                                 );
                               },
-                              style: OutlinedButton.styleFrom(
-                                backgroundColor: const Color(0xFFF0F9FF),
-                                foregroundColor: const Color(0xFF0284C7),
-                                side: const BorderSide(color: Color(0xFFBAE6FD)),
-                                padding: const EdgeInsets.symmetric(vertical: 10),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              ),
-                              icon: const Icon(Icons.download_rounded, size: 16),
-                              label: Text(
-                                isMr ? 'PDF अहवाल' : 'Download PDF',
-                                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
-                              ),
                             ),
                           ),
                         ],

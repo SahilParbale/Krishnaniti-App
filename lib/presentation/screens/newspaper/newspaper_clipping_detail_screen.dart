@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../data/models/newspaper_clipping_model.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_image_picker.dart';
+import '../../widgets/app_date_picker.dart';
 
 class NewspaperClippingDetailScreen extends StatefulWidget {
   final NewspaperClippingModel clipping;
@@ -223,7 +224,7 @@ class _NewspaperClippingDetailScreenState
                                   ),
                                   GestureDetector(
                                     onTap: () async {
-                                      final picked = await showDatePicker(
+                                      final picked = await showThemedDatePicker(
                                         context: modalCtx,
                                         initialDate: selectedDate,
                                         firstDate: DateTime(2020),

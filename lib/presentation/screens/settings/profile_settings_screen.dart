@@ -2334,11 +2334,14 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                       icon: _isSubmittingTicket
                           ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                           : const Icon(Icons.send_rounded, size: 16),
-                      label: Text(
-                        _isSubmittingTicket
-                            ? (isMr ? 'पाठवत आहे...' : 'Submitting Ticket...')
-                            : (isMr ? 'सपोर्ट तिकीट पाठवा' : 'Submit Support Ticket'),
-                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
+                      label: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          _isSubmittingTicket
+                              ? (isMr ? 'पाठवत आहे...' : 'Submitting Ticket...')
+                              : (isMr ? 'सपोर्ट तिकीट पाठवा' : 'Submit Support Ticket'),
+                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
+                        ),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF0284C7),
@@ -2358,9 +2361,12 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                isMr ? 'माझी सपोर्ट तिकिटे (${_supportTickets.length})' : 'My Support Tickets (${_supportTickets.length})',
-                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF0F172A)),
+              Expanded(
+                child: Text(
+                  isMr ? 'माझी सपोर्ट तिकिटे (${_supportTickets.length})' : 'My Support Tickets (${_supportTickets.length})',
+                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF0F172A)),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               IconButton(
                 icon: const Icon(Icons.refresh_rounded, size: 18, color: Color(0xFF0284C7)),
@@ -2374,13 +2380,40 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
           _isLoadingTickets
               ? const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)))
               : _supportTickets.isEmpty
-                  ? Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Text(
-                          isMr ? 'कोणतीही सपोर्ट तिकिटे उपलब्ध नाहीत' : 'No support tickets filed yet',
-                          style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B)),
-                        ),
+                  ? Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFF1F5F9),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.support_agent_rounded, size: 30, color: Color(0xFF94A3B8)),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            isMr ? 'कोणतीही सपोर्ट तिकिटे नोंदवली नाहीत' : 'No support tickets filed yet',
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            isMr
+                                ? 'काही अडचण किंवा प्रश्न असल्यास वरील फॉर्म भरून तिकीट पाठवा.'
+                                : 'If you face any issues, submit a ticket above.',
+                            style: const TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                       ),
                     )
                   : ListView.separated(
@@ -2394,54 +2427,158 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                             ? DateFormat('dd MMM yyyy').format(DateTime.tryParse(t['created_at'].toString()) ?? DateTime.now())
                             : 'Recent';
 
-                        final isResolved = (t['status'] ?? '').toString().toLowerCase() == 'resolved';
+                        final status = (t['status'] ?? 'Pending').toString();
+                        final priority = (t['priority'] ?? 'Medium').toString();
 
-                        return Card(
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: const BorderSide(color: Color(0xFFE2E8F0)),
+                        Color statusBg;
+                        Color statusText;
+                        String statusLabel;
+
+                        if (status.toLowerCase() == 'resolved') {
+                          statusBg = const Color(0xFFDCFCE7);
+                          statusText = const Color(0xFF15803D);
+                          statusLabel = isMr ? 'सोडवलेले' : 'Resolved';
+                        } else if (status.toLowerCase() == 'inprogress' || status.toLowerCase() == 'in progress') {
+                          statusBg = const Color(0xFFFEF3C7);
+                          statusText = const Color(0xFFB45309);
+                          statusLabel = isMr ? 'काम चालू' : 'In Progress';
+                        } else {
+                          statusBg = const Color(0xFFFEF2F2);
+                          statusText = const Color(0xFFB91C1C);
+                          statusLabel = isMr ? 'प्रलंबित' : 'Pending';
+                        }
+
+                        Color priorityBg;
+                        Color priorityText;
+                        if (priority.toLowerCase() == 'high') {
+                          priorityBg = const Color(0xFFFFE4E6);
+                          priorityText = const Color(0xFFE11D48);
+                        } else if (priority.toLowerCase() == 'medium') {
+                          priorityBg = const Color(0xFFFEF3C7);
+                          priorityText = const Color(0xFFD97706);
+                        } else {
+                          priorityBg = const Color(0xFFF1F5F9);
+                          priorityText = const Color(0xFF475569);
+                        }
+
+                        final rawId = (t['id'] ?? 'TKT').toString();
+                        final displayId = rawId.length > 10 && rawId.contains('-')
+                            ? '#${rawId.split('-').first.toUpperCase()}'
+                            : (rawId.startsWith('#') ? rawId : '#$rawId');
+
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                            boxShadow: const [
+                              BoxShadow(color: Color(0x04000000), blurRadius: 6, offset: Offset(0, 2)),
+                            ],
                           ),
                           child: Padding(
                             padding: const EdgeInsets.all(12),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                // Top Row: Title on Left + Status Badge on Right (Cannot Overflow)
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      t['id'] ?? 'TKT',
-                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
-                                    ),
-                                    Row(
-                                      children: [
-                                        _buildTicketBadge(t['priority'] ?? 'Medium', const Color(0xFF3B82F6)),
-                                        const SizedBox(width: 6),
-                                        _buildTicketBadge(
-                                          t['status'] ?? 'Pending',
-                                          isResolved ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                                    Expanded(
+                                      child: Text(
+                                        (t['title'] ?? (isMr ? 'सपोर्ट चौकशी' : 'Support Inquiry')).toString(),
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 13.5,
+                                          color: Color(0xFF0F172A),
                                         ),
-                                      ],
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: statusBg,
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(color: statusText.withValues(alpha: 0.2)),
+                                      ),
+                                      child: Text(
+                                        statusLabel,
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w800,
+                                          color: statusText,
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  t['title'] ?? 'Support Inquiry',
-                                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  t['description'] ?? '',
-                                  style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  dateStr,
-                                  style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+
+                                // Description (maxLines: 2)
+                                if ((t['description'] ?? '').toString().trim().isNotEmpty) ...[
+                                  const SizedBox(height: 5),
+                                  Text(
+                                    t['description'].toString().trim(),
+                                    style: const TextStyle(
+                                      fontSize: 11.5,
+                                      color: Color(0xFF64748B),
+                                      height: 1.35,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+
+                                const SizedBox(height: 8),
+                                const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                                const SizedBox(height: 8),
+
+                                // Bottom Row: Date on Left + Priority & Short ID on Right (Cannot Overflow)
+                                Row(
+                                  children: [
+                                    const Icon(Icons.access_time_rounded, size: 12, color: Color(0xFF94A3B8)),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        dateStr,
+                                        style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8), fontWeight: FontWeight.w500),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: priorityBg,
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        priority.toUpperCase(),
+                                        style: TextStyle(
+                                          fontSize: 9.5,
+                                          fontWeight: FontWeight.w700,
+                                          color: priorityText,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    ConstrainedBox(
+                                      constraints: const BoxConstraints(maxWidth: 85),
+                                      child: Text(
+                                        displayId,
+                                        style: const TextStyle(
+                                          fontFamily: 'monospace',
+                                          fontSize: 10.5,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF94A3B8),
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -2535,21 +2672,6 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
             color: isSelected ? Colors.white : const Color(0xFF334155),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildTicketBadge(String label, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Text(
-        label.toUpperCase(),
-        style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: color),
       ),
     );
   }

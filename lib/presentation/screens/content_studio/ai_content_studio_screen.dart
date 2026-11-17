@@ -5,6 +5,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/ai_content_model.dart';
 import '../../../data/repositories/ai_content_repository.dart';
 import '../../navigation/app_drawer.dart';
+import '../../widgets/app_dropdown.dart';
+import '../../widgets/app_pdf_button.dart';
 import 'ai_content_detail_screen.dart';
 import 'ai_content_report_generator.dart';
 
@@ -376,19 +378,9 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                           ),
                         ),
                         const SizedBox(width: 8),
-                        InkWell(
-                          onTap: _exportDossierPdf,
-                          borderRadius: BorderRadius.circular(10),
-                          child: Container(
-                            height: 40,
-                            padding: const EdgeInsets.symmetric(horizontal: 10),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF1F5F9),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
-                            ),
-                            child: const Icon(Icons.picture_as_pdf_rounded, size: 20, color: Color(0xFF0284C7)),
-                          ),
+                        AppPdfButton.icon(
+                          tooltip: 'Export Dossier PDF',
+                          onPressed: _exportDossierPdf,
                         ),
                       ],
                     ),
@@ -712,42 +704,30 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<AiContentType>(
-                          value: _selectedType,
-                          isExpanded: true,
-                          icon: const Icon(Icons.arrow_drop_down_rounded),
-                          items: AiContentType.values.map((type) {
-                            return DropdownMenuItem<AiContentType>(
-                              value: type,
-                              child: Row(
-                                children: [
-                                  Icon(type.icon, size: 15, color: type.color),
-                                  const SizedBox(width: 6),
-                                  Expanded(
-                                    child: Text(
-                                      type.titleMr,
-                                      style: const TextStyle(fontSize: 12),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
+                    AppDropdown<AiContentType>(
+                      value: _selectedType,
+                      items: AiContentType.values.map((type) {
+                        return DropdownMenuItem<AiContentType>(
+                          value: type,
+                          child: Row(
+                            children: [
+                              Icon(type.icon, size: 15, color: type.color),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  type.titleMr,
+                                  style: const TextStyle(fontSize: 12),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
-                            );
-                          }).toList(),
-                          onChanged: (val) {
-                            if (val != null) setState(() => _selectedType = val);
-                          },
-                        ),
-                      ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        if (val != null) setState(() => _selectedType = val);
+                      },
                     ),
                   ],
                 ),
@@ -767,42 +747,30 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<AiToneType>(
-                          value: _selectedTone,
-                          isExpanded: true,
-                          icon: const Icon(Icons.arrow_drop_down_rounded),
-                          items: AiToneType.values.map((tone) {
-                            return DropdownMenuItem<AiToneType>(
-                              value: tone,
-                              child: Row(
-                                children: [
-                                  Icon(tone.icon, size: 15, color: const Color(0xFF475569)),
-                                  const SizedBox(width: 6),
-                                  Expanded(
-                                    child: Text(
-                                      tone.titleMr,
-                                      style: const TextStyle(fontSize: 12),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
+                    AppDropdown<AiToneType>(
+                      value: _selectedTone,
+                      items: AiToneType.values.map((tone) {
+                        return DropdownMenuItem<AiToneType>(
+                          value: tone,
+                          child: Row(
+                            children: [
+                              Icon(tone.icon, size: 15, color: const Color(0xFF475569)),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  tone.titleMr,
+                                  style: const TextStyle(fontSize: 12),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
-                            );
-                          }).toList(),
-                          onChanged: (val) {
-                            if (val != null) setState(() => _selectedTone = val);
-                          },
-                        ),
-                      ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        if (val != null) setState(() => _selectedTone = val);
+                      },
                     ),
                   ],
                 ),

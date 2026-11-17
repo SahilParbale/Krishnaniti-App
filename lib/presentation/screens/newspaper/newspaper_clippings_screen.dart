@@ -9,6 +9,8 @@ import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_image_picker.dart';
+import '../../widgets/app_pdf_button.dart';
+import '../../widgets/app_date_picker.dart';
 import 'newspaper_clipping_detail_screen.dart';
 import 'newspaper_report_generator.dart';
 
@@ -342,7 +344,7 @@ class _NewspaperClippingsScreenState
                                   ),
                                   GestureDetector(
                                     onTap: () async {
-                                      final picked = await showDatePicker(
+                                      final picked = await showThemedDatePicker(
                                         context: modalCtx,
                                         initialDate: selectedDate,
                                         firstDate: DateTime(2020),
@@ -685,9 +687,7 @@ class _NewspaperClippingsScreenState
                                 });
                               },
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.picture_as_pdf_outlined,
-                                  color: Color(0xFF0284C7), size: 20),
+                            AppPdfButton.icon(
                               tooltip: 'Download PDF Report',
                               onPressed: () {
                                 NewspaperReportGenerator.generateAndPrintReport(
