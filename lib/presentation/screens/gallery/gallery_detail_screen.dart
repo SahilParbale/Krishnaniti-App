@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/gallery_model.dart';
 import '../../../data/repositories/gallery_repository.dart';
 import 'gallery_report_generator.dart';
+import '../../widgets/app_pdf_button.dart';
 
 class GalleryDetailScreen extends ConsumerStatefulWidget {
   final GalleryItemModel item;
@@ -112,10 +113,14 @@ class _GalleryDetailScreenState extends ConsumerState<GalleryDetailScreen> {
               tooltip: 'Favorite',
               onPressed: _handleToggleFavorite,
             ),
-            IconButton(
-              icon: const Icon(Icons.picture_as_pdf_rounded, color: Colors.white),
-              tooltip: 'Official PDF Report',
-              onPressed: () => GalleryReportGenerator.generateAndPrintReport(items: [_item]),
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: AppPdfButton.icon(
+                  tooltip: 'Official PDF Report',
+                  onPressed: () => GalleryReportGenerator.generateAndPrintReport(items: [_item]),
+                ),
+              ),
             ),
             IconButton(
               icon: const Icon(Icons.share_rounded, color: Colors.white),

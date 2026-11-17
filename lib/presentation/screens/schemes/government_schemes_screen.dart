@@ -7,6 +7,7 @@ import '../../../data/repositories/schemes_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_pdf_button.dart';
 import 'scheme_detail_screen.dart';
 import 'scheme_report_generator.dart';
 
@@ -1108,25 +1109,15 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                     ),
                   ),
                   const SizedBox(width: 6),
-                  InkWell(
-                    onTap: () {
+                  AppPdfButton.icon(
+                    tooltip: isMr ? 'योजना अहवाल डाउनलोड करा' : 'Download Schemes Report PDF',
+                    onPressed: () {
                       SchemeReportGenerator.generateAndPrintListReport(
                         schemes: displayedSchemes,
                         isMarathi: isMr,
                         categoryFilter: _selectedCategory,
                       );
                     },
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      height: 44,
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: const Icon(Icons.picture_as_pdf_outlined, size: 20, color: Color(0xFF0284C7)),
-                    ),
                   ),
                 ],
               ),
@@ -1488,24 +1479,14 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                     ),
                   ),
                   const SizedBox(width: 8),
-                  InkWell(
-                    onTap: () {
+                  AppPdfButton.icon(
+                    tooltip: isMr ? 'अर्ज अहवाल डाउनलोड करा' : 'Download Applications Report PDF',
+                    onPressed: () {
                       SchemeReportGenerator.generateAndPrintBeneficiaryReport(
                         applications: displayedApps,
                         isMarathi: isMr,
                       );
                     },
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      height: 44,
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: const Icon(Icons.picture_as_pdf_outlined, size: 20, color: Color(0xFF0284C7)),
-                    ),
                   ),
                 ],
               ),

@@ -9,6 +9,7 @@ import '../../../data/repositories/team_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_pdf_button.dart';
 import 'gov_office_report_generator.dart';
 import 'government_office_detail_screen.dart';
 
@@ -916,23 +917,13 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                                 ),
                               ),
                               const SizedBox(width: 6),
-                              InkWell(
-                                onTap: () {
+                              AppPdfButton.icon(
+                                tooltip: isMr ? 'कार्यालय अहवाल डाउनलोड करा' : 'Download Office Report PDF',
+                                onPressed: () {
                                   GovOfficeReportGenerator.generateAndPrintOfficeReport(
                                     offices: displayedOffices,
                                   );
                                 },
-                                borderRadius: BorderRadius.circular(10),
-                                child: Container(
-                                  height: 48,
-                                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                                  ),
-                                  child: const Icon(Icons.download_rounded, size: 20, color: Color(0xFF0284C7)),
-                                ),
                               ),
                             ],
                           ],

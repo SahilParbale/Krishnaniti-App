@@ -7,6 +7,7 @@ import '../../../data/repositories/diary_tasks_repository.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_date_picker.dart';
+import '../../widgets/app_pdf_button.dart';
 import 'diary_report_generator.dart';
 
 class DiaryDetailScreen extends ConsumerStatefulWidget {
@@ -592,12 +593,16 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
             ],
           ),
           actions: [
-            IconButton(
-              tooltip: 'Export Task Slip PDF',
-              icon: const Icon(Icons.picture_as_pdf_outlined, color: Colors.white),
-              onPressed: () {
-                DiaryReportGenerator.generateAndPrintSingleTask(_task);
-              },
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: AppPdfButton.icon(
+                  tooltip: 'Export Task Slip PDF',
+                  onPressed: () {
+                    DiaryReportGenerator.generateAndPrintSingleTask(_task);
+                  },
+                ),
+              ),
             ),
             IconButton(
               tooltip: 'Edit Task',

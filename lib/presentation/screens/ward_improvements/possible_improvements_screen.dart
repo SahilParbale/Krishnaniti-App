@@ -7,6 +7,7 @@ import '../../../data/repositories/improvements_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_pdf_button.dart';
 import 'improvement_detail_screen.dart';
 import 'improvement_report_generator.dart';
 
@@ -840,19 +841,8 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                               ),
                               const SizedBox(width: 8),
                               // PDF Export Button
-                              OutlinedButton.icon(
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                  minimumSize: Size.zero,
-                                  side: const BorderSide(color: Color(0xFFCBD5E1)),
-                                  backgroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                ),
-                                icon: const Icon(Icons.picture_as_pdf_outlined, size: 16, color: Color(0xFFDC2626)),
-                                label: Text(
-                                  isMr ? 'PDF अहवाल' : 'PDF',
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
-                                ),
+                              AppPdfButton.outlined(
+                                label: isMr ? 'PDF अहवाल' : 'PDF',
                                 onPressed: () {
                                   ImprovementReportGenerator.generateAndPrintImprovementReport(
                                     improvements: filtered,
@@ -1195,7 +1185,8 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                   '${isMr ? "अहवाल तक्ता" : "Report View"} (${items.length})',
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
                 ),
-                ElevatedButton.icon(
+                AppPdfButton.outlined(
+                  label: isMr ? 'PDF अहवाल' : 'Download PDF',
                   onPressed: () {
                     ImprovementReportGenerator.generateAndPrintImprovementReport(
                       improvements: items,
@@ -1203,19 +1194,6 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                       statusFilter: _statusFilter,
                     );
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF0F9FF),
-                    foregroundColor: const Color(0xFF0284C7),
-                    elevation: 0,
-                    side: const BorderSide(color: Color(0xFFBAE6FD)),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  icon: const Icon(Icons.download_rounded, size: 16),
-                  label: Text(
-                    isMr ? 'PDF अहवाल' : 'Download PDF',
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                  ),
                 ),
               ],
             ),

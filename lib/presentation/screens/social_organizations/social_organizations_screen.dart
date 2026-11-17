@@ -7,6 +7,7 @@ import '../../../data/repositories/social_organization_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_pdf_button.dart';
 import 'social_org_detail_screen.dart';
 import 'social_org_report_generator.dart';
 
@@ -929,18 +930,17 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                           onPressed: () => setState(() => _viewMode = 1),
                           tooltip: 'Table View',
                         ),
-                        Container(width: 1, height: 20, color: const Color(0xFFE2E8F0)),
-                        IconButton(
-                          icon: const Icon(Icons.picture_as_pdf_outlined, size: 20, color: Color(0xFFDC2626)),
-                          tooltip: 'Download PDF Report',
-                          onPressed: () {
-                            SocialOrgReportGenerator.generateAndPrintReport(
-                              organizations: _organizations,
-                            );
-                          },
-                        ),
                       ],
                     ),
+                  ),
+                  const SizedBox(width: 6),
+                  AppPdfButton.icon(
+                    tooltip: 'Download PDF Report',
+                    onPressed: () {
+                      SocialOrgReportGenerator.generateAndPrintReport(
+                        organizations: _organizations,
+                      );
+                    },
                   ),
                 ],
               ),

@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/social_post_model.dart';
 import '../../../data/repositories/social_analytics_repository.dart';
 import '../../navigation/app_drawer.dart';
+import '../../widgets/app_pdf_button.dart';
 import 'social_analytics_report_generator.dart';
 import 'social_post_detail_screen.dart';
 
@@ -344,8 +345,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                               tooltip: _viewMode == 'feed' ? 'Switch to Table' : 'Switch to Feed',
                               onPressed: () => setState(() => _viewMode = _viewMode == 'feed' ? 'table' : 'feed'),
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.picture_as_pdf_outlined, color: Color(0xFF0284C7), size: 20),
+                            AppPdfButton.icon(
                               tooltip: 'Download PDF Report',
                               onPressed: () {
                                 if (_summary != null) {

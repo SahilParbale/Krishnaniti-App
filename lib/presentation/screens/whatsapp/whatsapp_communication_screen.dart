@@ -7,6 +7,7 @@ import '../../../data/models/voter_model.dart';
 import '../../../data/repositories/whatsapp_repository.dart';
 import 'whatsapp_history_report_generator.dart';
 import '../../navigation/app_drawer.dart';
+import '../../widgets/app_pdf_button.dart';
 
 // WhatsApp brand colors
 const _kWaGreen = Color(0xFF25D366);
@@ -702,26 +703,10 @@ class _WhatsAppCommunicationScreenState
                   onPressed: _showHelpTutorialDialog,
                 ),
                 const SizedBox(width: 4),
-                InkWell(
-                  onTap: _generatePdfReport,
-                  borderRadius: BorderRadius.circular(10),
-                  child: Container(
-                    height: 34,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFEF2F2),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFFFECACA)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Icon(Icons.picture_as_pdf_outlined, size: 15, color: Color(0xFFDC2626)),
-                        SizedBox(width: 4),
-                        Text('Report', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFFDC2626))),
-                      ],
-                    ),
-                  ),
+                AppPdfButton.outlined(
+                  label: 'Report',
+                  tooltip: 'Download WhatsApp Broadcast Report PDF',
+                  onPressed: _generatePdfReport,
                 ),
               ],
             ),
@@ -1351,19 +1336,10 @@ class _WhatsAppCommunicationScreenState
                                     ),
                                   ],
                                 ),
-                                OutlinedButton.icon(
-                                  style: OutlinedButton.styleFrom(
-                                    side: const BorderSide(color: Color(0xFFCBD5E1)),
-                                    backgroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                  ),
+                                AppPdfButton.outlined(
+                                  label: 'Download PDF',
+                                  tooltip: 'Download WhatsApp Broadcast Report PDF',
                                   onPressed: _generatePdfReport,
-                                  icon: const Icon(Icons.picture_as_pdf_outlined, size: 15, color: Color(0xFF0284C7)),
-                                  label: const Text(
-                                    'Download PDF',
-                                    style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
-                                  ),
                                 ),
                               ],
                             ),

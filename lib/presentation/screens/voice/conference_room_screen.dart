@@ -11,6 +11,8 @@ import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_date_picker.dart';
+import '../../widgets/app_pdf_button.dart';
+import 'conference_meeting_report_generator.dart';
 
 class ConferenceMeetingModel {
   final String id;
@@ -1369,6 +1371,11 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                     ],
                   ),
                 ),
+                const SizedBox(width: 8),
+                AppPdfButton.icon(
+                  tooltip: isMr ? 'बैठक अहवाल डाउनलोड करा' : 'Download Meetings PDF Report',
+                  onPressed: () => ConferenceMeetingReportGenerator.generateAndPrintMeetingReport(meetings: displayMeetings),
+                ),
               ],
             ),
           ),
@@ -1710,32 +1717,42 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                         color: Color(0xFF0F172A),
                       ),
                     ),
-                    OutlinedButton.icon(
-                      onPressed: () {
-                        final messenger = ScaffoldMessenger.of(context);
-                        Clipboard.setData(ClipboardData(
-                          text: list
-                              .map((m) =>
-                                  '${DateFormat('dd/MM/yyyy HH:mm').format(m.scheduledAt)} | ${m.title} | ${m.status} | Invited: ${m.invitedCount} | ${m.meetLink}')
-                              .join('\n'),
-                        ));
-                        messenger.showSnackBar(
-                          SnackBar(
-                            content: Text(isMr ? 'रिपोर्ट कॉपी केला!' : 'Report data copied!'),
-                            backgroundColor: const Color(0xFF0284C7),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        AppPdfButton.outlined(
+                          label: isMr ? 'PDF रिपोर्ट' : 'PDF Report',
+                          onPressed: () => ConferenceMeetingReportGenerator.generateAndPrintMeetingReport(meetings: list),
+                        ),
+                        const SizedBox(width: 8),
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            final messenger = ScaffoldMessenger.of(context);
+                            Clipboard.setData(ClipboardData(
+                              text: list
+                                  .map((m) =>
+                                      '${DateFormat('dd/MM/yyyy HH:mm').format(m.scheduledAt)} | ${m.title} | ${m.status} | Invited: ${m.invitedCount} | ${m.meetLink}')
+                                  .join('\n'),
+                            ));
+                            messenger.showSnackBar(
+                              SnackBar(
+                                content: Text(isMr ? 'रिपोर्ट कॉपी केला!' : 'Report data copied!'),
+                                backgroundColor: const Color(0xFF0284C7),
+                              ),
+                            );
+                          },
+                          style: OutlinedButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                            side: const BorderSide(color: Color(0xFFCBD5E1)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           ),
-                        );
-                      },
-                      style: OutlinedButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
-                        side: const BorderSide(color: Color(0xFFCBD5E1)),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                      icon: const Icon(Icons.copy_all_rounded, size: 14, color: Color(0xFF0284C7)),
-                      label: Text(
-                        isMr ? 'कॉपी करा' : 'Copy Report',
-                        style: const TextStyle(fontSize: 11.5, color: Color(0xFF0284C7), fontWeight: FontWeight.bold),
-                      ),
+                          icon: const Icon(Icons.copy_all_rounded, size: 14, color: Color(0xFF0284C7)),
+                          label: Text(
+                            isMr ? 'कॉपी करा' : 'Copy Report',
+                            style: const TextStyle(fontSize: 11.5, color: Color(0xFF0284C7), fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

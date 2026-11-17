@@ -11,6 +11,7 @@ import '../../../data/models/letter_model.dart';
 import '../../providers/auth_provider.dart';
 import '../dashboard/dashboard_screen.dart';
 import 'letter_form_constants.dart';
+import 'letter_report_generator.dart';
 import '../../widgets/app_pdf_button.dart';
 
 class LetterDetailScreen extends ConsumerStatefulWidget {
@@ -512,10 +513,18 @@ class _LetterDetailScreenState extends ConsumerState<LetterDetailScreen> {
                       ),
                     ),
 
-                    // WhatsApp & Delete Action Buttons
+                    // Top Actions: PDF Export, WhatsApp & Delete
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        AppPdfButton.icon(
+                          tooltip: isMr ? 'पत्र पीडीएफ डाउनलोड करा' : 'Download Letter PDF',
+                          onPressed: () => LetterReportGenerator.generateAndPrintSingleLetter(
+                            letter: _letter,
+                            letterBody: _letterPreviewText,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
                         IconButton(
                           onPressed: _shareOnWhatsApp,
                           icon: const Icon(Icons.share_outlined, size: 18, color: Color(0xFF0284C7)),

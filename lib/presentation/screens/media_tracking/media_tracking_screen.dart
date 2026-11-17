@@ -5,6 +5,7 @@ import '../../../data/models/media_tracking_model.dart';
 import '../../../data/models/social_post_model.dart'; // for IntFormatting
 import '../../../data/repositories/media_tracking_repository.dart';
 import '../../navigation/app_drawer.dart';
+import '../../widgets/app_pdf_button.dart';
 import 'media_tracking_detail_screen.dart';
 import 'media_tracking_report_generator.dart';
 
@@ -365,9 +366,7 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
                                 setState(() => _showTelemetry = !_showTelemetry);
                               },
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.picture_as_pdf_outlined,
-                                  color: Color(0xFF0284C7), size: 20),
+                            AppPdfButton.icon(
                               tooltip: 'Download PDF Report',
                               onPressed: () {
                                 MediaTrackingReportGenerator.generateAndPrintReport(

@@ -10,6 +10,8 @@ import 'new_complaint_bottom_sheet.dart';
 import 'complaint_detail_screen.dart';
 import '../../navigation/app_drawer.dart';
 import '../../widgets/app_dropdown.dart';
+import '../../widgets/app_pdf_button.dart';
+import 'complaint_report_generator.dart';
 
 class ComplaintsScreen extends ConsumerStatefulWidget {
   final VoidCallback? onBackToHome;
@@ -373,6 +375,22 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                     }).toList(),
                     onChanged: (val) {
                       if (val != null) setState(() => _selectedArea = val);
+                    },
+                  ),
+                  const SizedBox(width: 8),
+
+                  // Download Complaints PDF Report Button
+                  AppPdfButton.icon(
+                    tooltip: isMr ? 'तक्रार अहवाल डाउनलोड करा' : 'Download Complaints PDF Report',
+                    onPressed: () {
+                      ComplaintReportGenerator.generateAndPrintReport(
+                        complaints: filtered,
+                        statusFilter: _selectedStatus != 'All' ? _selectedStatus : null,
+                        areaFilter: _selectedArea != 'All' ? _selectedArea : null,
+                        title: _activeTab == 'Complaints'
+                            ? (isMr ? 'नागरी तक्रारी व अडचणी रजिस्टर' : 'Citizen Grievance & Complaints Register')
+                            : (isMr ? 'वैयक्तिक मदत व विनंत्या रजिस्टर' : 'Personal Assistance Requests Register'),
+                      );
                     },
                   ),
                 ],

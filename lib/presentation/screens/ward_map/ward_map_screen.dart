@@ -7,6 +7,7 @@ import '../../../data/repositories/ward_map_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_pdf_button.dart';
 import 'ward_map_report_generator.dart';
 
 class WardMapScreen extends ConsumerStatefulWidget {
@@ -486,24 +487,14 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
                               ),
                             ),
                             const SizedBox(width: 6),
-                            InkWell(
-                              onTap: () {
+                            AppPdfButton.icon(
+                              tooltip: isMr ? 'प्रभाग नकाशा अहवाल डाउनलोड करा' : 'Download Ward Map Report PDF',
+                              onPressed: () {
                                 WardMapReportGenerator.generateAndPrintWardMapReport(
                                   points: displayed,
                                   categoryFilter: _activeCategory,
                                 );
                               },
-                              borderRadius: BorderRadius.circular(10),
-                              child: Container(
-                                height: 42,
-                                padding: const EdgeInsets.symmetric(horizontal: 10),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF1F5F9),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                                ),
-                                child: const Icon(Icons.picture_as_pdf_outlined, size: 20, color: Color(0xFF0284C7)),
-                              ),
                             ),
                           ],
                         ),

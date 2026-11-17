@@ -6,6 +6,7 @@ import '../../../data/models/event_model.dart';
 import '../../../data/repositories/events_repository.dart';
 import 'event_invite_modal.dart';
 import 'event_report_generator.dart';
+import '../../widgets/app_pdf_button.dart';
 
 class EventDetailScreen extends ConsumerStatefulWidget {
   final EventModel event;
@@ -132,10 +133,14 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
             ),
           ),
           actions: [
-            IconButton(
-              icon: const Icon(Icons.picture_as_pdf_rounded, color: Colors.white),
-              tooltip: 'Official PDF Report',
-              onPressed: () => EventReportGenerator.generateAndPrintReport(events: [_event]),
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: AppPdfButton.icon(
+                  tooltip: 'Official PDF Report',
+                  onPressed: () => EventReportGenerator.generateAndPrintReport(events: [_event]),
+                ),
+              ),
             ),
             IconButton(
               icon: const Icon(Icons.share_rounded, color: Colors.white),

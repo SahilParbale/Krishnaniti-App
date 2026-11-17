@@ -8,6 +8,7 @@ import '../../../data/repositories/team_repository.dart';
 import '../../providers/auth_provider.dart';
 import '../../navigation/app_drawer.dart';
 import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_pdf_button.dart';
 import 'team_member_profile_screen.dart';
 import 'team_report_generator.dart';
 
@@ -1158,10 +1159,8 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
             visualDensity: VisualDensity.compact,
             onPressed: _showHelpGuide,
           ),
-          IconButton(
-            icon: const Icon(Icons.picture_as_pdf_rounded, color: Color(0xFFDC2626), size: 20),
+          AppPdfButton.icon(
             tooltip: 'Download Team Report',
-            visualDensity: VisualDensity.compact,
             onPressed: () => TeamReportGenerator.generateAndPrintReport(
               staffList: filtered,
               activeCategory: _selectedCategory == 'All' ? 'All Team' : _selectedCategory,

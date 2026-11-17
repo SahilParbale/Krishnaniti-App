@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/ai_content_model.dart';
 import '../../../data/repositories/ai_content_repository.dart';
+import '../../widgets/app_pdf_button.dart';
 import 'ai_content_report_generator.dart';
 
 class AiContentDetailScreen extends ConsumerStatefulWidget {
@@ -420,24 +421,10 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
                 ],
               ),
               const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: _handlePrintPdf,
-                  icon: const Icon(Icons.picture_as_pdf_rounded, size: 18),
-                  label: const Text(
-                    'Download Official Letterhead PDF',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF0284C7),
-                    side: const BorderSide(color: Color(0xFF0284C7)),
-                    padding: const EdgeInsets.symmetric(vertical: 13),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
+              AppPdfButton.outlined(
+                label: 'Download Official Letterhead PDF',
+                isCompact: false,
+                onPressed: _handlePrintPdf,
               ),
               const SizedBox(height: 32),
             ],

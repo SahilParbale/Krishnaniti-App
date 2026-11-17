@@ -6,6 +6,7 @@ import '../../../data/models/visitor_model.dart';
 import '../../../data/repositories/visitors_repository.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_pdf_button.dart';
 import 'visitor_report_generator.dart';
 
 class VisitorDetailScreen extends ConsumerStatefulWidget {
@@ -454,12 +455,16 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
             ],
           ),
           actions: [
-            IconButton(
-              tooltip: 'Export Visitor Pass PDF',
-              icon: const Icon(Icons.picture_as_pdf_outlined, color: Colors.white),
-              onPressed: () {
-                VisitorReportGenerator.generateAndPrintVisitorSlip(_visitor);
-              },
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: AppPdfButton.icon(
+                  tooltip: 'Export Visitor Pass PDF',
+                  onPressed: () {
+                    VisitorReportGenerator.generateAndPrintVisitorSlip(_visitor);
+                  },
+                ),
+              ),
             ),
             IconButton(
               tooltip: 'Edit Visitor',

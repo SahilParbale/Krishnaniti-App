@@ -9,6 +9,7 @@ import '../../../data/repositories/voters_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_pdf_button.dart';
 import 'visitor_detail_screen.dart';
 import 'visitor_report_generator.dart';
 
@@ -797,23 +798,14 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                     ),
                   ],
                   const SizedBox(width: 8),
-                  InkWell(
-                    onTap: () {
+                  AppPdfButton.icon(
+                    tooltip: isMr ? 'भेट नोंद अहवाल डाउनलोड करा' : 'Download Visitors Report PDF',
+                    onPressed: () {
                       VisitorReportGenerator.generateAndPrintListReport(
                         visitors: filtered,
                         filterTitle: 'Tab: $_activeTab | Purpose: $_selectedPurpose',
                       );
                     },
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      padding: const EdgeInsets.all(9),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: const Icon(Icons.picture_as_pdf_outlined, size: 20, color: Color(0xFF0284C7)),
-                    ),
                   ),
                 ],
               ),

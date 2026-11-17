@@ -7,6 +7,7 @@ import '../../../data/repositories/schemes_repository.dart';
 import '../../../data/repositories/voters_repository.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_pdf_button.dart';
 import 'scheme_report_generator.dart';
 
 class SchemeDetailScreen extends ConsumerStatefulWidget {
@@ -331,15 +332,19 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
             ),
           ),
           actions: [
-            IconButton(
-              icon: const Icon(Icons.picture_as_pdf_outlined, color: Colors.white, size: 22),
-              tooltip: 'Download PDF Flyer',
-              onPressed: () {
-                SchemeReportGenerator.generateAndPrintSingleSchemeFlyer(
-                  scheme: _scheme,
-                  isMarathi: isMr,
-                );
-              },
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: AppPdfButton.icon(
+                  tooltip: isMr ? 'माहिती पत्रक डाउनलोड करा' : 'Download PDF Flyer',
+                  onPressed: () {
+                    SchemeReportGenerator.generateAndPrintSingleSchemeFlyer(
+                      scheme: _scheme,
+                      isMarathi: isMr,
+                    );
+                  },
+                ),
+              ),
             ),
             IconButton(
               icon: const Icon(Icons.edit_outlined, color: Colors.white, size: 22),

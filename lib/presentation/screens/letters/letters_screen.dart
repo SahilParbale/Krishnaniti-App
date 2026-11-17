@@ -12,6 +12,8 @@ import 'new_letter_bottom_sheet.dart';
 import '../../navigation/app_drawer.dart';
 import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_date_picker.dart';
+import '../../widgets/app_pdf_button.dart';
+import 'letter_report_generator.dart';
 
 class LettersScreen extends ConsumerStatefulWidget {
   final ValueChanged<int>? onTabChange;
@@ -442,6 +444,22 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                           },
                         ),
                       ],
+                      const SizedBox(width: 8),
+
+                      // Download Letters Register PDF Button
+                      AppPdfButton.icon(
+                        tooltip: isMr ? 'पत्र नोंदवही अहवाल डाउनलोड करा' : 'Download Letter Register PDF',
+                        onPressed: () {
+                          LetterReportGenerator.generateAndPrintLetterReport(
+                            letters: _filteredLetters,
+                            statusFilter: _selectedStatus != 'All' ? _selectedStatus : null,
+                            areaFilter: _areaSearch.isNotEmpty ? _areaSearch : null,
+                            title: _isOutgoing
+                                ? (isMr ? 'जावक पत्र अधिकृत नोंदवही (Outgoing Letters)' : 'Official Outgoing Letters Register')
+                                : (isMr ? 'आवक पत्र अधिकृत नोंदवही (Incoming Letters)' : 'Official Incoming Letters Register'),
+                          );
+                        },
+                      ),
                     ],
                   ),
 

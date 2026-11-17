@@ -6,6 +6,8 @@ import '../../../data/models/work_history_model.dart';
 import '../../../data/repositories/work_history_repository.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_pdf_button.dart';
+import 'ahwal_report_generator.dart';
 
 class WorkDetailScreen extends ConsumerStatefulWidget {
   final WorkHistoryModel work;
@@ -532,6 +534,17 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
             ],
           ),
           actions: [
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: AppPdfButton.icon(
+                  tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Work Docket PDF',
+                  onPressed: () => AhwalReportGenerator.generateAndPrintAhwal(
+                    selectedWorks: [_currentWork],
+                  ),
+                ),
+              ),
+            ),
             IconButton(
               icon: const Icon(Icons.edit_outlined, color: Colors.white),
               tooltip: 'Edit Project',

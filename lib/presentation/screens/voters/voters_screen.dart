@@ -9,6 +9,7 @@ import '../../../data/repositories/voters_repository.dart';
 import '../../providers/auth_provider.dart';
 import '../../navigation/app_drawer.dart';
 import '../../widgets/app_modal_sheet.dart';
+import '../../widgets/app_pdf_button.dart';
 import 'voter_profile_screen.dart';
 import 'voter_slip_generator.dart';
 
@@ -1252,12 +1253,8 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                     padding: EdgeInsets.zero,
                     onPressed: _showHelpGuide,
                   ),
-                  Container(width: 1, height: 18, color: Colors.grey.shade200),
-                  IconButton(
-                    icon: const Icon(Icons.picture_as_pdf_rounded, color: Color(0xFFDC2626), size: 17),
+                  AppPdfButton.icon(
                     tooltip: 'Download Electoral Roll Report',
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                    padding: EdgeInsets.zero,
                     onPressed: () => VoterSlipGenerator.downloadVotersListReport(
                       voters: filtered,
                       totalCount: totalRoll,

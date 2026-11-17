@@ -9,6 +9,7 @@ import '../../../data/models/whatsapp_broadcast_model.dart';
 import '../../../data/repositories/whatsapp_repository.dart';
 import 'whatsapp_history_report_generator.dart';
 import '../../navigation/app_drawer.dart';
+import '../../widgets/app_pdf_button.dart';
 
 const _kWaGreen = Color(0xFF25D366);
 const _kWaDark = Color(0xFF075E54);
@@ -684,20 +685,10 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
               ),
               Row(
                 children: [
-                  OutlinedButton.icon(
-                    onPressed: _isExportingPdf ? null : _exportPdfReport,
-                    icon: _isExportingPdf
-                        ? const SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: CircularProgressIndicator(strokeWidth: 1.5, color: Color(0xFF0284C7)),
-                          )
-                        : const Icon(Icons.picture_as_pdf, size: 16, color: Color(0xFF0284C7)),
-                    label: const Text('PDF Report', style: TextStyle(fontSize: 12, color: Color(0xFF0284C7))),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFFCBD5E1)),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    ),
+                  AppPdfButton.outlined(
+                    label: 'PDF Report',
+                    isLoading: _isExportingPdf,
+                    onPressed: _exportPdfReport,
                   ),
                   const SizedBox(width: 8),
                   IconButton(

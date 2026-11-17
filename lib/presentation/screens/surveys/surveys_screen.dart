@@ -9,6 +9,7 @@ import '../../../data/models/voter_model.dart';
 import '../../../data/repositories/surveys_repository.dart';
 import '../../../data/repositories/voters_repository.dart';
 import '../../navigation/app_drawer.dart';
+import '../../widgets/app_pdf_button.dart';
 import 'create_survey_screen.dart';
 import 'survey_detail_screen.dart';
 import 'survey_report_generator.dart';
@@ -609,10 +610,8 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
             visualDensity: VisualDensity.compact,
             onPressed: _showHelpGuide,
           ),
-          IconButton(
-            icon: const Icon(Icons.picture_as_pdf_rounded, color: Color(0xFFDC2626), size: 20),
+          AppPdfButton.icon(
             tooltip: 'Download PDF Report',
-            visualDensity: VisualDensity.compact,
             onPressed: () => SurveyReportGenerator.generateAndPrintReport(
               surveys: filtered,
               responseCounts: _surveyResponseCounts,

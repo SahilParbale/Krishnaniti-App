@@ -13,6 +13,8 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_image_picker.dart';
 import '../../widgets/app_dropdown.dart';
+import '../../widgets/app_pdf_button.dart';
+import 'complaint_report_generator.dart';
 
 class ComplaintDetailScreen extends ConsumerStatefulWidget {
   final ComplaintModel complaint;
@@ -579,11 +581,16 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                       ),
                     ),
 
-                    // Edit & Delete Actions
+                    // Edit, PDF Docket & Delete Actions
                     if (isAdminOrStaff)
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          AppPdfButton.outlined(
+                            label: isMr ? 'डॉकेट' : 'Docket',
+                            onPressed: () => ComplaintReportGenerator.generateAndPrintSingleComplaintDocket(_complaint),
+                          ),
+                          const SizedBox(width: 6),
                           OutlinedButton.icon(
                             onPressed: _openEditTicketModal,
                             icon: const Icon(Icons.edit_outlined, size: 14, color: Color(0xFF475569)),
