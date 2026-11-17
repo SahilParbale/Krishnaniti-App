@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../data/models/user_model.dart';
 import '../providers/navigation_provider.dart';
+import '../providers/custom_navigation_provider.dart';
 import '../providers/auth_provider.dart';
 import '../screens/landing/landing_screen.dart';
+
+bool _groupHasPermittedItem(UserModel? user, List<String> moduleKeys) {
+  if (user == null || user.isAdmin) return true;
+  return moduleKeys.any((k) => userHasModulePermission(user, k));
+}
 
 class NagarsevakAppDrawer extends ConsumerStatefulWidget {
   final int currentTabIndex;
@@ -67,12 +74,12 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
       if (key == 'dashboard') ref.read(mainTabIndexProvider.notifier).setTab(0);
       if (key == 'complaints') ref.read(mainTabIndexProvider.notifier).setTab(1);
       if (key == 'letters') ref.read(mainTabIndexProvider.notifier).setTab(2);
-      if (key == 'profile_settings') ref.read(mainTabIndexProvider.notifier).setTab(3);
+      if (key == 'profile_settings' || key == 'bar_customization') ref.read(mainTabIndexProvider.notifier).setTab(3);
       if (widget.onTabChange != null) {
         if (key == 'dashboard') widget.onTabChange!(0);
         if (key == 'complaints') widget.onTabChange!(1);
         if (key == 'letters') widget.onTabChange!(2);
-        if (key == 'profile_settings') widget.onTabChange!(3);
+        if (key == 'profile_settings' || key == 'bar_customization') widget.onTabChange!(3);
       }
       return;
     }
@@ -82,6 +89,8 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final drawerWidth = screenWidth > 380 ? 285.0 : screenWidth * 0.78;
+    final user = ref.watch(currentUserProvider);
+    final isStaff = user?.isStaff ?? false;
 
     return Drawer(
       width: drawerWidth,
@@ -151,10 +160,10 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
                     children: [
                       Row(
                         children: [
-                          const Expanded(
+                          Expanded(
                             child: Text(
-                              'Hon. Nagarsevak',
-                              style: TextStyle(
+                              isStaff ? (user?.name ?? 'Team Member') : 'Hon. Nagarsevak',
+                              style: const TextStyle(
                                 fontSize: 14.5,
                                 fontWeight: FontWeight.w700,
                                 color: Colors.white,
@@ -171,9 +180,9 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(color: Colors.white.withOpacity(0.35), width: 0.8),
                             ),
-                            child: const Text(
-                              'Ward 12',
-                              style: TextStyle(
+                            child: Text(
+                              isStaff ? 'Staff' : 'Ward 12',
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 10,
                                 fontWeight: FontWeight.w700,
@@ -194,9 +203,9 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
                         ],
                       ),
                       const SizedBox(height: 2),
-                      const Text(
-                        'Prabhag 12 • Pune Municipal Corp.',
-                        style: TextStyle(
+                      Text(
+                        isStaff ? (user?.email ?? 'Prabhag 12 Staff Account') : 'Prabhag 12 • Pune Municipal Corp.',
+                        style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
                           color: Color(0xFFE0F2FE),
@@ -238,188 +247,191 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
                 // ==========================================
                 // 1) DAILY WORK (nav.daily_work)
                 // ==========================================
-                _DrawerGroupHeader(
-                  title: 'Daily work',
-                  icon: Icons.business_center_outlined,
-                  isOpen: _openGroups['daily_work'] ?? true,
-                  onToggle: () => _toggleGroup('daily_work'),
-                ),
-                if (_openGroups['daily_work'] ?? true) ...[
-                  _DrawerSubItem(
-                    icon: Icons.assignment_outlined,
-                    title: 'Requests & Complaints',
-                    onTap: () => _navigateToModule(
-                      title: 'Requests & Complaints',
-                      subtitle: 'Civic grievances, issue tracking and status updates',
-                      category: 'Daily work',
+                if (!isStaff || _groupHasPermittedItem(user, ['complaints', 'letters', 'diary', 'visitors', 'schemes'])) ...[
+                  _DrawerGroupHeader(
+                    title: 'Daily work',
+                    icon: Icons.business_center_outlined,
+                    isOpen: _openGroups['daily_work'] ?? true,
+                    onToggle: () => _toggleGroup('daily_work'),
+                  ),
+                  if (_openGroups['daily_work'] ?? true) ...[
+                    _DrawerSubItem(
                       icon: Icons.assignment_outlined,
-                      description: 'Register and monitor citizen civic complaints and ward maintenance work.',
-                      highlights: ['128 Total requests', '32 Pending', '20 Resolved'],
+                      title: 'Requests & Complaints',
+                      onTap: () => _navigateToModule(
+                        title: 'Requests & Complaints',
+                        subtitle: 'Civic grievances, issue tracking and status updates',
+                        category: 'Daily work',
+                        icon: Icons.assignment_outlined,
+                        description: 'Register and monitor citizen civic complaints and ward maintenance work.',
+                        highlights: ['128 Total requests', '32 Pending', '20 Resolved'],
+                      ),
                     ),
-                  ),
-                  _DrawerSubItem(
-                    icon: Icons.description_outlined,
-                    title: 'Letters',
-                    onTap: () => _navigateToModule(
-                      title: 'Letters',
-                      subtitle: 'Inward and outward official municipal correspondence',
-                      category: 'Daily work',
+                    _DrawerSubItem(
                       icon: Icons.description_outlined,
-                      description: 'Scan and track inward citizen petitions and departmental dispatch letters.',
-                      highlights: ['14 Inward letters', '8 Outward follow-ups', 'PDF inward seal'],
+                      title: 'Letters',
+                      onTap: () => _navigateToModule(
+                        title: 'Letters',
+                        subtitle: 'Inward and outward official municipal correspondence',
+                        category: 'Daily work',
+                        icon: Icons.description_outlined,
+                        description: 'Scan and track inward citizen petitions and departmental dispatch letters.',
+                        highlights: ['14 Inward letters', '8 Outward follow-ups', 'PDF inward seal'],
+                      ),
                     ),
-                  ),
-                  _DrawerSubItem(
-                    icon: Icons.check_box_outlined,
-                    title: 'Diary',
-                    onTap: () => _navigateToModule(
-                      title: 'Diary',
-                      subtitle: 'Task management, daily visits and itinerary',
-                      category: 'Daily work',
+                    _DrawerSubItem(
                       icon: Icons.check_box_outlined,
-                      description: 'Daily ward itinerary, scheduled official meetings, and action items.',
-                      highlights: ['4 appointments today', 'Inspection at 4:00 PM', 'GB agenda prep'],
+                      title: 'Diary',
+                      onTap: () => _navigateToModule(
+                        title: 'Diary',
+                        subtitle: 'Task management, daily visits and itinerary',
+                        category: 'Daily work',
+                        icon: Icons.check_box_outlined,
+                        description: 'Daily ward itinerary, scheduled official meetings, and action items.',
+                        highlights: ['4 appointments today', 'Inspection at 4:00 PM', 'GB agenda prep'],
+                      ),
                     ),
-                  ),
-                  _DrawerSubItem(
-                    icon: Icons.people_outline_rounded,
-                    title: 'Visitor Log',
-                    onTap: () => _navigateToModule(
-                      title: 'Visitor Log',
-                      subtitle: 'Daily constituent office meeting register and time log',
-                      category: 'Daily work',
+                    _DrawerSubItem(
                       icon: Icons.people_outline_rounded,
-                      description: 'Log and track constituent visits, appointments, and office delegations.',
-                      highlights: ['26 Constituent visits', '6 Follow-ups pending', 'Monthly report'],
+                      title: 'Visitor Log',
+                      onTap: () => _navigateToModule(
+                        title: 'Visitor Log',
+                        subtitle: 'Daily constituent office meeting register and time log',
+                        category: 'Daily work',
+                        icon: Icons.people_outline_rounded,
+                        description: 'Log and track constituent visits, appointments, and office delegations.',
+                        highlights: ['26 Constituent visits', '6 Follow-ups pending', 'Monthly report'],
+                      ),
                     ),
-                  ),
-                  _DrawerSubItem(
-                    icon: Icons.assured_workload_outlined,
-                    title: 'Govt Schemes',
-                    onTap: () => _navigateToModule(
-                      title: 'Govt Schemes',
-                      subtitle: 'Central and state welfare schemes database',
-                      category: 'Daily work',
+                    _DrawerSubItem(
                       icon: Icons.assured_workload_outlined,
-                      description: 'Official welfare schemes database including Ladki Bahin, PM Awas, and Ayushman Bharat.',
-                      highlights: ['24 Active Schemes', '1,420 Enrolled', 'Marathi Forms Available'],
+                      title: 'Govt Schemes',
+                      onTap: () => _navigateToModule(
+                        title: 'Govt Schemes',
+                        subtitle: 'Central and state welfare schemes database',
+                        category: 'Daily work',
+                        icon: Icons.assured_workload_outlined,
+                        description: 'Official welfare schemes database including Ladki Bahin, PM Awas, and Ayushman Bharat.',
+                        highlights: ['24 Active Schemes', '1,420 Enrolled', 'Marathi Forms Available'],
+                      ),
                     ),
-                  ),
+                  ],
+                  const Divider(height: 6, thickness: 0.8, color: Color(0xFFF1F5F9)),
                 ],
-
-                const Divider(height: 6, thickness: 0.8, color: Color(0xFFF1F5F9)),
 
                 // ==========================================
                 // 2) WARD INFORMATION (nav.ward_info)
                 // ==========================================
-                _DrawerGroupHeader(
-                  title: 'Ward information',
-                  icon: Icons.info_outline_rounded,
-                  isOpen: _openGroups['ward_info'] ?? true,
-                  onToggle: () => _toggleGroup('ward_info'),
-                ),
-                if (_openGroups['ward_info'] ?? true) ...[
-                  _DrawerSubItem(
-                    icon: Icons.warning_amber_rounded,
-                    title: 'Ward Problems',
-                    onTap: () => _navigateToModule(
-                      title: 'Ward Problems',
-                      subtitle: 'Chronic civic issues, garbage spots and bottlenecks',
-                      category: 'Ward information',
+                if (!isStaff || _groupHasPermittedItem(user, ['ward_problems', 'ward_map', 'work_history', 'improvements', 'provisions'])) ...[
+                  _DrawerGroupHeader(
+                    title: 'Ward information',
+                    icon: Icons.info_outline_rounded,
+                    isOpen: _openGroups['ward_info'] ?? true,
+                    onToggle: () => _toggleGroup('ward_info'),
+                  ),
+                  if (_openGroups['ward_info'] ?? true) ...[
+                    _DrawerSubItem(
                       icon: Icons.warning_amber_rounded,
-                      description: 'Geo-tagged tracking of chronic garbage spots, water drops, and infrastructure pain points.',
-                      highlights: ['8 Chronic garbage spots', '3 Low pressure zones', 'Streetlights drive'],
+                      title: 'Ward Problems',
+                      onTap: () => _navigateToModule(
+                        title: 'Ward Problems',
+                        subtitle: 'Chronic civic issues, garbage spots and bottlenecks',
+                        category: 'Ward information',
+                        icon: Icons.warning_amber_rounded,
+                        description: 'Geo-tagged tracking of chronic garbage spots, water drops, and infrastructure pain points.',
+                        highlights: ['8 Chronic garbage spots', '3 Low pressure zones', 'Streetlights drive'],
+                      ),
                     ),
-                  ),
-                  _DrawerSubItem(
-                    icon: Icons.map_outlined,
-                    title: 'Ward Map',
-                    onTap: () => _navigateToModule(
-                      title: 'Ward Map',
-                      subtitle: 'Interactive Prabhag boundary, developmental works and GIS layers',
-                      category: 'Ward information',
+                    _DrawerSubItem(
                       icon: Icons.map_outlined,
-                      description: 'Interactive digital Prabhag 12 boundary demarcation and project sites.',
-                      highlights: ['Prabhag 12 Boundary', '28 Polling booths', 'Civil development project map'],
+                      title: 'Ward Map',
+                      onTap: () => _navigateToModule(
+                        title: 'Ward Map',
+                        subtitle: 'Interactive Prabhag boundary, developmental works and GIS layers',
+                        category: 'Ward information',
+                        icon: Icons.map_outlined,
+                        description: 'Interactive digital Prabhag 12 boundary demarcation and project sites.',
+                        highlights: ['Prabhag 12 Boundary', '28 Polling booths', 'Civil development project map'],
+                      ),
                     ),
-                  ),
-                  _DrawerSubItem(
-                    icon: Icons.history_rounded,
-                    title: 'Work History',
-                    onTap: () => _navigateToModule(
-                      title: 'Work History',
-                      subtitle: 'Historical archive of completed municipal projects and tenders',
-                      category: 'Ward information',
+                    _DrawerSubItem(
                       icon: Icons.history_rounded,
-                      description: 'Archive of all completed development works over the tenure with verified certificates.',
-                      highlights: ['142 Completed projects', 'Audited work orders', 'Public reports'],
+                      title: 'Work History',
+                      onTap: () => _navigateToModule(
+                        title: 'Work History',
+                        subtitle: 'Historical archive of completed municipal projects and tenders',
+                        category: 'Ward information',
+                        icon: Icons.history_rounded,
+                        description: 'Archive of all completed development works over the tenure with verified certificates.',
+                        highlights: ['142 Completed projects', 'Audited work orders', 'Public reports'],
+                      ),
                     ),
-                  ),
-                  _DrawerSubItem(
-                    icon: Icons.trending_up_rounded,
-                    title: 'Possible Improvements',
-                    onTap: () => _navigateToModule(
-                      title: 'Possible Improvements',
-                      subtitle: 'Citizen proposals, infrastructure ideas and future project plans',
-                      category: 'Ward information',
+                    _DrawerSubItem(
                       icon: Icons.trending_up_rounded,
-                      description: 'Crowdsourced citizen suggestions and urban planning proposals.',
-                      highlights: ['Skywalk proposal', 'Underground electrical cable plan', 'Walking track'],
+                      title: 'Possible Improvements',
+                      onTap: () => _navigateToModule(
+                        title: 'Possible Improvements',
+                        subtitle: 'Citizen proposals, infrastructure ideas and future project plans',
+                        category: 'Ward information',
+                        icon: Icons.trending_up_rounded,
+                        description: 'Crowdsourced citizen suggestions and urban planning proposals.',
+                        highlights: ['Skywalk proposal', 'Underground electrical cable plan', 'Walking track'],
+                      ),
                     ),
-                  ),
-                  _DrawerSubItem(
-                    icon: Icons.currency_rupee_rounded,
-                    title: 'Ward Wise Provision',
-                    onTap: () => _navigateToModule(
-                      title: 'Ward Wise Provision',
-                      subtitle: 'Yearly municipal provisions and capital development allocations',
-                      category: 'Ward information',
+                    _DrawerSubItem(
                       icon: Icons.currency_rupee_rounded,
-                      description: 'Municipal budget provisions earmarked for road, sanitation, and parks.',
-                      highlights: ['Roads: ₹95 L', 'Drainage: ₹60 L', 'Gardens: ₹35 L'],
+                      title: 'Ward Wise Provision',
+                      onTap: () => _navigateToModule(
+                        title: 'Ward Wise Provision',
+                        subtitle: 'Yearly municipal provisions and capital development allocations',
+                        category: 'Ward information',
+                        icon: Icons.currency_rupee_rounded,
+                        description: 'Municipal budget provisions earmarked for road, sanitation, and parks.',
+                        highlights: ['Roads: ₹95 L', 'Drainage: ₹60 L', 'Gardens: ₹35 L'],
+                      ),
                     ),
-                  ),
+                  ],
+                  const Divider(height: 6, thickness: 0.8, color: Color(0xFFF1F5F9)),
                 ],
-
-                const Divider(height: 6, thickness: 0.8, color: Color(0xFFF1F5F9)),
 
                 // ==========================================
                 // 3) MUNICIPAL WORK (nav.municipal_work)
                 // ==========================================
-                _DrawerGroupHeader(
-                  title: 'Municipal work',
-                  icon: Icons.account_balance_outlined,
-                  isOpen: _openGroups['municipal'] ?? true,
-                  onToggle: () => _toggleGroup('municipal'),
-                ),
-                if (_openGroups['municipal'] ?? true) ...[
-                  _DrawerSubItem(
-                    icon: Icons.menu_book_outlined,
-                    title: 'GB Register',
-                    onTap: () => _navigateToModule(
-                      title: 'GB Register',
-                      subtitle: 'General Body questions raised, resolutions and committee records',
-                      category: 'Municipal work',
+                if (!isStaff || _groupHasPermittedItem(user, ['gb_register', 'ward_budget'])) ...[
+                  _DrawerGroupHeader(
+                    title: 'Municipal work',
+                    icon: Icons.account_balance_outlined,
+                    isOpen: _openGroups['municipal'] ?? true,
+                    onToggle: () => _toggleGroup('municipal'),
+                  ),
+                  if (_openGroups['municipal'] ?? true) ...[
+                    _DrawerSubItem(
                       icon: Icons.menu_book_outlined,
-                      description: 'Municipal Corporation General Body (GB) Register and resolutions tracker.',
-                      highlights: ['18 Questions raised', '12 Resolutions approved', 'Next GB: 15 Feb'],
+                      title: 'GB Register',
+                      onTap: () => _navigateToModule(
+                        title: 'GB Register',
+                        subtitle: 'General Body questions raised, resolutions and committee records',
+                        category: 'Municipal work',
+                        icon: Icons.menu_book_outlined,
+                        description: 'Municipal Corporation General Body (GB) Register and resolutions tracker.',
+                        highlights: ['18 Questions raised', '12 Resolutions approved', 'Next GB: 15 Feb'],
+                      ),
                     ),
-                  ),
-                  _DrawerSubItem(
-                    icon: Icons.currency_rupee_rounded,
-                    title: 'Ward Budget',
-                    onTap: () => _navigateToModule(
-                      title: 'Ward Budget',
-                      subtitle: 'Municipal corporation fund allocation, spending and balances',
-                      category: 'Municipal work',
+                    _DrawerSubItem(
                       icon: Icons.currency_rupee_rounded,
-                      description: 'Annual municipal development budget tracker for Prabhag 12.',
-                      highlights: ['₹2.50 Cr Sanctioned', '₹1.82 Cr Utilized', '₹68 Lakhs Balance'],
+                      title: 'Ward Budget',
+                      onTap: () => _navigateToModule(
+                        title: 'Ward Budget',
+                        subtitle: 'Municipal corporation fund allocation, spending and balances',
+                        category: 'Municipal work',
+                        icon: Icons.currency_rupee_rounded,
+                        description: 'Annual municipal development budget tracker for Prabhag 12.',
+                        highlights: ['₹2.50 Cr Sanctioned', '₹1.82 Cr Utilized', '₹68 Lakhs Balance'],
+                      ),
                     ),
-                  ),
+                  ],
+                  const Divider(height: 6, thickness: 0.8, color: Color(0xFFF1F5F9)),
                 ],
-
-                const Divider(height: 6, thickness: 0.8, color: Color(0xFFF1F5F9)),
 
                 // ==========================================
                 // 4) GOVERNMENT OFFICE (nav.gov_office) - Standalone Item
@@ -442,334 +454,338 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
                 // ==========================================
                 // 5) MEDIA & PROMOTION (nav.media_promotion)
                 // ==========================================
-                _DrawerGroupHeader(
-                  title: 'Media & Promotion',
-                  icon: Icons.campaign_outlined,
-                  isOpen: _openGroups['media'] ?? true,
-                  onToggle: () => _toggleGroup('media'),
-                ),
-                if (_openGroups['media'] ?? true) ...[
-                  _DrawerSubItem(
-                    icon: Icons.trending_up_rounded,
-                    title: 'Social Analytics',
-                    onTap: () => _navigateToModule(
-                      title: 'Social Analytics',
-                      subtitle: 'Social media reach, engagement, and constituent sentiment',
-                      category: 'Media & Promotion',
+                if (!isStaff || _groupHasPermittedItem(user, ['social_analytics', 'newspaper', 'media_tracking', 'ai_content'])) ...[
+                  _DrawerGroupHeader(
+                    title: 'Media & Promotion',
+                    icon: Icons.campaign_outlined,
+                    isOpen: _openGroups['media'] ?? true,
+                    onToggle: () => _toggleGroup('media'),
+                  ),
+                  if (_openGroups['media'] ?? true) ...[
+                    _DrawerSubItem(
                       icon: Icons.trending_up_rounded,
-                      description: 'Track Facebook, Instagram, and Twitter reach for Prabhag 12 public updates.',
-                      highlights: ['48K Monthly Impressions', '+24% Engagement', '85% Positive Sentiment'],
+                      title: 'Social Analytics',
+                      onTap: () => _navigateToModule(
+                        title: 'Social Analytics',
+                        subtitle: 'Social media reach, engagement, and constituent sentiment',
+                        category: 'Media & Promotion',
+                        icon: Icons.trending_up_rounded,
+                        description: 'Track Facebook, Instagram, and Twitter reach for Prabhag 12 public updates.',
+                        highlights: ['48K Monthly Impressions', '+24% Engagement', '85% Positive Sentiment'],
+                      ),
                     ),
-                  ),
-                  _DrawerSubItem(
-                    icon: Icons.newspaper_outlined,
-                    title: 'Newspaper Clipping',
-                    onTap: () => _navigateToModule(
-                      title: 'Newspaper Clipping',
-                      subtitle: 'Print news media coverage archive and press releases',
-                      category: 'Media & Promotion',
+                    _DrawerSubItem(
                       icon: Icons.newspaper_outlined,
-                      description: 'Archive of local Marathi and English daily press mentions and developmental coverage.',
-                      highlights: ['32 Press Clippings', 'Sakal & Lokmat Features', 'Press Releases Archive'],
+                      title: 'Newspaper Clipping',
+                      onTap: () => _navigateToModule(
+                        title: 'Newspaper Clipping',
+                        subtitle: 'Print news media coverage archive and press releases',
+                        category: 'Media & Promotion',
+                        icon: Icons.newspaper_outlined,
+                        description: 'Archive of local Marathi and English daily press mentions and developmental coverage.',
+                        highlights: ['32 Press Clippings', 'Sakal & Lokmat Features', 'Press Releases Archive'],
+                      ),
                     ),
-                  ),
-                  _DrawerSubItem(
-                    icon: Icons.language_rounded,
-                    title: 'Media Tracking',
-                    onTap: () => _navigateToModule(
-                      title: 'Media Tracking',
-                      subtitle: 'Digital news portals and TV news monitoring',
-                      category: 'Media & Promotion',
+                    _DrawerSubItem(
                       icon: Icons.language_rounded,
-                      description: 'Live alerts for municipal council news and Prabhag 12 development mentions.',
-                      highlights: ['Daily News Alerts', '18 Digital Mentions', 'TV Byte Logs'],
+                      title: 'Media Tracking',
+                      onTap: () => _navigateToModule(
+                        title: 'Media Tracking',
+                        subtitle: 'Digital news portals and TV news monitoring',
+                        category: 'Media & Promotion',
+                        icon: Icons.language_rounded,
+                        description: 'Live alerts for municipal council news and Prabhag 12 development mentions.',
+                        highlights: ['Daily News Alerts', '18 Digital Mentions', 'TV Byte Logs'],
+                      ),
                     ),
-                  ),
-                  _DrawerSubItem(
-                    icon: Icons.auto_awesome_rounded,
-                    title: 'AI Content Studio',
-                    onTap: () => _navigateToModule(
-                      title: 'AI Content Studio',
-                      subtitle: 'AI Marathi speechwriter, press releases and festive banners',
-                      category: 'Media & Promotion',
+                    _DrawerSubItem(
                       icon: Icons.auto_awesome_rounded,
-                      description: 'AI-assisted speech generator, social media captions, and press release drafts.',
-                      highlights: ['Marathi Speechwriter', 'Festival Greetings', 'Press Release Drafts'],
+                      title: 'AI Content Studio',
+                      onTap: () => _navigateToModule(
+                        title: 'AI Content Studio',
+                        subtitle: 'AI Marathi speechwriter, press releases and festive banners',
+                        category: 'Media & Promotion',
+                        icon: Icons.auto_awesome_rounded,
+                        description: 'AI-assisted speech generator, social media captions, and press release drafts.',
+                        highlights: ['Marathi Speechwriter', 'Festival Greetings', 'Press Release Drafts'],
+                      ),
                     ),
-                  ),
+                  ],
+                  const Divider(height: 6, thickness: 0.8, color: Color(0xFFF1F5F9)),
                 ],
-
-                const Divider(height: 6, thickness: 0.8, color: Color(0xFFF1F5F9)),
 
                 // ==========================================
                 // 6) PROGRAMS & ACTIVITIES (nav.programs_activities)
                 // ==========================================
-                _DrawerGroupHeader(
-                  title: 'Programs and activities',
-                  icon: Icons.event_available_outlined,
-                  isOpen: _openGroups['programs'] ?? true,
-                  onToggle: () => _toggleGroup('programs'),
-                ),
-                if (_openGroups['programs'] ?? true) ...[
-                  _DrawerSubItem(
-                    icon: Icons.event_outlined,
-                    title: 'Events & Invites',
-                    onTap: () => _navigateToModule(
-                      title: 'Events & Invites',
-                      subtitle: 'Public programs, festival pandal visits and invitations',
-                      category: 'Programs and activities',
+                if (!isStaff || _groupHasPermittedItem(user, ['events', 'gallery'])) ...[
+                  _DrawerGroupHeader(
+                    title: 'Programs and activities',
+                    icon: Icons.event_available_outlined,
+                    isOpen: _openGroups['programs'] ?? true,
+                    onToggle: () => _toggleGroup('programs'),
+                  ),
+                  if (_openGroups['programs'] ?? true) ...[
+                    _DrawerSubItem(
                       icon: Icons.event_outlined,
-                      description: 'Calendar of ward events, guest invitations, and inauguration ceremonies.',
-                      highlights: ['Ward Programs', 'Guest Invites', 'Protocol Directory'],
+                      title: 'Events & Invites',
+                      onTap: () => _navigateToModule(
+                        title: 'Events & Invites',
+                        subtitle: 'Public programs, festival pandal visits and invitations',
+                        category: 'Programs and activities',
+                        icon: Icons.event_outlined,
+                        description: 'Calendar of ward events, guest invitations, and inauguration ceremonies.',
+                        highlights: ['Ward Programs', 'Guest Invites', 'Protocol Directory'],
+                      ),
                     ),
-                  ),
-                  _DrawerSubItem(
-                    icon: Icons.photo_library_outlined,
-                    title: 'Gallery & Media',
-                    onTap: () => _navigateToModule(
-                      title: 'Gallery & Media',
-                      subtitle: 'Official photo archive, development work images and press albums',
-                      category: 'Programs and activities',
+                    _DrawerSubItem(
                       icon: Icons.photo_library_outlined,
-                      description: 'Visual evidence repository of development works and festival celebrations.',
-                      highlights: ['Project Photos', 'Press Albums', 'High-Res Downloads'],
+                      title: 'Gallery & Media',
+                      onTap: () => _navigateToModule(
+                        title: 'Gallery & Media',
+                        subtitle: 'Official photo archive, development work images and press albums',
+                        category: 'Programs and activities',
+                        icon: Icons.photo_library_outlined,
+                        description: 'Visual evidence repository of development works and festival celebrations.',
+                        highlights: ['Project Photos', 'Press Albums', 'High-Res Downloads'],
+                      ),
                     ),
-                  ),
+                  ],
+                  const Divider(height: 6, thickness: 0.8, color: Color(0xFFF1F5F9)),
                 ],
-
-                const Divider(height: 6, thickness: 0.8, color: Color(0xFFF1F5F9)),
 
                 // ==========================================
                 // 7) POLITICAL (nav.political)
                 // ==========================================
-                _DrawerGroupHeader(
-                  title: 'Political',
-                  icon: Icons.flag_outlined,
-                  isOpen: _openGroups['political'] ?? true,
-                  onToggle: () => _toggleGroup('political'),
-                ),
-                if (_openGroups['political'] ?? true) ...[
-                  _DrawerSubItem(
-                    icon: Icons.bar_chart_rounded,
-                    title: 'Result Analysis',
-                    onTap: () => _navigateToModule(
-                      title: 'Result Analysis',
-                      subtitle: 'Booth-wise past municipal and assembly election vote analysis',
-                      category: 'Political',
+                if (!isStaff || _groupHasPermittedItem(user, ['result_analysis', 'sadasya', 'surveys', 'voters', 'team', 'opposition', 'ngo_mandals', 'housing_societies', 'duplicate_voters', 'voter_forms', 'karyakarta_work'])) ...[
+                  _DrawerGroupHeader(
+                    title: 'Political',
+                    icon: Icons.flag_outlined,
+                    isOpen: _openGroups['political'] ?? true,
+                    onToggle: () => _toggleGroup('political'),
+                  ),
+                  if (_openGroups['political'] ?? true) ...[
+                    _DrawerSubItem(
                       icon: Icons.bar_chart_rounded,
-                      description: 'Detailed polling booth trend analytics, margin comparisons, and vote share breakdown.',
-                      highlights: ['28 Booths analyzed', 'Winning margin +4,200', 'Swing booth identification'],
+                      title: 'Result Analysis',
+                      onTap: () => _navigateToModule(
+                        title: 'Result Analysis',
+                        subtitle: 'Booth-wise past municipal and assembly election vote analysis',
+                        category: 'Political',
+                        icon: Icons.bar_chart_rounded,
+                        description: 'Detailed polling booth trend analytics, margin comparisons, and vote share breakdown.',
+                        highlights: ['28 Booths analyzed', 'Winning margin +4,200', 'Swing booth identification'],
+                      ),
                     ),
-                  ),
-                  _DrawerSubItem(
-                    icon: Icons.group_add_outlined,
-                    title: 'Sadasya (Members)',
-                    onTap: () => _navigateToModule(
-                      title: 'Sadasya (Members)',
-                      subtitle: 'Party workers, active booth members and volunteer register',
-                      category: 'Political',
+                    _DrawerSubItem(
                       icon: Icons.group_add_outlined,
-                      description: 'Directory of ward booth in-charges, verified party karyakartas, and active volunteers.',
-                      highlights: ['1,240 Registered Members', '28 Booth In-charges', 'Active Member Badges'],
+                      title: 'Sadasya (Members)',
+                      onTap: () => _navigateToModule(
+                        title: 'Sadasya (Members)',
+                        subtitle: 'Party workers, active booth members and volunteer register',
+                        category: 'Political',
+                        icon: Icons.group_add_outlined,
+                        description: 'Directory of ward booth in-charges, verified party karyakartas, and active volunteers.',
+                        highlights: ['1,240 Registered Members', '28 Booth In-charges', 'Active Member Badges'],
+                      ),
                     ),
-                  ),
-                  _DrawerSubItem(
-                    icon: Icons.fact_check_outlined,
-                    title: 'Sample Surveys',
-                    onTap: () => _navigateToModule(
-                      title: 'Sample Surveys',
-                      subtitle: 'Public opinion surveys, constituent feedback and pulse',
-                      category: 'Political',
+                    _DrawerSubItem(
                       icon: Icons.fact_check_outlined,
-                      description: 'Statistical sample surveys measuring public satisfaction with roads, water, and ward office service.',
-                      highlights: ['Latest Survey: Oct 2024', '1,500 Sample Size', '78% Citizen Satisfaction'],
+                      title: 'Sample Surveys',
+                      onTap: () => _navigateToModule(
+                        title: 'Sample Surveys',
+                        subtitle: 'Public opinion surveys, constituent feedback and pulse',
+                        category: 'Political',
+                        icon: Icons.fact_check_outlined,
+                        description: 'Statistical sample surveys measuring public satisfaction with roads, water, and ward office service.',
+                        highlights: ['Latest Survey: Oct 2024', '1,500 Sample Size', '78% Citizen Satisfaction'],
+                      ),
                     ),
-                  ),
-                  _DrawerSubItem(
-                    icon: Icons.person_search_outlined,
-                    title: 'Voter Search',
-                    onTap: () => _navigateToModule(
-                      title: 'Voter Search',
-                      subtitle: 'Digital electoral roll lookup by name, EPIC and address',
-                      category: 'Political',
+                    _DrawerSubItem(
                       icon: Icons.person_search_outlined,
-                      description: 'Search voter list for Prabhag 12 by EPIC number, Marathi/English name, or building name.',
-                      highlights: ['42,560 Registered Voters', '28 Booths Mapped', 'Instant Slip Print/Share'],
+                      title: 'Voter Search',
+                      onTap: () => _navigateToModule(
+                        title: 'Voter Search',
+                        subtitle: 'Digital electoral roll lookup by name, EPIC and address',
+                        category: 'Political',
+                        icon: Icons.person_search_outlined,
+                        description: 'Search voter list for Prabhag 12 by EPIC number, Marathi/English name, or building name.',
+                        highlights: ['42,560 Registered Voters', '28 Booths Mapped', 'Instant Slip Print/Share'],
+                      ),
                     ),
-                  ),
-                  _DrawerSubItem(
-                    icon: Icons.groups_outlined,
-                    title: 'My Team',
-                    onTap: () => _navigateToModule(
-                      title: 'My Team',
-                      subtitle: 'Nagarsevak office staff, field coordinators and roles',
-                      category: 'Political',
+                    _DrawerSubItem(
                       icon: Icons.groups_outlined,
-                      description: 'Staff directory with access permissions, task assignments, and duty rosters.',
-                      highlights: ['8 Office Staff', '12 Field Coordinators', 'Permission Controls'],
+                      title: 'My Team',
+                      onTap: () => _navigateToModule(
+                        title: 'My Team',
+                        subtitle: 'Nagarsevak office staff, field coordinators and roles',
+                        category: 'Political',
+                        icon: Icons.groups_outlined,
+                        description: 'Staff directory with access permissions, task assignments, and duty rosters.',
+                        highlights: ['8 Office Staff', '12 Field Coordinators', 'Permission Controls'],
+                      ),
                     ),
-                  ),
-                  _DrawerSubItem(
-                    icon: Icons.groups_2_outlined,
-                    title: 'Opposition Information',
-                    onTap: () => _navigateToModule(
-                      title: 'Opposition Information',
-                      subtitle: 'Opposition candidate profiles, past records and public claims',
-                      category: 'Political',
+                    _DrawerSubItem(
                       icon: Icons.groups_2_outlined,
-                      description: 'Factual repository of statements, public meetings, and political movements in the ward.',
-                      highlights: ['Prabhag Political Profile', 'Booth Strengths/Weaknesses', 'Counter Strategy'],
+                      title: 'Opposition Information',
+                      onTap: () => _navigateToModule(
+                        title: 'Opposition Information',
+                        subtitle: 'Opposition candidate profiles, past records and public claims',
+                        category: 'Political',
+                        icon: Icons.groups_2_outlined,
+                        description: 'Factual repository of statements, public meetings, and political movements in the ward.',
+                        highlights: ['Prabhag Political Profile', 'Booth Strengths/Weaknesses', 'Counter Strategy'],
+                      ),
                     ),
-                  ),
-                  _DrawerSubItem(
-                    icon: Icons.apartment_outlined,
-                    title: 'NGO & Mandals Info',
-                    onTap: () => _navigateToModule(
-                      title: 'NGO & Mandals Info',
-                      subtitle: 'Social organizations, youth mandals and trust directory',
-                      category: 'Political',
+                    _DrawerSubItem(
                       icon: Icons.apartment_outlined,
-                      description: 'Contact register of Ganesh mandals, Navratri groups, sports clubs, and social welfare trusts.',
-                      highlights: ['42 Registered Mandals', 'Key Office Bearers', 'Festival Grant Log'],
+                      title: 'NGO & Mandals Info',
+                      onTap: () => _navigateToModule(
+                        title: 'NGO & Mandals Info',
+                        subtitle: 'Social organizations, youth mandals and trust directory',
+                        category: 'Political',
+                        icon: Icons.apartment_outlined,
+                        description: 'Contact register of Ganesh mandals, Navratri groups, sports clubs, and social welfare trusts.',
+                        highlights: ['42 Registered Mandals', 'Key Office Bearers', 'Festival Grant Log'],
+                      ),
                     ),
-                  ),
-                  _DrawerSubItem(
-                    icon: Icons.home_work_outlined,
-                    title: 'Housing Societies',
-                    onTap: () => _navigateToModule(
-                      title: 'Housing Societies',
-                      subtitle: 'Co-op housing society chairmen, secretaries and voter counts',
-                      category: 'Political',
+                    _DrawerSubItem(
                       icon: Icons.home_work_outlined,
-                      description: 'Directory of housing societies across Prabhag 12 with committee contact numbers and issues.',
-                      highlights: ['86 Housing Societies', 'Chairman & Secretary Contacts', 'Water/Drainage Tickets'],
+                      title: 'Housing Societies',
+                      onTap: () => _navigateToModule(
+                        title: 'Housing Societies',
+                        subtitle: 'Co-op housing society chairmen, secretaries and voter counts',
+                        category: 'Political',
+                        icon: Icons.home_work_outlined,
+                        description: 'Directory of housing societies across Prabhag 12 with committee contact numbers and issues.',
+                        highlights: ['86 Housing Societies', 'Chairman & Secretary Contacts', 'Water/Drainage Tickets'],
+                      ),
                     ),
-                  ),
-                  _DrawerSubItem(
-                    icon: Icons.warning_amber_rounded,
-                    title: 'Duplicate Voters',
-                    onTap: () => _navigateToModule(
-                      title: 'Duplicate Voters',
-                      subtitle: 'Electoral roll duplicate detection and verification audit',
-                      category: 'Political',
+                    _DrawerSubItem(
                       icon: Icons.warning_amber_rounded,
-                      description: 'Automated algorithmic scan identifying duplicate names, photos, and EPICs in the ward roll.',
-                      highlights: ['142 Suspected Duplicates', 'ECI Form 7 Deletion Desk', 'Clean Roll Audit'],
+                      title: 'Duplicate Voters',
+                      onTap: () => _navigateToModule(
+                        title: 'Duplicate Voters',
+                        subtitle: 'Electoral roll duplicate detection and verification audit',
+                        category: 'Political',
+                        icon: Icons.warning_amber_rounded,
+                        description: 'Automated algorithmic scan identifying duplicate names, photos, and EPICs in the ward roll.',
+                        highlights: ['142 Suspected Duplicates', 'ECI Form 7 Deletion Desk', 'Clean Roll Audit'],
+                      ),
                     ),
-                  ),
-                  _DrawerSubItem(
-                    icon: Icons.description_outlined,
-                    title: 'Voter Forms',
-                    onTap: () => _navigateToModule(
-                      title: 'Voter Forms',
-                      subtitle: 'ECI Form 6, Form 7, Form 8 registration helpdesk',
-                      category: 'Political',
+                    _DrawerSubItem(
                       icon: Icons.description_outlined,
-                      description: 'Direct citizen assistance desk for new voter additions, address corrections, and roll transfers.',
-                      highlights: ['Form 6 New Registration', 'Form 8 Correction', 'Ward Electoral Helpdesk'],
+                      title: 'Voter Forms',
+                      onTap: () => _navigateToModule(
+                        title: 'Voter Forms',
+                        subtitle: 'ECI Form 6, Form 7, Form 8 registration helpdesk',
+                        category: 'Political',
+                        icon: Icons.description_outlined,
+                        description: 'Direct citizen assistance desk for new voter additions, address corrections, and roll transfers.',
+                        highlights: ['Form 6 New Registration', 'Form 8 Correction', 'Ward Electoral Helpdesk'],
+                      ),
                     ),
-                  ),
-                  _DrawerSubItem(
-                    icon: Icons.assignment_ind_outlined,
-                    title: 'Karyakarta Work Management',
-                    onTap: () => _navigateToModule(
-                      title: 'Karyakarta Work Management',
-                      subtitle: 'Assign booth duties, letter distribution and follow-ups',
-                      category: 'Political',
+                    _DrawerSubItem(
                       icon: Icons.assignment_ind_outlined,
-                      description: 'Work allocation tracker for party workers with completion verification and photo proof.',
-                      highlights: ['24 Active Work Orders', 'Booth Distribution Status', 'Performance Tracker'],
+                      title: 'Karyakarta Work Management',
+                      onTap: () => _navigateToModule(
+                        title: 'Karyakarta Work Management',
+                        subtitle: 'Assign booth duties, letter distribution and follow-ups',
+                        category: 'Political',
+                        icon: Icons.assignment_ind_outlined,
+                        description: 'Work allocation tracker for party workers with completion verification and photo proof.',
+                        highlights: ['24 Active Work Orders', 'Booth Distribution Status', 'Performance Tracker'],
+                      ),
                     ),
-                  ),
+                  ],
+                  const Divider(height: 6, thickness: 0.8, color: Color(0xFFF1F5F9)),
                 ],
-
-                const Divider(height: 6, thickness: 0.8, color: Color(0xFFF1F5F9)),
 
                 // ==========================================
                 // 8) PUBLIC COMMUNICATION (nav.public_communication)
                 // ==========================================
-                _DrawerGroupHeader(
-                  title: 'Public Communication',
-                  icon: Icons.record_voice_over_outlined,
-                  isOpen: _openGroups['public_comm'] ?? true,
-                  onToggle: () => _toggleGroup('public_comm'),
-                ),
-                if (_openGroups['public_comm'] ?? true) ...[
-                  _DrawerSubItem(
-                    icon: Icons.sms_outlined,
-                    title: 'Send SMS',
-                    onTap: () => _navigateToModule(
-                      title: 'Send SMS',
-                      subtitle: 'Bulk SMS dispatch for ward updates and emergency alerts',
-                      category: 'Public Communication',
+                if (!isStaff || _groupHasPermittedItem(user, ['sms', 'whatsapp_message', 'voice_call', 'ai_voice_call', 'conference_room', 'whatsapp_call'])) ...[
+                  _DrawerGroupHeader(
+                    title: 'Public Communication',
+                    icon: Icons.record_voice_over_outlined,
+                    isOpen: _openGroups['public_comm'] ?? true,
+                    onToggle: () => _toggleGroup('public_comm'),
+                  ),
+                  if (_openGroups['public_comm'] ?? true) ...[
+                    _DrawerSubItem(
                       icon: Icons.sms_outlined,
-                      description: 'Send municipal water shutdown notices, vaccination camp alerts, and festive greetings.',
-                      highlights: ['DLT Registered Templates', 'Ward-wise Mobile Numbers', 'Delivery Reports'],
+                      title: 'Send SMS',
+                      onTap: () => _navigateToModule(
+                        title: 'Send SMS',
+                        subtitle: 'Bulk SMS dispatch for ward updates and emergency alerts',
+                        category: 'Public Communication',
+                        icon: Icons.sms_outlined,
+                        description: 'Send municipal water shutdown notices, vaccination camp alerts, and festive greetings.',
+                        highlights: ['DLT Registered Templates', 'Ward-wise Mobile Numbers', 'Delivery Reports'],
+                      ),
                     ),
-                  ),
-                  _DrawerSubItem(
-                    icon: Icons.chat_bubble_outline_rounded,
-                    title: 'WhatsApp Message',
-                    onTap: () => _navigateToModule(
-                      title: 'WhatsApp Message',
-                      subtitle: 'Official WhatsApp broadcast messages and society updates',
-                      category: 'Public Communication',
+                    _DrawerSubItem(
                       icon: Icons.chat_bubble_outline_rounded,
-                      description: 'Direct WhatsApp communication with society chairmen and active constituents.',
-                      highlights: ['Meta Cloud API Verified', 'Rich Media & PDF Attachments', 'Automated Replies'],
+                      title: 'WhatsApp Message',
+                      onTap: () => _navigateToModule(
+                        title: 'WhatsApp Message',
+                        subtitle: 'Official WhatsApp broadcast messages and society updates',
+                        category: 'Public Communication',
+                        icon: Icons.chat_bubble_outline_rounded,
+                        description: 'Direct WhatsApp communication with society chairmen and active constituents.',
+                        highlights: ['Meta Cloud API Verified', 'Rich Media & PDF Attachments', 'Automated Replies'],
+                      ),
                     ),
-                  ),
-                  _DrawerSubItem(
-                    icon: Icons.phone_forwarded_rounded,
-                    title: 'WhatsApp Call',
-                    onTap: () => _navigateToModule(
-                      title: 'WhatsApp Call',
-                      subtitle: 'Direct WhatsApp internet voice calls to ward constituents',
-                      category: 'Public Communication',
+                    _DrawerSubItem(
                       icon: Icons.phone_forwarded_rounded,
-                      description: 'Initiate 1-tap WhatsApp voice calls to verified voters across Prabhag 12.',
-                      highlights: ['Instant WhatsApp Dialer', 'Direct 1-on-1 Internet Calls', 'Call Activity Logs & PDF'],
+                      title: 'WhatsApp Call',
+                      onTap: () => _navigateToModule(
+                        title: 'WhatsApp Call',
+                        subtitle: 'Direct WhatsApp internet voice calls to ward constituents',
+                        category: 'Public Communication',
+                        icon: Icons.phone_forwarded_rounded,
+                        description: 'Initiate 1-tap WhatsApp voice calls to verified voters across Prabhag 12.',
+                        highlights: ['Instant WhatsApp Dialer', 'Direct 1-on-1 Internet Calls', 'Call Activity Logs & PDF'],
+                      ),
                     ),
-                  ),
-                  _DrawerSubItem(
-                    icon: Icons.phone_in_talk_outlined,
-                    title: 'Voice Call',
-                    onTap: () => _navigateToModule(
-                      title: 'Voice Call',
-                      subtitle: 'Outbound recorded voice broadcasts in Nagarsevak own voice',
-                      category: 'Public Communication',
+                    _DrawerSubItem(
                       icon: Icons.phone_in_talk_outlined,
-                      description: 'Broadcast personalized Marathi audio messages for major festival greetings and developmental news.',
-                      highlights: ['High Call Connect Rate', 'Personal Audio Voice Note', 'Call Completion Analytics'],
+                      title: 'Voice Call',
+                      onTap: () => _navigateToModule(
+                        title: 'Voice Call',
+                        subtitle: 'Outbound recorded voice broadcasts in Nagarsevak own voice',
+                        category: 'Public Communication',
+                        icon: Icons.phone_in_talk_outlined,
+                        description: 'Broadcast personalized Marathi audio messages for major festival greetings and developmental news.',
+                        highlights: ['High Call Connect Rate', 'Personal Audio Voice Note', 'Call Completion Analytics'],
+                      ),
                     ),
-                  ),
-                  _DrawerSubItem(
-                    icon: Icons.record_voice_over_rounded,
-                    title: 'AI Voice Call',
-                    onTap: () => _navigateToModule(
-                      title: 'AI Voice Call',
-                      subtitle: 'Interactive AI voice agent for citizen feedback collection',
-                      category: 'Public Communication',
+                    _DrawerSubItem(
                       icon: Icons.record_voice_over_rounded,
-                      description: 'Automated conversational calling system to ask citizens about water and garbage satisfaction.',
-                      highlights: ['Real-time Marathi AI Voice', 'Automated Survey Collection', 'Immediate Escalation'],
+                      title: 'AI Voice Call',
+                      onTap: () => _navigateToModule(
+                        title: 'AI Voice Call',
+                        subtitle: 'Interactive AI voice agent for citizen feedback collection',
+                        category: 'Public Communication',
+                        icon: Icons.record_voice_over_rounded,
+                        description: 'Automated conversational calling system to ask citizens about water and garbage satisfaction.',
+                        highlights: ['Real-time Marathi AI Voice', 'Automated Survey Collection', 'Immediate Escalation'],
+                      ),
                     ),
-                  ),
-                  _DrawerSubItem(
-                    icon: Icons.groups_outlined,
-                    title: 'Conference Room',
-                    onTap: () => _navigateToModule(
-                      title: 'Conference Room',
-                      subtitle: 'Multi-party bridge telephone calls with ward engineers and chairmen',
-                      category: 'Public Communication',
+                    _DrawerSubItem(
                       icon: Icons.groups_outlined,
-                      description: 'Instantly connect 50+ housing society secretaries on a single joint phone bridge call.',
-                      highlights: ['Instant 50+ Line Bridge', 'No Internet Required on Phone', 'Live Call Recording'],
+                      title: 'Conference Room',
+                      onTap: () => _navigateToModule(
+                        title: 'Conference Room',
+                        subtitle: 'Multi-party bridge telephone calls with ward engineers and chairmen',
+                        category: 'Public Communication',
+                        icon: Icons.groups_outlined,
+                        description: 'Instantly connect 50+ housing society secretaries on a single joint phone bridge call.',
+                        highlights: ['Instant 50+ Line Bridge', 'No Internet Required on Phone', 'Live Call Recording'],
+                      ),
                     ),
-                  ),
+                  ],
+                  const Divider(height: 6, thickness: 0.8, color: Color(0xFFF1F5F9)),
                 ],
-
-                const Divider(height: 6, thickness: 0.8, color: Color(0xFFF1F5F9)),
 
                 // ==========================================
                 // 9) ANALYSIS STRATEGY (nav.analysis_strategy) - Standalone Item
@@ -790,6 +806,24 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
                 const Divider(height: 6, thickness: 0.8, color: Color(0xFFF1F5F9)),
 
                 // ==========================================
+                // BAR CUSTOMIZATION (Navigation Shortcuts)
+                // ==========================================
+                _DrawerSingleItem(
+                  icon: Icons.tune_rounded,
+                  title: 'Bar Customization',
+                  onTap: () => _navigateToModule(
+                    title: 'Bar Customization',
+                    subtitle: 'Bottom bar & radial quick access shortcuts',
+                    category: 'System Settings',
+                    icon: Icons.tune_rounded,
+                    description: 'Personalize bottom bar navigation tabs and 5 radial quick gesture actions.',
+                    highlights: ['3 Bottom Bar Slots', '5 Radial Arc Slots', 'Cloud Synced'],
+                  ),
+                ),
+
+                const SizedBox(height: 4),
+
+                // ==========================================
                 // 10) PROFILE SETTINGS (Settings) - Standalone Item
                 // ==========================================
                 _DrawerSingleItem(
@@ -797,11 +831,11 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
                   title: 'Profile Settings',
                   onTap: () => _navigateToModule(
                     title: 'Profile Settings',
-                    subtitle: 'Nagarsevak profile, branding, bot & SMS gateway configuration',
+                    subtitle: 'Nagarsevak profile, branding & security configuration',
                     category: 'System Settings',
                     icon: Icons.settings_rounded,
-                    description: 'Configure official Nagarsevak identity, party branding, WhatsApp & SMS integrations, and security audit logs.',
-                    highlights: ['Profile Branding & Photo', 'WhatsApp Bot & SMS Gateway', 'Audit & Security Logs'],
+                    description: 'Configure official Nagarsevak identity, party branding, and security audit logs.',
+                    highlights: ['Profile Branding & Photo', 'Bar Customization', 'Audit & Security Logs'],
                   ),
                 ),
 
@@ -903,7 +937,13 @@ class _DrawerSubItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final active = ref.watch(activeScreenProvider) == resolveScreenKey(title);
+    final user = ref.watch(currentUserProvider);
+    final key = resolveScreenKey(title);
+    if (key != null && !userHasModulePermission(user, key)) {
+      return const SizedBox.shrink();
+    }
+
+    final active = ref.watch(activeScreenProvider) == key;
     return Container(
       margin: const EdgeInsets.only(left: 18, right: 8, top: 1, bottom: 1),
       decoration: BoxDecoration(
@@ -974,7 +1014,17 @@ class _DrawerSingleItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final active = ref.watch(activeScreenProvider) == resolveScreenKey(title);
+    final user = ref.watch(currentUserProvider);
+    final key = resolveScreenKey(title);
+    if (key != null &&
+        key != 'dashboard' &&
+        key != 'bar_customization' &&
+        key != 'profile_settings' &&
+        !userHasModulePermission(user, key)) {
+      return const SizedBox.shrink();
+    }
+
+    final active = ref.watch(activeScreenProvider) == key;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
       decoration: BoxDecoration(

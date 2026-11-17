@@ -26,10 +26,35 @@ class DiaryTasksRepository {
       }
 
       final response = await query.order('created_at', ascending: false).limit(200);
+      final rawList = response as List<dynamic>;
 
-      return (response as List<dynamic>)
-          .map((item) => DiaryTaskModel.fromJson(item as Map<String, dynamic>))
-          .toList();
+      // Resolve assigned staff names if assigned_staff_id exists but assigned_to is empty
+      final Map<String, String> staffMap = {};
+      try {
+        var sQuery = _client.from('staff').select('id, name');
+        if (_tenantId != null && _tenantId!.isNotEmpty) {
+          sQuery = sQuery.eq('tenant_id', _tenantId!);
+        }
+        final sRes = await sQuery;
+        for (final s in (sRes as List<dynamic>)) {
+          final m = s as Map<String, dynamic>;
+          if (m['id'] != null && m['name'] != null) {
+            staffMap[m['id'].toString()] = m['name'].toString();
+          }
+        }
+      } catch (_) {}
+
+      return rawList.map((item) {
+        final map = Map<String, dynamic>.from(item as Map);
+        if ((map['assigned_to'] == null || map['assigned_to'].toString().isEmpty) &&
+            map['assigned_staff_id'] != null) {
+          final sId = map['assigned_staff_id'].toString();
+          if (staffMap.containsKey(sId)) {
+            map['assigned_to'] = staffMap[sId];
+          }
+        }
+        return DiaryTaskModel.fromJson(map);
+      }).toList();
     } catch (_) {
       return [];
     }

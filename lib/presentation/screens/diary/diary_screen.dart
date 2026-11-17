@@ -61,8 +61,13 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
   List<String> get _uniqueAreas {
     final set = <String>{};
     for (final t in _allTasks) {
-      if (t.address != null && t.address!.trim().isNotEmpty) {
-        set.add(t.address!.trim());
+      final loc = (t.address != null && t.address!.trim().isNotEmpty)
+          ? t.address!.trim()
+          : (t.officeName != null && t.officeName!.trim().isNotEmpty)
+              ? t.officeName!.trim()
+              : '';
+      if (loc.isNotEmpty) {
+        set.add(loc);
       }
     }
     final list = set.toList();
@@ -107,8 +112,8 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
 
       // Area Filter
       if (_selectedArea != 'All') {
-        final taskArea = task.address ?? '';
-        if (!taskArea.toLowerCase().contains(_selectedArea.toLowerCase())) {
+        final taskArea = '${task.address ?? ""} ${task.officeName ?? ""}'.toLowerCase();
+        if (!taskArea.contains(_selectedArea.toLowerCase())) {
           return false;
         }
       }

@@ -217,35 +217,40 @@ class ComplaintModel {
       name = meta['submitter_name']?.toString();
       mobile = meta['submitter_mobile']?.toString();
     } else {
-      name = json['citizen_name'] ?? json['user_name'] ?? json['reporter_name'];
-      mobile = json['citizen_mobile'] ?? json['mobile'] ?? json['reporter_mobile'];
+      name = json['citizen_name'] ?? json['user_name'] ?? json['reporter_name'] ?? json['name'];
+      mobile = json['citizen_mobile'] ?? json['mobile'] ?? json['user_id'] ?? json['reporter_mobile'];
     }
 
     // Extract Title & Description matching ComplaintDetail.tsx logic
     String title = 'Request';
     String description = '';
 
-    if (meta != null && meta['original_title'] != null) {
-      title = meta['original_title']?.toString() ?? 'Request';
-      description = meta['original_description']?.toString() ?? json['description']?.toString() ?? '';
-    } else if (json['title'] != null && json['title'].toString().isNotEmpty) {
-      title = json['title'].toString();
-      description = json['description']?.toString() ?? '';
-    } else if (json['request_type'] != null && json['request_type'].toString().isNotEmpty) {
-      title = json['request_type'].toString();
-      description = json['description']?.toString() ?? '';
-    } else if (json['problem'] != null) {
-      final problemStr = json['problem'].toString();
+    if (meta != null && meta['original_title'] != null && meta['original_title'].toString().trim().isNotEmpty) {
+      title = meta['original_title'].toString().trim();
+      description = meta['original_description']?.toString().trim() ?? json['description']?.toString().trim() ?? '';
+    } else if (json['title'] != null && json['title'].toString().trim().isNotEmpty) {
+      title = json['title'].toString().trim();
+      description = json['description']?.toString().trim() ?? '';
+    } else if (json['request_type'] != null && json['request_type'].toString().trim().isNotEmpty) {
+      title = json['request_type'].toString().trim();
+      description = json['description']?.toString().trim() ?? '';
+    } else if (json['problem'] != null && json['problem'].toString().trim().isNotEmpty) {
+      final problemStr = json['problem'].toString().trim();
       final parts = problemStr.split('\n');
       if (parts.length > 1) {
         title = parts[0].trim();
         description = parts.sublist(1).join('\n').trim();
       } else {
         title = parts[0].trim();
-        description = json['description']?.toString() ?? '';
+        description = json['description']?.toString().trim() ?? parts[0].trim();
       }
     } else {
-      title = json['description']?.toString() ?? 'Civic Issue';
+      title = json['description']?.toString().trim() ?? 'Civic Issue';
+      description = json['description']?.toString().trim() ?? '';
+    }
+
+    if (description.isEmpty && title.isNotEmpty) {
+      description = title;
     }
 
     // Photos & Attachments

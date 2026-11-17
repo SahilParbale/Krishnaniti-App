@@ -878,18 +878,18 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                       color: Color(0xFF0F172A),
                     ),
                   ),
-                  const SizedBox(height: 4),
-
-                  // Description matching line 602
-                  Text(
-                    c.description,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF64748B),
+                  if (c.description.isNotEmpty && c.description != c.title) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      c.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF64748B),
+                      ),
                     ),
-                  ),
+                  ],
                   const SizedBox(height: 12),
 
                   const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
@@ -909,7 +909,7 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                           ),
                         ],
                       ),
-                      if (c.area != null || c.location != null) ...[
+                      if ((c.area != null && c.area!.isNotEmpty) || (c.location != null && c.location!.isNotEmpty)) ...[
                         Flexible(
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -918,9 +918,9 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                               const SizedBox(width: 3),
                               Flexible(
                                 child: Text(
-                                  c.area != null && c.location != null
+                                  c.area != null && c.location != null && c.area!.isNotEmpty && c.location!.isNotEmpty
                                       ? '${c.area!}, ${c.location!}'
-                                      : (c.area ?? c.location ?? ''),
+                                      : ((c.area != null && c.area!.isNotEmpty) ? c.area! : (c.location ?? '')),
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
                                 ),

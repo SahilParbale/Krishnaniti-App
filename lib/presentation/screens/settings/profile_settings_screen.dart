@@ -10,14 +10,20 @@ import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/custom_navigation_provider.dart';
 import '../../providers/navigation_provider.dart';
-import '../../widgets/app_modal_sheet.dart';
 import '../landing/landing_screen.dart';
+import 'bar_customization_screen.dart';
 
 class ProfileSettingsScreen extends ConsumerStatefulWidget {
   final VoidCallback? onBackToHome;
   final ValueChanged<int>? onTabChange;
+  final int? initialTab;
 
-  const ProfileSettingsScreen({super.key, this.onBackToHome, this.onTabChange});
+  const ProfileSettingsScreen({
+    super.key,
+    this.onBackToHome,
+    this.onTabChange,
+    this.initialTab,
+  });
 
   @override
   ConsumerState<ProfileSettingsScreen> createState() => _ProfileSettingsScreenState();
@@ -29,6 +35,8 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
   bool get wantKeepAlive => true;
   late TabController _tabController;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  int _getTabCount(bool isStaff) => isStaff ? 3 : 4;
 
   bool _isLoading = true;
   bool _isSaving = false;
@@ -48,13 +56,6 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
   String _profileImageUrl = '';
   String _partyLogoUrl = '';
   Map<String, dynamic> _rawConfig = {};
-
-  // SMS Gateway state
-  String _selectedSmsProvider = 'Fast2SMS';
-  final TextEditingController _smsApiKeyCtrl = TextEditingController();
-  final TextEditingController _smsSenderIdCtrl = TextEditingController();
-  final TextEditingController _smsDltEntityCtrl = TextEditingController();
-  bool _obscureSmsKey = true;
 
   // Security Logs
   List<Map<String, dynamic>> _securityLogs = [];
@@ -79,9 +80,17 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    final user = ref.read(currentUserProvider);
+    final isStaff = user?.isStaff ?? false;
+    final tabCount = _getTabCount(isStaff);
+    final initialIdx = widget.initialTab != null
+        ? widget.initialTab!.clamp(0, tabCount - 1)
+        : 0;
+    _tabController = TabController(length: tabCount, vsync: this, initialIndex: initialIdx);
     _loadTenantSettings();
-    _loadSecurityLogs();
+    if (!isStaff) {
+      _loadSecurityLogs();
+    }
     _loadSupportTickets();
   }
 
@@ -98,9 +107,6 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
     _emailCtrl.dispose();
     _socialLinkCtrl.dispose();
     _partyNameCtrl.dispose();
-    _smsApiKeyCtrl.dispose();
-    _smsSenderIdCtrl.dispose();
-    _smsDltEntityCtrl.dispose();
     _supportTitleCtrl.dispose();
     _supportDescCtrl.dispose();
     super.dispose();
@@ -366,76 +372,6 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
     }
   }
 
-  void _showTestSmsDialog() {
-    final phoneCtrl = TextEditingController(text: _phoneCtrl.text);
-    final msgCtrl = TextEditingController(
-      text: 'Ward 12 Office Test SMS: Gateway integration active and verified successfully.',
-    );
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: const [
-            Icon(Icons.sms_outlined, color: Color(0xFF0284C7)),
-            SizedBox(width: 8),
-            Text('Send Test SMS', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Recipient Phone Number', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
-            TextField(
-              controller: phoneCtrl,
-              keyboardType: TextInputType.phone,
-              decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.phone, size: 16),
-                isDense: true,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-            ),
-            const SizedBox(height: 10),
-            const Text('Test Message', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
-            TextField(
-              controller: msgCtrl,
-              maxLines: 3,
-              decoration: InputDecoration(
-                isDense: true,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0284C7),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            onPressed: () {
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Test SMS queued to ${phoneCtrl.text}! Check delivery in a moment.'),
-                  backgroundColor: const Color(0xFF0284C7),
-                ),
-              );
-            },
-            icon: const Icon(Icons.send, size: 15),
-            label: const Text('Send SMS'),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _showGlobalSignOutDialog() {
     showDialog(
       context: context,
@@ -480,6 +416,14 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
   Widget build(BuildContext context) {
     super.build(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final user = ref.watch(currentUserProvider);
+    final isStaff = user?.isStaff ?? false;
+
+    final tabCount = _getTabCount(isStaff);
+    if (_tabController.length != tabCount) {
+      _tabController.dispose();
+      _tabController = TabController(length: tabCount, vsync: this);
+    }
 
     return Scaffold(
       key: _scaffoldKey,
@@ -508,18 +452,18 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
-          children: const [
+          children: [
             Text(
-              'Profile Settings',
+              isStaff ? 'Staff Settings' : 'Profile Settings',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.bold, color: Colors.white),
+              style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.bold, color: Colors.white),
             ),
             Text(
-              'Profile details & system settings',
+              isStaff ? 'Bar customization & staff profile' : 'Profile details & system settings',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 10.5, color: Color(0xFFE0F2FE)),
+              style: const TextStyle(fontSize: 10.5, color: Color(0xFFE0F2FE)),
             ),
           ],
         ),
@@ -551,53 +495,74 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                       unselectedLabelColor: const Color(0xFF64748B),
                       labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                       dividerColor: Colors.transparent,
-                      tabs: const [
-                        Tab(
-                          child: Row(
-                            children: [
-                              Icon(Icons.person_outline, size: 14),
-                              SizedBox(width: 5),
-                              Text('Profile Details'),
+                      tabs: isStaff
+                          ? const [
+                              Tab(
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.tune_rounded, size: 14),
+                                    SizedBox(width: 5),
+                                    Text('Bar Customization'),
+                                  ],
+                                ),
+                              ),
+                              Tab(
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.badge_outlined, size: 14),
+                                    SizedBox(width: 5),
+                                    Text('My Profile'),
+                                  ],
+                                ),
+                              ),
+                              Tab(
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.support_agent_outlined, size: 14),
+                                    SizedBox(width: 5),
+                                    Text('Report Issue'),
+                                  ],
+                                ),
+                              ),
+                            ]
+                          : const [
+                              Tab(
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.person_outline, size: 14),
+                                    SizedBox(width: 5),
+                                    Text('Profile Details'),
+                                  ],
+                                ),
+                              ),
+                              Tab(
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.tune_rounded, size: 14),
+                                    SizedBox(width: 5),
+                                    Text('Bar Customization'),
+                                  ],
+                                ),
+                              ),
+                              Tab(
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.shield_outlined, size: 14),
+                                    SizedBox(width: 5),
+                                    Text('Security Logs'),
+                                  ],
+                                ),
+                              ),
+                              Tab(
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.support_agent_outlined, size: 14),
+                                    SizedBox(width: 5),
+                                    Text('Report Issue'),
+                                  ],
+                                ),
+                              ),
                             ],
-                          ),
-                        ),
-                        Tab(
-                          child: Row(
-                            children: [
-                              Icon(Icons.tune_rounded, size: 14),
-                              SizedBox(width: 5),
-                              Text('Bar Customization'),
-                            ],
-                          ),
-                        ),
-                        Tab(
-                          child: Row(
-                            children: [
-                              Icon(Icons.sms_outlined, size: 14),
-                              SizedBox(width: 5),
-                              Text('SMS Gateway'),
-                            ],
-                          ),
-                        ),
-                        Tab(
-                          child: Row(
-                            children: [
-                              Icon(Icons.shield_outlined, size: 14),
-                              SizedBox(width: 5),
-                              Text('Security Logs'),
-                            ],
-                          ),
-                        ),
-                        Tab(
-                          child: Row(
-                            children: [
-                              Icon(Icons.support_agent_outlined, size: 14),
-                              SizedBox(width: 5),
-                              Text('Report Issue'),
-                            ],
-                          ),
-                        ),
-                      ],
                     ),
                   ),
                 ),
@@ -665,13 +630,18 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                     },
                     child: TabBarView(
                       controller: _tabController,
-                      children: [
-                        _buildProfileTab(isDark),
-                        _buildBarCustomizationTab(isDark),
-                        _buildSmsTab(isDark),
-                        _buildSecurityTab(isDark),
-                        _buildSupportTab(isDark),
-                      ],
+                      children: isStaff
+                          ? [
+                              _buildBarCustomizationTab(isDark),
+                              _buildStaffProfileTab(isDark),
+                              _buildSupportTab(isDark),
+                            ]
+                          : [
+                              _buildProfileTab(isDark),
+                              _buildBarCustomizationTab(isDark),
+                              _buildSecurityTab(isDark),
+                              _buildSupportTab(isDark),
+                            ],
                     ),
                   ),
                 ),
@@ -978,739 +948,176 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Tab 2: Navigation Bar & Quick Actions Customization
+  // Tab: Navigation Bar & Quick Actions Customization
   // ─────────────────────────────────────────────────────────────
   Widget _buildBarCustomizationTab(bool isDark) {
+    return const SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(14, 14, 14, 80),
+      child: BarCustomizationView(),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Tab: Staff Profile / Account Info (Shown for Team Members)
+  // ─────────────────────────────────────────────────────────────
+  Widget _buildStaffProfileTab(bool isDark) {
     final isMr = ref.watch(isMarathiProvider);
-    final bottomSlots = ref.watch(customBottomBarProvider);
-    final quickSlots = ref.watch(customQuickActionsProvider);
+    final user = ref.watch(currentUserProvider);
+    final permittedModules = ref.watch(permittedModulesProvider);
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 90),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Banner Card
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0284C7), Color(0xFF0369A1)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF0284C7).withValues(alpha: 0.25),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.20),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.tune_rounded, color: Colors.white, size: 24),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isMr ? 'नेव्हिगेशन आणि द्रुत क्रिया सानुकूलन' : 'Bar & Quick Actions Customization',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        isMr
-                            ? 'आपल्या दैनंदिन कामासाठी बॉटम बार आणि 7 द्रुत क्रिया पर्याय बदला.'
-                            : 'Personalize your bottom bar tabs and 7 radial gesture actions to fit your daily civic workflow.',
-                        style: const TextStyle(
-                          color: Color(0xFFE0F2FE),
-                          fontSize: 11.5,
-                          height: 1.3,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // ─────────────────────────────────────────────────────────────
-          // SECTION 1: BOTTOM NAVIGATION BAR (3 CUSTOMIZABLE + 1 FIXED)
-          // ─────────────────────────────────────────────────────────────
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isMr ? 'बॉटम नेव्हिगेशन बार (4 पर्याय)' : 'Bottom Navigation Bar (4 Tabs)',
-                    style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    isMr
-                        ? 'पहिले 3 टॅब बदला. चौथा सेटिंग्ज पर्याय कायम निश्चित आहे.'
-                        : 'First 3 tabs are customizable. Tab 4 (Settings) is fixed.',
-                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                  ),
-                ],
-              ),
-              TextButton.icon(
-                onPressed: () {
-                  ref.read(customBottomBarProvider.notifier).resetToDefaults();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(isMr ? 'बॉटम बार डीफॉल्टवर रीसेट केला.' : 'Bottom bar tabs reset to defaults.'),
-                      backgroundColor: const Color(0xFF0284C7),
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.restore_rounded, size: 15, color: Color(0xFF0284C7)),
-                label: Text(isMr ? 'रीसेट' : 'Reset', style: const TextStyle(fontSize: 12, color: Color(0xFF0284C7))),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 8),
-
-          // 4 Bottom Bar Slots Preview
-          Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: isDark ? Colors.grey[800]! : const Color(0xFFE2E8F0)),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-              child: Column(
-                children: [
-                  for (int slotIdx = 0; slotIdx < 3; slotIdx++) ...[
-                    _buildBottomBarSlotTile(
-                      slotIndex: slotIdx,
-                      moduleKey: bottomSlots[slotIdx],
-                      isMr: isMr,
-                    ),
-                    if (slotIdx < 2) const Divider(height: 1, indent: 46),
-                  ],
-                  const Divider(height: 1, indent: 46),
-                  // Fixed Slot 3 (Settings)
-                  ListTile(
-                    dense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    leading: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(Icons.person_rounded, color: Color(0xFF64748B), size: 20),
-                    ),
-                    title: Text(
-                      isMr ? 'प्रोफाईल सेटिंग्ज' : 'Profile Settings',
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
-                    ),
-                    subtitle: Text(
-                      isMr ? 'टॅब 4 (कायम निश्चित पर्याय)' : 'Tab 4 (Permanently Fixed)',
-                      style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
-                    ),
-                    trailing: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.lock_rounded, size: 12, color: Color(0xFF64748B)),
-                          const SizedBox(width: 4),
-                          Text(
-                            isMr ? 'निश्चित' : 'Fixed',
-                            style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 22),
-
-          // ─────────────────────────────────────────────────────────────
-          // SECTION 2: RADIAL QUICK ACCESS ACTIONS (5 SLOTS)
-          // ─────────────────────────────────────────────────────────────
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isMr ? 'द्रुत क्रिया मेनू (5 पर्याय)' : 'Radial Quick Access Actions (5 Slots)',
-                    style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    isMr
-                        ? 'मध्यवर्ती बटण दाबून धरल्यावर किंवा ओढल्यावर दिसणारे 5 पर्याय.'
-                        : 'The 5 gesture actions on the curved glass running track.',
-                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                  ),
-                ],
-              ),
-              TextButton.icon(
-                onPressed: () {
-                  ref.read(customQuickActionsProvider.notifier).resetToDefaults();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(isMr ? 'द्रुत क्रिया डीफॉल्टवर रीसेट केल्या.' : 'Quick actions reset to defaults.'),
-                      backgroundColor: const Color(0xFF0284C7),
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.restore_rounded, size: 15, color: Color(0xFF0284C7)),
-                label: Text(isMr ? 'रीसेट' : 'Reset', style: const TextStyle(fontSize: 12, color: Color(0xFF0284C7))),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 8),
-
-          // 5 Radial Action Slots
-          Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: isDark ? Colors.grey[800]! : const Color(0xFFE2E8F0)),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-              child: Column(
-                children: [
-                  for (int slotIdx = 0; slotIdx < 5; slotIdx++) ...[
-                    _buildQuickActionSlotTile(
-                      slotIndex: slotIdx,
-                      moduleKey: quickSlots[slotIdx],
-                      isMr: isMr,
-                    ),
-                    if (slotIdx < 4) const Divider(height: 1, indent: 46),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomBarSlotTile({
-    required int slotIndex,
-    required String moduleKey,
-    required bool isMr,
-  }) {
-    final config = getModuleConfig(moduleKey);
-
-    return ListTile(
-      dense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      leading: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: const Color(0xFFE0F2FE),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(config.icon, color: const Color(0xFF0284C7), size: 20),
-      ),
-      title: Text(
-        isMr ? config.titleMr : config.titleEn,
-        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
-      ),
-      subtitle: Text(
-        'Tab ${slotIndex + 1} • ${config.category}',
-        style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
-      ),
-      trailing: ElevatedButton.icon(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFF0F9FF),
-          foregroundColor: const Color(0xFF0284C7),
-          elevation: 0,
-          side: const BorderSide(color: Color(0xFFBAE6FD)),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          minimumSize: const Size(60, 30),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-        ),
-        onPressed: () {
-          _showModulePicker(
-            context: context,
-            title: isMr ? 'टॅब ${slotIndex + 1} साठी पर्याय निवडा' : 'Select Module for Tab ${slotIndex + 1}',
-            currentKey: moduleKey,
-            onSelected: (newKey) {
-              ref.read(customBottomBarProvider.notifier).setSlot(slotIndex, newKey);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    isMr
-                        ? 'टॅब ${slotIndex + 1} "${getModuleConfig(newKey).titleMr}" वर बदलला.'
-                        : 'Tab ${slotIndex + 1} updated to "${getModuleConfig(newKey).titleEn}".',
-                  ),
-                  backgroundColor: const Color(0xFF0284C7),
-                  duration: const Duration(seconds: 2),
-                ),
-              );
-            },
-          );
-        },
-        icon: const Icon(Icons.edit_rounded, size: 12),
-        label: Text(isMr ? 'बदला' : 'Change', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-      ),
-    );
-  }
-
-  Widget _buildQuickActionSlotTile({
-    required int slotIndex,
-    required String moduleKey,
-    required bool isMr,
-  }) {
-    final config = getModuleConfig(moduleKey);
-
-    final positionLabelsEn = [
-      'Slot 1 • Left Arc (162°)',
-      'Slot 2 • Left Upper Arc (126°)',
-      'Slot 3 • Top Center Arc (90°)',
-      'Slot 4 • Right Upper Arc (54°)',
-      'Slot 5 • Right Arc (18°)',
-    ];
-
-    final positionLabelsMr = [
-      'पर्याय 1 • डावा चाप (162°)',
-      'पर्याय 2 • डावा वरील चाप (126°)',
-      'पर्याय 3 • मध्य शिखर चाप (90°)',
-      'पर्याय 4 • उजवा वरील चाप (54°)',
-      'पर्याय 5 • उजवा चाप (18°)',
-    ];
-
-    return ListTile(
-      dense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      leading: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: const Color(0xFFE0F2FE),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(config.icon, color: const Color(0xFF0284C7), size: 20),
-      ),
-      title: Text(
-        isMr ? config.titleMr : config.titleEn,
-        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
-      ),
-      subtitle: Text(
-        isMr ? positionLabelsMr[slotIndex] : positionLabelsEn[slotIndex],
-        style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
-      ),
-      trailing: ElevatedButton.icon(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFF0F9FF),
-          foregroundColor: const Color(0xFF0284C7),
-          elevation: 0,
-          side: const BorderSide(color: Color(0xFFBAE6FD)),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          minimumSize: const Size(60, 30),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-        ),
-        onPressed: () {
-          _showModulePicker(
-            context: context,
-            title: isMr
-                ? '${positionLabelsMr[slotIndex]} साठी पर्याय निवडा'
-                : 'Select Action for ${positionLabelsEn[slotIndex]}',
-            currentKey: moduleKey,
-            onSelected: (newKey) {
-              ref.read(customQuickActionsProvider.notifier).setSlot(slotIndex, newKey);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    isMr
-                        ? 'क्रिया ${slotIndex + 1} "${getModuleConfig(newKey).titleMr}" वर बदलली.'
-                        : 'Quick Action ${slotIndex + 1} updated to "${getModuleConfig(newKey).titleEn}".',
-                  ),
-                  backgroundColor: const Color(0xFF0284C7),
-                  duration: const Duration(seconds: 2),
-                ),
-              );
-            },
-          );
-        },
-        icon: const Icon(Icons.edit_rounded, size: 12),
-        label: Text(isMr ? 'बदला' : 'Change', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-      ),
-    );
-  }
-
-  void _showModulePicker({
-    required BuildContext context,
-    required String title,
-    required String currentKey,
-    required ValueChanged<String> onSelected,
-  }) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        String query = '';
-        return StatefulBuilder(
-          builder: (modalCtx, setModalState) {
-            final isMr = ref.read(isMarathiProvider);
-            final filtered = kAllAvailableModules.where((item) {
-              if (query.isEmpty) return true;
-              final q = query.toLowerCase();
-              return item.titleEn.toLowerCase().contains(q) ||
-                  item.titleMr.toLowerCase().contains(q) ||
-                  item.category.toLowerCase().contains(q);
-            }).toList();
-
-            return Container(
-              height: MediaQuery.of(context).size.height * 0.75,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 20,
-                    offset: Offset(0, -4),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  // 1. FIXED HEADER
-                  AppModalHeader(
-                    icon: Icons.tune_rounded,
-                    title: title,
-                    subtitle: isMr ? 'प्रणालीमधील विभाग निवडा' : 'Select module shortcut',
-                    onClose: () => Navigator.pop(modalCtx),
-                  ),
-
-                  // Search Bar
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                    child: TextField(
-                      autofocus: false,
-                      decoration: InputDecoration(
-                        hintText: isMr ? 'पर्याय शोधा...' : 'Search page or module...',
-                        hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                        prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Color(0xFF64748B)),
-                        filled: true,
-                        fillColor: const Color(0xFFF1F5F9),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                      onChanged: (v) {
-                        setModalState(() => query = v);
-                      },
-                    ),
-                  ),
-
-                  const Divider(height: 12),
-
-                  // Module List
-                  Expanded(
-                    child: filtered.isEmpty
-                        ? Center(
-                            child: Text(
-                              isMr ? 'कोणतेही पर्याय आढळले नाहीत.' : 'No modules match your search.',
-                              style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
-                            ),
-                          )
-                        : ListView.separated(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                            itemCount: filtered.length,
-                            separatorBuilder: (_, _) => const Divider(height: 1),
-                            itemBuilder: (ctx, idx) {
-                              final mod = filtered[idx];
-                              final isSelected = mod.key == currentKey;
-
-                              return Material(
-                                color: isSelected ? const Color(0xFFF0F9FF) : Colors.transparent,
-                                borderRadius: BorderRadius.circular(8),
-                                child: InkWell(
-                                  onTap: () {
-                                    Navigator.pop(modalCtx);
-                                    onSelected(mod.key);
-                                  },
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          width: 38,
-                                          height: 38,
-                                          decoration: BoxDecoration(
-                                            color: isSelected
-                                                ? const Color(0xFF0284C7)
-                                                : const Color(0xFFE0F2FE),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Icon(
-                                            mod.icon,
-                                            color: isSelected ? Colors.white : const Color(0xFF0284C7),
-                                            size: 20,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                isMr ? mod.titleMr : mod.titleEn,
-                                                style: TextStyle(
-                                                  fontSize: 13.5,
-                                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                                                  color: isSelected ? const Color(0xFF0284C7) : const Color(0xFF1E293B),
-                                                ),
-                                              ),
-                                              const SizedBox(height: 2),
-                                              Text(
-                                                '${isMr ? mod.titleEn : mod.titleMr} • ${mod.category}',
-                                                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        if (isSelected)
-                                          const Icon(Icons.check_circle_rounded, color: Color(0xFF0284C7), size: 20)
-                                        else
-                                          const Icon(Icons.chevron_right_rounded, color: Color(0xFFCBD5E1), size: 20),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // Tab 3: SMS Gateway
-  // ─────────────────────────────────────────────────────────────
-  Widget _buildSmsTab(bool isDark) {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 80),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Quota Banner Card
+          // Staff Identity Card
           Card(
             elevation: 0,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-              side: const BorderSide(color: Color(0xFFBAE6FD)),
+              borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(color: Color(0xFFE2E8F0)),
             ),
-            color: const Color(0xFFF0F9FF),
             child: Padding(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE0F2FE),
-                      borderRadius: BorderRadius.circular(10),
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor: const Color(0xFFE0F2FE),
+                    child: Text(
+                      (user?.name.isNotEmpty ?? false) ? user!.name[0].toUpperCase() : 'S',
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                     ),
-                    child: const Icon(Icons.sms_outlined, color: Color(0xFF0284C7), size: 24),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Text('Fast2SMS Enterprise Plan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                        SizedBox(height: 2),
-                        Text('18,450 / 25,000 SMS Balance Remaining · DLT Approved', style: TextStyle(fontSize: 11, color: Color(0xFF0369A1))),
+                      children: [
+                        Text(
+                          user?.name ?? (isMr ? 'कार्यकर्ता / कर्मचारी' : 'Staff Member'),
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          user?.email ?? '',
+                          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                        ),
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE0F2FE),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            isMr ? 'अधिकृत टीम सदस्य' : 'Authorized Team Member',
+                            style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
+                          ),
+                        ),
                       ],
                     ),
-                  ),
-                  ElevatedButton(
-                    onPressed: _showTestSmsDialog,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0284C7),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    ),
-                    child: const Text('Test SMS', style: TextStyle(fontSize: 11)),
                   ),
                 ],
               ),
             ),
           ),
 
-          const SizedBox(height: 14),
+          const SizedBox(height: 20),
 
-          // Provider Config Card
-          Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
+          // Permitted Modules Section
+          Row(
+            children: [
+              const Icon(Icons.verified_user_outlined, size: 18, color: Color(0xFF0284C7)),
+              const SizedBox(width: 8),
+              Text(
+                isMr
+                    ? 'आपल्याला दिलेले अधिकार (${permittedModules.length} विभाग)'
+                    : 'Assigned Permissions (${permittedModules.length} Modules)',
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            isMr
+                ? 'हे विभाग नगरसेवक / ॲडमिन कार्यालयाने आपल्या खात्यास नियुक्त केले आहेत.'
+                : 'These module privileges have been granted to your staff profile by the Nagarsevak office.',
+            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+          ),
+          const SizedBox(height: 12),
+
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: permittedModules.map((item) {
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(item.icon, size: 15, color: const Color(0xFF0284C7)),
+                    const SizedBox(width: 6),
+                    Text(
+                      isMr ? item.titleMr : item.titleEn,
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+
+          const SizedBox(height: 24),
+
+          // Bar Customization Call-to-action
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0F9FF),
               borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: isDark ? Colors.grey[800]! : const Color(0xFFE2E8F0)),
+              border: Border.all(color: const Color(0xFFBAE6FD)),
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Gateway Credentials & DLT Headers', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold)),
-                  const Divider(height: 18),
-
-                  // Provider dropdown
-                  const Text('Active Gateway Provider', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: const Color(0xFFCBD5E1)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: _selectedSmsProvider,
-                        isExpanded: true,
-                        items: ['Fast2SMS', 'Twilio SMS', 'MSG91 Enterprise'].map((p) {
-                          return DropdownMenuItem(value: p, child: Text(p, style: const TextStyle(fontSize: 13)));
-                        }).toList(),
-                        onChanged: (val) {
-                          if (val != null) setState(() => _selectedSmsProvider = val);
-                        },
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // API Key
-                  const Text('API Key / Token', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 4),
-                  TextField(
-                    controller: _smsApiKeyCtrl,
-                    obscureText: _obscureSmsKey,
-                    decoration: InputDecoration(
-                      isDense: true,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                      suffixIcon: IconButton(
-                        icon: Icon(_obscureSmsKey ? Icons.visibility : Icons.visibility_off, size: 18),
-                        onPressed: () => setState(() => _obscureSmsKey = !_obscureSmsKey),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  Row(
+            child: Row(
+              children: [
+                const Icon(Icons.tune_rounded, color: Color(0xFF0284C7), size: 24),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Sender ID (DLT Header)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 4),
-                            TextField(
-                              controller: _smsSenderIdCtrl,
-                              decoration: InputDecoration(
-                                isDense: true,
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                              ),
-                            ),
-                          ],
-                        ),
+                      Text(
+                        isMr ? 'नेव्हिगेशन सानुकूल करा' : 'Customize Your Navigation',
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('DLT Entity ID', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 4),
-                            TextField(
-                              controller: _smsDltEntityCtrl,
-                              decoration: InputDecoration(
-                                isDense: true,
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                              ),
-                            ),
-                          ],
-                        ),
+                      const SizedBox(height: 2),
+                      Text(
+                        isMr
+                            ? 'आपल्या आवडीनुसार बॉटम बार आणि 5 द्रुत क्रिया पर्याय सेट करा.'
+                            : 'Assign your most frequently used permitted modules to bottom bar tabs and quick gestures.',
+                        style: const TextStyle(fontSize: 11, color: Color(0xFF475569)),
                       ),
                     ],
                   ),
-
-                  const SizedBox(height: 16),
-
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('SMS gateway configuration updated successfully!'),
-                            backgroundColor: Color(0xFF0284C7),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.save, size: 16),
-                      label: const Text('Update SMS Settings'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0284C7),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                    ),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0284C7),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   ),
-                ],
-              ),
+                  onPressed: () {
+                    _tabController.animateTo(0);
+                  },
+                  child: Text(isMr ? 'सेट करा' : 'Open', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                ),
+              ],
             ),
           ),
         ],
@@ -1719,7 +1126,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Tab 4: Security Logs
+  // Tab: Security Logs
   // ─────────────────────────────────────────────────────────────
   Widget _buildSecurityTab(bool isDark) {
     final filtered = _securityLogs.where((log) {

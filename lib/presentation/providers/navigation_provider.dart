@@ -56,7 +56,7 @@ class ActiveScreenNotifier extends Notifier<String> {
 final activeScreenProvider = NotifierProvider<ActiveScreenNotifier, String>(ActiveScreenNotifier.new);
 
 final canPopProvider = Provider<bool>((ref) {
-  final active = ref.watch(activeScreenProvider);
+  ref.watch(activeScreenProvider);
   return ref.read(activeScreenProvider.notifier).canPop;
 });
 
@@ -87,6 +87,7 @@ String? resolveScreenKey(String raw) {
   if (lower.contains('complaint') || lower.contains('request') || lower.contains('तक्रार') || lower.contains('विनंती')) return 'complaints';
   if (lower == 'letters' || lower.contains('correspondence') || lower.contains('letter') || lower.contains('पत्र')) return 'letters';
   if (lower.contains('profile settings') || lower.contains('settings') || lower.contains('सेटिंग्ज')) return 'profile_settings';
+  if (lower.contains('bar customization') || lower.contains('bar_customization') || lower.contains('customization') || lower.contains('सानुकूलन')) return 'bar_customization';
   if (lower == 'ward map' || lower.contains('ward map') || lower.contains('नकाशा')) return 'ward_map';
   if (lower.contains('ward problem') || lower.contains('ward_problem') || lower.contains('समस्या')) return 'ward_problems';
   if (lower.contains('work history') || lower.contains('कामे') || lower.contains('इतिहास')) return 'work_history';

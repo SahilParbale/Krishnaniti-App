@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 
 class WorkFeedbackModel {
@@ -75,20 +76,38 @@ class WorkHistoryModel {
         .map((f) => WorkFeedbackModel.fromJson(f as Map<String, dynamic>))
         .toList();
 
+    Map<String, dynamic>? meta;
+    if (json['metadata'] != null) {
+      if (json['metadata'] is Map) {
+        meta = Map<String, dynamic>.from(json['metadata'] as Map);
+      } else if (json['metadata'] is String && (json['metadata'] as String).trim().isNotEmpty) {
+        try {
+          meta = Map<String, dynamic>.from(jsonDecode(json['metadata'] as String) as Map);
+        } catch (_) {}
+      }
+    }
+
+    final peopleBenefited = meta?['people_benefited'] is num
+        ? (meta!['people_benefited'] as num).toInt()
+        : int.tryParse(meta?['people_benefited']?.toString() ?? '') ??
+            (json['people_benefited'] is num ? (json['people_benefited'] as num).toInt() : int.tryParse(json['people_benefited']?.toString() ?? '')) ??
+            (json['peopleBenefited'] is num ? (json['peopleBenefited'] as num).toInt() : int.tryParse(json['peopleBenefited']?.toString() ?? ''));
+
+    final amount = (json['amount'] is num ? (json['amount'] as num).toDouble() : double.tryParse(json['amount']?.toString() ?? '')) ??
+        (json['budget'] is num ? (json['budget'] as num).toDouble() : double.tryParse(json['budget']?.toString() ?? ''));
+
     return WorkHistoryModel(
       id: json['id']?.toString() ?? '',
       source: json['source'] ?? 'Manual',
-      title: json['title'] ?? '',
-      description: json['description'] ?? '',
-      location: json['location'] ?? '',
-      area: json['area'] ?? 'Ward 12',
-      status: json['status'] ?? 'Planned',
-      date: json['completion_date'] ?? json['date'] ?? json['created_at'] ?? '',
-      citizenName: json['citizen_name'] ?? json['citizenName'],
-      amount: (json['amount'] as num?)?.toDouble(),
-      peopleBenefited: (json['metadata']?['people_benefited'] as num?)?.toInt() ??
-          (json['people_benefited'] as num?)?.toInt() ??
-          (json['peopleBenefited'] as num?)?.toInt(),
+      title: json['title']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
+      location: json['location']?.toString() ?? '',
+      area: json['area']?.toString() ?? '',
+      status: json['status']?.toString() ?? 'Planned',
+      date: json['completion_date']?.toString() ?? json['date']?.toString() ?? json['created_at']?.toString() ?? '',
+      citizenName: json['citizen_name']?.toString() ?? json['citizenName']?.toString(),
+      amount: amount,
+      peopleBenefited: peopleBenefited,
       feedbackRating: (json['feedback_rating'] as num?)?.toDouble() ?? 4.8,
       feedbackCount: (json['feedback_count'] as num?)?.toInt() ?? parsedFeedbacks.length,
       feedbacks: parsedFeedbacks,

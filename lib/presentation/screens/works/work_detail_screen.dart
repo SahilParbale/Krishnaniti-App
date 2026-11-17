@@ -669,7 +669,7 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                                   icon: Icons.place_outlined,
                                   iconColor: Colors.red.shade600,
                                   label: isMr ? 'ठिकाण (Location)' : 'Location',
-                                  value: w.location,
+                                  value: w.location.isNotEmpty ? w.location : (w.area.isNotEmpty ? w.area : 'Prabhag Area'),
                                 ),
                               ),
                               const SizedBox(width: 8),

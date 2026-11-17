@@ -630,7 +630,9 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
                           ),
                           const Divider(height: 20),
                           Text(
-                            entry.description,
+                            entry.description.isNotEmpty
+                                ? entry.description
+                                : (isMr ? 'या सभेच्या विषयाबाबत विस्तृत नोंद उपलब्ध नाही.' : 'No detailed motion description recorded.'),
                             style: const TextStyle(
                               fontSize: 14,
                               color: Color(0xFF334155),
@@ -731,7 +733,7 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
                           _infoRow(
                             icon: Icons.location_on_outlined,
                             label: isMr ? 'परिसर / प्रभाग' : 'Area / Prabhag',
-                            value: entry.area,
+                            value: entry.area.isNotEmpty ? entry.area : (isMr ? 'सर्व प्रभाग' : 'Entire Prabhag'),
                           ),
                           if (entry.beneficiaries != null) ...[
                             const SizedBox(height: 12),

@@ -31,18 +31,7 @@ class ComplaintsRepository {
     int limit = 50,
   }) async {
     try {
-      var query = _client.from('complaints').select('''
-        *,
-        voter:voters (
-          name_marathi,
-          name_english,
-          mobile
-        ),
-        staff:staff (
-          name,
-          mobile
-        )
-      ''');
+      var query = _client.from('complaints').select('*');
 
       if (_tenantId != null) {
         query = query.eq('tenant_id', _tenantId!);
@@ -69,18 +58,7 @@ class ComplaintsRepository {
       final actualId = _getActualId(id);
 
       if (table == 'complaints') {
-        var query = _client.from('complaints').select('''
-          *,
-          voter:voters (
-            name_marathi,
-            name_english,
-            mobile
-          ),
-          staff:staff (
-            name,
-            mobile
-          )
-        ''').eq('id', actualId);
+        var query = _client.from('complaints').select('*').eq('id', actualId);
 
         if (_tenantId != null) {
           query = query.eq('tenant_id', _tenantId!);
@@ -433,18 +411,7 @@ class ComplaintsRepository {
     int limit = 100,
   }) async {
     try {
-      var query = _client.from('personal_requests').select('''
-        *,
-        voter:voters (
-          name_marathi,
-          name_english,
-          mobile
-        ),
-        staff:staff (
-          name,
-          mobile
-        )
-      ''');
+      var query = _client.from('personal_requests').select('*');
 
       if (_tenantId != null && _tenantId!.isNotEmpty) {
         query = query.eq('tenant_id', _tenantId!);
@@ -462,23 +429,7 @@ class ComplaintsRepository {
         return ComplaintModel.fromJson(map);
       }).toList();
     } catch (_) {
-      try {
-        var query = _client.from('personal_requests').select('*');
-        if (_tenantId != null && _tenantId!.isNotEmpty) {
-          query = query.eq('tenant_id', _tenantId!);
-        }
-        if (statusFilter != null && statusFilter != 'All' && statusFilter.isNotEmpty) {
-          query = query.eq('status', statusFilter);
-        }
-        final response = await query.order('created_at', ascending: false).limit(limit);
-        return (response as List<dynamic>).map((item) {
-          final map = Map<String, dynamic>.from(item as Map);
-          map['id'] = 'pr-${map['id']}';
-          return ComplaintModel.fromJson(map);
-        }).toList();
-      } catch (_) {
-        return [];
-      }
+      return [];
     }
   }
 
@@ -503,21 +454,20 @@ class ComplaintsRepository {
         : area;
 
     final payload = {
-      'title': title,
-      'problem': title,
-      'description': description,
+      'problem': description.isNotEmpty ? '$title\n$description' : title,
       'category': category,
       'status': 'Pending',
       'priority': priority ?? 'Medium',
       'ward': ward,
       'area': effectiveArea,
-      'location': ward != null ? (ward.startsWith('Sector') ? ward : 'Ward $ward') : null,
+      'location': ward != null ? (ward.startsWith('Sector') || ward.startsWith('Ward') ? ward : 'Ward $ward') : effectiveArea,
       'source': 'Mobile App',
+      if (citizenName != null) 'user_name': citizenName,
       if (citizenName != null) 'citizen_name': citizenName,
       if (citizenMobile != null) 'citizen_mobile': citizenMobile,
       if (voterId != null) 'voter_id': voterId,
       if (addedByStaffId != null && addedByStaffId.isNotEmpty) 'added_by_staff_id': addedByStaffId,
-      'photos': photos,
+      if (photos.isNotEmpty) 'image_url': photos.first,
       if (attachments.isNotEmpty) 'attachments': attachments.map((a) => a.toJson()).toList(),
       'description_meta': {
         if (citizenName != null) 'submitter_name': citizenName,
@@ -645,18 +595,7 @@ class ComplaintsRepository {
 
       // 1. Fetch complaints where category is SelfIdentified or general civic issues
       try {
-        var cQuery = _client.from('complaints').select('''
-          *,
-          voter:voters (
-            name_marathi,
-            name_english,
-            mobile
-          ),
-          staff:staff (
-            name,
-            mobile
-          )
-        ''');
+        var cQuery = _client.from('complaints').select('*');
         if (_tenantId != null) {
           cQuery = cQuery.eq('tenant_id', _tenantId!);
         }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../data/models/user_model.dart';
+import '../../data/repositories/bar_customization_repository.dart';
+import 'auth_provider.dart';
 
 class NavItemConfig {
   final String key;
@@ -313,6 +315,114 @@ NavItemConfig getModuleConfig(String key) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 0. Permission Evaluation for Team Members
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Checks if a user has permission to access and configure a specific module.
+/// Admins have full access to all modules. Team members (staff) only have access
+/// to modules matching their assigned permissions list.
+bool userHasModulePermission(UserModel? user, String moduleKey) {
+  if (user == null || user.isAdmin) return true;
+  if (!user.isStaff) return true;
+
+  // Overview and system settings are always accessible
+  if (moduleKey == 'dashboard' || moduleKey == 'profile_settings') return true;
+
+  final perms = user.permissions;
+  if (perms.isEmpty) return false;
+
+  switch (moduleKey) {
+    case 'complaints':
+      return perms.contains('complaints');
+    case 'letters':
+      return perms.contains('letters');
+    case 'diary':
+      return perms.contains('tasks') || perms.contains('diary');
+    case 'visitors':
+      return perms.contains('visitors');
+    case 'schemes':
+      return perms.contains('schemes');
+    case 'ward_problems':
+      return perms.contains('ward_problems');
+    case 'ward_map':
+      return perms.contains('ward_info') || perms.contains('ward_map');
+    case 'work_history':
+      return perms.contains('work_history');
+    case 'improvements':
+      return perms.contains('improvements');
+    case 'provisions':
+      return perms.contains('provision') || perms.contains('provisions');
+    case 'gb_register':
+      return perms.contains('gb_register');
+    case 'ward_budget':
+      return perms.contains('budget') || perms.contains('ward_budget');
+    case 'gov_office':
+      return perms.contains('gov_office');
+    case 'social_analytics':
+      return perms.contains('social') || perms.contains('social_analytics');
+    case 'newspaper':
+      return perms.contains('newspaper');
+    case 'media_tracking':
+      return perms.contains('media_tracking');
+    case 'ai_content':
+      return perms.contains('ai_content');
+    case 'events':
+      return perms.contains('events');
+    case 'gallery':
+      return perms.contains('gallery');
+    case 'result_analysis':
+      return perms.contains('results') || perms.contains('result_analysis');
+    case 'sadasya':
+      return perms.contains('sadasya');
+    case 'surveys':
+      return perms.contains('surveys');
+    case 'voters':
+      return perms.contains('voters');
+    case 'team':
+      return perms.contains('staff') || perms.contains('team');
+    case 'opposition':
+      return perms.contains('opposition');
+    case 'ngo_mandals':
+      return perms.contains('social_organizations') || perms.contains('ngo_mandals');
+    case 'housing_societies':
+      return perms.contains('housing_societies');
+    case 'duplicate_voters':
+      return perms.contains('voters') || perms.contains('duplicate_voters');
+    case 'voter_forms':
+      return perms.contains('voter_forms');
+    case 'karyakarta_work':
+      return perms.contains('karyakarta_work');
+    case 'sms':
+      return perms.contains('public_comm') || perms.contains('sms');
+    case 'whatsapp_message':
+      return perms.contains('public_comm') || perms.contains('whatsapp') || perms.contains('whatsapp_message');
+    case 'whatsapp_call':
+      return perms.contains('public_comm') || perms.contains('whatsapp_call');
+    case 'voice_call':
+      return perms.contains('public_comm') || perms.contains('voice_call');
+    case 'ai_voice_call':
+      return perms.contains('public_comm') || perms.contains('ai_voice_call');
+    case 'conference_room':
+      return perms.contains('public_comm') || perms.contains('conference_room');
+    case 'analysis_strategy':
+      return perms.contains('analysis') || perms.contains('analysis_strategy');
+    default:
+      return perms.contains(moduleKey);
+  }
+}
+
+/// Returns the selectable modules available for the current user.
+/// For team members, this filters out any restricted modules so only allowed
+/// features are visible in the customization picker.
+final permittedModulesProvider = Provider<List<NavItemConfig>>((ref) {
+  final user = ref.watch(currentUserProvider);
+  if (user == null || user.isAdmin) {
+    return kAllAvailableModules;
+  }
+  return kAllAvailableModules.where((item) => userHasModulePermission(user, item.key)).toList();
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 1. Bottom Bar Customizable Slots (3 slots: Tab 0, Tab 1, Tab 2. Tab 3 is fixed)
 // ─────────────────────────────────────────────────────────────────────────────
 const List<String> kDefaultBottomBarSlots = [
@@ -322,22 +432,54 @@ const List<String> kDefaultBottomBarSlots = [
 ];
 
 class CustomBottomBarNotifier extends Notifier<List<String>> {
-  static const String _prefKey = 'custom_bottom_bar_slots';
-
   @override
   List<String> build() {
-    _loadFromPrefs();
+    // 1. Start with defaults or cached local slots
+    _initSlots();
     return List.from(kDefaultBottomBarSlots);
   }
 
-  Future<void> _loadFromPrefs() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final saved = prefs.getStringList(_prefKey);
-      if (saved != null && saved.length == 3) {
-        state = List.from(saved);
+  Future<void> _initSlots() async {
+    final repo = ref.read(barCustomizationRepoProvider);
+    final user = ref.read(currentUserProvider);
+
+    // Load from local storage cache first for instant UI
+    final cached = await repo.getLocalBottomSlots();
+    if (cached != null && cached.length == 3) {
+      state = _sanitizeForUser(cached, user);
+    }
+
+    // Then pull latest from Supabase Database
+    final dbResult = await repo.loadFromDatabase(
+      userId: user?.id,
+      isStaff: user?.isStaff ?? false,
+    );
+    if (dbResult.bottomSlots != null && dbResult.bottomSlots!.length == 3) {
+      state = _sanitizeForUser(dbResult.bottomSlots!, user);
+    }
+  }
+
+  List<String> _sanitizeForUser(List<String> rawSlots, UserModel? user) {
+    if (user == null || user.isAdmin) return List.from(rawSlots);
+    final permitted = kAllAvailableModules
+        .where((m) => userHasModulePermission(user, m.key))
+        .map((m) => m.key)
+        .toList();
+
+    final sanitized = <String>[];
+    for (int i = 0; i < 3; i++) {
+      if (i < rawSlots.length && (rawSlots[i] == 'dashboard' || permitted.contains(rawSlots[i]))) {
+        sanitized.add(rawSlots[i]);
+      } else {
+        // Fallback to first available permitted module not already chosen
+        final fallback = permitted.firstWhere(
+          (k) => !sanitized.contains(k),
+          orElse: () => 'dashboard',
+        );
+        sanitized.add(fallback);
       }
-    } catch (_) {}
+    }
+    return sanitized;
   }
 
   Future<void> setSlot(int slotIndex, String moduleKey) async {
@@ -346,18 +488,26 @@ class CustomBottomBarNotifier extends Notifier<List<String>> {
     updated[slotIndex] = moduleKey;
     state = updated;
 
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList(_prefKey, updated);
-    } catch (_) {}
+    final repo = ref.read(barCustomizationRepoProvider);
+    final user = ref.read(currentUserProvider);
+    await repo.saveToDatabase(
+      bottomSlots: updated,
+      userId: user?.id,
+      isStaff: user?.isStaff ?? false,
+    );
   }
 
   Future<void> resetToDefaults() async {
-    state = List.from(kDefaultBottomBarSlots);
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList(_prefKey, kDefaultBottomBarSlots);
-    } catch (_) {}
+    final user = ref.read(currentUserProvider);
+    final reset = _sanitizeForUser(kDefaultBottomBarSlots, user);
+    state = reset;
+
+    final repo = ref.read(barCustomizationRepoProvider);
+    await repo.saveToDatabase(
+      bottomSlots: reset,
+      userId: user?.id,
+      isStaff: user?.isStaff ?? false,
+    );
   }
 }
 
@@ -376,22 +526,52 @@ const List<String> kDefaultQuickActionSlots = [
 ];
 
 class CustomQuickActionsNotifier extends Notifier<List<String>> {
-  static const String _prefKey = 'custom_quick_action_slots_v5';
-
   @override
   List<String> build() {
-    _loadFromPrefs();
+    _initSlots();
     return List.from(kDefaultQuickActionSlots);
   }
 
-  Future<void> _loadFromPrefs() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final saved = prefs.getStringList(_prefKey);
-      if (saved != null && saved.length == 5) {
-        state = List.from(saved);
+  Future<void> _initSlots() async {
+    final repo = ref.read(barCustomizationRepoProvider);
+    final user = ref.read(currentUserProvider);
+
+    // Load from local storage cache first
+    final cached = await repo.getLocalQuickSlots();
+    if (cached != null && cached.length == 5) {
+      state = _sanitizeForUser(cached, user);
+    }
+
+    // Pull latest from Supabase Database
+    final dbResult = await repo.loadFromDatabase(
+      userId: user?.id,
+      isStaff: user?.isStaff ?? false,
+    );
+    if (dbResult.quickSlots != null && dbResult.quickSlots!.length == 5) {
+      state = _sanitizeForUser(dbResult.quickSlots!, user);
+    }
+  }
+
+  List<String> _sanitizeForUser(List<String> rawSlots, UserModel? user) {
+    if (user == null || user.isAdmin) return List.from(rawSlots);
+    final permitted = kAllAvailableModules
+        .where((m) => userHasModulePermission(user, m.key))
+        .map((m) => m.key)
+        .toList();
+
+    final sanitized = <String>[];
+    for (int i = 0; i < 5; i++) {
+      if (i < rawSlots.length && permitted.contains(rawSlots[i])) {
+        sanitized.add(rawSlots[i]);
+      } else {
+        final fallback = permitted.firstWhere(
+          (k) => !sanitized.contains(k),
+          orElse: () => permitted.isNotEmpty ? permitted.first : 'dashboard',
+        );
+        sanitized.add(fallback);
       }
-    } catch (_) {}
+    }
+    return sanitized;
   }
 
   Future<void> setSlot(int slotIndex, String moduleKey) async {
@@ -400,18 +580,26 @@ class CustomQuickActionsNotifier extends Notifier<List<String>> {
     updated[slotIndex] = moduleKey;
     state = updated;
 
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList(_prefKey, updated);
-    } catch (_) {}
+    final repo = ref.read(barCustomizationRepoProvider);
+    final user = ref.read(currentUserProvider);
+    await repo.saveToDatabase(
+      quickSlots: updated,
+      userId: user?.id,
+      isStaff: user?.isStaff ?? false,
+    );
   }
 
   Future<void> resetToDefaults() async {
-    state = List.from(kDefaultQuickActionSlots);
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList(_prefKey, kDefaultQuickActionSlots);
-    } catch (_) {}
+    final user = ref.read(currentUserProvider);
+    final reset = _sanitizeForUser(kDefaultQuickActionSlots, user);
+    state = reset;
+
+    final repo = ref.read(barCustomizationRepoProvider);
+    await repo.saveToDatabase(
+      quickSlots: reset,
+      userId: user?.id,
+      isStaff: user?.isStaff ?? false,
+    );
   }
 }
 

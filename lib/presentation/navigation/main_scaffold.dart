@@ -50,6 +50,7 @@ import '../screens/voice/voice_call_screen.dart';
 import '../screens/voice/ai_voice_call_screen.dart';
 import '../screens/voice/conference_room_screen.dart';
 import '../screens/analysis_strategy/analysis_strategy_screen.dart';
+import '../screens/settings/bar_customization_screen.dart';
 
 class MainScaffold extends ConsumerStatefulWidget {
   const MainScaffold({super.key});
@@ -101,6 +102,7 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
     'ai_voice_call',       // 36
     'conference_room',     // 37
     'analysis_strategy',   // 38
+    'bar_customization',   // 39
   ];
 
   late final List<WidgetBuilder> _builders;
@@ -154,6 +156,7 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
       (BuildContext ctx) => const AiVoiceCallScreen(),
       (BuildContext ctx) => const ConferenceRoomScreen(),
       (BuildContext ctx) => const AnalysisStrategyScreen(),
+      (BuildContext ctx) => BarCustomizationScreen(onTabChange: _onTabChange),
     ];
   }
 
@@ -362,7 +365,7 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
       bottomBarIndex = 1;
     } else if (activeScreen == customBottomKeys[2]) {
       bottomBarIndex = 2;
-    } else if (activeScreen == 'profile_settings') {
+    } else if (activeScreen == 'profile_settings' || activeScreen == 'bar_customization') {
       bottomBarIndex = 3;
     }
 
