@@ -1,5 +1,7 @@
-import 'package:flutter/services.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -9,10 +11,14 @@ import '../../../core/services/supabase_service.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/custom_navigation_provider.dart';
-import '../../providers/navigation_provider.dart';
 import '../landing/landing_screen.dart';
 import 'bar_customization_screen.dart';
 
+/// Professional, fully responsive Profile & Settings screen.
+/// - Adaptive layout for small phones, tablets, and desktop/web.
+/// - Live branding image previews (camera/gallery/URL).
+/// - Bilingual (Marathi / English) support with instant toggle.
+/// - Role-aware (Nagarsevak Administrator vs Team Staff).
 class ProfileSettingsScreen extends ConsumerStatefulWidget {
   final VoidCallback? onBackToHome;
   final ValueChanged<int>? onTabChange;
@@ -33,6 +39,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
     with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
+
   late TabController _tabController;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -71,11 +78,6 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
   bool _isLoadingTickets = false;
 
   final ImagePicker _picker = ImagePicker();
-
-  // Screen Touch gesture tracking for seamless transitions when sub-pages end
-  double _horizontalPointerDelta = 0.0;
-  double _verticalPointerDelta = 0.0;
-  double _pointerStartX = 0.0;
 
   @override
   void initState() {
@@ -149,6 +151,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
   }
 
   Future<void> _saveSettings() async {
+    HapticFeedback.mediumImpact();
     setState(() => _isSaving = true);
     try {
       final client = SupabaseService.instance.client;
@@ -175,10 +178,11 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
 
       _rawConfig = mergedConfig;
       if (mounted) {
+        final isMr = ref.read(isMarathiProvider);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile settings saved successfully!'),
-            backgroundColor: Color(0xFF0284C7),
+          SnackBar(
+            content: Text(isMr ? 'प्रोफाईल माहिती यशस्वीरीत्या सेव्ह केली!' : 'Profile settings saved successfully!'),
+            backgroundColor: const Color(0xFF0284C7),
           ),
         );
       }
@@ -186,7 +190,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Updated settings locally (${e.toString()})'),
+            content: Text('Saved locally (${e.toString()})'),
             backgroundColor: const Color(0xFF0284C7),
           ),
         );
@@ -196,9 +200,137 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
     }
   }
 
-  Future<void> _pickImage(bool isProfile) async {
+  void _showImagePickerOptions(bool isProfile) {
+    HapticFeedback.lightImpact();
+    final isMr = ref.read(isMarathiProvider);
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: [
+            BoxShadow(color: Colors.black26, blurRadius: 20, offset: Offset(0, -4)),
+          ],
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 18),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFCBD5E1),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  Icon(
+                    isProfile ? Icons.account_circle_rounded : Icons.flag_rounded,
+                    color: const Color(0xFF0284C7),
+                    size: 22,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    isProfile
+                        ? (isMr ? 'प्रोफाईल छायाचित्र निवडा' : 'Select Profile Photo')
+                        : (isMr ? 'पक्ष चिन्ह / लोगो निवडा' : 'Select Party Logo'),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              ListTile(
+                dense: true,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: const Color(0xFFE0F2FE), borderRadius: BorderRadius.circular(10)),
+                  child: const Icon(Icons.camera_alt_rounded, color: Color(0xFF0284C7), size: 20),
+                ),
+                title: Text(
+                  isMr ? 'कॅमेऱ्यातून फोटो काढा' : 'Take Photo with Camera',
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5),
+                ),
+                subtitle: Text(
+                  isMr ? 'थेट कॅमेरा उघडून नवीन फोटो घ्या' : 'Capture directly using phone camera',
+                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                ),
+                trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 13, color: Color(0xFF94A3B8)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickImageSource(isProfile, ImageSource.camera);
+                },
+              ),
+              const SizedBox(height: 6),
+              ListTile(
+                dense: true,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: const Color(0xFFE0F2FE), borderRadius: BorderRadius.circular(10)),
+                  child: const Icon(Icons.photo_library_rounded, color: Color(0xFF0284C7), size: 20),
+                ),
+                title: Text(
+                  isMr ? 'फोन गॅलरीतून निवडा' : 'Choose from Photo Gallery',
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5),
+                ),
+                subtitle: Text(
+                  isMr ? 'फोनमधील साठवलेल्या फोटोंमधून निवडा' : 'Pick existing image from storage',
+                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                ),
+                trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 13, color: Color(0xFF94A3B8)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickImageSource(isProfile, ImageSource.gallery);
+                },
+              ),
+              const SizedBox(height: 6),
+              ListTile(
+                dense: true,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(10)),
+                  child: const Icon(Icons.link_rounded, color: Color(0xFF64748B), size: 20),
+                ),
+                title: Text(
+                  isMr ? 'थेट वेब लिंक (URL) प्रविष्ट करा' : 'Provide Direct Image URL',
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5),
+                ),
+                subtitle: Text(
+                  isMr ? 'इंटरनेटवरील फोटोची लिंक पेस्ट करा' : 'Enter https:// hosted image URL',
+                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                ),
+                trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 13, color: Color(0xFF94A3B8)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showUrlInputDialog(isProfile);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickImageSource(bool isProfile, ImageSource source) async {
     try {
-      final picked = await _picker.pickImage(source: ImageSource.gallery, maxWidth: 800);
+      final picked = await _picker.pickImage(
+        source: source,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
+      );
       if (picked != null) {
         if (!mounted) return;
         setState(() {
@@ -208,9 +340,14 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
             _partyLogoUrl = picked.path;
           }
         });
+        final isMr = ref.read(isMarathiProvider);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(isProfile ? 'Profile photo selected!' : 'Party logo selected!'),
+            content: Text(
+              isProfile
+                  ? (isMr ? 'प्रोफाईल छायाचित्र निवडले!' : 'Profile photo selected!')
+                  : (isMr ? 'पक्ष चिन्ह निवडले!' : 'Party logo selected!'),
+            ),
             backgroundColor: const Color(0xFF0284C7),
           ),
         );
@@ -222,24 +359,33 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
 
   void _showUrlInputDialog(bool isProfile) {
     final urlCtrl = TextEditingController(text: isProfile ? _profileImageUrl : _partyLogoUrl);
+    final isMr = ref.read(isMarathiProvider);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        title: Text(isProfile ? 'Enter Profile Photo URL' : 'Enter Party Logo URL'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          isProfile
+              ? (isMr ? 'प्रोफाईल फोटो URL' : 'Enter Profile Photo URL')
+              : (isMr ? 'पक्ष चिन्ह URL' : 'Enter Party Logo URL'),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
         content: TextField(
           controller: urlCtrl,
+          keyboardType: TextInputType.url,
           decoration: InputDecoration(
             hintText: 'https://...',
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            prefixIcon: const Icon(Icons.link, size: 18),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(isMr ? 'रद्द करा' : 'Cancel')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF0284C7),
               foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             onPressed: () {
               setState(() {
@@ -251,7 +397,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
               });
               Navigator.pop(ctx);
             },
-            child: const Text('Save'),
+            child: Text(isMr ? 'लागू करा' : 'Apply'),
           ),
         ],
       ),
@@ -321,10 +467,14 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
   Future<void> _submitSupportTicket() async {
     final title = _supportTitleCtrl.text.trim();
     final desc = _supportDescCtrl.text.trim();
+    final isMr = ref.read(isMarathiProvider);
 
     if (title.isEmpty || desc.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in both title and description.')),
+        SnackBar(
+          content: Text(isMr ? 'कृपया शीर्षक आणि तपशील दोन्ही भरा.' : 'Please fill in both title and description.'),
+          backgroundColor: const Color(0xFFDC2626),
+        ),
       );
       return;
     }
@@ -361,9 +511,9 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Support ticket submitted successfully! IT team will review.'),
-            backgroundColor: Color(0xFF0284C7),
+          SnackBar(
+            content: Text(isMr ? 'अडचण नोंदवली गेली आहे! आयटी सपोर्ट टीम लवकरच संपर्क करेल.' : 'Support ticket submitted! IT support team will review shortly.'),
+            backgroundColor: const Color(0xFF0284C7),
           ),
         );
       }
@@ -373,23 +523,29 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
   }
 
   void _showGlobalSignOutDialog() {
+    final isMr = ref.read(isMarathiProvider);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
-          children: const [
-            Icon(Icons.shield_outlined, color: Color(0xFFDC2626)),
-            SizedBox(width: 8),
-            Text('Sign Out Other Devices', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          children: [
+            const Icon(Icons.shield_outlined, color: Color(0xFFDC2626)),
+            const SizedBox(width: 8),
+            Text(
+              isMr ? 'इतर सर्व उपकरणांवरून बाहेर पडा' : 'Sign Out Other Devices',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
           ],
         ),
-        content: const Text(
-          'Are you sure you want to invalidate all active session tokens on other devices? You will remain signed in on this device.',
-          style: TextStyle(fontSize: 13, color: Color(0xFF475569)),
+        content: Text(
+          isMr
+              ? 'आपण इतर उपकरणांवरील सर्व सक्रिय सत्रे बंद करू इच्छिता? आपण या फोनवर लॉग इन राहाल.'
+              : 'Are you sure you want to invalidate all active session tokens on other devices? You will remain signed in on this device.',
+          style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(isMr ? 'रद्द करा' : 'Cancel')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFDC2626),
@@ -399,539 +555,51 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
             onPressed: () {
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('All other device sessions signed out successfully.'),
-                  backgroundColor: Color(0xFF0284C7),
+                SnackBar(
+                  content: Text(isMr ? 'इतर सर्व उपकरणांवरील सत्रे बंद केली गेली आहेत.' : 'All other device sessions signed out successfully.'),
+                  backgroundColor: const Color(0xFF0284C7),
                 ),
               );
             },
-            child: const Text('Sign Out Others'),
+            child: Text(isMr ? 'बाहेर पडा' : 'Sign Out Others'),
           ),
         ],
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    super.build(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final user = ref.watch(currentUserProvider);
-    final isStaff = user?.isStaff ?? false;
-
-    final tabCount = _getTabCount(isStaff);
-    if (_tabController.length != tabCount) {
-      _tabController.dispose();
-      _tabController = TabController(length: tabCount, vsync: this);
-    }
-
-    return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: const Color(0xFFF8FAFC),
-      drawer: NagarsevakAppDrawer(
-        currentTabIndex: 3,
-        onTabChange: widget.onTabChange,
-      ),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0284C7),
-        foregroundColor: Colors.white,
-        elevation: 0,
-        titleSpacing: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-          tooltip: 'Toggle Sidebar Menu',
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
-              _scaffoldKey.currentState?.closeDrawer();
-            } else {
-              _scaffoldKey.currentState?.openDrawer();
-            }
-          },
-        ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              isStaff ? 'Staff Settings' : 'Profile Settings',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.bold, color: Colors.white),
-            ),
-            Text(
-              isStaff ? 'Bar customization & staff profile' : 'Profile details & system settings',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 10.5, color: Color(0xFFE0F2FE)),
-            ),
-          ],
-        ),
-        actions: const [],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)))
-          : Column(
-              children: [
-                Container(
-                  color: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  alignment: Alignment.centerLeft,
-                  child: Container(
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: TabBar(
-                      controller: _tabController,
-                      isScrollable: true,
-                      tabAlignment: TabAlignment.start,
-                      indicator: BoxDecoration(
-                        color: const Color(0xFF0284C7),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      labelColor: Colors.white,
-                      unselectedLabelColor: const Color(0xFF64748B),
-                      labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                      dividerColor: Colors.transparent,
-                      tabs: isStaff
-                          ? const [
-                              Tab(
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.tune_rounded, size: 14),
-                                    SizedBox(width: 5),
-                                    Text('Bar Customization'),
-                                  ],
-                                ),
-                              ),
-                              Tab(
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.badge_outlined, size: 14),
-                                    SizedBox(width: 5),
-                                    Text('My Profile'),
-                                  ],
-                                ),
-                              ),
-                              Tab(
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.support_agent_outlined, size: 14),
-                                    SizedBox(width: 5),
-                                    Text('Report Issue'),
-                                  ],
-                                ),
-                              ),
-                            ]
-                          : const [
-                              Tab(
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.person_outline, size: 14),
-                                    SizedBox(width: 5),
-                                    Text('Profile Details'),
-                                  ],
-                                ),
-                              ),
-                              Tab(
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.tune_rounded, size: 14),
-                                    SizedBox(width: 5),
-                                    Text('Bar Customization'),
-                                  ],
-                                ),
-                              ),
-                              Tab(
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.shield_outlined, size: 14),
-                                    SizedBox(width: 5),
-                                    Text('Security Logs'),
-                                  ],
-                                ),
-                              ),
-                              Tab(
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.support_agent_outlined, size: 14),
-                                    SizedBox(width: 5),
-                                    Text('Report Issue'),
-                                  ],
-                                ),
-                              ),
-                            ],
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Listener(
-                    behavior: HitTestBehavior.translucent,
-                    onPointerDown: (event) {
-                      _pointerStartX = event.position.dx;
-                      _horizontalPointerDelta = 0.0;
-                      _verticalPointerDelta = 0.0;
-                    },
-                    onPointerMove: (event) {
-                      _horizontalPointerDelta += event.delta.dx;
-                      _verticalPointerDelta += event.delta.dy;
-
-                      // When pulled from left corner (<= 50px): sidebar drawer comes!
-                      if (_pointerStartX <= 50.0 && _horizontalPointerDelta > 20.0) {
-                        if (!(_scaffoldKey.currentState?.isDrawerOpen ?? false)) {
-                          HapticFeedback.lightImpact();
-                          _scaffoldKey.currentState?.openDrawer();
-                        }
-                      }
-                    },
-                    onPointerUp: (event) {
-                      final screenWidth = MediaQuery.of(context).size.width;
-                      final isHorizontal = _horizontalPointerDelta.abs() > 30.0 &&
-                          _horizontalPointerDelta.abs() > _verticalPointerDelta.abs() * 1.1;
-
-                      if (!isHorizontal) return;
-
-                      // 1. When pulled from left corner (<= 50px): The sidebar comes!
-                      if (_pointerStartX <= 50.0) {
-                        if (_horizontalPointerDelta > 15.0) {
-                          if (!(_scaffoldKey.currentState?.isDrawerOpen ?? false)) {
-                            HapticFeedback.lightImpact();
-                            _scaffoldKey.currentState?.openDrawer();
-                          }
-                        }
-                        return; // Consume left corner gesture completely: do NOT swipe screens!
-                      }
-
-                      // 2. While pulled from middle of the screen (> 50px): The screen gets swiped!
-
-                      // A) Swiping Right (finger moves →): Screen gets swiped back to Letters!
-                      if (_horizontalPointerDelta > 30.0) {
-                        final customBottomKeys = ref.read(customBottomBarProvider);
-                        final prevScreen = customBottomKeys.length > 2 ? customBottomKeys[2] : 'letters';
-                        HapticFeedback.lightImpact();
-                        ref.read(activeScreenProvider.notifier).setScreen(prevScreen, isBack: true);
-                        return;
-                      }
-
-                      // B) Swiping Left (finger moves ←):
-                      // - When sub-pages are ending (at the last tab: Report Issue) OR right-edge inward swipe:
-                      // Screen gets swiped forward to Dashboard!
-                      if (_horizontalPointerDelta < -30.0) {
-                        if (_tabController.index == _tabController.length - 1 ||
-                            _pointerStartX > screenWidth - 60.0) {
-                          HapticFeedback.lightImpact();
-                          ref.read(activeScreenProvider.notifier).setScreen('dashboard', isBack: false);
-                          ref.read(mainTabIndexProvider.notifier).setTab(0);
-                          return;
-                        }
-                      }
-                    },
-                    child: TabBarView(
-                      controller: _tabController,
-                      children: isStaff
-                          ? [
-                              _buildBarCustomizationTab(isDark),
-                              _buildStaffProfileTab(isDark),
-                              _buildSupportTab(isDark),
-                            ]
-                          : [
-                              _buildProfileTab(isDark),
-                              _buildBarCustomizationTab(isDark),
-                              _buildSecurityTab(isDark),
-                              _buildSupportTab(isDark),
-                            ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // Tab 1: Profile Details
-  // ─────────────────────────────────────────────────────────────
-  Widget _buildProfileTab(bool isDark) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 80),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Save Bar
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
-                    'Nagarsevak Profile & Branding',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                  ),
-                  Text(
-                    'Configures official letterhead, receipts & card headers',
-                    style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                  ),
-                ],
-              ),
-              ElevatedButton.icon(
-                onPressed: _isSaving ? null : _saveSettings,
-                icon: _isSaving
-                    ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Icon(Icons.save_rounded, size: 16),
-                label: Text(_isSaving ? 'Saving...' : 'Save Changes'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0284C7),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 14),
-
-          // 1. Personal Details Card
-          Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: isDark ? Colors.grey[800]! : const Color(0xFFE2E8F0)),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: const [
-                      Icon(Icons.person, size: 18, color: Color(0xFF0284C7)),
-                      SizedBox(width: 6),
-                      Text('Personal Details', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  const Divider(height: 20),
-                  Row(
-                    children: [
-                      Expanded(child: _buildTextField('Full Name (English)', _nameEnglishCtrl, 'e.g. Rahul Patil')),
-                      const SizedBox(width: 10),
-                      Expanded(child: _buildTextField('Full Name (Marathi)', _nameMarathiCtrl, 'उदा. राहुल पाटील')),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(child: _buildTextField('Ward Name', _wardNameCtrl, 'e.g. Kasba Peth')),
-                      const SizedBox(width: 10),
-                      Expanded(child: _buildTextField('Ward Number', _wardNumCtrl, 'e.g. 12')),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 14),
-
-          // 2. Office & Contact Details Card
-          Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: isDark ? Colors.grey[800]! : const Color(0xFFE2E8F0)),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: const [
-                      Icon(Icons.business, size: 18, color: Color(0xFF0284C7)),
-                      SizedBox(width: 6),
-                      Text('Office & Public Contacts', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  const Divider(height: 20),
-                  _buildTextField('Office Address', _officeAddressCtrl, 'e.g. Ward Office No. 12, Kelkar Road, Pune'),
-                  const SizedBox(height: 10),
-                  _buildTextField('Public Office Hours', _officeHoursCtrl, 'e.g. 10:00 AM - 06:00 PM (Mon-Sat)'),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(child: _buildTextField('Phone Number', _phoneCtrl, 'e.g. +91 98220 12345', isPhone: true)),
-                      const SizedBox(width: 10),
-                      Expanded(child: _buildTextField('Email Address', _emailCtrl, 'e.g. office@ward12.in', isEmail: true)),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  _buildTextField('Official Social Media Link', _socialLinkCtrl, 'e.g. https://facebook.com/ward12nagarsevak'),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 14),
-
-          // 3. Branding & Media Card
-          Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: isDark ? Colors.grey[800]! : const Color(0xFFE2E8F0)),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: const [
-                      Icon(Icons.flag_rounded, size: 18, color: Color(0xFF0284C7)),
-                      SizedBox(width: 6),
-                      Text('Party Affiliation & Branding Images', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  const Divider(height: 20),
-                  _buildTextField('Party / Front Name', _partyNameCtrl, 'e.g. Nagarsevak Vikas Aghadi'),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      // Profile Photo
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF8FAFC),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: const Color(0xFFE2E8F0)),
-                          ),
-                          child: Column(
-                            children: [
-                              CircleAvatar(
-                                radius: 36,
-                                backgroundColor: const Color(0xFFE0F2FE),
-                                child: const Icon(Icons.person, size: 36, color: Color(0xFF0284C7)),
-                              ),
-                              const SizedBox(height: 8),
-                              const Text('Profile Photo', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                              const SizedBox(height: 6),
-                              OutlinedButton.icon(
-                                onPressed: () => _pickImage(true),
-                                icon: const Icon(Icons.upload, size: 14),
-                                label: const Text('Change', style: TextStyle(fontSize: 11)),
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      // Party Logo
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF8FAFC),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: const Color(0xFFE2E8F0)),
-                          ),
-                          child: Column(
-                            children: [
-                              Container(
-                                width: 72,
-                                height: 72,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFE0F2FE),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                alignment: Alignment.center,
-                                child: const Icon(Icons.flag_rounded, size: 34, color: Color(0xFF0284C7)),
-                              ),
-                              const SizedBox(height: 8),
-                              const Text('Party Symbol / Logo', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                              const SizedBox(height: 6),
-                              OutlinedButton.icon(
-                                onPressed: () => _pickImage(false),
-                                icon: const Icon(Icons.upload, size: 14),
-                                label: const Text('Change', style: TextStyle(fontSize: 11)),
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 14),
-          Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-              side: const BorderSide(color: Color(0xFFFECACA)),
-            ),
-            color: const Color(0xFFFEF2F2),
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Row(
-                children: [
-                  const Icon(Icons.logout_rounded, color: Color(0xFFDC2626), size: 24),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Text('Account Session', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF991B1B))),
-                        Text('Sign out of your Nagarsevak account on this device', style: TextStyle(fontSize: 11, color: Color(0xFFB91C1C))),
-                      ],
-                    ),
-                  ),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFDC2626),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                    onPressed: _showLogoutConfirmDialog,
-                    child: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _showLogoutConfirmDialog() async {
+  void _showLogoutConfirmDialog() async {
+    final isMr = ref.read(isMarathiProvider);
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        title: const Text('Confirm Logout'),
-        content: const Text('Are you sure you want to sign out of your account?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.logout_rounded, color: Color(0xFFDC2626)),
+            const SizedBox(width: 8),
+            Text(
+              isMr ? 'लॉगआउट पुष्टीकरण' : 'Confirm Logout',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: Text(
+          isMr
+              ? 'आपण आपल्या खात्यातून बाहेर पडू इच्छिता?'
+              : 'Are you sure you want to sign out of your account on this device?',
+          style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(isMr ? 'रद्द करा' : 'Cancel')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFDC2626),
               foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Logout'),
+            child: Text(isMr ? 'लॉगआउट' : 'Sign Out'),
           ),
         ],
       ),
@@ -947,47 +615,1085 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Tab: Navigation Bar & Quick Actions Customization
-  // ─────────────────────────────────────────────────────────────
-  Widget _buildBarCustomizationTab(bool isDark) {
-    return const SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(14, 14, 14, 80),
-      child: BarCustomizationView(),
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    final isMr = ref.watch(isMarathiProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final user = ref.watch(currentUserProvider);
+    final isStaff = user?.isStaff ?? false;
+
+    final tabCount = _getTabCount(isStaff);
+    if (_tabController.length != tabCount) {
+      _tabController.dispose();
+      _tabController = TabController(length: tabCount, vsync: this);
+    }
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Color(0xFF0284C7),
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+        systemNavigationBarColor: Colors.white,
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
+        key: _scaffoldKey,
+        backgroundColor: const Color(0xFFF8FAFC),
+        drawer: NagarsevakAppDrawer(
+          currentTabIndex: 3,
+          onTabChange: widget.onTabChange,
+        ),
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF0284C7),
+          foregroundColor: Colors.white,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          titleSpacing: 0,
+          leading: Builder(
+            builder: (ctx) => IconButton(
+              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+              tooltip: isMr ? 'मेनू उघडा' : 'Toggle Menu',
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                Scaffold.of(ctx).openDrawer();
+              },
+            ),
+          ),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                isMr
+                    ? (isStaff ? 'कर्मचारी सेटिंग्ज' : 'प्रोफाईल व ब्रँडिंग सेटिंग्ज')
+                    : (isStaff ? 'Staff Settings' : 'Profile & Branding'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 16.5,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: -0.2,
+                ),
+              ),
+              Text(
+                isMr
+                    ? (isStaff ? 'नेव्हिगेशन आणि कर्मचारी तपशील' : 'अधिकृत लेटरहेड, संपर्क आणि प्रणाली')
+                    : (isStaff ? 'Bar customization & staff profile' : 'Official letterhead, contacts & portal'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFFE0F2FE),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            // Language Switch Pill
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: InkWell(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    ref.read(isMarathiProvider.notifier).toggle();
+                  },
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.language_rounded, size: 14, color: Colors.white),
+                        const SizedBox(width: 4),
+                        Text(
+                          isMr ? 'English' : 'मराठी',
+                          style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 4),
+          ],
+        ),
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)))
+            : LayoutBuilder(
+                builder: (context, constraints) {
+                  final isWide = constraints.maxWidth >= 720;
+                  final contentMaxWidth = isWide ? 900.0 : double.infinity;
+
+                  return Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: contentMaxWidth),
+                      child: Column(
+                        children: [
+                          // ─────────────────────────────────────────────
+                          // MODERN HORIZONTAL TAB BAR
+                          // ─────────────────────────────────────────────
+                          Container(
+                            color: Colors.white,
+                            padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
+                            alignment: Alignment.centerLeft,
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: TabBar(
+                                  controller: _tabController,
+                                  isScrollable: true,
+                                  tabAlignment: TabAlignment.start,
+                                  indicator: BoxDecoration(
+                                    color: const Color(0xFF0284C7),
+                                    borderRadius: BorderRadius.circular(9),
+                                    boxShadow: const [
+                                      BoxShadow(
+                                        color: Color(0x260284C7),
+                                        blurRadius: 6,
+                                        offset: Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  labelColor: Colors.white,
+                                  unselectedLabelColor: const Color(0xFF475569),
+                                  labelStyle: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+                                  unselectedLabelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                  dividerColor: Colors.transparent,
+                                  labelPadding: const EdgeInsets.symmetric(horizontal: 14),
+                                  tabs: isStaff
+                                      ? [
+                                          Tab(
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                const Icon(Icons.tune_rounded, size: 15),
+                                                const SizedBox(width: 6),
+                                                Text(isMr ? 'नेव्हिगेशन बार' : 'Bar Customization'),
+                                              ],
+                                            ),
+                                          ),
+                                          Tab(
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                const Icon(Icons.badge_outlined, size: 15),
+                                                const SizedBox(width: 6),
+                                                Text(isMr ? 'माझे प्रोफाईल' : 'My Profile'),
+                                              ],
+                                            ),
+                                          ),
+                                          Tab(
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                const Icon(Icons.support_agent_rounded, size: 15),
+                                                const SizedBox(width: 6),
+                                                Text(isMr ? 'अडचण नोंदवा' : 'Report Issue'),
+                                              ],
+                                            ),
+                                          ),
+                                        ]
+                                      : [
+                                          Tab(
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                const Icon(Icons.person_rounded, size: 15),
+                                                const SizedBox(width: 6),
+                                                Text(isMr ? 'प्रोफाईल तपशील' : 'Profile Details'),
+                                              ],
+                                            ),
+                                          ),
+                                          Tab(
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                const Icon(Icons.tune_rounded, size: 15),
+                                                const SizedBox(width: 6),
+                                                Text(isMr ? 'नेव्हिगेशन बार' : 'Bar Customization'),
+                                              ],
+                                            ),
+                                          ),
+                                          Tab(
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                const Icon(Icons.shield_outlined, size: 15),
+                                                const SizedBox(width: 6),
+                                                Text(isMr ? 'सुरक्षा लॉग' : 'Security Logs'),
+                                              ],
+                                            ),
+                                          ),
+                                          Tab(
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                const Icon(Icons.support_agent_rounded, size: 15),
+                                                const SizedBox(width: 6),
+                                                Text(isMr ? 'अडचण नोंदवा' : 'Report Issue'),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          // ─────────────────────────────────────────────
+                          // TAB CONTENT VIEWS (Fully Responsive)
+                          // ─────────────────────────────────────────────
+                          Expanded(
+                            child: TabBarView(
+                              controller: _tabController,
+                              children: isStaff
+                                  ? [
+                                      _buildBarCustomizationTab(isDark, constraints),
+                                      _buildStaffProfileTab(isDark, constraints),
+                                      _buildSupportTab(isDark, constraints),
+                                    ]
+                                  : [
+                                      _buildProfileTab(isDark, constraints),
+                                      _buildBarCustomizationTab(isDark, constraints),
+                                      _buildSecurityTab(isDark, constraints),
+                                      _buildSupportTab(isDark, constraints),
+                                    ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+      ),
     );
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Tab: Staff Profile / Account Info (Shown for Team Members)
+  // Tab 1: Profile Details & Branding (Responsive Adaptive Grid)
   // ─────────────────────────────────────────────────────────────
-  Widget _buildStaffProfileTab(bool isDark) {
+  Widget _buildProfileTab(bool isDark, BoxConstraints constraints) {
     final isMr = ref.watch(isMarathiProvider);
     final user = ref.watch(currentUserProvider);
-    final permittedModules = ref.watch(permittedModulesProvider);
+    final isStacked = constraints.maxWidth < 540;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 80),
+      physics: const ClampingScrollPhysics(),
+      padding: EdgeInsets.fromLTRB(
+        constraints.maxWidth < 400 ? 12 : 16,
+        14,
+        constraints.maxWidth < 400 ? 12 : 16,
+        90,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Staff Identity Card
-          Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: const BorderSide(color: Color(0xFFE2E8F0)),
+          // 1. Executive Representative Hero Card
+          _buildHeroIdentityCard(isMr, isStacked),
+
+          const SizedBox(height: 16),
+
+          // 2. Personal & Representation Details Card
+          _buildCardSection(
+            icon: Icons.account_circle_outlined,
+            title: isMr ? 'वैयक्तिक व प्रभाग तपशील' : 'Personal & Ward Representation',
+            subtitle: isMr
+                ? 'हे तपशील अधिकृत लेटरहेड, डिजिटल प्रमाणपत्रे व नागरिकांच्या डॅशबोर्डवर दिसतील.'
+                : 'Appears on official municipal letterhead, receipts, and public ward summaries.',
+            child: Column(
+              children: [
+                if (!isStacked)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: _buildTextField(
+                          label: isMr ? 'पूर्ण नाव (इंग्रजीत) *' : 'Full Name (English) *',
+                          ctrl: _nameEnglishCtrl,
+                          hint: 'e.g. Hon. Rahul Patil',
+                          prefixIcon: Icons.badge_outlined,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildTextField(
+                          label: isMr ? 'पूर्ण नाव (मराठीत) *' : 'Full Name (Marathi) *',
+                          ctrl: _nameMarathiCtrl,
+                          hint: 'उदा. मा. राहुल पाटील',
+                          prefixIcon: Icons.translate_rounded,
+                        ),
+                      ),
+                    ],
+                  )
+                else ...[
+                  _buildTextField(
+                    label: isMr ? 'पूर्ण नाव (इंग्रजीत) *' : 'Full Name (English) *',
+                    ctrl: _nameEnglishCtrl,
+                    hint: 'e.g. Hon. Rahul Patil',
+                    prefixIcon: Icons.badge_outlined,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildTextField(
+                    label: isMr ? 'पूर्ण नाव (मराठीत) *' : 'Full Name (Marathi) *',
+                    ctrl: _nameMarathiCtrl,
+                    hint: 'उदा. मा. राहुल पाटील',
+                    prefixIcon: Icons.translate_rounded,
+                  ),
+                ],
+                const SizedBox(height: 12),
+                if (!isStacked)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: _buildTextField(
+                          label: isMr ? 'प्रभाग नाव / मतदारसंघ *' : 'Ward / Constituency Name *',
+                          ctrl: _wardNameCtrl,
+                          hint: 'e.g. Kasba Peth Ward',
+                          prefixIcon: Icons.location_city_rounded,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildTextField(
+                          label: isMr ? 'प्रभाग क्रमांक *' : 'Ward Number *',
+                          ctrl: _wardNumCtrl,
+                          hint: 'e.g. 12',
+                          prefixIcon: Icons.tag_rounded,
+                          isNumeric: true,
+                        ),
+                      ),
+                    ],
+                  )
+                else ...[
+                  _buildTextField(
+                    label: isMr ? 'प्रभाग नाव / मतदारसंघ *' : 'Ward / Constituency Name *',
+                    ctrl: _wardNameCtrl,
+                    hint: 'e.g. Kasba Peth Ward',
+                    prefixIcon: Icons.location_city_rounded,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildTextField(
+                    label: isMr ? 'प्रभाग क्रमांक *' : 'Ward Number *',
+                    ctrl: _wardNumCtrl,
+                    hint: 'e.g. 12',
+                    prefixIcon: Icons.tag_rounded,
+                    isNumeric: true,
+                  ),
+                ],
+                const SizedBox(height: 12),
+                _buildTextField(
+                  label: isMr ? 'पक्ष किंवा आघाडीचे नाव' : 'Political Party / Coalition Front',
+                  ctrl: _partyNameCtrl,
+                  hint: 'e.g. Nagarsevak Vikas Aghadi',
+                  prefixIcon: Icons.flag_outlined,
+                ),
+              ],
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 28,
-                    backgroundColor: const Color(0xFFE0F2FE),
-                    child: Text(
-                      (user?.name.isNotEmpty ?? false) ? user!.name[0].toUpperCase() : 'S',
-                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
+          ),
+
+          const SizedBox(height: 16),
+
+          // 3. Office & Contact Details Card
+          _buildCardSection(
+            icon: Icons.apartment_rounded,
+            title: isMr ? 'कार्यालय व सार्वजनिक संपर्क' : 'Office & Public Contacts',
+            subtitle: isMr
+                ? 'नागरिकांना समस्या घेऊन येण्यासाठी कार्यालयाचा पत्ता आणि संपर्क क्रमांक.'
+                : 'Citizen touchpoints for official petitions, meetings, and emergency contacts.',
+            child: Column(
+              children: [
+                _buildTextField(
+                  label: isMr ? 'मुख्य संपर्क कार्यालय पत्ता' : 'Ward Office Street Address',
+                  ctrl: _officeAddressCtrl,
+                  hint: 'e.g. Ward Office No. 12, Kelkar Road, Pune',
+                  prefixIcon: Icons.business_rounded,
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 12),
+                _buildTextField(
+                  label: isMr ? 'नागरिकांसाठी कार्यालयीन वेळ' : 'Public Meeting / Office Hours',
+                  ctrl: _officeHoursCtrl,
+                  hint: 'e.g. 10:00 AM - 06:00 PM (Monday to Saturday)',
+                  prefixIcon: Icons.access_time_rounded,
+                ),
+                const SizedBox(height: 12),
+                if (!isStacked)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: _buildTextField(
+                          label: isMr ? 'अधिकृत दूरध्वनी / मोबाईल *' : 'Official Phone Number *',
+                          ctrl: _phoneCtrl,
+                          hint: 'e.g. +91 98220 12345',
+                          prefixIcon: Icons.phone_rounded,
+                          isPhone: true,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildTextField(
+                          label: isMr ? 'अधिकृत ईमेल पत्ता *' : 'Official Email Address *',
+                          ctrl: _emailCtrl,
+                          hint: 'e.g. office@ward12.in',
+                          prefixIcon: Icons.email_rounded,
+                          isEmail: true,
+                        ),
+                      ),
+                    ],
+                  )
+                else ...[
+                  _buildTextField(
+                    label: isMr ? 'अधिकृत दूरध्वनी / मोबाईल *' : 'Official Phone Number *',
+                    ctrl: _phoneCtrl,
+                    hint: 'e.g. +91 98220 12345',
+                    prefixIcon: Icons.phone_rounded,
+                    isPhone: true,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildTextField(
+                    label: isMr ? 'अधिकृत ईमेल पत्ता *' : 'Official Email Address *',
+                    ctrl: _emailCtrl,
+                    hint: 'e.g. office@ward12.in',
+                    prefixIcon: Icons.email_rounded,
+                    isEmail: true,
+                  ),
+                ],
+                const SizedBox(height: 12),
+                _buildTextField(
+                  label: isMr ? 'अधिकृत सोशल मीडिया / वेबसाइट लिंक' : 'Official Social Media / Website Link',
+                  ctrl: _socialLinkCtrl,
+                  hint: 'e.g. https://facebook.com/ward12nagarsevak',
+                  prefixIcon: Icons.link_rounded,
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // 4. Official Branding & Media Images Card
+          _buildCardSection(
+            icon: Icons.photo_library_outlined,
+            title: isMr ? 'अधिकृत फोटो व पक्षाचे चिन्ह' : 'Official Media & Branding',
+            subtitle: isMr
+                ? 'प्रणालीतील अहवाल, पत्रे व कार्ड्सवर दिसणारे अधिकृत छायाचित्र व चिन्ह.'
+                : 'High-resolution images displayed on printable reports, letterheads and headers.',
+            child: Column(
+              children: [
+                if (!isStacked)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildMediaTile(
+                          isProfile: true,
+                          title: isMr ? 'अधिकृत प्रोफाईल छायाचित्र' : 'Official Profile Photo',
+                          subtitle: isMr ? 'नागरिक अहवाल व पत्रांवर' : 'On civic letters & reports',
+                          imageUrl: _profileImageUrl,
+                          fallbackIcon: Icons.person_rounded,
+                          isCircle: true,
+                          isMr: isMr,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildMediaTile(
+                          isProfile: false,
+                          title: isMr ? 'पक्ष चिन्ह / लोगो' : 'Party Symbol / Logo',
+                          subtitle: isMr ? 'डिजिटल लेटरहेड व बॅनरवर' : 'On digital cards & letterhead',
+                          imageUrl: _partyLogoUrl,
+                          fallbackIcon: Icons.flag_rounded,
+                          isCircle: false,
+                          isMr: isMr,
+                        ),
+                      ),
+                    ],
+                  )
+                else ...[
+                  _buildMediaTile(
+                    isProfile: true,
+                    title: isMr ? 'अधिकृत प्रोफाईल छायाचित्र' : 'Official Profile Photo',
+                    subtitle: isMr ? 'नागरिक अहवाल व पत्रांवर' : 'On civic letters & reports',
+                    imageUrl: _profileImageUrl,
+                    fallbackIcon: Icons.person_rounded,
+                    isCircle: true,
+                    isMr: isMr,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildMediaTile(
+                    isProfile: false,
+                    title: isMr ? 'पक्ष चिन्ह / लोगो' : 'Party Symbol / Logo',
+                    subtitle: isMr ? 'डिजिटल लेटरहेड व बॅनरवर' : 'On digital cards & letterhead',
+                    imageUrl: _partyLogoUrl,
+                    fallbackIcon: Icons.flag_rounded,
+                    isCircle: false,
+                    isMr: isMr,
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 18),
+
+          // 5. Account Session & Security Card (Sign Out Option)
+          _buildSessionSecurityCard(isMr, user, isStacked),
+
+          const SizedBox(height: 20),
+
+          // 6. Sticky-Style Responsive Save Button
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton.icon(
+              onPressed: _isSaving ? null : _saveSettings,
+              icon: _isSaving
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.check_circle_rounded, size: 20),
+              label: Text(
+                _isSaving
+                    ? (isMr ? 'जतन करत आहे...' : 'Saving Changes...')
+                    : (isMr ? 'सर्व बदल जतन करा' : 'Save Profile Changes'),
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0284C7),
+                foregroundColor: Colors.white,
+                elevation: 2,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Hero Identity Header Card
+  // ─────────────────────────────────────────────────────────────
+  Widget _buildHeroIdentityCard(bool isMr, bool isStacked) {
+    final nameText = _nameEnglishCtrl.text.isNotEmpty
+        ? _nameEnglishCtrl.text
+        : (_nameMarathiCtrl.text.isNotEmpty ? _nameMarathiCtrl.text : 'Elected Representative');
+
+    final wardText = _wardNumCtrl.text.isNotEmpty
+        ? (isMr ? 'प्रभाग क्र. ${_wardNumCtrl.text}' : 'Ward No. ${_wardNumCtrl.text}')
+        : '';
+    final wardCombined = _wardNameCtrl.text.isNotEmpty
+        ? (wardText.isNotEmpty ? '$wardText · ${_wardNameCtrl.text}' : _wardNameCtrl.text)
+        : wardText;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF0284C7), Color(0xFF0369A1)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x260284C7),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: isStacked
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Stack(
+                      children: [
+                        _buildImagePreview(
+                          imageUrl: _profileImageUrl,
+                          size: 64,
+                          fallbackIcon: Icons.person_rounded,
+                          isCircle: true,
+                        ),
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: InkWell(
+                            onTap: () => _showImagePickerOptions(true),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.all(5),
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                                boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                              ),
+                              child: const Icon(Icons.camera_alt_rounded, size: 14, color: Color(0xFF0284C7)),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.20),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.verified_rounded, size: 12, color: Colors.white),
+                                const SizedBox(width: 4),
+                                Text(
+                                  isMr ? 'लोकप्रतिनिधी' : 'Elected Representative',
+                                  style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.white),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            nameText,
+                            style: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              letterSpacing: -0.3,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (wardCombined.isNotEmpty)
+                            Text(
+                              wardCombined,
+                              style: const TextStyle(fontSize: 12, color: Color(0xFFE0F2FE), fontWeight: FontWeight.w500),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _isSaving ? null : _saveSettings,
+                    icon: _isSaving
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0284C7)),
+                          )
+                        : const Icon(Icons.save_rounded, size: 16),
+                    label: Text(
+                      _isSaving ? (isMr ? 'सेव्ह करत आहे...' : 'Saving...') : (isMr ? 'बदल सेव्ह करा' : 'Save Changes'),
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF0284C7),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(vertical: 9),
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : Row(
+              children: [
+                Stack(
+                  children: [
+                    _buildImagePreview(
+                      imageUrl: _profileImageUrl,
+                      size: 68,
+                      fallbackIcon: Icons.person_rounded,
+                      isCircle: true,
+                    ),
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: InkWell(
+                        onTap: () => _showImagePickerOptions(true),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.all(5),
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                          ),
+                          child: const Icon(Icons.camera_alt_rounded, size: 14, color: Color(0xFF0284C7)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.20),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.verified_rounded, size: 12, color: Colors.white),
+                            const SizedBox(width: 4),
+                            Text(
+                              isMr ? 'लोकप्रतिनिधी' : 'Elected Representative',
+                              style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.white),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        nameText,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: -0.3,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (wardCombined.isNotEmpty)
+                        Text(
+                          wardCombined,
+                          style: const TextStyle(fontSize: 12.5, color: Color(0xFFE0F2FE), fontWeight: FontWeight.w500),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 14),
+                ElevatedButton.icon(
+                  onPressed: _isSaving ? null : _saveSettings,
+                  icon: _isSaving
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0284C7)),
+                        )
+                      : const Icon(Icons.save_rounded, size: 16),
+                  label: Text(
+                    _isSaving ? (isMr ? 'सेव्ह करत आहे...' : 'Saving...') : (isMr ? 'बदल सेव्ह करा' : 'Save Changes'),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF0284C7),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+                    elevation: 0,
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Helper: Section Card Container
+  // ─────────────────────────────────────────────────────────────
+  Widget _buildCardSection({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Widget child,
+  }) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: const [
+          BoxShadow(color: Color(0x06000000), blurRadius: 8, offset: Offset(0, 2)),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE0F2FE),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, size: 18, color: const Color(0xFF0284C7)),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF0F172A),
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), height: 1.25),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 22, color: Color(0xFFF1F5F9)),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Helper: Media Tile (Profile Photo & Party Logo with live image)
+  // ─────────────────────────────────────────────────────────────
+  Widget _buildMediaTile({
+    required bool isProfile,
+    required String title,
+    required String subtitle,
+    required String imageUrl,
+    required IconData fallbackIcon,
+    required bool isCircle,
+    required bool isMr,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        children: [
+          _buildImagePreview(
+            imageUrl: imageUrl,
+            size: 76,
+            fallbackIcon: fallbackIcon,
+            isCircle: isCircle,
+          ),
+          const SizedBox(height: 10),
+          Text(
+            title,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            subtitle,
+            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            height: 34,
+            child: OutlinedButton.icon(
+              onPressed: () => _showImagePickerOptions(isProfile),
+              icon: const Icon(Icons.upload_rounded, size: 15, color: Color(0xFF0284C7)),
+              label: Text(
+                imageUrl.isNotEmpty ? (isMr ? 'बदला' : 'Change') : (isMr ? 'अपलोड करा' : 'Upload'),
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF0284C7)),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFFBAE6FD)),
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Helper: Responsive Image Preview
+  // ─────────────────────────────────────────────────────────────
+  Widget _buildImagePreview({
+    required String imageUrl,
+    required double size,
+    required IconData fallbackIcon,
+    required bool isCircle,
+  }) {
+    final placeholder = Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: const Color(0xFFE0F2FE),
+        shape: isCircle ? BoxShape.circle : BoxShape.rectangle,
+        borderRadius: isCircle ? null : BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFBAE6FD)),
+      ),
+      alignment: Alignment.center,
+      child: Icon(fallbackIcon, size: size * 0.45, color: const Color(0xFF0284C7)),
+    );
+
+    if (imageUrl.isEmpty) return placeholder;
+
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return ClipRRect(
+        borderRadius: isCircle ? BorderRadius.circular(size / 2) : BorderRadius.circular(12),
+        child: Image.network(
+          imageUrl,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => placeholder,
+        ),
+      );
+    }
+
+    if (!kIsWeb && (imageUrl.startsWith('/') || imageUrl.contains(':\\') || imageUrl.contains(':/'))) {
+      try {
+        final file = File(imageUrl);
+        if (file.existsSync()) {
+          return ClipRRect(
+            borderRadius: isCircle ? BorderRadius.circular(size / 2) : BorderRadius.circular(12),
+            child: Image.file(
+              file,
+              width: size,
+              height: size,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => placeholder,
+            ),
+          );
+        }
+      } catch (_) {}
+    }
+
+    return placeholder;
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Session Security & Sign Out Card
+  // ─────────────────────────────────────────────────────────────
+  Widget _buildSessionSecurityCard(bool isMr, dynamic user, bool isStacked) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: const Color(0xFFFEF2F2),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFFECACA)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: isStacked
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEE2E2),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.shield_rounded, color: Color(0xFFDC2626), size: 20),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isMr ? 'खाते सुरक्षा व सत्र' : 'Account & Security Session',
+                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF991B1B)),
+                            ),
+                            Text(
+                              user?.email ?? 'Active Account',
+                              style: const TextStyle(fontSize: 11.5, color: Color(0xFFB91C1C)),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 40,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFDC2626),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: _showLogoutConfirmDialog,
+                      icon: const Icon(Icons.logout_rounded, size: 16),
+                      label: Text(
+                        isMr ? 'या फोनवरून लॉगआउट करा' : 'Sign Out of Account',
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEE2E2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.shield_rounded, color: Color(0xFFDC2626), size: 24),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -995,31 +1701,126 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          user?.name ?? (isMr ? 'कार्यकर्ता / कर्मचारी' : 'Staff Member'),
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                          isMr ? 'खाते सुरक्षा व सत्र' : 'Account & Security Session',
+                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF991B1B)),
                         ),
-                        const SizedBox(height: 3),
+                        const SizedBox(height: 2),
                         Text(
-                          user?.email ?? '',
-                          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                        ),
-                        const SizedBox(height: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE0F2FE),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            isMr ? 'अधिकृत टीम सदस्य' : 'Authorized Team Member',
-                            style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
-                          ),
+                          isMr
+                              ? 'आपल्या चालू खात्यातून (${user?.email ?? 'Active'}) सुरक्षितपणे बाहेर पडा.'
+                              : 'Signed in as ${user?.email ?? 'Representative'}. Invalidate local device token.',
+                          style: const TextStyle(fontSize: 11.5, color: Color(0xFFB91C1C)),
                         ),
                       ],
                     ),
                   ),
+                  const SizedBox(width: 12),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFDC2626),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    onPressed: _showLogoutConfirmDialog,
+                    icon: const Icon(Icons.logout_rounded, size: 16),
+                    label: Text(
+                      isMr ? 'लॉगआउट' : 'Sign Out',
+                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
+                    ),
+                  ),
                 ],
               ),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Tab 2: Navigation Bar & Quick Actions Customization
+  // ─────────────────────────────────────────────────────────────
+  Widget _buildBarCustomizationTab(bool isDark, BoxConstraints constraints) {
+    return SingleChildScrollView(
+      physics: const ClampingScrollPhysics(),
+      padding: EdgeInsets.fromLTRB(
+        constraints.maxWidth < 400 ? 12 : 16,
+        14,
+        constraints.maxWidth < 400 ? 12 : 16,
+        90,
+      ),
+      child: const BarCustomizationView(),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Tab: Staff Profile / Account Info (Shown for Team Members)
+  // ─────────────────────────────────────────────────────────────
+  Widget _buildStaffProfileTab(bool isDark, BoxConstraints constraints) {
+    final isMr = ref.watch(isMarathiProvider);
+    final user = ref.watch(currentUserProvider);
+    final permittedModules = ref.watch(permittedModulesProvider);
+    final isStacked = constraints.maxWidth < 540;
+
+    return SingleChildScrollView(
+      physics: const ClampingScrollPhysics(),
+      padding: EdgeInsets.fromLTRB(
+        constraints.maxWidth < 400 ? 12 : 16,
+        14,
+        constraints.maxWidth < 400 ? 12 : 16,
+        90,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Staff Identity Hero
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: const [BoxShadow(color: Color(0x06000000), blurRadius: 8, offset: Offset(0, 2))],
+            ),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 30,
+                  backgroundColor: const Color(0xFFE0F2FE),
+                  child: Text(
+                    (user?.name.isNotEmpty ?? false) ? user!.name[0].toUpperCase() : 'S',
+                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        user?.name ?? (isMr ? 'कार्यालय कर्मचारी' : 'Staff Member'),
+                        style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        user?.email ?? '',
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                      ),
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE0F2FE),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          isMr ? 'अधिकृत टीम सदस्य (Staff)' : 'Authorized Team Member (Staff)',
+                          style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
 
@@ -1030,15 +1831,17 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
             children: [
               const Icon(Icons.verified_user_outlined, size: 18, color: Color(0xFF0284C7)),
               const SizedBox(width: 8),
-              Text(
-                isMr
-                    ? 'आपल्याला दिलेले अधिकार (${permittedModules.length} विभाग)'
-                    : 'Assigned Permissions (${permittedModules.length} Modules)',
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              Expanded(
+                child: Text(
+                  isMr
+                      ? 'आपल्याला दिलेले अधिकार (${permittedModules.length} विभाग)'
+                      : 'Assigned Permissions (${permittedModules.length} Modules)',
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           Text(
             isMr
                 ? 'हे विभाग नगरसेवक / ॲडमिन कार्यालयाने आपल्या खात्यास नियुक्त केले आहेत.'
@@ -1073,62 +1876,106 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
             }).toList(),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 22),
 
           // Bar Customization Call-to-action
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: const Color(0xFFF0F9FF),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
               border: Border.all(color: const Color(0xFFBAE6FD)),
             ),
-            child: Row(
-              children: [
-                const Icon(Icons.tune_rounded, color: Color(0xFF0284C7), size: 24),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
+            child: isStacked
+                ? Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        isMr ? 'नेव्हिगेशन सानुकूल करा' : 'Customize Your Navigation',
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                      Row(
+                        children: [
+                          const Icon(Icons.tune_rounded, color: Color(0xFF0284C7), size: 22),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              isMr ? 'नेव्हिगेशन सानुकूल करा' : 'Customize Your Navigation',
+                              style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 6),
                       Text(
                         isMr
                             ? 'आपल्या आवडीनुसार बॉटम बार आणि 5 द्रुत क्रिया पर्याय सेट करा.'
-                            : 'Assign your most frequently used permitted modules to bottom bar tabs and quick gestures.',
-                        style: const TextStyle(fontSize: 11, color: Color(0xFF475569)),
+                            : 'Assign your frequently used permitted modules to bottom bar tabs and radial gestures.',
+                        style: const TextStyle(fontSize: 11.5, color: Color(0xFF475569)),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0284C7),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          onPressed: () => _tabController.animateTo(0),
+                          child: Text(isMr ? 'सेट करा' : 'Open Customizer', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      const Icon(Icons.tune_rounded, color: Color(0xFF0284C7), size: 24),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isMr ? 'नेव्हिगेशन सानुकूल करा' : 'Customize Your Navigation',
+                              style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              isMr
+                                  ? 'आपल्या आवडीनुसार बॉटम बार आणि 5 द्रुत क्रिया पर्याय सेट करा.'
+                                  : 'Assign your frequently used permitted modules to bottom bar tabs and radial gestures.',
+                              style: const TextStyle(fontSize: 11, color: Color(0xFF475569)),
+                            ),
+                          ],
+                        ),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0284C7),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        ),
+                        onPressed: () => _tabController.animateTo(0),
+                        child: Text(isMr ? 'सेट करा' : 'Open Customizer', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),
-                ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0284C7),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  ),
-                  onPressed: () {
-                    _tabController.animateTo(0);
-                  },
-                  child: Text(isMr ? 'सेट करा' : 'Open', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                ),
-              ],
-            ),
           ),
+
+          const SizedBox(height: 20),
+
+          // Logout for staff
+          _buildSessionSecurityCard(isMr, user, isStacked),
         ],
       ),
     );
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Tab: Security Logs
+  // Tab 3: Security Logs (Responsive Table & Search)
   // ─────────────────────────────────────────────────────────────
-  Widget _buildSecurityTab(bool isDark) {
+  Widget _buildSecurityTab(bool isDark, BoxConstraints constraints) {
+    final isMr = ref.watch(isMarathiProvider);
+    final isStacked = constraints.maxWidth < 480;
+
     final filtered = _securityLogs.where((log) {
       if (_securityLogSearch.isEmpty) return true;
       final q = _securityLogSearch.toLowerCase();
@@ -1140,44 +1987,89 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
 
     return Column(
       children: [
-        // Header Bar
+        // Responsive Header Search & Sign Out Bar
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E293B) : Colors.white,
-            border: Border(bottom: BorderSide(color: isDark ? Colors.grey[800]! : const Color(0xFFE2E8F0))),
+            color: Colors.white,
+            border: Border(bottom: BorderSide(color: const Color(0xFFE2E8F0))),
           ),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
+          child: isStacked
+              ? Column(
+                  children: [
+                    TextField(
                       decoration: InputDecoration(
-                        hintText: 'Search IP, email or device OS...',
-                        prefixIcon: const Icon(Icons.search, size: 18),
+                        hintText: isMr ? 'IP, ईमेल किंवा उपकरण शोधा...' : 'Search IP, email or device OS...',
+                        hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
+                        prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFF64748B)),
                         isDense: true,
+                        filled: true,
+                        fillColor: const Color(0xFFF8FAFC),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                        ),
                       ),
                       onChanged: (v) => setState(() => _securityLogSearch = v.trim()),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  OutlinedButton.icon(
-                    onPressed: _showGlobalSignOutDialog,
-                    icon: const Icon(Icons.logout, size: 14, color: Color(0xFFDC2626)),
-                    label: const Text('Sign Out Others', style: TextStyle(fontSize: 11.5, color: Color(0xFFDC2626))),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFFFECACA)),
-                      backgroundColor: const Color(0xFFFEF2F2),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: _showGlobalSignOutDialog,
+                        icon: const Icon(Icons.logout_rounded, size: 14, color: Color(0xFFDC2626)),
+                        label: Text(
+                          isMr ? 'इतर सर्व उपकरणांवरून बाहेर पडा' : 'Sign Out Other Devices',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFFDC2626)),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFFFECACA)),
+                          backgroundColor: const Color(0xFFFEF2F2),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+                  ],
+                )
+              : Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        decoration: InputDecoration(
+                          hintText: isMr ? 'IP, ईमेल किंवा उपकरण शोधा...' : 'Search IP, email or device OS...',
+                          hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
+                          prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFF64748B)),
+                          isDense: true,
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                          ),
+                        ),
+                        onChanged: (v) => setState(() => _securityLogSearch = v.trim()),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    OutlinedButton.icon(
+                      onPressed: _showGlobalSignOutDialog,
+                      icon: const Icon(Icons.logout_rounded, size: 14, color: Color(0xFFDC2626)),
+                      label: Text(
+                        isMr ? 'इतर उपकरणे बंद करा' : 'Sign Out Others',
+                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFFDC2626)),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFFECACA)),
+                        backgroundColor: const Color(0xFFFEF2F2),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ],
+                ),
         ),
 
         // Logs List
@@ -1185,9 +2077,24 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
           child: _isLoadingLogs
               ? const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)))
               : filtered.isEmpty
-                  ? const Center(child: Text('No security audit logs found'))
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.shield_outlined, size: 40, color: Color(0xFF94A3B8)),
+                            const SizedBox(height: 10),
+                            Text(
+                              isMr ? 'कोणतेही सुरक्षा लॉग उपलब्ध नाहीत' : 'No security audit logs found',
+                              style: const TextStyle(fontSize: 13, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
                   : ListView.separated(
-                      padding: const EdgeInsets.all(14),
+                      padding: const EdgeInsets.fromLTRB(14, 12, 14, 90),
                       itemCount: filtered.length,
                       separatorBuilder: (_, _) => const SizedBox(height: 8),
                       itemBuilder: (context, idx) {
@@ -1196,21 +2103,35 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                             ? DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.tryParse(log['created_at'].toString()) ?? DateTime.now())
                             : 'Recent';
 
+                        final osStr = (log['os'] ?? 'Device').toString();
+                        final browserStr = (log['browser'] ?? 'App').toString();
+
                         return Card(
                           elevation: 0,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            side: BorderSide(color: isDark ? Colors.grey[800]! : const Color(0xFFE2E8F0)),
+                            borderRadius: BorderRadius.circular(12),
+                            side: const BorderSide(color: Color(0xFFE2E8F0)),
                           ),
                           child: Padding(
                             padding: const EdgeInsets.all(12),
                             child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                CircleAvatar(
-                                  backgroundColor: const Color(0xFFE0F2FE),
-                                  child: const Icon(Icons.devices, color: Color(0xFF0284C7), size: 18),
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFE0F2FE),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(
+                                    osStr.toLowerCase().contains('android') || osStr.toLowerCase().contains('ios')
+                                        ? Icons.smartphone_rounded
+                                        : Icons.laptop_chromebook_rounded,
+                                    color: const Color(0xFF0284C7),
+                                    size: 20,
+                                  ),
                                 ),
-                                const SizedBox(width: 10),
+                                const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1218,12 +2139,16 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                                       Row(
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
-                                          Text(
-                                            '${log['os'] ?? 'Device'} · ${log['browser'] ?? 'App'}',
-                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                          Expanded(
+                                            child: Text(
+                                              '$osStr · $browserStr',
+                                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
                                           ),
+                                          const SizedBox(width: 8),
                                           Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                                             decoration: BoxDecoration(
                                               color: const Color(0xFFF0FDF4),
                                               borderRadius: BorderRadius.circular(4),
@@ -1236,14 +2161,16 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                                           ),
                                         ],
                                       ),
-                                      const SizedBox(height: 2),
+                                      const SizedBox(height: 3),
                                       Text(
                                         'IP: ${log['ip_address'] ?? '127.0.0.1'} · ${log['email'] ?? 'User'}',
                                         style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                        overflow: TextOverflow.ellipsis,
                                       ),
+                                      const SizedBox(height: 2),
                                       Text(
                                         dateStr,
-                                        style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+                                        style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8), fontWeight: FontWeight.w500),
                                       ),
                                     ],
                                   ),
@@ -1260,92 +2187,163 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Tab 5: Report Issue / Support
+  // Tab 4: Report Issue / Support
   // ─────────────────────────────────────────────────────────────
-  Widget _buildSupportTab(bool isDark) {
+  Widget _buildSupportTab(bool isDark, BoxConstraints constraints) {
+    final isMr = ref.watch(isMarathiProvider);
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 80),
+      physics: const ClampingScrollPhysics(),
+      padding: EdgeInsets.fromLTRB(
+        constraints.maxWidth < 400 ? 12 : 16,
+        14,
+        constraints.maxWidth < 400 ? 12 : 16,
+        90,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Submit Ticket Card
-          Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: isDark ? Colors.grey[800]! : const Color(0xFFE2E8F0)),
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: const [BoxShadow(color: Color(0x06000000), blurRadius: 8, offset: Offset(0, 2))],
             ),
             child: Padding(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    children: const [
-                      Icon(Icons.report_problem_outlined, color: Color(0xFFD97706), size: 18),
-                      SizedBox(width: 6),
-                      Text('Report New Issue or Feature Request', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF3C7),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.report_problem_rounded, color: Color(0xFFD97706), size: 18),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isMr ? 'नवीन अडचण किंवा सूचना नोंदवा' : 'Report Issue / Feature Request',
+                              style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              isMr
+                                  ? 'कृष्णनीती म्युनिसिपल सॉफ्टवेअर सपोर्ट डेस्ककडे थेट तांत्रिक संपर्क.'
+                                  : 'Direct technical escalation to Krishnaniti municipal software support desk.',
+                              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Direct technical escalation to Krishnaniti municipal software support desk.',
-                    style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                  ),
-                  const Divider(height: 18),
+                  const Divider(height: 22, color: Color(0xFFF1F5F9)),
 
-                  const Text('Issue Title / Summary *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 4),
+                  Text(
+                    isMr ? 'समस्येचे शीर्षक / सारांश *' : 'Issue Title / Summary *',
+                    style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
+                  ),
+                  const SizedBox(height: 5),
                   TextField(
                     controller: _supportTitleCtrl,
+                    style: const TextStyle(fontSize: 13),
                     decoration: InputDecoration(
-                      hintText: 'e.g. Photo upload in gallery reports timeout error',
+                      hintText: isMr ? 'उदा. फोटो अपलोड करताना त्रुटी येते' : 'e.g. Photo upload in gallery reports timeout error',
+                      hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
                       isDense: true,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+                      ),
                     ),
                   ),
 
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
 
-                  const Text('Detailed Description *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 4),
+                  Text(
+                    isMr ? 'तपशीलवार वर्णन *' : 'Detailed Description *',
+                    style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
+                  ),
+                  const SizedBox(height: 5),
                   TextField(
                     controller: _supportDescCtrl,
                     maxLines: 4,
+                    style: const TextStyle(fontSize: 13),
                     decoration: InputDecoration(
-                      hintText: 'Explain the issue encountered, steps to reproduce, or requested enhancement...',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      hintText: isMr
+                          ? 'येणारी समस्या, पावले आणि अपेक्षित निकाल स्पष्ट करा...'
+                          : 'Explain the issue encountered, steps to reproduce, or requested enhancement...',
+                      hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.all(12),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+                      ),
                     ),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  Row(
-                    children: [
-                      const Text('Severity / Priority:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                      const SizedBox(width: 12),
-                      _buildPriorityChoice('Low'),
-                      const SizedBox(width: 8),
-                      _buildPriorityChoice('Medium'),
-                      const SizedBox(width: 8),
-                      _buildPriorityChoice('High'),
-                    ],
                   ),
 
                   const SizedBox(height: 14),
 
+                  // Priority Choice (Responsive Wrap)
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      Text(
+                        isMr ? 'तीव्रता / प्राधान्य:' : 'Severity / Priority:',
+                        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
+                      ),
+                      _buildPriorityChoice('Low', isMr ? 'कमी (Low)' : 'Low', const Color(0xFF10B981)),
+                      _buildPriorityChoice('Medium', isMr ? 'मध्यम (Med)' : 'Medium', const Color(0xFFF59E0B)),
+                      _buildPriorityChoice('High', isMr ? 'तातडीचे (High)' : 'High', const Color(0xFFEF4444)),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
                   SizedBox(
                     width: double.infinity,
+                    height: 46,
                     child: ElevatedButton.icon(
                       onPressed: _isSubmittingTicket ? null : _submitSupportTicket,
                       icon: _isSubmittingTicket
                           ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Icon(Icons.send, size: 16),
-                      label: Text(_isSubmittingTicket ? 'Submitting...' : 'Submit Support Ticket'),
+                          : const Icon(Icons.send_rounded, size: 16),
+                      label: Text(
+                        _isSubmittingTicket
+                            ? (isMr ? 'पाठवत आहे...' : 'Submitting Ticket...')
+                            : (isMr ? 'सपोर्ट तिकीट पाठवा' : 'Submit Support Ticket'),
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF0284C7),
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                     ),
                   ),
@@ -1354,18 +2352,19 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
             ),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
-          // Submitted Tickets
+          // Submitted Tickets Header
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'My Support Tickets (${_supportTickets.length})',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                isMr ? 'माझी सपोर्ट तिकिटे (${_supportTickets.length})' : 'My Support Tickets (${_supportTickets.length})',
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF0F172A)),
               ),
               IconButton(
-                icon: const Icon(Icons.refresh, size: 18),
+                icon: const Icon(Icons.refresh_rounded, size: 18, color: Color(0xFF0284C7)),
+                tooltip: 'Refresh Tickets',
                 onPressed: _loadSupportTickets,
               ),
             ],
@@ -1375,7 +2374,15 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
           _isLoadingTickets
               ? const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)))
               : _supportTickets.isEmpty
-                  ? const Center(child: Text('No support tickets filed yet'))
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Text(
+                          isMr ? 'कोणतीही सपोर्ट तिकिटे उपलब्ध नाहीत' : 'No support tickets filed yet',
+                          style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B)),
+                        ),
+                      ),
+                    )
                   : ListView.separated(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
@@ -1392,8 +2399,8 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                         return Card(
                           elevation: 0,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            side: BorderSide(color: isDark ? Colors.grey[800]! : const Color(0xFFE2E8F0)),
+                            borderRadius: BorderRadius.circular(12),
+                            side: const BorderSide(color: Color(0xFFE2E8F0)),
                           ),
                           child: Padding(
                             padding: const EdgeInsets.all(12),
@@ -1422,7 +2429,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                                 const SizedBox(height: 4),
                                 Text(
                                   t['title'] ?? 'Support Inquiry',
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
@@ -1448,21 +2455,39 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
   }
 
   // ─────────────────────────────────────────────────────────────
-  // UI Helpers
+  // UI Helpers: Text Field with Icon
   // ─────────────────────────────────────────────────────────────
-  Widget _buildTextField(String label, TextEditingController ctrl, String hint, {bool isPhone = false, bool isEmail = false}) {
+  Widget _buildTextField({
+    required String label,
+    required TextEditingController ctrl,
+    required String hint,
+    IconData? prefixIcon,
+    bool isPhone = false,
+    bool isEmail = false,
+    bool isNumeric = false,
+    int maxLines = 1,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
+        ),
         const SizedBox(height: 5),
         TextField(
           controller: ctrl,
-          keyboardType: isPhone ? TextInputType.phone : (isEmail ? TextInputType.emailAddress : TextInputType.text),
-          style: const TextStyle(fontSize: 13),
+          maxLines: maxLines,
+          keyboardType: isPhone
+              ? TextInputType.phone
+              : (isEmail
+                  ? TextInputType.emailAddress
+                  : (isNumeric ? TextInputType.number : TextInputType.text)),
+          style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A), fontWeight: FontWeight.w500),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+            hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12.5),
+            prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: const Color(0xFF64748B), size: 18) : null,
             filled: true,
             fillColor: Colors.white,
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -1480,26 +2505,34 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
     );
   }
 
-
-
-  Widget _buildPriorityChoice(String priority) {
+  Widget _buildPriorityChoice(String priority, String displayLabel, Color baseColor) {
     final isSelected = _supportPriority == priority;
     return InkWell(
-      onTap: () => setState(() => _supportPriority = priority),
-      borderRadius: BorderRadius.circular(6),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      onTap: () {
+        HapticFeedback.selectionClick();
+        setState(() => _supportPriority = priority);
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF0284C7) : Colors.grey[100],
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: isSelected ? const Color(0xFF0284C7) : Colors.grey[300]!),
+          color: isSelected ? baseColor : const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected ? baseColor : const Color(0xFFCBD5E1),
+            width: isSelected ? 1.5 : 1.0,
+          ),
+          boxShadow: isSelected
+              ? [BoxShadow(color: baseColor.withValues(alpha: 0.25), blurRadius: 4, offset: const Offset(0, 1))]
+              : null,
         ),
         child: Text(
-          priority,
+          displayLabel,
           style: TextStyle(
-            fontSize: 11,
+            fontSize: 11.5,
             fontWeight: FontWeight.bold,
-            color: isSelected ? Colors.white : Colors.grey[800],
+            color: isSelected ? Colors.white : const Color(0xFF334155),
           ),
         ),
       ),
@@ -1508,7 +2541,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
 
   Widget _buildTicketBadge(String label, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(4),

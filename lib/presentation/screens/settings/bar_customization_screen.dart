@@ -209,7 +209,7 @@ class _BarCustomizationViewState extends ConsumerState<BarCustomizationView> {
                         : ListView.separated(
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                             itemCount: filtered.length,
-                            separatorBuilder: (_, __) => const Divider(height: 1, indent: 50),
+                            separatorBuilder: (context, index) => const Divider(height: 1, indent: 50),
                             itemBuilder: (c, idx) {
                               final item = filtered[idx];
                               final isCurrent = item.key == currentKey;
@@ -382,21 +382,23 @@ class _BarCustomizationViewState extends ConsumerState<BarCustomizationView> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isMr ? 'बॉटम नेव्हिगेशन बार (4 पर्याय)' : 'Bottom Navigation Bar (4 Tabs)',
-                  style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  isMr
-                      ? 'पहिले 3 टॅब बदला. चौथा प्रोफाईल पर्याय कायम निश्चित आहे.'
-                      : 'First 3 tabs are customizable. Tab 4 (Profile) is fixed.',
-                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                ),
-              ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isMr ? 'बॉटम नेव्हिगेशन बार (4 पर्याय)' : 'Bottom Navigation Bar (4 Tabs)',
+                    style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    isMr
+                        ? 'पहिले 3 टॅब बदला. चौथा प्रोफाईल पर्याय कायम निश्चित आहे.'
+                        : 'First 3 tabs are customizable. Tab 4 (Profile) is fixed.',
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                  ),
+                ],
+              ),
             ),
             TextButton.icon(
               onPressed: () {
@@ -495,21 +497,23 @@ class _BarCustomizationViewState extends ConsumerState<BarCustomizationView> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isMr ? 'द्रुत क्रिया मेनू (5 पर्याय)' : 'Radial Quick Access (5 Slots)',
-                  style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  isMr
-                      ? 'मध्यवर्ती बटण दाबून धरल्यावर किंवा ओढल्यावर दिसणारे 5 पर्याय.'
-                      : 'The 5 gesture actions on the semicircular arc track.',
-                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                ),
-              ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isMr ? 'द्रुत क्रिया मेनू (5 पर्याय)' : 'Radial Quick Access (5 Slots)',
+                    style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    isMr
+                        ? 'मध्यवर्ती बटण दाबून धरल्यावर किंवा ओढल्यावर दिसणारे 5 पर्याय.'
+                        : 'The 5 gesture actions on the semicircular arc track.',
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                  ),
+                ],
+              ),
             ),
             TextButton.icon(
               onPressed: () {
