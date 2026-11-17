@@ -1153,12 +1153,17 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
 
           const SizedBox(height: 18),
 
-          // 5. Account Session & Security Card (Sign Out Option)
+          // 5. Navigation Bar Customization Banner
+          _buildBarCustomizationBanner(isMr, isStacked, false),
+
+          const SizedBox(height: 18),
+
+          // 6. Account Session & Security Card (Sign Out Option)
           _buildSessionSecurityCard(isMr, user, isStacked),
 
           const SizedBox(height: 20),
 
-          // 6. Sticky-Style Responsive Save Button
+          // 7. Sticky-Style Responsive Save Button
           SizedBox(
             width: double.infinity,
             height: 50,
@@ -1879,86 +1884,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
           const SizedBox(height: 22),
 
           // Bar Customization Call-to-action
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF0F9FF),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFBAE6FD)),
-            ),
-            child: isStacked
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.tune_rounded, color: Color(0xFF0284C7), size: 22),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              isMr ? 'नेव्हिगेशन सानुकूल करा' : 'Customize Your Navigation',
-                              style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        isMr
-                            ? 'आपल्या आवडीनुसार बॉटम बार आणि 5 द्रुत क्रिया पर्याय सेट करा.'
-                            : 'Assign your frequently used permitted modules to bottom bar tabs and radial gestures.',
-                        style: const TextStyle(fontSize: 11.5, color: Color(0xFF475569)),
-                      ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0284C7),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          ),
-                          onPressed: () => _tabController.animateTo(0),
-                          child: Text(isMr ? 'सेट करा' : 'Open Customizer', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                    ],
-                  )
-                : Row(
-                    children: [
-                      const Icon(Icons.tune_rounded, color: Color(0xFF0284C7), size: 24),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              isMr ? 'नेव्हिगेशन सानुकूल करा' : 'Customize Your Navigation',
-                              style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              isMr
-                                  ? 'आपल्या आवडीनुसार बॉटम बार आणि 5 द्रुत क्रिया पर्याय सेट करा.'
-                                  : 'Assign your frequently used permitted modules to bottom bar tabs and radial gestures.',
-                              style: const TextStyle(fontSize: 11, color: Color(0xFF475569)),
-                            ),
-                          ],
-                        ),
-                      ),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0284C7),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        ),
-                        onPressed: () => _tabController.animateTo(0),
-                        child: Text(isMr ? 'सेट करा' : 'Open Customizer', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                      ),
-                    ],
-                  ),
-          ),
+          _buildBarCustomizationBanner(isMr, isStacked, true),
 
           const SizedBox(height: 20),
 
@@ -1966,6 +1892,89 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
           _buildSessionSecurityCard(isMr, user, isStacked),
         ],
       ),
+    );
+  }
+
+  Widget _buildBarCustomizationBanner(bool isMr, bool isStacked, bool isStaff) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0F9FF),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFBAE6FD)),
+      ),
+      child: isStacked
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.tune_rounded, color: Color(0xFF0284C7), size: 22),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        isMr ? 'नेव्हिगेशन सानुकूल करा' : 'Customize Your Navigation',
+                        style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  isMr
+                      ? 'आपल्या आवडीनुसार बॉटम बार आणि 5 द्रुत क्रिया पर्याय सेट करा.'
+                      : 'Assign your frequently used permitted modules to bottom bar tabs and radial gestures.',
+                  style: const TextStyle(fontSize: 11.5, color: Color(0xFF475569)),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0284C7),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    onPressed: () => _tabController.animateTo(isStaff ? 0 : 1),
+                    child: Text(isMr ? 'सेट करा' : 'Open Customizer', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            )
+          : Row(
+              children: [
+                const Icon(Icons.tune_rounded, color: Color(0xFF0284C7), size: 24),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isMr ? 'नेव्हिगेशन सानुकूल करा' : 'Customize Your Navigation',
+                        style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        isMr
+                            ? 'आपल्या आवडीनुसार बॉटम बार आणि 5 द्रुत क्रिया पर्याय सेट करा.'
+                            : 'Assign your frequently used permitted modules to bottom bar tabs and radial gestures.',
+                        style: const TextStyle(fontSize: 11, color: Color(0xFF475569)),
+                      ),
+                    ],
+                  ),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0284C7),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  ),
+                  onPressed: () => _tabController.animateTo(isStaff ? 0 : 1),
+                  child: Text(isMr ? 'सेट करा' : 'Open Customizer', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
     );
   }
 

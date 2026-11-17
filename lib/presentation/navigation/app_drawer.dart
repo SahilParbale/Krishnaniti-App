@@ -803,42 +803,6 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
                   ),
                 ),
 
-                const Divider(height: 6, thickness: 0.8, color: Color(0xFFF1F5F9)),
-
-                // ==========================================
-                // BAR CUSTOMIZATION (Navigation Shortcuts)
-                // ==========================================
-                _DrawerSingleItem(
-                  icon: Icons.tune_rounded,
-                  title: 'Bar Customization',
-                  onTap: () => _navigateToModule(
-                    title: 'Bar Customization',
-                    subtitle: 'Bottom bar & radial quick access shortcuts',
-                    category: 'System Settings',
-                    icon: Icons.tune_rounded,
-                    description: 'Personalize bottom bar navigation tabs and 5 radial quick gesture actions.',
-                    highlights: ['3 Bottom Bar Slots', '5 Radial Arc Slots', 'Cloud Synced'],
-                  ),
-                ),
-
-                const SizedBox(height: 4),
-
-                // ==========================================
-                // 10) PROFILE SETTINGS (Settings) - Standalone Item
-                // ==========================================
-                _DrawerSingleItem(
-                  icon: Icons.settings_rounded,
-                  title: 'Profile Settings',
-                  onTap: () => _navigateToModule(
-                    title: 'Profile Settings',
-                    subtitle: 'Nagarsevak profile, branding & security configuration',
-                    category: 'System Settings',
-                    icon: Icons.settings_rounded,
-                    description: 'Configure official Nagarsevak identity, party branding, and security audit logs.',
-                    highlights: ['Profile Branding & Photo', 'Bar Customization', 'Audit & Security Logs'],
-                  ),
-                ),
-
                 const SizedBox(height: 8),
                 const Divider(height: 16, thickness: 1, color: Color(0xFFF1F5F9)),
 
