@@ -1090,40 +1090,29 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
           ),
           Container(height: 24, width: 1, color: Colors.grey.shade200),
 
-          // Booth Filter Popup
-          PopupMenuButton<String>(
-            tooltip: 'Select Booth',
-            initialValue: _selectedBooth,
-            onSelected: (val) {
-              setState(() => _selectedBooth = val);
-              _loadVoters();
-            },
-            itemBuilder: (ctx) => [
-              const PopupMenuItem(value: 'All', child: Text('All Booths')),
-              ..._boothsList.map((b) => PopupMenuItem(value: b, child: Text(b))),
-            ],
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.how_to_vote_outlined,
-                    size: 16,
-                    color: _selectedBooth != 'All' ? const Color(0xFF0284C7) : Colors.grey.shade600,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    _selectedBooth == 'All' ? 'All Booths' : _selectedBooth.split('/').first,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: _selectedBooth != 'All' ? FontWeight.bold : FontWeight.normal,
-                      color: _selectedBooth != 'All' ? const Color(0xFF0284C7) : Colors.grey.shade700,
-                    ),
-                  ),
-                  const Icon(Icons.arrow_drop_down, size: 18, color: Colors.grey),
-                ],
-              ),
+          // Booth Filter Dropdown (Themed Component)
+          AppDropdown<String>(
+            value: _selectedBooth,
+            height: 36,
+            isExpanded: false,
+            backgroundColor: Colors.transparent,
+            borderColor: Colors.transparent,
+            hintText: 'Select Booth',
+            prefixIcon: Icon(
+              Icons.how_to_vote_outlined,
+              size: 16,
+              color: _selectedBooth != 'All' ? const Color(0xFF0284C7) : Colors.grey.shade600,
             ),
+            items: [
+              const DropdownMenuItem(value: 'All', child: Text('All Booths')),
+              ..._boothsList.map((b) => DropdownMenuItem(value: b, child: Text(b))),
+            ],
+            onChanged: (val) {
+              if (val != null) {
+                setState(() => _selectedBooth = val);
+                _loadVoters();
+              }
+            },
           ),
 
           // Filter Button

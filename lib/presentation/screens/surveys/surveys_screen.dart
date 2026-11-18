@@ -13,6 +13,7 @@ import '../../widgets/app_pdf_button.dart';
 import 'create_survey_screen.dart';
 import 'survey_detail_screen.dart';
 import 'survey_report_generator.dart';
+import '../../widgets/app_dropdown.dart';
 
 class SurveysScreen extends ConsumerStatefulWidget {
   const SurveysScreen({super.key});
@@ -542,23 +543,32 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
             color: Colors.grey.shade200,
             margin: const EdgeInsets.symmetric(horizontal: 4),
           ),
-          // Area Dropdown
-          PopupMenuButton<String>(
-            tooltip: 'Area Filter',
-            initialValue: _selectedArea,
-            onSelected: (val) => setState(() => _selectedArea = val),
-            itemBuilder: (ctx) => [
-              const PopupMenuItem(
+          // Area Dropdown (Themed Component)
+          AppDropdown<String>(
+            value: _selectedArea,
+            height: 36,
+            isExpanded: false,
+            backgroundColor: Colors.transparent,
+            borderColor: Colors.transparent,
+            hintText: 'Select Area',
+            prefixIcon: Icon(
+              Icons.location_on_outlined,
+              size: 16,
+              color: _selectedArea != 'All' ? const Color(0xFF0284C7) : Colors.grey.shade600,
+            ),
+            items: [
+              const DropdownMenuItem(
                 value: 'All',
                 child: Text('All Areas'),
               ),
               ..._areaCounts.keys.map(
-                (area) => PopupMenuItem(
+                (area) => DropdownMenuItem(
                   value: area,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(area),
+                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
@@ -575,28 +585,9 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                 ),
               ),
             ],
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.location_on_outlined,
-                    size: 16,
-                    color: _selectedArea != 'All' ? const Color(0xFF0284C7) : Colors.grey.shade600,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    _selectedArea == 'All' ? 'All Areas' : _selectedArea,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: _selectedArea != 'All' ? FontWeight.bold : FontWeight.normal,
-                      color: _selectedArea != 'All' ? const Color(0xFF0284C7) : Colors.grey.shade700,
-                    ),
-                  ),
-                  const Icon(Icons.arrow_drop_down, size: 18, color: Colors.grey),
-                ],
-              ),
-            ),
+            onChanged: (val) {
+              if (val != null) setState(() => _selectedArea = val);
+            },
           ),
           Container(
             height: 28,
