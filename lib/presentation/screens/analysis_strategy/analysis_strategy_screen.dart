@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../navigation/app_drawer.dart';
 import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_pdf_button.dart';
+import 'analysis_strategy_report_generator.dart';
 
 class AreaMetrics {
   final String areaName;
@@ -370,118 +368,9 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
 
   Future<void> _exportPdfReport() async {
     if (_reportData == null) return;
-    final r = _reportData!;
-    final pdf = pw.Document();
-
-    pdf.addPage(
-      pw.Page(
-        pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(24),
-        build: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(
-                        'PUNE MUNICIPAL CORPORATION - PRABHAG 12',
-                        style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.indigo900),
-                      ),
-                      pw.Text(
-                        'Area Intelligence & Strategic Advisory Docket',
-                        style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.black),
-                      ),
-                      pw.Text('Area: ${r.areaName} · Confidential Political Document', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
-                    ],
-                  ),
-                  pw.Text(DateFormat('dd MMM yyyy').format(DateTime.now()), style: const pw.TextStyle(fontSize: 9)),
-                ],
-              ),
-              pw.Divider(thickness: 1.5),
-              pw.SizedBox(height: 10),
-
-              // KPI Row
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  _pwStatCard('Total Voters', '${r.totalVoters}'),
-                  _pwStatCard('Supporters', '${r.supportersCount}'),
-                  _pwStatCard('Mobile Reach', '${r.mobileReach}%'),
-                  _pwStatCard('Complaints Solved', '${r.solvedComplaints} / ${r.totalComplaints}'),
-                ],
-              ),
-              pw.SizedBox(height: 14),
-
-              // Demographics Table
-              pw.Text('Demographic Breakdown', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
-              pw.SizedBox(height: 6),
-              pw.Table.fromTextArray(
-                headers: ['Category', 'Male', 'Female', 'Youth (18-35)', 'Working (36-60)', 'Senior (61+)'],
-                data: [
-                  ['Count', '${r.genderMale}', '${r.genderFemale}', '${r.age18_35}', '${r.age36_60}', '${r.age61Plus}'],
-                ],
-                headerStyle: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
-                cellStyle: const pw.TextStyle(fontSize: 9),
-              ),
-              pw.SizedBox(height: 14),
-
-              // Political & Development
-              pw.Text('Political Strength & Development Works', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
-              pw.SizedBox(height: 6),
-              pw.Table.fromTextArray(
-                headers: ['Parameter', 'Details / Metrics'],
-                data: [
-                  ['Winning Status', '${r.winnerName} (Margin: +${r.winningMargin})'],
-                  ['Total Votes Casted', '${r.totalElectionVotes} votes in area'],
-                  ['Utilized Budget', 'Rs. ${r.utilizedBudget}'],
-                  ['Requested Provisions', '${r.requestedProvisionsCount} ongoing proposals (Rs. ${r.provisionsAmount})'],
-                ],
-                headerStyle: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
-                cellStyle: const pw.TextStyle(fontSize: 9),
-              ),
-
-              if (_generatedBrief.isNotEmpty) ...[
-                pw.SizedBox(height: 14),
-                pw.Text('AI Field Visit Briefing', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
-                pw.SizedBox(height: 4),
-                pw.Container(
-                  padding: const pw.EdgeInsets.all(8),
-                  decoration: pw.BoxDecoration(
-                    color: PdfColors.grey100,
-                    borderRadius: pw.BorderRadius.circular(6),
-                  ),
-                  child: pw.Text(_generatedBrief, style: const pw.TextStyle(fontSize: 8.5)),
-                ),
-              ],
-            ],
-          );
-        },
-      ),
-    );
-
-    await Printing.layoutPdf(onLayout: (format) async => pdf.save());
-  }
-
-  pw.Widget _pwStatCard(String title, String value) {
-    return pw.Container(
-      width: 110,
-      padding: const pw.EdgeInsets.all(8),
-      decoration: pw.BoxDecoration(
-        border: pw.Border.all(color: PdfColors.grey400),
-        borderRadius: pw.BorderRadius.circular(6),
-      ),
-      child: pw.Column(
-        crossAxisAlignment: pw.CrossAxisAlignment.start,
-        children: [
-          pw.Text(title, style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700)),
-          pw.SizedBox(height: 2),
-          pw.Text(value, style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
-        ],
-      ),
+    await AnalysisStrategyReportGenerator.generateAndPrintReport(
+      reportData: _reportData!,
+      generatedBrief: _generatedBrief,
     );
   }
 
@@ -536,7 +425,16 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
             ),
           ],
         ),
-        actions: const [],
+        actions: [
+          if (_reportData != null) ...[
+            AppPdfButton(
+              label: 'Reports',
+              style: AppPdfButtonStyle.outlined,
+              onPressed: _exportPdfReport,
+            ),
+            const SizedBox(width: 8),
+          ],
+        ],
       ),
       body: Column(
         children: [

@@ -3,175 +3,105 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../data/models/diary_task_model.dart';
+import '../../widgets/app_pdf_report_theme.dart';
 
+/// Official Tasks & Daily Work Diary Report Generator matching Nagarsevak-Managment
+/// (TaskReportGenerator.tsx).
 class DiaryReportGenerator {
   DiaryReportGenerator._();
 
   static Future<void> generateAndPrintTasksReport({
     required List<DiaryTaskModel> tasks,
     String? filterTitle,
+    String title = 'Daily Work Diary & Tasks Report',
+    String subtitle = 'Executive Itinerary & Scheduled Field Tasks',
   }) async {
     final pdf = pw.Document();
-    final nowStr = DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.now());
-
+    final now = DateTime.now();
+    final formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(now);
     final total = tasks.length;
-    final completed = tasks.where((t) => t.isCompleted).length;
-    final pending = tasks.where((t) => t.isPending).length;
-    final highPriority = tasks.where((t) => t.isHighPriority).length;
 
     pdf.addPage(
       pw.MultiPage(
-        pageFormat: PdfPageFormat.a4.landscape,
-        margin: const pw.EdgeInsets.all(24),
+        pageFormat: WebReportTheme.pageFormat,
+        margin: WebReportTheme.pageMargin,
         header: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(
-                        'DIARY - DAILY SCHEDULE & TASK ITINERARY',
-                        style: pw.TextStyle(
-                          fontSize: 16,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.blue900,
-                        ),
-                      ),
-                      pw.SizedBox(height: 3),
-                      pw.Text(
-                        'Prabhag Ward 12 - Nagarsevak Executive Work Diary',
-                        style: const pw.TextStyle(
-                          fontSize: 10,
-                          color: PdfColors.grey700,
-                        ),
-                      ),
-                    ],
-                  ),
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.end,
-                    children: [
-                      pw.Text(
-                        'Generated: $nowStr',
-                        style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600),
-                      ),
-                      if (filterTitle != null && filterTitle.isNotEmpty)
-                        pw.Text(
-                          'Filter: $filterTitle',
-                          style: pw.TextStyle(
-                            fontSize: 9,
-                            fontWeight: pw.FontWeight.bold,
-                            color: PdfColors.blue700,
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-              pw.SizedBox(height: 8),
-              // Summary row
-              pw.Container(
-                padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 10),
-                decoration: pw.BoxDecoration(
-                  color: PdfColors.grey100,
-                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
-                  border: pw.Border.all(color: PdfColors.grey300),
-                ),
-                child: pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildSummaryPill('Total Items', '$total', PdfColors.blue800),
-                    _buildSummaryPill('Pending', '$pending', PdfColors.amber800),
-                    _buildSummaryPill('Completed', '$completed', PdfColors.green800),
-                    _buildSummaryPill('High Priority', '$highPriority', PdfColors.red800),
-                  ],
-                ),
-              ),
-              pw.SizedBox(height: 10),
-              pw.Divider(thickness: 1, color: PdfColors.grey400),
-              pw.SizedBox(height: 6),
-            ],
+          if (context.pageNumber > 1) {
+            return WebReportTheme.buildContinuationHeader(
+              context,
+              title: title,
+            );
+          }
+          return WebReportTheme.buildHeader(
+            title: title,
+            subtitle: subtitle,
+            dateFormatted: formattedDate,
+            totalCount: total,
+            foundLabel: 'Total Tasks',
           );
         },
-        footer: (pw.Context context) {
-          return pw.Container(
-            alignment: pw.Alignment.centerRight,
-            margin: const pw.EdgeInsets.only(top: 10),
-            child: pw.Text(
-              'Page ${context.pageNumber} of ${context.pagesCount}',
-              style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600),
-            ),
-          );
-        },
+        footer: (pw.Context context) => WebReportTheme.buildFooter(context),
         build: (pw.Context context) {
-          if (tasks.isEmpty) {
-            return [
-              pw.Container(
-                alignment: pw.Alignment.center,
-                padding: const pw.EdgeInsets.all(40),
-                child: pw.Text(
-                  'No diary tasks found for the selected view.',
-                  style: const pw.TextStyle(fontSize: 12, color: PdfColors.grey600),
-                ),
-              ),
-            ];
-          }
-
-          final headers = [
-            'Sr.',
-            'Date & Time',
-            'Task Title & Details',
-            'Priority',
-            'Status',
-            'Location / Office',
-            'Person to Meet / Assigned',
-          ];
-
-          final rows = <List<String>>[];
-          for (var i = 0; i < tasks.length; i++) {
-            final t = tasks[i];
-            final dateStr = t.dueDate != null ? DateFormat('dd/MM/yyyy').format(t.dueDate!) : '-';
-            final timeStr = t.dueTime != null && t.dueTime!.isNotEmpty ? ' (${t.formattedTime})' : '';
-            final descPart = (t.description != null && t.description!.isNotEmpty) ? '\n${t.description!}' : '';
-            final locPart = [t.address, t.officeName].where((s) => s != null && s.isNotEmpty).join(' | ');
-            final personPart = [t.meetPersonName, t.assignedStaffName].where((s) => s != null && s.isNotEmpty).join(' / ');
-
-            rows.add([
-              '${i + 1}',
-              '$dateStr$timeStr',
-              '${t.title}$descPart',
-              t.priority,
-              t.status,
-              locPart.isNotEmpty ? locPart : '-',
-              personPart.isNotEmpty ? personPart : '-',
-            ]);
-          }
-
           return [
             pw.TableHelper.fromTextArray(
-              headers: headers,
-              data: rows,
-              headerStyle: pw.TextStyle(
-                fontSize: 9,
-                fontWeight: pw.FontWeight.bold,
-                color: PdfColors.white,
-              ),
-              headerDecoration: const pw.BoxDecoration(color: PdfColors.blue800),
-              cellStyle: const pw.TextStyle(fontSize: 8),
-              cellPadding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 6),
-              columnWidths: {
-                0: const pw.FixedColumnWidth(28),
-                1: const pw.FixedColumnWidth(80),
-                2: const pw.FlexColumnWidth(3),
-                3: const pw.FixedColumnWidth(55),
-                4: const pw.FixedColumnWidth(65),
-                5: const pw.FixedColumnWidth(110),
-                6: const pw.FixedColumnWidth(100),
+              border: WebReportTheme.tableBorder,
+              headerStyle: WebReportTheme.tableHeaderStyle,
+              headerDecoration: WebReportTheme.tableHeaderDecoration,
+              headerHeight: 22,
+              cellHeight: 20,
+              cellStyle: WebReportTheme.tableCellStyle,
+              headerCount: 1,
+              oddRowDecoration: WebReportTheme.oddRowDecoration,
+              columnWidths: const {
+                0: pw.FlexColumnWidth(0.6), // #
+                1: pw.FlexColumnWidth(2.8), // Task Title & Description
+                2: pw.FlexColumnWidth(1.2), // Priority
+                3: pw.FlexColumnWidth(1.6), // Due Date & Time
+                4: pw.FlexColumnWidth(2.2), // Location & Contact
+                5: pw.FlexColumnWidth(1.2), // Status
               },
-              oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey50),
+              headers: [
+                '#',
+                'Task Title & Details',
+                'Priority',
+                'Due Date / Time',
+                'Location / Contact',
+                'Status',
+              ],
+              data: List.generate(tasks.length, (index) {
+                final t = tasks[index];
+                final dateStr = t.dueDate != null ? DateFormat('dd/MM/yyyy').format(t.dueDate!) : '-';
+                final timeStr = t.dueTime ?? '';
+                final due = timeStr.isNotEmpty ? '$dateStr\n$timeStr' : dateStr;
+
+                final desc = (t.description != null && t.description!.isNotEmpty)
+                    ? '${t.title}\n${t.description!}'
+                    : t.title;
+
+                final loc = t.address != null && t.address!.isNotEmpty
+                    ? t.address!
+                    : (t.officeName ?? '-');
+                final meet = t.meetPersonName != null && t.meetPersonName!.isNotEmpty
+                    ? '\nMeet: ${t.meetPersonName}'
+                    : '';
+
+                return [
+                  '${index + 1}',
+                  desc,
+                  t.priority.toUpperCase(),
+                  due,
+                  '$loc$meet',
+                  t.status.toUpperCase(),
+                ];
+              }),
+              cellAlignments: {
+                0: pw.Alignment.center,
+                1: pw.Alignment.centerLeft,
+                2: pw.Alignment.center,
+                3: pw.Alignment.center,
+                4: pw.Alignment.centerLeft,
+                5: pw.Alignment.center,
+              },
             ),
           ];
         },
@@ -180,242 +110,245 @@ class DiaryReportGenerator {
 
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Diary_Report_${DateFormat('yyyyMMdd').format(DateTime.now())}.pdf',
+      name: 'Diary_Tasks_Report_${DateFormat('yyyyMMdd').format(now)}.pdf',
     );
   }
 
-  static pw.Widget _buildSummaryPill(String label, String value, PdfColor color) {
-    return pw.Row(
-      children: [
-        pw.Text(
-          '$label: ',
-          style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
-        ),
-        pw.Text(
-          value,
-          style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: color),
-        ),
-      ],
-    );
-  }
-
+  /// Generates a single Task / Diary docket
   static Future<void> generateAndPrintSingleTask(DiaryTaskModel task) async {
     final pdf = pw.Document();
-    final dateStr = task.dueDate != null ? DateFormat('dd MMMM yyyy').format(task.dueDate!) : 'Not scheduled';
+    final now = DateTime.now();
+    final formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(now);
+    final taskDueDateStr = task.dueDate != null
+        ? DateFormat('dd/MM/yyyy').format(task.dueDate!)
+        : 'Not scheduled';
 
     pdf.addPage(
-      pw.Page(
-        pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(36),
+      pw.MultiPage(
+        pageFormat: WebReportTheme.pageFormat,
+        margin: WebReportTheme.pageMargin,
+        header: (pw.Context context) {
+          if (context.pageNumber > 1) {
+            return WebReportTheme.buildContinuationHeader(
+              context,
+              title: 'Task Docket • ${task.id}',
+            );
+          }
+          return WebReportTheme.buildHeader(
+            title: 'Task / Diary Docket',
+            subtitle: 'Office of Nagarsevak • Executive Schedule & Action Item',
+            dateFormatted: formattedDate,
+            totalCount: 1,
+            foundLabel: 'Task ID: ${task.id}',
+          );
+        },
+        footer: (pw.Context context) => WebReportTheme.buildFooter(context),
         build: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              // Header
-              pw.Container(
-                padding: const pw.EdgeInsets.only(bottom: 12),
-                decoration: const pw.BoxDecoration(
-                  border: pw.Border(bottom: pw.BorderSide(color: PdfColors.blue800, width: 2)),
-                ),
-                child: pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: pw.CrossAxisAlignment.center,
-                  children: [
-                    pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.start,
-                      children: [
-                        pw.Text(
-                          'DAILY WORK DIARY - TASK SLIP',
-                          style: pw.TextStyle(
-                            fontSize: 16,
-                            fontWeight: pw.FontWeight.bold,
-                            color: PdfColors.blue900,
-                          ),
-                        ),
-                        pw.SizedBox(height: 3),
-                        pw.Text(
-                          'Nagarsevak Ward Administrative Office - Official Diary Itinerary',
-                          style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
-                        ),
-                      ],
-                    ),
-                    pw.Container(
-                      padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: pw.BoxDecoration(
-                        color: task.isCompleted ? PdfColors.green50 : PdfColors.amber50,
-                        border: pw.Border.all(
-                          color: task.isCompleted ? PdfColors.green300 : PdfColors.amber300,
-                        ),
-                        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
-                      ),
-                      child: pw.Text(
-                        task.status,
-                        style: pw.TextStyle(
-                          fontSize: 11,
-                          fontWeight: pw.FontWeight.bold,
-                          color: task.isCompleted ? PdfColors.green900 : PdfColors.amber900,
-                        ),
-                      ),
-                    ),
-                  ],
+          return [
+            // Status and priority strip
+            pw.Container(
+              padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: const pw.BoxDecoration(
+                color: WebReportTheme.slate50,
+                border: pw.Border(
+                  left: pw.BorderSide(color: WebReportTheme.brand600, width: 3),
+                  top: pw.BorderSide(color: WebReportTheme.slate200, width: 0.5),
+                  right: pw.BorderSide(color: WebReportTheme.slate200, width: 0.5),
+                  bottom: pw.BorderSide(color: WebReportTheme.slate200, width: 0.5),
                 ),
               ),
-
-              pw.SizedBox(height: 18),
-
-              // Overview Grid
-              pw.Container(
-                padding: const pw.EdgeInsets.all(12),
-                decoration: pw.BoxDecoration(
-                  color: PdfColors.grey100,
-                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
-                  border: pw.Border.all(color: PdfColors.grey300),
-                ),
-                child: pw.Column(
-                  children: [
-                    pw.Row(
-                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                      children: [
-                        _buildFieldCol('Scheduled Date', dateStr),
-                        _buildFieldCol('Scheduled Time', task.formattedTime.isNotEmpty ? task.formattedTime : 'Flexible'),
-                        _buildFieldCol('Priority', task.priority),
-                      ],
-                    ),
-                    pw.SizedBox(height: 10),
-                    pw.Row(
-                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                      children: [
-                        _buildFieldCol('Location / Ward Area', task.address ?? 'Ward 12'),
-                        _buildFieldCol('Government Office / Dept', task.officeName ?? 'N/A'),
-                        _buildFieldCol('Person to Meet', task.meetPersonName ?? 'N/A'),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              pw.SizedBox(height: 18),
-
-              // Title
-              pw.Text(
-                'TASK TITLE / PURPOSE',
-                style: pw.TextStyle(
-                  fontSize: 10,
-                  fontWeight: pw.FontWeight.bold,
-                  color: PdfColors.blue900,
-                ),
-              ),
-              pw.SizedBox(height: 4),
-              pw.Container(
-                width: double.infinity,
-                padding: const pw.EdgeInsets.all(10),
-                decoration: pw.BoxDecoration(
-                  border: pw.Border.all(color: PdfColors.grey300),
-                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
-                ),
-                child: pw.Text(
-                  task.title,
-                  style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
-                ),
-              ),
-
-              pw.SizedBox(height: 16),
-
-              // Description
-              pw.Text(
-                'DETAILED INSTRUCTIONS & NOTES',
-                style: pw.TextStyle(
-                  fontSize: 10,
-                  fontWeight: pw.FontWeight.bold,
-                  color: PdfColors.blue900,
-                ),
-              ),
-              pw.SizedBox(height: 4),
-              pw.Container(
-                width: double.infinity,
-                padding: const pw.EdgeInsets.all(10),
-                decoration: pw.BoxDecoration(
-                  border: pw.Border.all(color: PdfColors.grey300),
-                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
-                ),
-                child: pw.Text(
-                  task.description != null && task.description!.isNotEmpty
-                      ? task.description!
-                      : 'No specific notes recorded.',
-                  style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey900, lineSpacing: 1.4),
-                ),
-              ),
-
-              pw.SizedBox(height: 16),
-
-              // Assigned Staff
-              if (task.assignedStaffName != null && task.assignedStaffName!.isNotEmpty) ...[
-                pw.Text(
-                  'ASSIGNED TO',
-                  style: pw.TextStyle(
-                    fontSize: 10,
-                    fontWeight: pw.FontWeight.bold,
-                    color: PdfColors.blue900,
-                  ),
-                ),
-                pw.SizedBox(height: 4),
-                pw.Container(
-                  width: double.infinity,
-                  padding: const pw.EdgeInsets.all(10),
-                  decoration: pw.BoxDecoration(
-                    color: PdfColors.blue50,
-                    border: pw.Border.all(color: PdfColors.blue200),
-                    borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
-                  ),
-                  child: pw.Text(
-                    task.assignedStaffName!,
-                    style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900),
-                  ),
-                ),
-              ],
-
-              pw.Spacer(),
-
-              // Signature Line
-              pw.Row(
+              child: pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  pw.Row(
                     children: [
-                      pw.Text('Generated by: Nagarsevak Mobile Office', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
-                      pw.Text('Date: $dateStr', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
+                      pw.Text(
+                        'STATUS: ',
+                        style: pw.TextStyle(
+                          fontSize: 9,
+                          fontWeight: pw.FontWeight.bold,
+                          color: WebReportTheme.slate700,
+                        ),
+                      ),
+                      pw.Text(
+                        task.status.toUpperCase(),
+                        style: pw.TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: pw.FontWeight.bold,
+                          color: WebReportTheme.brand700,
+                        ),
+                      ),
                     ],
                   ),
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.center,
+                  pw.Row(
                     children: [
-                      pw.Container(width: 140, height: 1, color: PdfColors.grey500),
-                      pw.SizedBox(height: 4),
-                      pw.Text('Nagarsevak / Authority', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                      pw.Text(
+                        'PRIORITY: ',
+                        style: pw.TextStyle(
+                          fontSize: 9,
+                          fontWeight: pw.FontWeight.bold,
+                          color: WebReportTheme.slate700,
+                        ),
+                      ),
+                      pw.Text(
+                        task.priority.toUpperCase(),
+                        style: pw.TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: pw.FontWeight.bold,
+                          color: task.priority.toLowerCase() == 'urgent' || task.priority.toLowerCase() == 'high'
+                              ? PdfColors.red800
+                              : WebReportTheme.slate800,
+                        ),
+                      ),
+                    ],
+                  ),
+                  pw.Row(
+                    children: [
+                      pw.Text(
+                        'ASSIGNED TO: ',
+                        style: pw.TextStyle(
+                          fontSize: 9,
+                          fontWeight: pw.FontWeight.bold,
+                          color: WebReportTheme.slate700,
+                        ),
+                      ),
+                      pw.Text(
+                        (task.assignedStaffName ?? 'Unassigned').toUpperCase(),
+                        style: const pw.TextStyle(
+                          fontSize: 9,
+                          color: WebReportTheme.slate800,
+                        ),
+                      ),
                     ],
                   ),
                 ],
               ),
-            ],
-          );
+            ),
+
+            pw.SizedBox(height: 14),
+
+            // Task Title & Description Box
+            pw.Container(
+              width: double.infinity,
+              padding: const pw.EdgeInsets.all(12),
+              decoration: pw.BoxDecoration(
+                color: PdfColors.white,
+                borderRadius: pw.BorderRadius.circular(4),
+                border: pw.Border.all(color: WebReportTheme.slate200, width: 0.5),
+              ),
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text(
+                    'TASK TITLE',
+                    style: pw.TextStyle(
+                      fontSize: 8,
+                      fontWeight: pw.FontWeight.bold,
+                      color: WebReportTheme.slate500,
+                    ),
+                  ),
+                  pw.SizedBox(height: 3),
+                  pw.Text(
+                    task.title,
+                    style: pw.TextStyle(
+                      fontSize: 12,
+                      fontWeight: pw.FontWeight.bold,
+                      color: WebReportTheme.slate900,
+                    ),
+                  ),
+                  if (task.description != null && task.description!.isNotEmpty) ...[
+                    pw.SizedBox(height: 8),
+                    pw.Text(
+                      'DESCRIPTION / NOTES',
+                      style: pw.TextStyle(
+                        fontSize: 8,
+                        fontWeight: pw.FontWeight.bold,
+                        color: WebReportTheme.slate500,
+                      ),
+                    ),
+                    pw.SizedBox(height: 3),
+                    pw.Text(
+                      task.description!,
+                      style: const pw.TextStyle(
+                        fontSize: 9.5,
+                        color: WebReportTheme.slate800,
+                        lineSpacing: 3,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+
+            pw.SizedBox(height: 14),
+
+            // Details Grid
+            pw.Table(
+              border: WebReportTheme.tableBorder,
+              children: [
+                _buildTableRow('Due Date', taskDueDateStr, 'Due Time', task.dueTime ?? '-'),
+                _buildTableRow('Location / Address', task.address ?? '-', 'Office', task.officeName ?? '-'),
+                _buildTableRow('Person to Meet', task.meetPersonName ?? '-', 'Assigned Staff', task.assignedStaffName ?? '-'),
+              ],
+            ),
+          ];
         },
       ),
     );
 
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Diary_Task_${task.id}.pdf',
+      name: 'Task_Docket_${task.id}.pdf',
     );
   }
 
-  static pw.Widget _buildFieldCol(String label, String value) {
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
+  static pw.TableRow _buildTableRow(String l1, String v1, String l2, String v2) {
+    return pw.TableRow(
       children: [
-        pw.Text(label, style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
-        pw.SizedBox(height: 2),
-        pw.Text(value, style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+        pw.Container(
+          padding: const pw.EdgeInsets.all(8),
+          color: WebReportTheme.slate50,
+          child: pw.Text(
+            l1,
+            style: pw.TextStyle(
+              fontSize: 8.5,
+              fontWeight: pw.FontWeight.bold,
+              color: WebReportTheme.slate700,
+            ),
+          ),
+        ),
+        pw.Container(
+          padding: const pw.EdgeInsets.all(8),
+          child: pw.Text(
+            v1,
+            style: const pw.TextStyle(
+              fontSize: 8.5,
+              color: WebReportTheme.slate800,
+            ),
+          ),
+        ),
+        pw.Container(
+          padding: const pw.EdgeInsets.all(8),
+          color: WebReportTheme.slate50,
+          child: pw.Text(
+            l2,
+            style: pw.TextStyle(
+              fontSize: 8.5,
+              fontWeight: pw.FontWeight.bold,
+              color: WebReportTheme.slate700,
+            ),
+          ),
+        ),
+        pw.Container(
+          padding: const pw.EdgeInsets.all(8),
+          child: pw.Text(
+            v2,
+            style: const pw.TextStyle(
+              fontSize: 8.5,
+              color: WebReportTheme.slate800,
+            ),
+          ),
+        ),
       ],
     );
   }

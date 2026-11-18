@@ -3,7 +3,10 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../data/models/ward_budget_model.dart';
+import '../../widgets/app_pdf_report_theme.dart';
 
+/// Official Ward Budget Report Generator matching Nagarsevak-Managment
+/// (pages/budget/BudgetReportGenerator.tsx).
 class WardBudgetReportGenerator {
   WardBudgetReportGenerator._();
 
@@ -11,216 +14,214 @@ class WardBudgetReportGenerator {
     required List<WardBudgetModel> budgets,
     required String year,
     String? areaFilter,
+    String title = 'Ward Budget & Provision Report',
+    String subtitle = 'Financial Planning & Allocation Audit',
   }) async {
     final pdf = pw.Document();
-    final nowStr = DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.now());
+    final nowStr = DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now());
 
     final totalCount = budgets.length;
     final totalAllocated = budgets.fold<double>(0, (sum, b) => sum + b.totalAllocation);
     final totalUtilized = budgets.fold<double>(0, (sum, b) => sum + b.utilizedAmount);
     final totalRemaining = (totalAllocated - totalUtilized).clamp(0.0, double.infinity);
-    final overallPercentage = totalAllocated > 0 ? (totalUtilized / totalAllocated) * 100 : 0.0;
-    final activeCount = budgets.where((b) => b.status == 'Active').length;
+    final utilizationPercentage = totalAllocated > 0 ? (totalUtilized / totalAllocated) * 100 : 0.0;
 
-    final numFormat = NumberFormat.currency(locale: 'en_IN', symbol: 'Rs. ', decimalDigits: 0);
+    String formatCurrency(double val) {
+      return 'Rs. ${NumberFormat.decimalPattern().format(val.toInt())}';
+    }
 
     pdf.addPage(
       pw.MultiPage(
-        pageFormat: PdfPageFormat.a4.landscape,
-        margin: const pw.EdgeInsets.all(24),
+        pageFormat: WebReportTheme.pageFormat,
+        margin: WebReportTheme.pageMargin,
         header: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Column(
+          if (context.pageNumber > 1) {
+            return WebReportTheme.buildContinuationHeader(
+              context,
+              title: title,
+            );
+          }
+          return pw.Container(
+            decoration: const pw.BoxDecoration(
+              border: pw.Border(
+                bottom: pw.BorderSide(color: WebReportTheme.brand600, width: 2),
+              ),
+            ),
+            padding: const pw.EdgeInsets.only(bottom: 12),
+            margin: const pw.EdgeInsets.only(bottom: 16),
+            child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: pw.CrossAxisAlignment.end,
+              children: [
+                pw.Expanded(
+                  child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
                       pw.Text(
-                        'PUNE MUNICIPAL CORPORATION - WARD BUDGET & EXPENDITURE AUDIT REPORT',
+                        title,
                         style: pw.TextStyle(
-                          fontSize: 14,
+                          fontSize: 20,
                           fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.blue900,
+                          color: WebReportTheme.brand700,
                         ),
                       ),
                       pw.SizedBox(height: 3),
                       pw.Text(
-                        'Prabhag Ward 12 - Development Fund Sanctions, Departmental Expenditure & Unspent Balances ($year)',
+                        subtitle,
                         style: const pw.TextStyle(
                           fontSize: 9.5,
-                          color: PdfColors.grey700,
+                          color: WebReportTheme.slate500,
                         ),
                       ),
                     ],
                   ),
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.end,
-                    children: [
-                      pw.Text(
-                        'Generated: $nowStr',
-                        style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.grey600),
-                      ),
-                      pw.Text(
-                        'Financial Year: $year',
-                        style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900),
-                      ),
-                      if (areaFilter != null && areaFilter != 'All')
-                        pw.Text('Area: $areaFilter', style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.blue800)),
-                    ],
-                  ),
-                ],
-              ),
-              pw.SizedBox(height: 10),
-              // Financial Summary Strip
-              pw.Container(
-                padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: pw.BoxDecoration(
-                  color: PdfColors.blue50,
-                  borderRadius: pw.BorderRadius.circular(6),
-                  border: pw.Border.all(color: PdfColors.blue200),
                 ),
-                child: pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
+                pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.end,
                   children: [
-                    _statPill('Budget Heads', '$totalCount', PdfColors.blue900),
-                    _statPill('Total Allocated', numFormat.format(totalAllocated), PdfColors.blue800),
-                    _statPill('Total Utilized', numFormat.format(totalUtilized), PdfColors.indigo900),
-                    _statPill('Remaining Balance', numFormat.format(totalRemaining), PdfColors.green900),
-                    _statPill('Utilization %', '${overallPercentage.toStringAsFixed(1)}%', _getPdfPctColor(overallPercentage)),
-                    _statPill('Active Heads', '$activeCount', PdfColors.blue900),
+                    pw.Text(
+                      'Financial Year: $year',
+                      style: const pw.TextStyle(
+                        fontSize: 8.5,
+                        color: WebReportTheme.slate400,
+                      ),
+                    ),
+                    pw.SizedBox(height: 1),
+                    pw.Text(
+                      'Date: $nowStr',
+                      style: const pw.TextStyle(
+                        fontSize: 8,
+                        color: WebReportTheme.slate400,
+                      ),
+                    ),
+                    pw.SizedBox(height: 1),
+                    pw.Text(
+                      'Total Heads: $totalCount',
+                      style: const pw.TextStyle(
+                        fontSize: 8.5,
+                        color: WebReportTheme.slate400,
+                      ),
+                    ),
                   ],
-                ),
-              ),
-              pw.SizedBox(height: 10),
-              pw.Divider(color: PdfColors.grey400, thickness: 0.5),
-              pw.SizedBox(height: 6),
-            ],
-          );
-        },
-        footer: (pw.Context context) {
-          return pw.Container(
-            margin: const pw.EdgeInsets.only(top: 8),
-            padding: const pw.EdgeInsets.only(top: 6),
-            decoration: const pw.BoxDecoration(
-              border: pw.Border(top: pw.BorderSide(color: PdfColors.grey300, width: 0.5)),
-            ),
-            child: pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-              children: [
-                pw.Text(
-                  'Pune Municipal Corporation - Ward Budget Administration Dossier | Official Nagarsevak Accounts Record',
-                  style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey600),
-                ),
-                pw.Text(
-                  'Page ${context.pageNumber} of ${context.pagesCount}',
-                  style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey600),
                 ),
               ],
             ),
           );
         },
+        footer: (pw.Context context) => WebReportTheme.buildFooter(context),
         build: (pw.Context context) {
           return [
-            pw.Table(
-              border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
-              columnWidths: const {
-                0: pw.FixedColumnWidth(28),  // #
-                1: pw.FlexColumnWidth(3.2), // Category / Head
-                2: pw.FlexColumnWidth(2.0), // Area
-                3: pw.FlexColumnWidth(1.8), // Allocated
-                4: pw.FlexColumnWidth(1.8), // Utilized
-                5: pw.FlexColumnWidth(1.8), // Remaining
-                6: pw.FixedColumnWidth(75),  // Progress %
-              },
+            // Summary Overview (3-card grid matching BudgetReportGenerator.tsx)
+            pw.Row(
               children: [
-                pw.TableRow(
-                  decoration: const pw.BoxDecoration(color: PdfColors.grey100),
-                  children: [
-                    _tableHeader('#', alignCenter: true),
-                    _tableHeader('Category / Budget Head'),
-                    _tableHeader('Area / Location'),
-                    _tableHeader('Allocated (INR)', alignRight: true),
-                    _tableHeader('Utilized (INR)', alignRight: true),
-                    _tableHeader('Remaining (INR)', alignRight: true),
-                    _tableHeader('Progress %', alignCenter: true),
-                  ],
-                ),
-                ...budgets.asMap().entries.map((entry) {
-                  final idx = entry.key + 1;
-                  final item = entry.value;
-                  final pct = item.utilizationPercentage;
-
-                  return pw.TableRow(
+                pw.Expanded(
+                  child: pw.Container(
+                    padding: const pw.EdgeInsets.all(10),
                     decoration: pw.BoxDecoration(
-                      color: idx.isEven ? PdfColors.grey50 : PdfColors.white,
+                      color: WebReportTheme.slate50,
+                      borderRadius: pw.BorderRadius.circular(6),
+                      border: pw.Border.all(color: WebReportTheme.slate200),
                     ),
-                    children: [
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(5),
-                        child: pw.Text('$idx', style: const pw.TextStyle(fontSize: 8), textAlign: pw.TextAlign.center),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(5),
-                        child: pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          children: [
-                            pw.Text(
-                              item.category,
-                              style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(5),
-                        child: pw.Text(item.area, style: const pw.TextStyle(fontSize: 8)),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(5),
-                        child: pw.Text(
-                          numFormat.format(item.totalAllocation),
-                          style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey800),
-                          textAlign: pw.TextAlign.right,
-                        ),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(5),
-                        child: pw.Text(
-                          numFormat.format(item.utilizedAmount),
-                          style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800),
-                          textAlign: pw.TextAlign.right,
-                        ),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(5),
-                        child: pw.Text(
-                          numFormat.format(item.remainingAmount),
-                          style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.green900),
-                          textAlign: pw.TextAlign.right,
-                        ),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(5),
-                        child: pw.Container(
-                          padding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                          decoration: pw.BoxDecoration(
-                            color: _getPdfPctBg(pct),
-                            borderRadius: pw.BorderRadius.circular(3),
-                          ),
-                          child: pw.Text(
-                            '${pct.toStringAsFixed(0)}%',
-                            style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: _getPdfPctColor(pct)),
-                            textAlign: pw.TextAlign.center,
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                }),
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text('TOTAL ALLOCATED', style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold, color: WebReportTheme.slate500)),
+                        pw.SizedBox(height: 3),
+                        pw.Text(formatCurrency(totalAllocated), style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: WebReportTheme.slate900)),
+                      ],
+                    ),
+                  ),
+                ),
+                pw.SizedBox(width: 8),
+                pw.Expanded(
+                  child: pw.Container(
+                    padding: const pw.EdgeInsets.all(10),
+                    decoration: pw.BoxDecoration(
+                      color: WebReportTheme.brand50,
+                      borderRadius: pw.BorderRadius.circular(6),
+                      border: pw.Border.all(color: WebReportTheme.brand600, width: 0.5),
+                    ),
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text('TOTAL UTILIZED', style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold, color: WebReportTheme.brand600)),
+                        pw.SizedBox(height: 3),
+                        pw.Text(formatCurrency(totalUtilized), style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: WebReportTheme.brand900)),
+                        pw.SizedBox(height: 1),
+                        pw.Text('${utilizationPercentage.toStringAsFixed(1)}% utilized', style: const pw.TextStyle(fontSize: 7, color: WebReportTheme.brand700)),
+                      ],
+                    ),
+                  ),
+                ),
+                pw.SizedBox(width: 8),
+                pw.Expanded(
+                  child: pw.Container(
+                    padding: const pw.EdgeInsets.all(10),
+                    decoration: pw.BoxDecoration(
+                      color: const PdfColor.fromInt(0xFFF0FDF4),
+                      borderRadius: pw.BorderRadius.circular(6),
+                      border: pw.Border.all(color: const PdfColor.fromInt(0xFFBBF7D0), width: 0.5),
+                    ),
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text('REMAINING BALANCE', style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold, color: const PdfColor.fromInt(0xFF15803D))),
+                        pw.SizedBox(height: 3),
+                        pw.Text(formatCurrency(totalRemaining), style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: const PdfColor.fromInt(0xFF14532D))),
+                      ],
+                    ),
+                  ),
+                ),
               ],
+            ),
+            pw.SizedBox(height: 14),
+
+            // Table matching BudgetReportGenerator.tsx
+            pw.TableHelper.fromTextArray(
+              border: WebReportTheme.tableBorder,
+              headerStyle: WebReportTheme.tableHeaderStyle,
+              headerDecoration: WebReportTheme.tableHeaderDecoration,
+              headerHeight: 22,
+              cellHeight: 20,
+              cellStyle: WebReportTheme.tableCellStyle,
+              headerCount: 1,
+              oddRowDecoration: WebReportTheme.oddRowDecoration,
+              columnWidths: const {
+                0: pw.FlexColumnWidth(0.6), // # (5%)
+                1: pw.FlexColumnWidth(3.5), // Category / Head (35%)
+                2: pw.FlexColumnWidth(2.0), // Allocated (20%)
+                3: pw.FlexColumnWidth(2.0), // Utilized (20%)
+                4: pw.FlexColumnWidth(1.9), // Progress (20%)
+              },
+              headers: [
+                '#',
+                'Category / Head',
+                'Allocated',
+                'Utilized',
+                'Progress',
+              ],
+              data: List.generate(budgets.length, (index) {
+                final b = budgets[index];
+                final percent = b.totalAllocation > 0
+                    ? (b.utilizedAmount / b.totalAllocation) * 100
+                    : 0.0;
+                final areaStr = b.area.isNotEmpty ? '\n${b.area}' : '';
+
+                return [
+                  '${index + 1}',
+                  '${b.category}$areaStr',
+                  formatCurrency(b.totalAllocation),
+                  formatCurrency(b.utilizedAmount),
+                  '${percent.toStringAsFixed(0)}% Utilized',
+                ];
+              }),
+              cellAlignments: {
+                0: pw.Alignment.center,
+                1: pw.Alignment.centerLeft,
+                2: pw.Alignment.centerRight,
+                3: pw.Alignment.centerRight,
+                4: pw.Alignment.center,
+              },
             ),
           ];
         },
@@ -229,44 +230,7 @@ class WardBudgetReportGenerator {
 
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Ward_Budget_Report_${year}_${DateFormat('yyyyMMdd').format(DateTime.now())}.pdf',
+      name: 'Budget_Report_${year}_${DateFormat('yyyyMMdd').format(DateTime.now())}.pdf',
     );
-  }
-
-  static pw.Widget _statPill(String label, String value, PdfColor color) {
-    return pw.Column(
-      children: [
-        pw.Text(label, style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey700)),
-        pw.SizedBox(height: 1),
-        pw.Text(
-          value,
-          style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: color),
-        ),
-      ],
-    );
-  }
-
-  static pw.Widget _tableHeader(String text, {bool alignRight = false, bool alignCenter = false}) {
-    return pw.Padding(
-      padding: const pw.EdgeInsets.all(5),
-      child: pw.Text(
-        text,
-        style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.grey800),
-        textAlign: alignRight ? pw.TextAlign.right : (alignCenter ? pw.TextAlign.center : pw.TextAlign.left),
-      ),
-    );
-  }
-
-  static PdfColor _getPdfPctColor(double pct) {
-    if (pct >= 80) return PdfColors.green800;
-    if (pct >= 50) return PdfColors.orange900;
-    return PdfColors.red800;
-  }
-
-  static PdfColor _getPdfPctBg(double pct) {
-    if (pct >= 80) return PdfColors.green50;
-    if (pct >= 50) return PdfColors.yellow50;
-    return PdfColors.red50;
   }
 }
-

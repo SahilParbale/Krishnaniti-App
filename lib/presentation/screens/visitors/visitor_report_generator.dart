@@ -3,174 +3,92 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../data/models/visitor_model.dart';
+import '../../widgets/app_pdf_report_theme.dart';
 
+/// Official Visitor Log Report Generator matching Nagarsevak-Managment
+/// (VisitorReportGenerator.tsx).
 class VisitorReportGenerator {
   VisitorReportGenerator._();
 
   static Future<void> generateAndPrintListReport({
     required List<VisitorModel> visitors,
     String? filterTitle,
+    String title = 'Visitor Log Report',
+    String subtitle = 'Visitor Records Report',
   }) async {
     final pdf = pw.Document();
-    final nowStr = DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.now());
-
+    final now = DateTime.now();
+    final formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(now);
     final total = visitors.length;
-    final todayCount = visitors.where((v) => v.isToday).length;
-    final complaintCount = visitors.where((v) => v.purpose.toLowerCase() == 'complaint').length;
-    final helpCount = visitors.where((v) => v.purpose.toLowerCase() == 'help' || v.purpose.toLowerCase() == 'donation').length;
 
     pdf.addPage(
       pw.MultiPage(
-        pageFormat: PdfPageFormat.a4.landscape,
-        margin: const pw.EdgeInsets.all(24),
+        pageFormat: WebReportTheme.pageFormat,
+        margin: WebReportTheme.pageMargin,
         header: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(
-                        'OFFICE VISITOR LOG - CONSTITUENT VISIT REGISTER',
-                        style: pw.TextStyle(
-                          fontSize: 16,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.blue900,
-                        ),
-                      ),
-                      pw.SizedBox(height: 3),
-                      pw.Text(
-                        'Prabhag Ward 12 - Nagarsevak Public Grievance & Office Register',
-                        style: const pw.TextStyle(
-                          fontSize: 10,
-                          color: PdfColors.grey700,
-                        ),
-                      ),
-                    ],
-                  ),
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.end,
-                    children: [
-                      pw.Text(
-                        'Generated: $nowStr',
-                        style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600),
-                      ),
-                      if (filterTitle != null && filterTitle.isNotEmpty)
-                        pw.Text(
-                          'Filter: $filterTitle',
-                          style: pw.TextStyle(
-                            fontSize: 9,
-                            fontWeight: pw.FontWeight.bold,
-                            color: PdfColors.blue700,
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-              pw.SizedBox(height: 8),
-              // Summary row
-              pw.Container(
-                padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 10),
-                decoration: pw.BoxDecoration(
-                  color: PdfColors.grey100,
-                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
-                  border: pw.Border.all(color: PdfColors.grey300),
-                ),
-                child: pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildSummaryPill('Total Visitors', '$total', PdfColors.blue800),
-                    _buildSummaryPill('Today', '$todayCount', PdfColors.amber800),
-                    _buildSummaryPill('Complaints', '$complaintCount', PdfColors.red800),
-                    _buildSummaryPill('Help / Requests', '$helpCount', PdfColors.green800),
-                  ],
-                ),
-              ),
-              pw.SizedBox(height: 10),
-              pw.Divider(thickness: 1, color: PdfColors.grey400),
-              pw.SizedBox(height: 6),
-            ],
+          if (context.pageNumber > 1) {
+            return WebReportTheme.buildContinuationHeader(
+              context,
+              title: title,
+            );
+          }
+          return WebReportTheme.buildHeader(
+            title: title,
+            subtitle: subtitle,
+            dateFormatted: formattedDate,
+            totalCount: total,
+            foundLabel: 'Total Records',
           );
         },
-        footer: (pw.Context context) {
-          return pw.Container(
-            alignment: pw.Alignment.centerRight,
-            margin: const pw.EdgeInsets.only(top: 10),
-            child: pw.Text(
-              'Page ${context.pageNumber} of ${context.pagesCount}',
-              style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600),
-            ),
-          );
-        },
+        footer: (pw.Context context) => WebReportTheme.buildFooter(context),
         build: (pw.Context context) {
-          if (visitors.isEmpty) {
-            return [
-              pw.Container(
-                alignment: pw.Alignment.center,
-                padding: const pw.EdgeInsets.all(40),
-                child: pw.Text(
-                  'No visitor records found for the selected view.',
-                  style: const pw.TextStyle(fontSize: 12, color: PdfColors.grey600),
-                ),
-              ),
-            ];
-          }
-
-          final headers = [
-            'Sr.',
-            'Visit Date & Time',
-            'Visitor Name',
-            'Mobile',
-            'Area / Locality',
-            'Purpose',
-            'Reference & Notes',
-          ];
-
-          final rows = <List<String>>[];
-          for (var i = 0; i < visitors.length; i++) {
-            final v = visitors[i];
-            final dateTimeStr = '${DateFormat('dd/MM/yyyy').format(v.visitDate)}\n${DateFormat('hh:mm a').format(v.visitDate)}';
-            final refPart = (v.reference != null && v.reference!.isNotEmpty) ? 'Ref: ${v.reference!}\n' : '';
-            final notesPart = (v.remarks != null && v.remarks!.isNotEmpty) ? v.remarks! : '';
-            final amountPart = (v.amount != null && v.amount!.isNotEmpty) ? ' [₹${v.amount}]' : '';
-
-            rows.add([
-              '${i + 1}',
-              dateTimeStr,
-              v.name,
-              v.mobile.isNotEmpty ? v.mobile : '-',
-              v.area != null && v.area!.isNotEmpty ? v.area! : '-',
-              '${v.purpose}$amountPart',
-              '$refPart$notesPart'.trim().isNotEmpty ? '$refPart$notesPart'.trim() : '-',
-            ]);
-          }
-
           return [
             pw.TableHelper.fromTextArray(
-              headers: headers,
-              data: rows,
-              headerStyle: pw.TextStyle(
-                fontSize: 9,
-                fontWeight: pw.FontWeight.bold,
-                color: PdfColors.white,
-              ),
-              headerDecoration: const pw.BoxDecoration(color: PdfColors.blue800),
-              cellStyle: const pw.TextStyle(fontSize: 8),
-              cellPadding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 6),
-              columnWidths: {
-                0: const pw.FixedColumnWidth(28),
-                1: const pw.FixedColumnWidth(75),
-                2: const pw.FixedColumnWidth(110),
-                3: const pw.FixedColumnWidth(75),
-                4: const pw.FixedColumnWidth(100),
-                5: const pw.FixedColumnWidth(75),
-                6: const pw.FlexColumnWidth(3),
+              border: WebReportTheme.tableBorder,
+              headerStyle: WebReportTheme.tableHeaderStyle,
+              headerDecoration: WebReportTheme.tableHeaderDecoration,
+              headerHeight: 22,
+              cellHeight: 20,
+              cellStyle: WebReportTheme.tableCellStyle,
+              headerCount: 1,
+              oddRowDecoration: WebReportTheme.oddRowDecoration,
+              columnWidths: const {
+                0: pw.FlexColumnWidth(1.5), // Date & Time (15%)
+                1: pw.FlexColumnWidth(2.0), // Full Name (20%)
+                2: pw.FlexColumnWidth(1.5), // Mobile (15%)
+                3: pw.FlexColumnWidth(2.0), // Area (20%)
+                4: pw.FlexColumnWidth(1.5), // Purpose (15%)
+                5: pw.FlexColumnWidth(1.5), // Reference (15%)
               },
-              oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey50),
+              headers: [
+                'Date & Time',
+                'Full Name',
+                'Mobile',
+                'Area',
+                'Purpose',
+                'Reference',
+              ],
+              data: visitors.map((v) {
+                final dateStr = DateFormat('dd/MM/yyyy').format(v.visitDate);
+                final timeStr = DateFormat('hh:mm a').format(v.visitDate);
+
+                return [
+                  '$dateStr\n$timeStr',
+                  v.name,
+                  v.mobile.isNotEmpty ? v.mobile : '-',
+                  v.area ?? '-',
+                  v.purpose,
+                  v.reference ?? '-',
+                ];
+              }).toList(),
+              cellAlignments: {
+                0: pw.Alignment.centerLeft,
+                1: pw.Alignment.centerLeft,
+                2: pw.Alignment.centerLeft,
+                3: pw.Alignment.centerLeft,
+                4: pw.Alignment.centerLeft,
+                5: pw.Alignment.centerLeft,
+              },
             ),
           ];
         },
@@ -179,197 +97,167 @@ class VisitorReportGenerator {
 
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Visitor_Log_Report_${DateFormat('yyyyMMdd').format(DateTime.now())}.pdf',
+      name: 'Visitor_Log_Report_${DateFormat('yyyy-MM-dd').format(now)}.pdf',
     );
   }
 
-  static pw.Widget _buildSummaryPill(String label, String value, PdfColor color) {
-    return pw.Row(
-      children: [
-        pw.Text(
-          '$label: ',
-          style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
-        ),
-        pw.Text(
-          value,
-          style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: color),
-        ),
-      ],
-    );
-  }
-
+  /// Generates and prints single visitor pass / gate slip
   static Future<void> generateAndPrintVisitorSlip(VisitorModel visitor) async {
     final pdf = pw.Document();
-    final dateStr = DateFormat('dd MMMM yyyy, hh:mm a').format(visitor.visitDate);
+    final now = DateTime.now();
+    final formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(now);
 
     pdf.addPage(
       pw.Page(
-        pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(36),
+        pageFormat: PdfPageFormat.a5,
+        margin: const pw.EdgeInsets.all(24),
         build: (pw.Context context) {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
               // Header
               pw.Container(
-                padding: const pw.EdgeInsets.only(bottom: 12),
+                padding: const pw.EdgeInsets.only(bottom: 10),
                 decoration: const pw.BoxDecoration(
-                  border: pw.Border(bottom: pw.BorderSide(color: PdfColors.blue800, width: 2)),
+                  border: pw.Border(bottom: pw.BorderSide(color: WebReportTheme.brand600, width: 2)),
                 ),
                 child: pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: pw.CrossAxisAlignment.center,
                   children: [
                     pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
                         pw.Text(
-                          'OFFICE VISITOR PASS / SLIP',
-                          style: pw.TextStyle(
-                            fontSize: 16,
-                            fontWeight: pw.FontWeight.bold,
-                            color: PdfColors.blue900,
-                          ),
+                          'Nagarsevak Office Management System',
+                          style: const pw.TextStyle(fontSize: 8.5, color: WebReportTheme.slate500),
                         ),
-                        pw.SizedBox(height: 3),
+                        pw.SizedBox(height: 2),
                         pw.Text(
-                          'Nagarsevak Office - Prabhag 12 Public Relations Desk',
-                          style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
+                          'VISITOR ENTRY PASS',
+                          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: WebReportTheme.brand700),
                         ),
                       ],
                     ),
                     pw.Container(
-                      padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: pw.BoxDecoration(
-                        color: PdfColors.blue50,
-                        border: pw.Border.all(color: PdfColors.blue300),
-                        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
+                        color: WebReportTheme.brand50,
+                        borderRadius: pw.BorderRadius.circular(4),
+                        border: pw.Border.all(color: WebReportTheme.brand600, width: 0.5),
                       ),
                       child: pw.Text(
-                        visitor.purpose,
-                        style: pw.TextStyle(
-                          fontSize: 11,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.blue900,
-                        ),
+                        'PASS #${visitor.id.length >= 6 ? visitor.id.substring(0, 6).toUpperCase() : visitor.id}',
+                        style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: WebReportTheme.brand700),
                       ),
                     ),
                   ],
                 ),
               ),
+              pw.SizedBox(height: 14),
 
-              pw.SizedBox(height: 18),
-
-              // Overview Grid
+              // Details
               pw.Container(
                 padding: const pw.EdgeInsets.all(12),
                 decoration: pw.BoxDecoration(
-                  color: PdfColors.grey100,
-                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
-                  border: pw.Border.all(color: PdfColors.grey300),
+                  border: pw.Border.all(color: WebReportTheme.slate200),
+                  borderRadius: pw.BorderRadius.circular(6),
                 ),
                 child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
                     pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
-                        _buildFieldCol('Visitor Name', visitor.name),
-                        _buildFieldCol('Contact Mobile', visitor.mobile.isNotEmpty ? visitor.mobile : 'N/A'),
-                        _buildFieldCol('Check-in Date & Time', dateStr),
+                        pw.Column(
+                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                          children: [
+                            pw.Text('VISITOR NAME', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: WebReportTheme.slate700)),
+                            pw.SizedBox(height: 2),
+                            pw.Text(visitor.name, style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: WebReportTheme.slate900)),
+                          ],
+                        ),
+                        pw.Column(
+                          crossAxisAlignment: pw.CrossAxisAlignment.end,
+                          children: [
+                            pw.Text('CONTACT NUMBER', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: WebReportTheme.slate700)),
+                            pw.SizedBox(height: 2),
+                            pw.Text(visitor.mobile, style: const pw.TextStyle(fontSize: 10, color: WebReportTheme.slate800)),
+                          ],
+                        ),
                       ],
                     ),
                     pw.SizedBox(height: 10),
+                    pw.Divider(color: WebReportTheme.slate200, thickness: 0.5),
+                    pw.SizedBox(height: 6),
                     pw.Row(
-                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
-                        _buildFieldCol('Area / Address', visitor.area ?? 'Ward 12'),
-                        _buildFieldCol('Reference / Leader', visitor.reference ?? 'Self'),
-                        if (visitor.amount != null && visitor.amount!.isNotEmpty)
-                          _buildFieldCol('Requested Amount', '₹${visitor.amount}')
-                        else
-                          _buildFieldCol('Status', 'Logged / Checked In'),
+                        pw.Expanded(
+                          child: pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.start,
+                            children: [
+                              pw.Text('PURPOSE OF VISIT', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: WebReportTheme.slate700)),
+                              pw.SizedBox(height: 2),
+                              pw.Text(visitor.purpose, style: pw.TextStyle(fontSize: 9.5, fontWeight: pw.FontWeight.bold, color: WebReportTheme.brand700)),
+                            ],
+                          ),
+                        ),
+                        pw.Expanded(
+                          child: pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.start,
+                            children: [
+                              pw.Text('AREA / LOCALITY', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: WebReportTheme.slate700)),
+                              pw.SizedBox(height: 2),
+                              pw.Text(visitor.area ?? 'Prabhag 12', style: const pw.TextStyle(fontSize: 9.5, color: WebReportTheme.slate800)),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
+                    if (visitor.reference != null && visitor.reference!.isNotEmpty) ...[
+                      pw.SizedBox(height: 8),
+                      pw.Text('REFERENCE: ${visitor.reference}', style: const pw.TextStyle(fontSize: 8.5, color: WebReportTheme.slate600)),
+                    ],
                   ],
                 ),
               ),
 
-              pw.SizedBox(height: 18),
-
-              // Discussion Notes
-              pw.Text(
-                'PURPOSE & DISCUSSION REMARKS',
-                style: pw.TextStyle(
-                  fontSize: 10,
-                  fontWeight: pw.FontWeight.bold,
-                  color: PdfColors.blue900,
-                ),
-              ),
-              pw.SizedBox(height: 4),
-              pw.Container(
-                width: double.infinity,
-                padding: const pw.EdgeInsets.all(12),
-                decoration: pw.BoxDecoration(
-                  border: pw.Border.all(color: PdfColors.grey300),
-                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
-                ),
-                child: pw.Text(
-                  visitor.remarks != null && visitor.remarks!.isNotEmpty
-                      ? visitor.remarks!
-                      : 'No additional notes provided.',
-                  style: const pw.TextStyle(fontSize: 11, color: PdfColors.grey900, lineSpacing: 1.4),
-                ),
-              ),
-
-              if (visitor.eventDate != null && visitor.eventDate!.isNotEmpty) ...[
-                pw.SizedBox(height: 16),
-                pw.Text(
-                  'EVENT / INVITATION DETAILS',
-                  style: pw.TextStyle(
-                    fontSize: 10,
-                    fontWeight: pw.FontWeight.bold,
-                    color: PdfColors.blue900,
-                  ),
-                ),
-                pw.SizedBox(height: 4),
-                pw.Container(
-                  width: double.infinity,
-                  padding: const pw.EdgeInsets.all(10),
-                  decoration: pw.BoxDecoration(
-                    color: PdfColors.purple50,
-                    border: pw.Border.all(color: PdfColors.purple200),
-                    borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
-                  ),
-                  child: pw.Text(
-                    'Event Date: ${visitor.eventDate} | Time: ${visitor.eventTime ?? "TBD"} | Venue: ${visitor.area ?? "Local"}',
-                    style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.purple900),
-                  ),
-                ),
-              ],
-
               pw.Spacer(),
 
-              // Signatures
+              // Signature strip
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                      pw.Container(width: 120, height: 1, color: PdfColors.grey500),
-                      pw.SizedBox(height: 4),
-                      pw.Text('Visitor Signature', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
+                      pw.Text('Security / Desk In-Charge', style: const pw.TextStyle(fontSize: 7.5, color: WebReportTheme.slate500)),
+                      pw.SizedBox(height: 20),
+                      pw.Container(width: 100, height: 1, color: WebReportTheme.slate400),
                     ],
                   ),
                   pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.center,
+                    crossAxisAlignment: pw.CrossAxisAlignment.end,
                     children: [
-                      pw.Container(width: 140, height: 1, color: PdfColors.grey500),
-                      pw.SizedBox(height: 4),
-                      pw.Text('Desk Officer / Reception', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                      pw.Text('Officer / PA Signature', style: const pw.TextStyle(fontSize: 7.5, color: WebReportTheme.slate500)),
+                      pw.SizedBox(height: 20),
+                      pw.Container(width: 100, height: 1, color: WebReportTheme.slate400),
                     ],
                   ),
                 ],
+              ),
+              pw.SizedBox(height: 10),
+              pw.Container(
+                padding: const pw.EdgeInsets.only(top: 4),
+                decoration: const pw.BoxDecoration(
+                  border: pw.Border(top: pw.BorderSide(color: WebReportTheme.slate100, width: 0.5)),
+                ),
+                child: pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text('Generated by Nagarsevak Management System', style: pw.TextStyle(fontSize: 7, fontStyle: pw.FontStyle.italic, color: WebReportTheme.slate400)),
+                    pw.Text('Date: $formattedDate', style: const pw.TextStyle(fontSize: 7, color: WebReportTheme.slate400)),
+                  ],
+                ),
               ),
             ],
           );
@@ -379,19 +267,7 @@ class VisitorReportGenerator {
 
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Visitor_Slip_${visitor.id}.pdf',
-    );
-  }
-
-  static pw.Widget _buildFieldCol(String label, String value) {
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Text(label, style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
-        pw.SizedBox(height: 2),
-        pw.Text(value, style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
-      ],
+      name: 'Visitor_Pass_${visitor.id}.pdf',
     );
   }
 }
-

@@ -45,7 +45,6 @@ class ModuleDetailScreen extends StatefulWidget {
 
 class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
   final TextEditingController _searchController = TextEditingController();
-  String _activeFilter = 'All';
 
   @override
   void dispose() {

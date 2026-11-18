@@ -3,7 +3,10 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../data/models/work_history_model.dart';
+import '../../widgets/app_pdf_report_theme.dart';
 
+/// Official Work History Report Generator matching Nagarsevak-Managment
+/// (WorkReportGenerator.tsx).
 class WorkReportGenerator {
   WorkReportGenerator._();
 
@@ -11,157 +14,103 @@ class WorkReportGenerator {
     required List<WorkHistoryModel> works,
     String? statusFilter,
     String? areaFilter,
+    String title = 'Work History Report',
+    String subtitle = 'Historical Register of Development Works & Municipal Projects',
   }) async {
     final pdf = pw.Document();
-    final nowStr = DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.now());
-
+    final now = DateTime.now();
+    final formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(now);
     final total = works.length;
-    final completed = works.where((w) => w.status.toLowerCase() == 'completed').length;
-    final inProgress = works.where((w) => w.status.toLowerCase().contains('progress')).length;
-    final planned = works.where((w) => w.status.toLowerCase() == 'planned').length;
-
-    final totalSpend = works.fold<double>(0, (sum, w) => sum + (w.amount ?? 0));
-    final totalBenefited = works.fold<int>(0, (sum, w) => sum + (w.peopleBenefited ?? 0));
-
-    final numFormat = NumberFormat.currency(locale: 'en_IN', symbol: 'Rs. ', decimalDigits: 0);
 
     pdf.addPage(
       pw.MultiPage(
-        pageFormat: PdfPageFormat.a4.landscape,
-        margin: const pw.EdgeInsets.all(24),
+        pageFormat: WebReportTheme.pageFormat,
+        margin: WebReportTheme.pageMargin,
         header: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(
-                        'WARD DEVELOPMENT WORKS & EXPENDITURE AUDIT REPORT',
-                        style: pw.TextStyle(
-                          fontSize: 16,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.blue900,
-                        ),
-                      ),
-                      pw.SizedBox(height: 3),
-                      pw.Text(
-                        'Prabhag Ward No. 12 - Comprehensive Historical Register of Municipal Projects & Assistance',
-                        style: const pw.TextStyle(
-                          fontSize: 10,
-                          color: PdfColors.grey700,
-                        ),
-                      ),
-                    ],
-                  ),
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.end,
-                    children: [
-                      pw.Text(
-                        'Generated: $nowStr',
-                        style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600),
-                      ),
-                      if (statusFilter != null && statusFilter != 'All')
-                        pw.Text('Status: $statusFilter', style: const pw.TextStyle(fontSize: 9, color: PdfColors.blue800)),
-                      if (areaFilter != null && areaFilter.isNotEmpty)
-                        pw.Text('Area: $areaFilter', style: const pw.TextStyle(fontSize: 9, color: PdfColors.blue800)),
-                    ],
-                  ),
-                ],
-              ),
-              pw.SizedBox(height: 10),
-              // Executive Summary Strip
-              pw.Container(
-                padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: pw.BoxDecoration(
-                  color: PdfColors.blue50,
-                  borderRadius: pw.BorderRadius.circular(6),
-                  border: pw.Border.all(color: PdfColors.blue200),
-                ),
-                child: pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
-                  children: [
-                    _statPill('Total Projects', '$total', PdfColors.blue900),
-                    _statPill('Completed', '$completed', PdfColors.green800),
-                    _statPill('In Progress', '$inProgress', PdfColors.orange800),
-                    _statPill('Planned', '$planned', PdfColors.grey700),
-                    _statPill('Total Citizens Benefited', NumberFormat.decimalPattern().format(totalBenefited), PdfColors.blue800),
-                    _statPill('Total Expenditure', numFormat.format(totalSpend), PdfColors.green900),
-                  ],
-                ),
-              ),
-              pw.SizedBox(height: 10),
-              pw.Divider(color: PdfColors.grey400, thickness: 0.5),
-              pw.SizedBox(height: 6),
-            ],
+          if (context.pageNumber > 1) {
+            return WebReportTheme.buildContinuationHeader(
+              context,
+              title: title,
+            );
+          }
+          return WebReportTheme.buildHeader(
+            title: title,
+            subtitle: subtitle,
+            dateFormatted: formattedDate,
+            totalCount: total,
+            foundLabel: 'Found',
           );
         },
-        footer: (pw.Context context) {
-          return pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-            children: [
-              pw.Text(
-                'Nagarsevak Ward Management System - Official Public Transparency Archive',
-                style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
-              ),
-              pw.Text(
-                'Page ${context.pageNumber} of ${context.pagesCount}',
-                style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
-              ),
-            ],
-          );
-        },
+        footer: (pw.Context context) => WebReportTheme.buildFooter(context),
         build: (pw.Context context) {
+          if (works.isEmpty) {
+            return [
+              pw.Container(
+                alignment: pw.Alignment.center,
+                padding: const pw.EdgeInsets.all(40),
+                child: pw.Text(
+                  'No development work records found.',
+                  style: const pw.TextStyle(fontSize: 12, color: WebReportTheme.slate400),
+                ),
+              ),
+            ];
+          }
+
           return [
             pw.TableHelper.fromTextArray(
-              border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
-              headerStyle: pw.TextStyle(
-                fontSize: 9,
-                fontWeight: pw.FontWeight.bold,
-                color: PdfColors.white,
-              ),
-              headerDecoration: const pw.BoxDecoration(color: PdfColors.blue800),
-              cellStyle: const pw.TextStyle(fontSize: 8.5),
-              cellPadding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 5),
-              columnWidths: {
-                0: const pw.FixedColumnWidth(28),  // Sr No
-                1: const pw.FlexColumnWidth(3.0), // Project Title & Details
-                2: const pw.FlexColumnWidth(2.0), // Location & Area
-                3: const pw.FixedColumnWidth(65), // Status
-                4: const pw.FixedColumnWidth(65), // Category / Source
-                5: const pw.FixedColumnWidth(65), // Date
-                6: const pw.FixedColumnWidth(65), // Benefited
-                7: const pw.FixedColumnWidth(75), // Amount
+              border: WebReportTheme.tableBorder,
+              headerStyle: WebReportTheme.tableHeaderStyle,
+              headerDecoration: WebReportTheme.tableHeaderDecoration,
+              headerHeight: 22,
+              cellHeight: 20,
+              cellStyle: WebReportTheme.tableCellStyle,
+              headerCount: 1,
+              oddRowDecoration: WebReportTheme.oddRowDecoration,
+              columnWidths: const {
+                0: pw.FlexColumnWidth(0.6), // # (5%)
+                1: pw.FlexColumnWidth(3.5), // Complaint / Subject (35%)
+                2: pw.FlexColumnWidth(2.5), // Location / Area (25%)
+                3: pw.FlexColumnWidth(1.5), // Status (15%)
+                4: pw.FlexColumnWidth(1.9), // Amount (20%)
               },
               headers: [
                 '#',
-                'Development Work / Project Scope',
-                'Location & Prabhag Area',
+                'Complaint / Subject',
+                'Location / Area',
                 'Status',
-                'Source',
-                'Date',
-                'Benefited',
-                'Expenditure',
+                'Amount',
               ],
               data: List.generate(works.length, (index) {
                 final w = works[index];
-                final amtStr = w.amount != null ? numFormat.format(w.amount) : '--';
-                final benStr = w.peopleBenefited != null ? NumberFormat.decimalPattern().format(w.peopleBenefited) : '--';
+                final dateStr = w.date;
+                final locationStr = w.area.isNotEmpty ? '${w.location} (${w.area})' : w.location;
+                final amountStr = w.amount != null && w.amount! > 0
+                    ? 'Rs. ${NumberFormat.decimalPattern().format(w.amount!.toInt())}'
+                    : '--';
+
+                final subjectDesc = w.description.isNotEmpty
+                    ? '${w.title}\n${w.description}'
+                    : w.title;
+
+                final statusWithDate = dateStr.isNotEmpty
+                    ? '${w.status}\n$dateStr'
+                    : w.status;
 
                 return [
                   '${index + 1}',
-                  '${w.title}\n${w.description}',
-                  '${w.location}\nArea: ${w.area}',
-                  w.statusDisplayEn,
-                  w.sourceDisplayEn,
-                  w.date,
-                  benStr,
-                  amtStr,
+                  subjectDesc,
+                  locationStr,
+                  statusWithDate,
+                  amountStr,
                 ];
               }),
+              cellAlignments: {
+                0: pw.Alignment.center,
+                1: pw.Alignment.centerLeft,
+                2: pw.Alignment.centerLeft,
+                3: pw.Alignment.centerLeft,
+                4: pw.Alignment.centerRight,
+              },
             ),
           ];
         },
@@ -170,28 +119,7 @@ class WorkReportGenerator {
 
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Ward12_Work_History_Report_${DateFormat('yyyyMMdd').format(DateTime.now())}.pdf',
-    );
-  }
-
-  static pw.Widget _statPill(String label, String value, PdfColor color) {
-    return pw.Column(
-      children: [
-        pw.Text(
-          value,
-          style: pw.TextStyle(
-            fontSize: 12,
-            fontWeight: pw.FontWeight.bold,
-            color: color,
-          ),
-        ),
-        pw.SizedBox(height: 2),
-        pw.Text(
-          label,
-          style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700),
-        ),
-      ],
+      name: 'Work_History_Report_${DateFormat('yyyy-MM-dd').format(now)}.pdf',
     );
   }
 }
-

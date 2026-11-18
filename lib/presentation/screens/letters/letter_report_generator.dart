@@ -3,6 +3,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../data/models/letter_model.dart';
+import '../../widgets/app_pdf_report_theme.dart';
 
 /// Official Letter Registry & Documentation Report Generator matching Nagarsevak-Managment
 /// (LetterReportGenerator.tsx).
@@ -14,138 +15,62 @@ class LetterReportGenerator {
     String? statusFilter,
     String? typeFilter,
     String? areaFilter,
-    String title = 'Inward & Outward Letters Official Register',
+    String title = 'Letters Register Report',
+    String subtitle = 'Inward & Outward Letters Official Register',
   }) async {
     final pdf = pw.Document();
     final now = DateTime.now();
-    final formattedDate = DateFormat('dd/MM/yyyy, hh:mm a').format(now);
-
+    final formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(now);
     final total = letters.length;
-    final incoming = letters.where((l) => l.isIncoming).length;
-    final outgoing = letters.where((l) => !l.isIncoming).length;
-    final approved = letters.where((l) => l.status.toLowerCase() == 'approved').length;
 
     pdf.addPage(
       pw.MultiPage(
-        pageFormat: PdfPageFormat.a4.landscape,
-        margin: const pw.EdgeInsets.all(24),
+        pageFormat: WebReportTheme.pageFormat,
+        margin: WebReportTheme.pageMargin,
+        header: (pw.Context context) {
+          if (context.pageNumber > 1) {
+            return WebReportTheme.buildContinuationHeader(
+              context,
+              title: title,
+            );
+          }
+          return WebReportTheme.buildHeader(
+            title: title,
+            subtitle: subtitle,
+            dateFormatted: formattedDate,
+            totalCount: total,
+            foundLabel: 'Found',
+          );
+        },
+        footer: (pw.Context context) => WebReportTheme.buildFooter(context),
         build: (pw.Context context) {
           return [
-            // Official PMC & Nagarsevak Letterhead Header
-            pw.Container(
-              padding: const pw.EdgeInsets.only(bottom: 12),
-              decoration: const pw.BoxDecoration(
-                border: pw.Border(
-                  bottom: pw.BorderSide(color: PdfColors.blue800, width: 2),
-                ),
-              ),
-              child: pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(
-                        'PUNE MUNICIPAL CORPORATION - PRABHAG 12',
-                        style: pw.TextStyle(
-                          fontSize: 11,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.blue900,
-                        ),
-                      ),
-                      pw.SizedBox(height: 2),
-                      pw.Text(
-                        title,
-                        style: pw.TextStyle(
-                          fontSize: 16,
-                          fontWeight: pw.FontWeight.bold,
-                          color: const PdfColor.fromInt(0xFF0F172A),
-                        ),
-                      ),
-                      pw.SizedBox(height: 2),
-                      pw.Text(
-                        'Nagarsevak Office Official Secretariat • Despatch & Inward Register',
-                        style: const pw.TextStyle(
-                          fontSize: 8.5,
-                          color: PdfColors.grey700,
-                        ),
-                      ),
-                    ],
-                  ),
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.end,
-                    children: [
-                      pw.Container(
-                        padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: pw.BoxDecoration(
-                          color: PdfColors.blue50,
-                          borderRadius: pw.BorderRadius.circular(4),
-                          border: pw.Border.all(color: PdfColors.blue300, width: 0.5),
-                        ),
-                        child: pw.Text(
-                          'OFFICIAL DESPATCH RECORD',
-                          style: pw.TextStyle(
-                            fontSize: 7.5,
-                            fontWeight: pw.FontWeight.bold,
-                            color: PdfColors.blue900,
-                          ),
-                        ),
-                      ),
-                      pw.SizedBox(height: 4),
-                      pw.Text('Generated: $formattedDate', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
-                      if (areaFilter != null && areaFilter != 'All')
-                        pw.Text('Area: $areaFilter', style: const pw.TextStyle(fontSize: 8, color: PdfColors.blue800)),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            pw.SizedBox(height: 12),
-
-            // KPI Summary Statistics
-            pw.Row(
-              children: [
-                _buildPdfKpiCard('Total Entries', '$total', PdfColors.blue50, PdfColors.blue900),
-                pw.SizedBox(width: 8),
-                _buildPdfKpiCard('Outgoing Letters', '$outgoing', PdfColors.green50, PdfColors.green900),
-                pw.SizedBox(width: 8),
-                _buildPdfKpiCard('Inward / Received', '$incoming', PdfColors.purple50, PdfColors.purple900),
-                pw.SizedBox(width: 8),
-                _buildPdfKpiCard('Sanctioned / Approved', '$approved', PdfColors.amber50, PdfColors.amber900),
-              ],
-            ),
-            pw.SizedBox(height: 14),
-
-            // Letters Table
             pw.TableHelper.fromTextArray(
-              border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
-              headerDecoration: const pw.BoxDecoration(color: PdfColor.fromInt(0xFF0284C7)),
-              headerHeight: 24,
-              cellHeight: 22,
-              headerStyle: pw.TextStyle(
-                fontSize: 8,
-                fontWeight: pw.FontWeight.bold,
-                color: PdfColors.white,
-              ),
-              cellStyle: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey900),
+              border: WebReportTheme.tableBorder,
+              headerStyle: WebReportTheme.tableHeaderStyle,
+              headerDecoration: WebReportTheme.tableHeaderDecoration,
+              headerHeight: 22,
+              cellHeight: 20,
+              cellStyle: WebReportTheme.tableCellStyle,
+              headerCount: 1,
+              oddRowDecoration: WebReportTheme.oddRowDecoration,
               headers: [
                 '#',
                 'Ref / Date',
                 'Flow',
-                'Citizen / Recipient / Dept',
+                'Citizen / Sender / Dept',
                 'Letter Type & Subject',
                 'Area / Ward',
                 'Status',
               ],
               columnWidths: const {
                 0: pw.FixedColumnWidth(22),
-                1: pw.FixedColumnWidth(65),
-                2: pw.FixedColumnWidth(48),
+                1: pw.FlexColumnWidth(1.4),
+                2: pw.FlexColumnWidth(1.0),
                 3: pw.FlexColumnWidth(1.8),
-                4: pw.FlexColumnWidth(2.4),
-                5: pw.FixedColumnWidth(75),
-                6: pw.FixedColumnWidth(55),
+                4: pw.FlexColumnWidth(2.2),
+                5: pw.FlexColumnWidth(1.4),
+                6: pw.FlexColumnWidth(1.0),
               },
               data: List.generate(letters.length, (index) {
                 final l = letters[index];
@@ -165,29 +90,15 @@ class LetterReportGenerator {
                   l.status,
                 ];
               }),
-            ),
-            pw.SizedBox(height: 18),
-
-            // Footer
-            pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-              children: [
-                pw.Text(
-                  'Note: Official computerized register of Pune Municipal Corporation Prabhag 12 secretariat.',
-                  style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey600),
-                ),
-                pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.center,
-                  children: [
-                    pw.Container(width: 140, height: 1, color: PdfColors.grey400),
-                    pw.SizedBox(height: 3),
-                    pw.Text(
-                      'Secretariat Officer / Authorized Signatory',
-                      style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold, color: PdfColors.grey800),
-                    ),
-                  ],
-                ),
-              ],
+              cellAlignments: {
+                0: pw.Alignment.center,
+                1: pw.Alignment.centerLeft,
+                2: pw.Alignment.center,
+                3: pw.Alignment.centerLeft,
+                4: pw.Alignment.centerLeft,
+                5: pw.Alignment.centerLeft,
+                6: pw.Alignment.center,
+              },
             ),
           ];
         },
@@ -217,18 +128,18 @@ class LetterReportGenerator {
 
     pdf.addPage(
       pw.Page(
-        pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.symmetric(horizontal: 36, vertical: 32),
+        pageFormat: WebReportTheme.pageFormat,
+        margin: WebReportTheme.pageMargin,
         build: (pw.Context context) {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              // Top Letterhead Header
+              // Top Header
               pw.Container(
                 padding: const pw.EdgeInsets.only(bottom: 12),
                 decoration: const pw.BoxDecoration(
                   border: pw.Border(
-                    bottom: pw.BorderSide(color: PdfColors.blue900, width: 2),
+                    bottom: pw.BorderSide(color: WebReportTheme.brand600, width: 2),
                   ),
                 ),
                 child: pw.Row(
@@ -239,26 +150,22 @@ class LetterReportGenerator {
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
                         pw.Text(
-                          'PUNE MUNICIPAL CORPORATION - PRABHAG 12',
-                          style: pw.TextStyle(
-                            fontSize: 10,
-                            fontWeight: pw.FontWeight.bold,
-                            color: PdfColors.blue900,
-                          ),
+                          'Office of Nagarsevak • $wardName',
+                          style: const pw.TextStyle(fontSize: 9, color: WebReportTheme.slate500),
                         ),
-                        pw.SizedBox(height: 3),
+                        pw.SizedBox(height: 2),
                         pw.Text(
-                          letter.isIncoming ? 'OFFICE OF NAGARSEVAK - INWARD LETTER' : 'OFFICE OF NAGARSEVAK - OUTWARD LETTER',
+                          letter.isIncoming ? 'INWARD CORRESPONDENCE' : 'OUTWARD LETTER',
                           style: pw.TextStyle(
-                            fontSize: 14,
+                            fontSize: 18,
                             fontWeight: pw.FontWeight.bold,
-                            color: const PdfColor.fromInt(0xFF0F172A),
+                            color: WebReportTheme.brand700,
                           ),
                         ),
                         pw.SizedBox(height: 2),
                         pw.Text(
-                          'Ward Secretariat & Citizen Correspondence Cell',
-                          style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.grey700),
+                          'Nagarsevak Office Management System',
+                          style: const pw.TextStyle(fontSize: 8.5, color: WebReportTheme.slate500),
                         ),
                       ],
                     ),
@@ -268,17 +175,17 @@ class LetterReportGenerator {
                         pw.Container(
                           padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: pw.BoxDecoration(
-                            color: PdfColors.blue50,
+                            color: WebReportTheme.brand50,
                             borderRadius: pw.BorderRadius.circular(4),
-                            border: pw.Border.all(color: PdfColors.blue300),
+                            border: pw.Border.all(color: WebReportTheme.brand600, width: 0.5),
                           ),
                           child: pw.Text(
                             refNo,
-                            style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900),
+                            style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: WebReportTheme.brand700),
                           ),
                         ),
                         pw.SizedBox(height: 3),
-                        pw.Text('Date: $dateStr', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700)),
+                        pw.Text('Date: $dateStr', style: const pw.TextStyle(fontSize: 8, color: WebReportTheme.slate400)),
                       ],
                     ),
                   ],
@@ -286,47 +193,30 @@ class LetterReportGenerator {
               ),
               pw.SizedBox(height: 16),
 
-              // Status Bar
+              // Overview Banner
               pw.Container(
-                padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const pw.EdgeInsets.all(12),
                 decoration: pw.BoxDecoration(
-                  color: letter.status.toLowerCase() == 'approved' ? PdfColors.green50 : PdfColors.blue50,
+                  color: WebReportTheme.slate50,
                   borderRadius: pw.BorderRadius.circular(6),
-                  border: pw.Border.all(
-                    color: letter.status.toLowerCase() == 'approved' ? PdfColors.green300 : PdfColors.blue300,
-                  ),
+                  border: pw.Border.all(color: WebReportTheme.slate200),
                 ),
                 child: pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
-                    pw.Text(
-                      'STATUS: ${letter.status.toUpperCase()}',
-                      style: pw.TextStyle(
-                        fontSize: 9.5,
-                        fontWeight: pw.FontWeight.bold,
-                        color: letter.status.toLowerCase() == 'approved' ? PdfColors.green900 : PdfColors.blue900,
-                      ),
-                    ),
-                    pw.Text(
-                      'Type: ${letter.letterType ?? "General Letter"}',
-                      style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey800),
-                    ),
-                    pw.Text(
-                      'Area: ${letter.area?.isNotEmpty == true ? letter.area! : "Prabhag 12"}',
-                      style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey800),
-                    ),
+                    pw.Text('FLOW: ${letter.isIncoming ? "INWARD / RECEIVED" : "OUTWARD / DISPATCHED"}', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: WebReportTheme.brand700)),
+                    pw.Text('STATUS: ${letter.status.toUpperCase()}', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: WebReportTheme.slate700)),
                   ],
                 ),
               ),
-              pw.SizedBox(height: 16),
+              pw.SizedBox(height: 14),
 
-              // Recipient / Sender Details
+              // Parties Info
               pw.Container(
                 padding: const pw.EdgeInsets.all(12),
                 decoration: pw.BoxDecoration(
-                  color: PdfColors.grey100,
+                  border: pw.Border.all(color: WebReportTheme.slate200),
                   borderRadius: pw.BorderRadius.circular(6),
-                  border: pw.Border.all(color: PdfColors.grey300),
                 ),
                 child: pw.Row(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -335,107 +225,52 @@ class LetterReportGenerator {
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
-                          pw.Text(
-                            letter.isIncoming ? 'From (Citizen / Applicant):' : 'To (Recipient / Department):',
-                            style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700),
-                          ),
+                          pw.Text(letter.isIncoming ? 'FROM (SENDER)' : 'CITIZEN / APPLICANT', style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: WebReportTheme.slate700)),
                           pw.SizedBox(height: 4),
-                          pw.Text(
-                            letter.citizenName,
-                            style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: const PdfColor.fromInt(0xFF0F172A)),
-                          ),
-                          if (letter.mobile.isNotEmpty) ...[
-                            pw.SizedBox(height: 2),
-                            pw.Text('Contact: ${letter.mobile}', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey800)),
-                          ],
-                          if (letter.address.isNotEmpty) ...[
-                            pw.SizedBox(height: 2),
-                            pw.Text('Address: ${letter.address}', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey800)),
-                          ],
+                          pw.Text(letter.isIncoming ? (letter.sender ?? letter.citizenName) : letter.citizenName, style: pw.TextStyle(fontSize: 9.5, fontWeight: pw.FontWeight.bold, color: WebReportTheme.slate900)),
+                          pw.Text('Contact: ${letter.mobile.isNotEmpty ? letter.mobile : "-"}', style: const pw.TextStyle(fontSize: 8.5, color: WebReportTheme.slate600)),
                         ],
                       ),
                     ),
-                    if (letter.department?.isNotEmpty == true) ...[
-                      pw.SizedBox(width: 16),
-                      pw.Expanded(
-                        child: pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          children: [
-                            pw.Text(
-                              'Target Department:',
-                              style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700),
-                            ),
-                            pw.SizedBox(height: 4),
-                            pw.Text(
-                              letter.department!,
-                              style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900),
-                            ),
-                          ],
-                        ),
+                    pw.Expanded(
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text('TYPE & JURISDICTION', style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: WebReportTheme.slate700)),
+                          pw.SizedBox(height: 4),
+                          pw.Text(letter.letterType ?? letter.title, style: pw.TextStyle(fontSize: 9.5, fontWeight: pw.FontWeight.bold, color: WebReportTheme.slate900)),
+                          pw.Text('Area: ${letter.area ?? "Prabhag 12"}', style: const pw.TextStyle(fontSize: 8.5, color: WebReportTheme.slate600)),
+                        ],
                       ),
-                    ],
+                    ),
                   ],
                 ),
               ),
-              pw.SizedBox(height: 16),
+              pw.SizedBox(height: 12),
 
-              // Subject
+              // Letter Body Box
               pw.Container(
                 width: double.infinity,
-                padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const pw.EdgeInsets.all(12),
                 decoration: pw.BoxDecoration(
-                  color: const PdfColor.fromInt(0xFFF1F5F9),
+                  border: pw.Border.all(color: WebReportTheme.slate200),
                   borderRadius: pw.BorderRadius.circular(6),
                 ),
-                child: pw.RichText(
-                  text: pw.TextSpan(
-                    children: [
-                      pw.TextSpan(
-                        text: 'Subject: ',
-                        style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: const PdfColor.fromInt(0xFF0F172A)),
-                      ),
-                      pw.TextSpan(
-                        text: letter.subject,
-                        style: const pw.TextStyle(fontSize: 11, color: PdfColors.black),
-                      ),
-                    ],
-                  ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text('LETTER SUBJECT & SUBMISSION DETAILS', style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: WebReportTheme.slate700)),
+                    pw.SizedBox(height: 6),
+                    pw.Text('Subject: ${letter.subject}', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: WebReportTheme.slate900)),
+                    pw.SizedBox(height: 6),
+                    pw.Text(bodyText, style: const pw.TextStyle(fontSize: 9, lineSpacing: 2, color: WebReportTheme.slate800)),
+                  ],
                 ),
               ),
-              pw.SizedBox(height: 16),
 
-              // Body Content
-              pw.Expanded(
-                child: pw.Container(
-                  width: double.infinity,
-                  padding: const pw.EdgeInsets.all(14),
-                  decoration: pw.BoxDecoration(
-                    border: pw.Border.all(color: PdfColors.grey300),
-                    borderRadius: pw.BorderRadius.circular(6),
-                  ),
-                  child: pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(
-                        'Representation / Official Communication:',
-                        style: pw.TextStyle(fontSize: 9.5, fontWeight: pw.FontWeight.bold, color: PdfColors.grey800),
-                      ),
-                      pw.SizedBox(height: 8),
-                      pw.Text(
-                        bodyText,
-                        style: const pw.TextStyle(
-                          fontSize: 10.5,
-                          lineSpacing: 2.5,
-                          color: PdfColors.black,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              pw.SizedBox(height: 20),
+              pw.Spacer(),
 
-              // Signatures & Official Seal
+              // Footer & Stamp
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: pw.CrossAxisAlignment.end,
@@ -443,27 +278,45 @@ class LetterReportGenerator {
                   pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                      pw.Text('Pune Municipal Corporation', style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey600)),
-                      pw.Text('Prabhag No. 12 Office Record', style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey600)),
-                      pw.Text('Computer Generated Document', style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey500)),
+                      pw.Container(
+                        width: 70,
+                        height: 70,
+                        decoration: pw.BoxDecoration(
+                          border: pw.Border.all(color: WebReportTheme.slate400),
+                          borderRadius: pw.BorderRadius.circular(35),
+                        ),
+                        child: pw.Center(
+                          child: pw.Text('[OFFICE\nSEAL]', textAlign: pw.TextAlign.center, style: const pw.TextStyle(fontSize: 8, color: WebReportTheme.slate400)),
+                        ),
+                      ),
+                      pw.SizedBox(height: 4),
+                      pw.Text('Prabhag 12 Office Stamp', style: const pw.TextStyle(fontSize: 8, color: WebReportTheme.slate500)),
                     ],
                   ),
                   pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.center,
                     children: [
-                      pw.Container(width: 140, height: 1, color: PdfColors.grey400),
+                      pw.Container(width: 140, height: 1, color: WebReportTheme.slate700),
                       pw.SizedBox(height: 4),
-                      pw.Text(
-                        'Authorized Signatory',
-                        style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: PdfColors.grey900),
-                      ),
-                      pw.Text(
-                        'Nagarsevak Office, Prabhag 12',
-                        style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey700),
-                      ),
+                      pw.Text('Authorized Signatory', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: WebReportTheme.slate800)),
+                      pw.Text('Nagarsevak Secretariat • Pune', style: const pw.TextStyle(fontSize: 8, color: WebReportTheme.slate500)),
                     ],
                   ),
                 ],
+              ),
+              pw.SizedBox(height: 12),
+              pw.Container(
+                padding: const pw.EdgeInsets.only(top: 6),
+                decoration: const pw.BoxDecoration(
+                  border: pw.Border(top: pw.BorderSide(color: WebReportTheme.slate100, width: 0.5)),
+                ),
+                child: pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text('Generated by Nagarsevak Management System', style: pw.TextStyle(fontSize: 8, fontStyle: pw.FontStyle.italic, color: WebReportTheme.slate400)),
+                    pw.Text('Date: $dateStr', style: const pw.TextStyle(fontSize: 8, color: WebReportTheme.slate400)),
+                  ],
+                ),
               ),
             ],
           );
@@ -473,28 +326,7 @@ class LetterReportGenerator {
 
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Letter_${refNo.replaceAll('-', '_')}.pdf',
-    );
-  }
-
-  static pw.Widget _buildPdfKpiCard(String label, String value, PdfColor bg, PdfColor text) {
-    return pw.Expanded(
-      child: pw.Container(
-        padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: pw.BoxDecoration(
-          color: bg,
-          borderRadius: pw.BorderRadius.circular(6),
-          border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
-        ),
-        child: pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Text(label, style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey700)),
-            pw.SizedBox(height: 2),
-            pw.Text(value, style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold, color: text)),
-          ],
-        ),
-      ),
+      name: 'Letter_${letter.id}.pdf',
     );
   }
 }

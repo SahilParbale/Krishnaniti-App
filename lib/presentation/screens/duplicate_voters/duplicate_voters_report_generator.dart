@@ -3,118 +3,70 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../data/models/duplicate_voter_group_model.dart';
+import '../../widgets/app_pdf_report_theme.dart';
 
 class DuplicateVotersReportGenerator {
+  DuplicateVotersReportGenerator._();
+
   static Future<void> generateAndPrintReport({
     required List<DuplicateVoterGroupModel> duplicateGroups,
     required int totalAffectedVoters,
   }) async {
     final pdf = pw.Document();
     final now = DateTime.now();
-    final formattedDate = DateFormat('dd/MM/yyyy, hh:mm a').format(now);
+    final formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(now);
     final estExtraRecords = duplicateGroups.fold<int>(0, (sum, g) => sum + g.extraRecordsCount);
 
     pdf.addPage(
       pw.MultiPage(
-        pageFormat: PdfPageFormat.a4.landscape,
-        margin: const pw.EdgeInsets.all(24),
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(WebReportTheme.marginPt),
+        header: (pw.Context context) {
+          if (context.pageNumber == 1) return pw.SizedBox.shrink();
+          return WebReportTheme.buildContinuationHeader(
+            context,
+            title: 'Duplicate Voters Audit (Continued)',
+          );
+        },
+        footer: (pw.Context context) => WebReportTheme.buildFooter(context),
         build: (pw.Context context) {
           return [
-            // Official PMC & Nagarsevak Office Header
+            WebReportTheme.buildHeader(
+              title: 'Duplicate Voters Report',
+              subtitle: 'Identification of duplicated voter registrations across electoral rolls',
+              metaLines: [
+                'Date: $formattedDate',
+                'Affected Voters: $totalAffectedVoters',
+                'Extra Records: $estExtraRecords',
+              ],
+            ),
+            pw.SizedBox(height: 12),
+
+            // Summary KPI boxes matching web layout
             pw.Container(
-              padding: const pw.EdgeInsets.only(bottom: 12),
-              decoration: const pw.BoxDecoration(
-                border: pw.Border(
-                  bottom: pw.BorderSide(color: PdfColors.blue800, width: 2),
-                ),
+              padding: const pw.EdgeInsets.all(10),
+              decoration: pw.BoxDecoration(
+                color: WebReportTheme.slate50,
+                borderRadius: pw.BorderRadius.circular(6),
+                border: pw.Border.all(color: WebReportTheme.slate200, width: 0.8),
               ),
               child: pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(
-                        'PUNE MUNICIPAL CORPORATION - PRABHAG 12',
-                        style: pw.TextStyle(
-                          fontSize: 11,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.blue900,
-                        ),
-                      ),
-                      pw.SizedBox(height: 2),
-                      pw.Text(
-                        'Duplicate Voters Audit & Verification Report',
-                        style: pw.TextStyle(
-                          fontSize: 15,
-                          fontWeight: pw.FontWeight.bold,
-                          color: const PdfColor.fromInt(0xFF0F172A),
-                        ),
-                      ),
-                      pw.SizedBox(height: 2),
-                      pw.Text(
-                        'Duplicate Voter Detection Report - Electoral Roll Cleanliness Audit',
-                        style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.grey700),
-                      ),
-                    ],
-                  ),
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.end,
-                    children: [
-                      pw.Container(
-                        padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: pw.BoxDecoration(
-                          color: const PdfColor.fromInt(0xFFFEF2F2),
-                          borderRadius: pw.BorderRadius.circular(4),
-                          border: pw.Border.all(color: const PdfColor.fromInt(0xFFFECACA), width: 0.5),
-                        ),
-                        child: pw.Text(
-                          'ELECTORAL AUDIT / VOTER ROLL VERIFICATION',
-                          style: pw.TextStyle(
-                            fontSize: 7.5,
-                            fontWeight: pw.FontWeight.bold,
-                            color: const PdfColor.fromInt(0xFFDC2626),
-                          ),
-                        ),
-                      ),
-                      pw.SizedBox(height: 4),
-                      pw.Text(
-                        'Date: $formattedDate',
-                        style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700),
-                      ),
-                      pw.Text(
-                        'Nagarsevak Office - Prabhag 12',
-                        style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
-                      ),
-                    ],
-                  ),
+                  _buildSummaryItem('Duplicate Groups', '${duplicateGroups.length}'),
+                  _buildSummaryItem('Total Affected', '$totalAffectedVoters', highlightColor: PdfColors.red700),
+                  _buildSummaryItem('Est. Extra Records', '$estExtraRecords', highlightColor: WebReportTheme.brand700),
                 ],
               ),
             ),
-
-            pw.SizedBox(height: 12),
-
-            // Summary KPI Cards Row
-            pw.Row(
-              children: [
-                _buildPdfKpiCard('Duplicate Groups', duplicateGroups.length.toString(), PdfColors.blue50, PdfColors.blue900),
-                pw.SizedBox(width: 8),
-                _buildPdfKpiCard('Total Affected Voters', totalAffectedVoters.toString(), const PdfColor.fromInt(0xFFFEF2F2), const PdfColor.fromInt(0xFFB91C1C)),
-                pw.SizedBox(width: 8),
-                _buildPdfKpiCard('Est. Extra Records', estExtraRecords.toString(), PdfColors.amber50, PdfColors.amber900),
-              ],
-            ),
-
             pw.SizedBox(height: 14),
 
             if (duplicateGroups.isEmpty)
               pw.Container(
-                padding: const pw.EdgeInsets.all(24),
+                padding: const pw.EdgeInsets.all(32),
                 alignment: pw.Alignment.center,
                 child: pw.Text(
                   'No duplicate voters found. All voter records are unique.',
-                  style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: PdfColors.green800),
+                  style: const pw.TextStyle(fontSize: 11, color: WebReportTheme.slate500),
                 ),
               )
             else
@@ -123,7 +75,7 @@ class DuplicateVotersReportGenerator {
                   margin: const pw.EdgeInsets.only(bottom: 12),
                   decoration: pw.BoxDecoration(
                     borderRadius: pw.BorderRadius.circular(6),
-                    border: pw.Border.all(color: PdfColors.grey300, width: 0.8),
+                    border: pw.Border.all(color: WebReportTheme.slate200, width: 0.8),
                   ),
                   child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -132,95 +84,84 @@ class DuplicateVotersReportGenerator {
                       pw.Container(
                         padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         decoration: const pw.BoxDecoration(
-                          color: PdfColor.fromInt(0xFFF1F5F9),
+                          color: WebReportTheme.brand50,
                           borderRadius: pw.BorderRadius.vertical(top: pw.Radius.circular(5)),
                         ),
                         child: pw.Row(
                           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                           children: [
                             pw.Text(
-                              '${group.displayName} (${group.recordsCount} records found)',
-                              style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: const PdfColor.fromInt(0xFF0F172A)),
+                              '${group.displayName} (${group.recordsCount} records)',
+                              style: pw.TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: pw.FontWeight.bold,
+                                color: WebReportTheme.brand900,
+                              ),
                             ),
                             pw.Text(
-                              '${group.extraRecordsCount} potential extra records (Form 7 Deletion)',
-                              style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: const PdfColor.fromInt(0xFFDC2626)),
+                              '${group.extraRecordsCount} extra records (Form 7)',
+                              style: const pw.TextStyle(
+                                fontSize: 8,
+                                color: PdfColors.red700,
+                              ),
                             ),
                           ],
                         ),
                       ),
 
-                      // Side-by-side Table of Voters in Group
+                      // Table of Voters in Group
                       pw.TableHelper.fromTextArray(
-                        headers: [
+                        headerCount: 1,
+                        border: WebReportTheme.tableBorder,
+                        headerStyle: WebReportTheme.tableHeaderStyle,
+                        headerDecoration: WebReportTheme.tableHeaderDecoration,
+                        headerHeight: 20,
+                        cellHeight: 18,
+                        cellAlignment: pw.Alignment.centerLeft,
+                        cellStyle: WebReportTheme.tableCellStyle,
+                        columnWidths: const {
+                          0: pw.FixedColumnWidth(22),
+                          1: pw.FlexColumnWidth(2.6),
+                          2: pw.FlexColumnWidth(1.8),
+                          3: pw.FlexColumnWidth(1.0),
+                          4: pw.FlexColumnWidth(1.0),
+                          5: pw.FlexColumnWidth(1.2),
+                          6: pw.FlexColumnWidth(1.2),
+                          7: pw.FlexColumnWidth(2.4),
+                        },
+                        headers: const [
                           '#',
-                          'Status',
                           'Voter Name',
                           'EPIC No.',
-                          'Booth / Part',
-                          'Sr No',
-                          'Age/Sex',
-                          'House #',
-                          'Mobile',
-                          'Address',
+                          'Serial',
+                          'Age',
+                          'Gender',
+                          'Booth',
+                          'Address / Area',
                         ],
                         data: List.generate(group.voters.length, (idx) {
                           final v = group.voters[idx];
+                          final namePart = [v.nameEnglish, v.nameMarathi]
+                              .where((s) => s.isNotEmpty)
+                              .join('\n');
+
                           return [
-                            (idx + 1).toString(),
-                            idx == 0 ? 'First Record' : 'Duplicate',
-                            v.displayName,
+                            '${idx + 1}',
+                            namePart,
                             v.epicNo.isNotEmpty ? v.epicNo : '-',
-                            v.booth,
-                            v.serialNo != null ? v.serialNo.toString() : '-',
-                            '${v.age} / ${v.gender}',
-                            v.houseNo ?? '-',
-                            v.mobile ?? '-',
-                            v.address,
+                            v.serialNo != null ? '${v.serialNo}' : '-',
+                            '${v.age}',
+                            v.gender.isNotEmpty ? v.gender : '-',
+                            v.booth.isNotEmpty ? v.booth : '-',
+                            v.address.isNotEmpty ? v.address : '-',
                           ];
                         }),
-                        headerStyle: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold, color: PdfColors.white),
-                        headerDecoration: const pw.BoxDecoration(color: PdfColor.fromInt(0xFF0284C7)),
-                        rowDecoration: const pw.BoxDecoration(
-                          border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey200, width: 0.5)),
-                        ),
-                        cellStyle: const pw.TextStyle(fontSize: 7, color: PdfColors.grey900),
-                        cellAlignment: pw.Alignment.centerLeft,
-                        cellPadding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 3.5),
-                        columnWidths: {
-                          0: const pw.FixedColumnWidth(16),
-                          1: const pw.FixedColumnWidth(50),
-                          2: const pw.FlexColumnWidth(2.2),
-                          3: const pw.FlexColumnWidth(1.8),
-                          4: const pw.FlexColumnWidth(1.6),
-                          5: const pw.FixedColumnWidth(28),
-                          6: const pw.FixedColumnWidth(35),
-                          7: const pw.FixedColumnWidth(30),
-                          8: const pw.FixedColumnWidth(55),
-                          9: const pw.FlexColumnWidth(2.6),
-                        },
+                        oddRowDecoration: WebReportTheme.oddRowDecoration,
                       ),
                     ],
                   ),
                 );
               }),
-
-            pw.SizedBox(height: 12),
-
-            // Footer note
-            pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-              children: [
-                pw.Text(
-                  'Note: To remove duplicate names from electoral rolls, submit Form 7 (Deletion) to the Election Commission.',
-                  style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey600),
-                ),
-                pw.Text(
-                  'Nagarsevak Central Command System',
-                  style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800),
-                ),
-              ],
-            ),
           ];
         },
       ),
@@ -228,35 +169,30 @@ class DuplicateVotersReportGenerator {
 
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Duplicate_Voters_Report_${DateFormat('yyyyMMdd').format(now)}.pdf',
+      name: 'Duplicate_Voters_Report_${DateFormat('yyyyMMdd').format(DateTime.now())}.pdf',
     );
   }
 
-  static pw.Widget _buildPdfKpiCard(String label, String value, PdfColor bg, PdfColor text) {
+  static pw.Widget _buildSummaryItem(String label, String value, {PdfColor? highlightColor}) {
     return pw.Expanded(
-      child: pw.Container(
-        padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: pw.BoxDecoration(
-          color: bg,
-          borderRadius: pw.BorderRadius.circular(6),
-          border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
-        ),
-        child: pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Text(
-              label,
-              style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey700),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            label,
+            style: const pw.TextStyle(fontSize: 8, color: WebReportTheme.slate500),
+          ),
+          pw.SizedBox(height: 2),
+          pw.Text(
+            value,
+            style: pw.TextStyle(
+              fontSize: 10,
+              fontWeight: pw.FontWeight.bold,
+              color: highlightColor ?? WebReportTheme.slate800,
             ),
-            pw.SizedBox(height: 2),
-            pw.Text(
-              value,
-              style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold, color: text),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
-

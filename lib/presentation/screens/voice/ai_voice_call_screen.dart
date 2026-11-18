@@ -7,6 +7,8 @@ import '../../../data/models/voter_model.dart';
 import '../../../data/models/whatsapp_broadcast_model.dart';
 import '../../../data/repositories/sms_repository.dart';
 import '../../navigation/app_drawer.dart';
+import '../../widgets/app_pdf_button.dart';
+import 'communication_history_report_generator.dart';
 
 const _kAiPurple = Color(0xFF0284C7);
 const _kAiPurpleLight = Color(0xFFE0F2FE);
@@ -275,7 +277,22 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
             ),
           ],
         ),
-        actions: const [],
+        actions: [
+          if (_aiCallLogs.isNotEmpty) ...[
+            AppPdfButton(
+              label: 'Reports',
+              style: AppPdfButtonStyle.outlined,
+              onPressed: () {
+                CommunicationHistoryReportGenerator.generateAndPrintReport(
+                  logs: _aiCallLogs,
+                  title: 'AI Voice Call History & Citizen Feedback',
+                  subtitle: 'Automated AI Voice Call Broadcast Register - Prabhag 12',
+                );
+              },
+            ),
+            const SizedBox(width: 8),
+          ],
+        ],
       ),
       body: Column(
         children: [

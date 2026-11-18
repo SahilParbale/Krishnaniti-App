@@ -3,14 +3,17 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../data/models/social_organization_model.dart';
+import '../../widgets/app_pdf_report_theme.dart';
 
 class SocialOrgReportGenerator {
+  SocialOrgReportGenerator._();
+
   static Future<void> generateAndPrintReport({
     required List<SocialOrganizationModel> organizations,
   }) async {
     final pdf = pw.Document();
     final now = DateTime.now();
-    final formattedDate = DateFormat('dd/MM/yyyy, hh:mm a').format(now);
+    final formattedDate = DateFormat('dd/MM/yyyy').format(now);
 
     final total = organizations.length;
     final ngos = organizations.where((o) => o.type == 'ngo').length;
@@ -19,175 +22,100 @@ class SocialOrgReportGenerator {
 
     pdf.addPage(
       pw.MultiPage(
-        pageFormat: PdfPageFormat.a4.landscape,
-        margin: const pw.EdgeInsets.all(24),
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(WebReportTheme.marginPt),
+        header: (pw.Context context) {
+          if (context.pageNumber == 1) return pw.SizedBox.shrink();
+          return WebReportTheme.buildContinuationHeader(
+            context,
+            title: 'NGO & Mandal Registry (Continued)',
+          );
+        },
+        footer: (pw.Context context) => WebReportTheme.buildFooter(context),
         build: (pw.Context context) {
           return [
-            // Official PMC & Office Header
+            WebReportTheme.buildHeader(
+              title: 'NGO & Mandal Registry',
+              subtitle: 'List of NGOs, Clubs and Mandals in the ward',
+              dateFormatted: formattedDate,
+              totalCount: total,
+            ),
+            pw.SizedBox(height: 12),
+
+            // Summary metrics
             pw.Container(
-              padding: const pw.EdgeInsets.only(bottom: 12),
-              decoration: const pw.BoxDecoration(
-                border: pw.Border(
-                  bottom: pw.BorderSide(color: PdfColors.blue800, width: 2),
-                ),
+              padding: const pw.EdgeInsets.all(10),
+              decoration: pw.BoxDecoration(
+                color: WebReportTheme.slate50,
+                borderRadius: pw.BorderRadius.circular(6),
+                border: pw.Border.all(color: WebReportTheme.slate200, width: 0.8),
               ),
               child: pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(
-                        'PUNE MUNICIPAL CORPORATION - PRABHAG 12',
-                        style: pw.TextStyle(
-                          fontSize: 11,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.blue900,
-                        ),
-                      ),
-                      pw.SizedBox(height: 2),
-                      pw.Text(
-                        'NGOS, SPORTS CLUBS & FESTIVAL MANDALS REGISTRY',
-                        style: pw.TextStyle(
-                          fontSize: 16,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.blue800,
-                        ),
-                      ),
-                      pw.SizedBox(height: 2),
-                      pw.Text(
-                        'NGOs, Sports Clubs & Festival Mandals Directory & Contacts',
-                        style: const pw.TextStyle(
-                          fontSize: 10,
-                          color: PdfColors.grey700,
-                        ),
-                      ),
-                    ],
-                  ),
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.end,
-                    children: [
-                      pw.Container(
-                        padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: pw.BoxDecoration(
-                          color: PdfColors.blue50,
-                          borderRadius: pw.BorderRadius.circular(4),
-                          border: pw.Border.all(color: PdfColors.blue200),
-                        ),
-                        child: pw.Text(
-                          'OFFICIAL DIRECTORY / WARD REGISTER',
-                          style: pw.TextStyle(
-                            fontSize: 9,
-                            fontWeight: pw.FontWeight.bold,
-                            color: PdfColors.blue900,
-                          ),
-                        ),
-                      ),
-                      pw.SizedBox(height: 4),
-                      pw.Text(
-                        'Generated: $formattedDate',
-                        style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
-                      ),
-                    ],
-                  ),
+                  _buildSummaryItem('Total NGOs', '$ngos', highlightColor: WebReportTheme.brand700),
+                  _buildSummaryItem('Sports Clubs', '$sports', highlightColor: PdfColors.teal700),
+                  _buildSummaryItem('Mandals', '$mandals', highlightColor: PdfColors.amber800),
+                  _buildSummaryItem('Total Registered', '$total'),
                 ],
               ),
             ),
-
             pw.SizedBox(height: 12),
 
-            // Summary KPI Row
-            pw.Row(
-              children: [
-                _buildPdfKpiCard('Total Registered', total.toString(), PdfColors.blue50, PdfColors.blue900),
-                pw.SizedBox(width: 8),
-                _buildPdfKpiCard('NGOs & Trusts', ngos.toString(), PdfColors.indigo50, PdfColors.indigo900),
-                pw.SizedBox(width: 8),
-                _buildPdfKpiCard('Sports & Cricket Clubs', sports.toString(), PdfColors.green50, PdfColors.green900),
-                pw.SizedBox(width: 8),
-                _buildPdfKpiCard('Festival Mandals', mandals.toString(), PdfColors.amber50, PdfColors.amber900),
-              ],
-            ),
+            if (organizations.isEmpty)
+              pw.Container(
+                alignment: pw.Alignment.center,
+                padding: const pw.EdgeInsets.all(40),
+                child: pw.Text(
+                  'No social organizations or mandals found.',
+                  style: const pw.TextStyle(fontSize: 11, color: WebReportTheme.slate500),
+                ),
+              )
+            else
+              pw.TableHelper.fromTextArray(
+                border: WebReportTheme.tableBorder,
+                headerCount: 1,
+                headerStyle: WebReportTheme.tableHeaderStyle,
+                headerDecoration: WebReportTheme.tableHeaderDecoration,
+                headerHeight: 22,
+                cellHeight: 20,
+                cellAlignment: pw.Alignment.centerLeft,
+                cellStyle: WebReportTheme.tableCellStyle,
+                columnWidths: const {
+                  0: pw.FixedColumnWidth(24),
+                  1: pw.FlexColumnWidth(3.0),
+                  2: pw.FlexColumnWidth(2.4),
+                  3: pw.FlexColumnWidth(1.8),
+                  4: pw.FlexColumnWidth(1.4),
+                  5: pw.FlexColumnWidth(1.2),
+                },
+                headers: const [
+                  '#',
+                  'Organization Name & Type',
+                  'President & Mobile',
+                  'Area',
+                  'Members & Est.',
+                  'Status',
+                ],
+                data: List.generate(organizations.length, (index) {
+                  final o = organizations[index];
+                  final typeStr = '\nType: ${o.typeLabelEnglish}';
+                  final presStr = o.presidentName.isNotEmpty
+                      ? (o.presidentMobile.isNotEmpty ? '${o.presidentName}\n${o.presidentMobile}' : o.presidentName)
+                      : '-';
+                  final memStr = o.membersCount > 0 ? '${o.membersCount} members' : '-';
+                  final estStr = o.establishedYear.isNotEmpty ? '\nEst: ${o.establishedYear}' : '';
 
-            pw.SizedBox(height: 14),
-
-            // Directory Table
-            pw.TableHelper.fromTextArray(
-              headers: [
-                '#',
-                'Organization Name',
-                'Type',
-                'President',
-                'Mobile',
-                'Area',
-                'Members',
-                'Est.',
-                'Support Received',
-                'Events',
-                'Status',
-              ],
-              data: List.generate(organizations.length, (index) {
-                final o = organizations[index];
-                return [
-                  (index + 1).toString(),
-                  o.displayName,
-                  o.typeLabelEnglish,
-                  o.presidentName.isNotEmpty ? o.presidentName : '-',
-                  o.presidentMobile.isNotEmpty ? o.presidentMobile : '-',
-                  o.area.isNotEmpty ? o.area : '-',
-                  o.membersCount > 0 ? o.membersCount.toString() : '-',
-                  o.establishedYear.isNotEmpty ? o.establishedYear : '-',
-                  o.supportReceived.isNotEmpty ? o.supportReceived : '-',
-                  o.eventsConducted.length.toString(),
-                  o.status,
-                ];
-              }),
-              headerStyle: pw.TextStyle(
-                fontWeight: pw.FontWeight.bold,
-                fontSize: 8,
-                color: PdfColors.white,
+                  return [
+                    '${index + 1}',
+                    '${o.displayName}$typeStr',
+                    presStr,
+                    o.area.isNotEmpty ? o.area : '-',
+                    '$memStr$estStr',
+                    o.status,
+                  ];
+                }),
+                oddRowDecoration: WebReportTheme.oddRowDecoration,
               ),
-              headerDecoration: const pw.BoxDecoration(color: PdfColor.fromInt(0xFF0284C7)),
-              rowDecoration: const pw.BoxDecoration(
-                border: pw.Border(
-                  bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
-                ),
-              ),
-              cellStyle: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey900),
-              cellAlignment: pw.Alignment.centerLeft,
-              cellPadding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 5),
-              columnWidths: {
-                0: const pw.FixedColumnWidth(20),
-                1: const pw.FlexColumnWidth(2.2),
-                2: const pw.FlexColumnWidth(1.6),
-                3: const pw.FlexColumnWidth(1.8),
-                4: const pw.FixedColumnWidth(65),
-                5: const pw.FlexColumnWidth(1.6),
-                6: const pw.FixedColumnWidth(35),
-                7: const pw.FixedColumnWidth(30),
-                8: const pw.FlexColumnWidth(2.4),
-                9: const pw.FixedColumnWidth(28),
-                10: const pw.FixedColumnWidth(35),
-              },
-            ),
-
-            pw.SizedBox(height: 16),
-
-            // Footer note
-            pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-              children: [
-                pw.Text(
-                  'Note: This report is prepared for coordinating social, cultural, and sports organizations in Ward 12.',
-                  style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey600),
-                ),
-                pw.Text(
-                  'Nagarsevak Central Command System',
-                  style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800),
-                ),
-              ],
-            ),
           ];
         },
       ),
@@ -199,29 +127,25 @@ class SocialOrgReportGenerator {
     );
   }
 
-  static pw.Widget _buildPdfKpiCard(String label, String value, PdfColor bg, PdfColor text) {
+  static pw.Widget _buildSummaryItem(String label, String value, {PdfColor? highlightColor}) {
     return pw.Expanded(
-      child: pw.Container(
-        padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: pw.BoxDecoration(
-          color: bg,
-          borderRadius: pw.BorderRadius.circular(6),
-          border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
-        ),
-        child: pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Text(
-              label,
-              style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey700),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            label,
+            style: const pw.TextStyle(fontSize: 8, color: WebReportTheme.slate500),
+          ),
+          pw.SizedBox(height: 2),
+          pw.Text(
+            value,
+            style: pw.TextStyle(
+              fontSize: 10,
+              fontWeight: pw.FontWeight.bold,
+              color: highlightColor ?? WebReportTheme.slate800,
             ),
-            pw.SizedBox(height: 2),
-            pw.Text(
-              value,
-              style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold, color: text),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

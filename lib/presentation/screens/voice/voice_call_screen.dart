@@ -8,6 +8,8 @@ import '../../../data/models/voter_model.dart';
 import '../../../data/models/whatsapp_broadcast_model.dart';
 import '../../../data/repositories/sms_repository.dart';
 import '../../navigation/app_drawer.dart';
+import '../../widgets/app_pdf_button.dart';
+import 'communication_history_report_generator.dart';
 
 class VoiceCallScreen extends ConsumerStatefulWidget {
   const VoiceCallScreen({super.key});
@@ -210,7 +212,21 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
             ),
           ],
         ),
-        actions: const [],
+        actions: [
+          if (_callHistory.isNotEmpty) ...[
+            AppPdfButton(
+              label: 'Reports',
+              style: AppPdfButtonStyle.outlined,
+              onPressed: () {
+                CommunicationHistoryReportGenerator.generateAndPrintReport(
+                  logs: _callHistory,
+                  title: 'Public Voice Call History & Broadcast Report',
+                );
+              },
+            ),
+            const SizedBox(width: 8),
+          ],
+        ],
       ),
       body: Column(
         children: [

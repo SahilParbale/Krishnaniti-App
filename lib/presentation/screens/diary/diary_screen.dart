@@ -30,7 +30,6 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
   String _selectedArea = 'All';
 
   final TextEditingController _searchCtrl = TextEditingController();
-  String _searchQuery = '';
   bool _isLoading = true;
 
   List<DiaryTaskModel> _allTasks = [];

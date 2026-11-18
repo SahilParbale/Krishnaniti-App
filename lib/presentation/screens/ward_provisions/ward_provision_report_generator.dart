@@ -3,6 +3,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../data/models/ward_provision_model.dart';
+import '../../widgets/app_pdf_report_theme.dart';
 
 class WardProvisionReportGenerator {
   WardProvisionReportGenerator._();
@@ -14,12 +15,10 @@ class WardProvisionReportGenerator {
     String? statusFilter,
   }) async {
     final pdf = pw.Document();
-    final nowStr = DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.now());
 
     final totalCount = provisions.length;
     final totalRequested = provisions.fold<double>(0, (sum, p) => sum + p.requestedAmount);
     final totalSanctioned = provisions.fold<double>(0, (sum, p) => sum + (p.sanctionedAmount ?? 0));
-    final successRate = totalRequested > 0 ? ((totalSanctioned / totalRequested) * 100).toStringAsFixed(1) : '0';
 
     final approvedCount = provisions.where((p) => p.status.toLowerCase() == 'approved').length;
     final partialCount = provisions.where((p) => p.status.toLowerCase().contains('partially')).length;
@@ -29,145 +28,103 @@ class WardProvisionReportGenerator {
 
     pdf.addPage(
       pw.MultiPage(
-        pageFormat: PdfPageFormat.a4.landscape,
-        margin: const pw.EdgeInsets.all(24),
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(WebReportTheme.marginPt),
         header: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(
-                        'PUNE MUNICIPAL CORPORATION - WARD PROVISIONS & SANCTIONS DOSSIER',
-                        style: pw.TextStyle(
-                          fontSize: 15,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.blue900,
-                        ),
-                      ),
-                      pw.SizedBox(height: 3),
-                      pw.Text(
-                        'Prabhag Ward 12 - Capital Budget Allocations, Departmental Requests & Sanction Audit ($year)',
-                        style: const pw.TextStyle(
-                          fontSize: 9.5,
-                          color: PdfColors.grey700,
-                        ),
-                      ),
-                    ],
-                  ),
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.end,
-                    children: [
-                      pw.Text(
-                        'Generated: $nowStr',
-                        style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.grey600),
-                      ),
-                      pw.Text('FY: $year', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
-                      if (statusFilter != null && statusFilter != 'All')
-                        pw.Text('Status: $statusFilter', style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.blue800)),
-                    ],
-                  ),
-                ],
-              ),
-              pw.SizedBox(height: 10),
-              // Financial Summary Strip
-              pw.Container(
-                padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: pw.BoxDecoration(
-                  color: PdfColors.blue50,
-                  borderRadius: pw.BorderRadius.circular(6),
-                  border: pw.Border.all(color: PdfColors.blue200),
-                ),
-                child: pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
-                  children: [
-                    _statPill('Total Requests', '$totalCount', PdfColors.blue900),
-                    _statPill('Total Requested', numFormat.format(totalRequested), PdfColors.blue800),
-                    _statPill('Total Sanctioned', numFormat.format(totalSanctioned), PdfColors.green900),
-                    _statPill('Success Rate', '$successRate%', PdfColors.orange900),
-                    _statPill('Approved', '$approvedCount', PdfColors.green800),
-                    _statPill('Partially Approved', '$partialCount', PdfColors.blue700),
-                    _statPill('Pending Review', '$pendingCount', PdfColors.orange800),
-                  ],
-                ),
-              ),
-              pw.SizedBox(height: 10),
-              pw.Divider(color: PdfColors.grey400, thickness: 0.5),
-              pw.SizedBox(height: 6),
-            ],
+          if (context.pageNumber == 1) return pw.SizedBox.shrink();
+          return WebReportTheme.buildContinuationHeader(
+            context,
+            title: 'Ward Provisions & Budget Allocations (Continued)',
           );
         },
-        footer: (pw.Context context) {
-          return pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-            children: [
-              pw.Text(
-                'Nagarsevak Ward Municipal Finance & Sanction Tracker',
-                style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
-              ),
-              pw.Text(
-                'Page ${context.pageNumber} of ${context.pagesCount}',
-                style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
-              ),
-            ],
-          );
-        },
+        footer: (pw.Context context) => WebReportTheme.buildFooter(context),
         build: (pw.Context context) {
           return [
-            pw.TableHelper.fromTextArray(
-              border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
-              headerStyle: pw.TextStyle(
-                fontSize: 9,
-                fontWeight: pw.FontWeight.bold,
-                color: PdfColors.white,
-              ),
-              headerDecoration: const pw.BoxDecoration(color: PdfColors.blue800),
-              cellStyle: const pw.TextStyle(fontSize: 8.5),
-              cellPadding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 5),
-              columnWidths: {
-                0: const pw.FixedColumnWidth(26),  // #
-                1: const pw.FlexColumnWidth(3.0), // Project Title & Description
-                2: const pw.FixedColumnWidth(85), // Category
-                3: const pw.FixedColumnWidth(85), // Area
-                4: const pw.FixedColumnWidth(85), // Letter Ref
-                5: const pw.FixedColumnWidth(75), // Requested
-                6: const pw.FixedColumnWidth(75), // Sanctioned
-                7: const pw.FixedColumnWidth(65), // Status
-                8: const pw.FixedColumnWidth(60), // Date
-              },
-              headers: [
-                '#',
-                'Project Title & Purpose',
-                'Category',
-                'Area',
-                'Letter Ref',
-                'Requested',
-                'Sanctioned',
-                'Status',
-                'Date',
+            WebReportTheme.buildHeader(
+              title: 'Ward Provisions',
+              subtitle: 'Capital Budget Allocations & Sanctions Dossier',
+              metaLines: [
+                'Financial Year: $year',
+                'Total Records: $totalCount',
+                'Req: ${numFormat.format(totalRequested)} | Sanc: ${numFormat.format(totalSanctioned)}',
               ],
-              data: List.generate(provisions.length, (index) {
-                final p = provisions[index];
-                final reqStr = numFormat.format(p.requestedAmount);
-                final sancStr = p.sanctionedAmount != null ? numFormat.format(p.sanctionedAmount) : '--';
-
-                return [
-                  '${index + 1}',
-                  '${p.title}\n${p.description}',
-                  p.category,
-                  p.area,
-                  p.letterReference,
-                  reqStr,
-                  sancStr,
-                  p.statusDisplayEn,
-                  p.sanctionedDate ?? p.requestedDate,
-                ];
-              }),
             ),
+            pw.SizedBox(height: 12),
+
+            // Summary KPIs matching web styling
+            pw.Container(
+              padding: const pw.EdgeInsets.all(10),
+              decoration: pw.BoxDecoration(
+                color: WebReportTheme.slate50,
+                borderRadius: pw.BorderRadius.circular(6),
+                border: pw.Border.all(color: WebReportTheme.slate200, width: 0.8),
+              ),
+              child: pw.Row(
+                children: [
+                  _buildSummaryItem('Total Proposals', '$totalCount'),
+                  _buildSummaryItem('Requested', numFormat.format(totalRequested)),
+                  _buildSummaryItem('Sanctioned', numFormat.format(totalSanctioned), highlightColor: WebReportTheme.brand700),
+                  _buildSummaryItem('Approved', '$approvedCount'),
+                  _buildSummaryItem('Partial / Pending', '${partialCount + pendingCount}'),
+                ],
+              ),
+            ),
+            pw.SizedBox(height: 12),
+
+            if (provisions.isEmpty)
+              pw.Container(
+                alignment: pw.Alignment.center,
+                padding: const pw.EdgeInsets.all(40),
+                child: pw.Text(
+                  'No ward provision records found for the selected view.',
+                  style: const pw.TextStyle(fontSize: 11, color: WebReportTheme.slate500),
+                ),
+              )
+            else
+              pw.TableHelper.fromTextArray(
+                border: WebReportTheme.tableBorder,
+                headerStyle: WebReportTheme.tableHeaderStyle,
+                headerDecoration: WebReportTheme.tableHeaderDecoration,
+                headerHeight: 22,
+                cellHeight: 20,
+                cellAlignment: pw.Alignment.centerLeft,
+                cellStyle: WebReportTheme.tableCellStyle,
+                columnWidths: const {
+                  0: pw.FixedColumnWidth(24),
+                  1: pw.FlexColumnWidth(3),
+                  2: pw.FlexColumnWidth(1.8),
+                  3: pw.FlexColumnWidth(1.5),
+                  4: pw.FlexColumnWidth(1.8),
+                  5: pw.FlexColumnWidth(1.8),
+                  6: pw.FlexColumnWidth(1.4),
+                },
+                headers: const [
+                  '#',
+                  'Project Title & Category',
+                  'Area',
+                  'Letter Ref',
+                  'Requested',
+                  'Sanctioned',
+                  'Status',
+                ],
+                data: List.generate(provisions.length, (index) {
+                  final p = provisions[index];
+                  final reqStr = numFormat.format(p.requestedAmount);
+                  final sancStr = p.sanctionedAmount != null ? numFormat.format(p.sanctionedAmount) : '--';
+                  final catStr = p.category.isNotEmpty ? '\nCategory: ${p.category}' : '';
+
+                  return [
+                    '${index + 1}',
+                    '${p.title}$catStr',
+                    p.area.isNotEmpty ? p.area : '-',
+                    p.letterReference.isNotEmpty ? p.letterReference : '-',
+                    reqStr,
+                    sancStr,
+                    p.statusDisplayEn,
+                  ];
+                }),
+                oddRowDecoration: WebReportTheme.oddRowDecoration,
+              ),
           ];
         },
       ),
@@ -175,28 +132,30 @@ class WardProvisionReportGenerator {
 
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Ward12_Provisions_Report_${year}_${DateFormat('yyyyMMdd').format(DateTime.now())}.pdf',
+      name: 'Ward_Provisions_Report_${year}_${DateFormat('yyyyMMdd').format(DateTime.now())}.pdf',
     );
   }
 
-  static pw.Widget _statPill(String label, String value, PdfColor color) {
-    return pw.Column(
-      children: [
-        pw.Text(
-          value,
-          style: pw.TextStyle(
-            fontSize: 11.5,
-            fontWeight: pw.FontWeight.bold,
-            color: color,
+  static pw.Widget _buildSummaryItem(String label, String value, {PdfColor? highlightColor}) {
+    return pw.Expanded(
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            label,
+            style: const pw.TextStyle(fontSize: 8, color: WebReportTheme.slate500),
           ),
-        ),
-        pw.SizedBox(height: 2),
-        pw.Text(
-          label,
-          style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700),
-        ),
-      ],
+          pw.SizedBox(height: 2),
+          pw.Text(
+            value,
+            style: pw.TextStyle(
+              fontSize: 10,
+              fontWeight: pw.FontWeight.bold,
+              color: highlightColor ?? WebReportTheme.slate800,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
-

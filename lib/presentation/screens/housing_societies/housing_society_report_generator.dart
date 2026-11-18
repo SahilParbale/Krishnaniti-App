@@ -3,14 +3,17 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../data/models/housing_society_model.dart';
+import '../../widgets/app_pdf_report_theme.dart';
 
 class HousingSocietyReportGenerator {
+  HousingSocietyReportGenerator._();
+
   static Future<void> generateAndPrintReport({
     required List<HousingSocietyModel> societies,
   }) async {
     final pdf = pw.Document();
     final now = DateTime.now();
-    final formattedDate = DateFormat('dd/MM/yyyy, hh:mm a').format(now);
+    final formattedDate = DateFormat('dd/MM/yyyy').format(now);
 
     final totalSocieties = societies.length;
     final totalVoters = societies.fold<int>(0, (sum, s) => sum + s.voterCount);
@@ -19,179 +22,104 @@ class HousingSocietyReportGenerator {
 
     pdf.addPage(
       pw.MultiPage(
-        pageFormat: PdfPageFormat.a4.landscape,
-        margin: const pw.EdgeInsets.all(24),
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(WebReportTheme.marginPt),
+        header: (pw.Context context) {
+          if (context.pageNumber == 1) return pw.SizedBox.shrink();
+          return WebReportTheme.buildContinuationHeader(
+            context,
+            title: 'Housing Societies Registry (Continued)',
+          );
+        },
+        footer: (pw.Context context) => WebReportTheme.buildFooter(context),
         build: (pw.Context context) {
           return [
-            // Official Header
+            WebReportTheme.buildHeader(
+              title: 'Housing Societies Registry',
+              subtitle: 'List of Co-operative Housing Societies & Executive Contacts',
+              dateFormatted: formattedDate,
+              totalCount: totalSocieties,
+            ),
+            pw.SizedBox(height: 12),
+
+            // Summary row matching web layout
             pw.Container(
-              padding: const pw.EdgeInsets.only(bottom: 12),
-              decoration: const pw.BoxDecoration(
-                border: pw.Border(
-                  bottom: pw.BorderSide(color: PdfColors.blue800, width: 2),
-                ),
+              padding: const pw.EdgeInsets.all(10),
+              decoration: pw.BoxDecoration(
+                color: WebReportTheme.slate50,
+                borderRadius: pw.BorderRadius.circular(6),
+                border: pw.Border.all(color: WebReportTheme.slate200, width: 0.8),
               ),
               child: pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(
-                        'PUNE MUNICIPAL CORPORATION - PRABHAG 12',
-                        style: pw.TextStyle(
-                          fontSize: 11,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.blue900,
-                        ),
-                      ),
-                      pw.SizedBox(height: 2),
-                      pw.Text(
-                        'Cooperative Housing Societies, Executive Contacts & Voter Sentiment Report',
-                        style: pw.TextStyle(
-                          fontSize: 15,
-                          fontWeight: pw.FontWeight.bold,
-                          color: const PdfColor.fromInt(0xFF0F172A),
-                        ),
-                      ),
-                      pw.SizedBox(height: 2),
-                      pw.Text(
-                        'Housing Societies, Chairman & Secretary Contacts with Voter Support Breakdown',
-                        style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.grey700),
-                      ),
-                    ],
-                  ),
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.end,
-                    children: [
-                      pw.Container(
-                        padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: pw.BoxDecoration(
-                          color: const PdfColor.fromInt(0xFFEFF6FF),
-                          borderRadius: pw.BorderRadius.circular(4),
-                          border: pw.Border.all(color: PdfColors.blue300, width: 0.5),
-                        ),
-                        child: pw.Text(
-                          'CONFIDENTIAL / WARD ELECTORAL DOCUMENT',
-                          style: pw.TextStyle(
-                            fontSize: 7.5,
-                            fontWeight: pw.FontWeight.bold,
-                            color: PdfColors.blue900,
-                          ),
-                        ),
-                      ),
-                      pw.SizedBox(height: 4),
-                      pw.Text(
-                        'Date: $formattedDate',
-                        style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700),
-                      ),
-                      pw.Text(
-                        'Nagarsevak Office - Prabhag 12',
-                        style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
-                      ),
-                    ],
-                  ),
+                  _buildSummaryItem('Total Societies', '$totalSocieties'),
+                  _buildSummaryItem('Total Voters', '$totalVoters', highlightColor: WebReportTheme.brand700),
+                  _buildSummaryItem('Favourable', '$totalFavourable', highlightColor: PdfColors.green700),
+                  _buildSummaryItem('Support Rating', '$supportPercentage%', highlightColor: WebReportTheme.brand600),
                 ],
               ),
             ),
-
             pw.SizedBox(height: 12),
 
-            // Summary KPI Row
-            pw.Row(
-              children: [
-                _buildPdfKpiCard('Total Societies', totalSocieties.toString(), PdfColors.indigo50, PdfColors.indigo900),
-                pw.SizedBox(width: 8),
-                _buildPdfKpiCard('Total Voters', totalVoters.toString(), PdfColors.blue50, PdfColors.blue900),
-                pw.SizedBox(width: 8),
-                _buildPdfKpiCard('Favourable Voters', totalFavourable.toString(), PdfColors.green50, PdfColors.green900),
-                pw.SizedBox(width: 8),
-                _buildPdfKpiCard('Support Rating', '$supportPercentage%', PdfColors.amber50, PdfColors.amber900),
-              ],
-            ),
+            if (societies.isEmpty)
+              pw.Container(
+                alignment: pw.Alignment.center,
+                padding: const pw.EdgeInsets.all(40),
+                child: pw.Text(
+                  'No housing societies found.',
+                  style: const pw.TextStyle(fontSize: 11, color: WebReportTheme.slate500),
+                ),
+              )
+            else
+              pw.TableHelper.fromTextArray(
+                border: WebReportTheme.tableBorder,
+                headerCount: 1,
+                headerStyle: WebReportTheme.tableHeaderStyle,
+                headerDecoration: WebReportTheme.tableHeaderDecoration,
+                headerHeight: 22,
+                cellHeight: 20,
+                cellAlignment: pw.Alignment.centerLeft,
+                cellStyle: WebReportTheme.tableCellStyle,
+                columnWidths: const {
+                  0: pw.FixedColumnWidth(24),
+                  1: pw.FlexColumnWidth(2.8),
+                  2: pw.FlexColumnWidth(2.2),
+                  3: pw.FlexColumnWidth(2.2),
+                  4: pw.FlexColumnWidth(1.6),
+                  5: pw.FlexColumnWidth(1.2),
+                  6: pw.FlexColumnWidth(1.2),
+                },
+                headers: const [
+                  '#',
+                  'Society & Area',
+                  'Chairman',
+                  'Secretary',
+                  'Voters (Tot/Fav)',
+                  'Support',
+                  'Status',
+                ],
+                data: List.generate(societies.length, (index) {
+                  final s = societies[index];
+                  final areaStr = s.area.isNotEmpty ? '\nArea: ${s.area}' : '';
+                  final chairmanStr = s.chairmanName.isNotEmpty
+                      ? (s.chairmanMobile.isNotEmpty ? '${s.chairmanName}\n(${s.chairmanMobile})' : s.chairmanName)
+                      : '-';
+                  final secStr = s.secretaryName.isNotEmpty
+                      ? (s.secretaryMobile.isNotEmpty ? '${s.secretaryName}\n(${s.secretaryMobile})' : s.secretaryName)
+                      : '-';
 
-            pw.SizedBox(height: 14),
-
-            // Directory Table
-            pw.TableHelper.fromTextArray(
-              headers: [
-                '#',
-                'Society Name',
-                'Area',
-                'Chairman',
-                'Chairman Mobile',
-                'Secretary',
-                'Secretary Mobile',
-                'Total Voters',
-                'Fav Voters',
-                'Support %',
-                'Status',
-                'Key Issues & Notes',
-              ],
-              data: List.generate(societies.length, (index) {
-                final s = societies[index];
-                return [
-                  (index + 1).toString(),
-                  s.displayName(true),
-                  s.area.isNotEmpty ? s.area : '-',
-                  s.chairmanName.isNotEmpty ? s.chairmanName : '-',
-                  s.chairmanMobile.isNotEmpty ? s.chairmanMobile : '-',
-                  s.secretaryName.isNotEmpty ? s.secretaryName : '-',
-                  s.secretaryMobile.isNotEmpty ? s.secretaryMobile : '-',
-                  s.voterCount.toString(),
-                  s.favourableVoterCount.toString(),
-                  '${s.supportPercentage}%',
-                  s.status,
-                  s.notes.isNotEmpty ? s.notes : '-',
-                ];
-              }),
-              headerStyle: pw.TextStyle(
-                fontSize: 8,
-                fontWeight: pw.FontWeight.bold,
-                color: PdfColors.white,
+                  return [
+                    '${index + 1}',
+                    '${s.displayName(true)}$areaStr',
+                    chairmanStr,
+                    secStr,
+                    '${s.voterCount} / ${s.favourableVoterCount}',
+                    '${s.supportPercentage}%',
+                    s.status,
+                  ];
+                }),
+                oddRowDecoration: WebReportTheme.oddRowDecoration,
               ),
-              headerDecoration: const pw.BoxDecoration(color: PdfColor.fromInt(0xFF0284C7)),
-              rowDecoration: const pw.BoxDecoration(
-                border: pw.Border(
-                  bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
-                ),
-              ),
-              cellStyle: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey900),
-              cellAlignment: pw.Alignment.centerLeft,
-              cellPadding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 5),
-              columnWidths: {
-                0: const pw.FixedColumnWidth(20),
-                1: const pw.FlexColumnWidth(2.2),
-                2: const pw.FlexColumnWidth(1.6),
-                3: const pw.FlexColumnWidth(1.6),
-                4: const pw.FixedColumnWidth(65),
-                5: const pw.FlexColumnWidth(1.6),
-                6: const pw.FixedColumnWidth(65),
-                7: const pw.FixedColumnWidth(35),
-                8: const pw.FixedColumnWidth(35),
-                9: const pw.FixedColumnWidth(35),
-                10: const pw.FixedColumnWidth(32),
-                11: const pw.FlexColumnWidth(2.8),
-              },
-            ),
-
-            pw.SizedBox(height: 16),
-
-            // Footer note
-            pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-              children: [
-                pw.Text(
-                  'Note: This report is compiled for coordination and voter outreach across cooperative housing societies in Ward 12.',
-                  style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey600),
-                ),
-                pw.Text(
-                  'Nagarsevak Central Command System',
-                  style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800),
-                ),
-              ],
-            ),
           ];
         },
       ),
@@ -203,31 +131,26 @@ class HousingSocietyReportGenerator {
     );
   }
 
-  static pw.Widget _buildPdfKpiCard(String label, String value, PdfColor bg, PdfColor text) {
+  static pw.Widget _buildSummaryItem(String label, String value, {PdfColor? highlightColor}) {
     return pw.Expanded(
-      child: pw.Container(
-        padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: pw.BoxDecoration(
-          color: bg,
-          borderRadius: pw.BorderRadius.circular(6),
-          border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
-        ),
-        child: pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Text(
-              label,
-              style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey700),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            label,
+            style: const pw.TextStyle(fontSize: 8, color: WebReportTheme.slate500),
+          ),
+          pw.SizedBox(height: 2),
+          pw.Text(
+            value,
+            style: pw.TextStyle(
+              fontSize: 10,
+              fontWeight: pw.FontWeight.bold,
+              color: highlightColor ?? WebReportTheme.slate800,
             ),
-            pw.SizedBox(height: 2),
-            pw.Text(
-              value,
-              style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold, color: text),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
-

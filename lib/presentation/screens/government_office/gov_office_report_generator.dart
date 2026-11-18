@@ -3,6 +3,8 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../data/models/government_office_model.dart';
+import '../../../data/models/work_tracker_model.dart';
+import '../../widgets/app_pdf_report_theme.dart';
 
 class GovOfficeReportGenerator {
   GovOfficeReportGenerator._();
@@ -13,7 +15,7 @@ class GovOfficeReportGenerator {
     String? areaFilter,
   }) async {
     final pdf = pw.Document();
-    final nowStr = DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.now());
+    final nowStr = DateFormat('dd/MM/yyyy').format(DateTime.now());
 
     final totalCount = offices.length;
     final emergencyCount = offices.where((o) => o.isEmergency).length;
@@ -22,206 +24,99 @@ class GovOfficeReportGenerator {
 
     pdf.addPage(
       pw.MultiPage(
-        pageFormat: PdfPageFormat.a4.landscape,
-        margin: const pw.EdgeInsets.all(24),
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(WebReportTheme.marginPt),
         header: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(
-                        'PUNE MUNICIPAL CORPORATION - CIVIC AUTHORITIES & GOVERNMENT OFFICES DIRECTORY',
-                        style: pw.TextStyle(
-                          fontSize: 14,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.blue900,
-                        ),
-                      ),
-                      pw.SizedBox(height: 3),
-                      pw.Text(
-                        'Prabhag Ward 12 - Municipal Administration, Police Stations, Emergency Helplines & Utility Offices',
-                        style: const pw.TextStyle(
-                          fontSize: 9.5,
-                          color: PdfColors.grey700,
-                        ),
-                      ),
-                    ],
-                  ),
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.end,
-                    children: [
-                      pw.Text(
-                        'Generated: $nowStr',
-                        style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.grey600),
-                      ),
-                      if (categoryFilter != null && categoryFilter != 'All')
-                        pw.Text(
-                          'Category: $categoryFilter',
-                          style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900),
-                        ),
-                      if (areaFilter != null && areaFilter != 'All')
-                        pw.Text('Area: $areaFilter', style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.blue800)),
-                    ],
-                  ),
-                ],
-              ),
-              pw.SizedBox(height: 10),
-              // Summary Strip
-              pw.Container(
-                padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: pw.BoxDecoration(
-                  color: PdfColors.blue50,
-                  borderRadius: pw.BorderRadius.circular(6),
-                  border: pw.Border.all(color: PdfColors.blue200),
-                ),
-                child: pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
-                  children: [
-                    _statPill('Total Offices & Helplines', '$totalCount', PdfColors.blue900),
-                    _statPill('24x7 Emergency Services', '$emergencyCount', PdfColors.red900),
-                    _statPill('Municipal PMC Centers', '$municipalCount', PdfColors.blue800),
-                    _statPill('Police & Security Desks', '$policeCount', PdfColors.indigo900),
-                  ],
-                ),
-              ),
-              pw.SizedBox(height: 10),
-              pw.Divider(color: PdfColors.grey400, thickness: 0.5),
-              pw.SizedBox(height: 6),
-            ],
+          if (context.pageNumber == 1) return pw.SizedBox.shrink();
+          return WebReportTheme.buildContinuationHeader(
+            context,
+            title: 'Government Offices Directory (Continued)',
           );
         },
-        footer: (pw.Context context) {
-          return pw.Container(
-            margin: const pw.EdgeInsets.only(top: 8),
-            padding: const pw.EdgeInsets.only(top: 6),
-            decoration: const pw.BoxDecoration(
-              border: pw.Border(top: pw.BorderSide(color: PdfColors.grey300, width: 0.5)),
-            ),
-            child: pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-              children: [
-                pw.Text(
-                  'Pune Municipal Corporation - Nagarsevak Citizen Services Portal | Official Emergency & Administrative Directory',
-                  style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey600),
-                ),
-                pw.Text(
-                  'Page ${context.pageNumber} of ${context.pagesCount}',
-                  style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey600),
-                ),
-              ],
-            ),
-          );
-        },
+        footer: (pw.Context context) => WebReportTheme.buildFooter(context),
         build: (pw.Context context) {
           return [
-            pw.Table(
-              border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
-              columnWidths: const {
-                0: pw.FixedColumnWidth(28),  // #
-                1: pw.FlexColumnWidth(3.0), // Office Name
-                2: pw.FlexColumnWidth(2.2), // Officer In-Charge
-                3: pw.FlexColumnWidth(1.8), // Contact / Helpline
-                4: pw.FlexColumnWidth(1.6), // Category
-                5: pw.FlexColumnWidth(2.6), // Address & Area
-                6: pw.FlexColumnWidth(1.8), // Timings
-              },
-              children: [
-                pw.TableRow(
-                  decoration: const pw.BoxDecoration(color: PdfColors.grey100),
-                  children: [
-                    _tableHeader('#', alignCenter: true),
-                    _tableHeader('Office / Authority Name'),
-                    _tableHeader('Officer In-Charge'),
-                    _tableHeader('Contact / Helpline'),
-                    _tableHeader('Category'),
-                    _tableHeader('Address & Location'),
-                    _tableHeader('Working Hours'),
-                  ],
-                ),
-                ...offices.asMap().entries.map((entry) {
-                  final idx = entry.key + 1;
-                  final item = entry.value;
-
-                  return pw.TableRow(
-                    decoration: pw.BoxDecoration(
-                      color: idx.isEven ? PdfColors.grey50 : PdfColors.white,
-                    ),
-                    children: [
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(5),
-                        child: pw.Text('$idx', style: const pw.TextStyle(fontSize: 8), textAlign: pw.TextAlign.center),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(5),
-                        child: pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          children: [
-                            pw.Text(
-                              item.name,
-                              style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold),
-                            ),
-                            if (item.isEmergency)
-                              pw.Container(
-                                margin: const pw.EdgeInsets.only(top: 2),
-                                padding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                decoration: pw.BoxDecoration(
-                                  color: PdfColors.red50,
-                                  borderRadius: pw.BorderRadius.circular(2),
-                                ),
-                                child: pw.Text('24x7 Emergency', style: const pw.TextStyle(fontSize: 6.5, color: PdfColors.red900)),
-                              ),
-                          ],
-                        ),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(5),
-                        child: pw.Text(item.officerName, style: const pw.TextStyle(fontSize: 8)),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(5),
-                        child: pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          children: [
-                            pw.Text(
-                              item.contactNumber,
-                              style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900),
-                            ),
-                            if (item.secondaryContact != null)
-                              pw.Text(
-                                item.secondaryContact!,
-                                style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey700),
-                              ),
-                          ],
-                        ),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(5),
-                        child: pw.Text(item.category, style: const pw.TextStyle(fontSize: 8)),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(5),
-                        child: pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          children: [
-                            pw.Text(item.address, style: const pw.TextStyle(fontSize: 7.5)),
-                            pw.Text(item.area, style: pw.TextStyle(fontSize: 7, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
-                          ],
-                        ),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(5),
-                        child: pw.Text(item.timing, style: const pw.TextStyle(fontSize: 7.5)),
-                      ),
-                    ],
-                  );
-                }),
+            WebReportTheme.buildHeader(
+              title: 'Government Offices',
+              subtitle: 'Directory of Key Government Departments & Administrative Officers',
+              metaLines: [
+                'Date: $nowStr',
+                'Count: $totalCount',
+                if (categoryFilter != null && categoryFilter != 'All') 'Category: $categoryFilter',
+                if (areaFilter != null && areaFilter != 'All') 'Area: $areaFilter',
               ],
             ),
+            pw.SizedBox(height: 12),
+
+            // Summary strip
+            pw.Container(
+              padding: const pw.EdgeInsets.all(10),
+              decoration: pw.BoxDecoration(
+                color: WebReportTheme.slate50,
+                borderRadius: pw.BorderRadius.circular(6),
+                border: pw.Border.all(color: WebReportTheme.slate200, width: 0.8),
+              ),
+              child: pw.Row(
+                children: [
+                  _buildSummaryItem('Total Authorities', '$totalCount'),
+                  _buildSummaryItem('Emergency 24x7', '$emergencyCount', highlightColor: PdfColors.red700),
+                  _buildSummaryItem('Municipal Centers', '$municipalCount', highlightColor: WebReportTheme.brand700),
+                  _buildSummaryItem('Police / Security', '$policeCount'),
+                ],
+              ),
+            ),
+            pw.SizedBox(height: 12),
+
+            if (offices.isEmpty)
+              pw.Container(
+                alignment: pw.Alignment.center,
+                padding: const pw.EdgeInsets.all(40),
+                child: pw.Text(
+                  'No government office records found for the selected view.',
+                  style: const pw.TextStyle(fontSize: 11, color: WebReportTheme.slate500),
+                ),
+              )
+            else
+              pw.TableHelper.fromTextArray(
+                border: WebReportTheme.tableBorder,
+                headerStyle: WebReportTheme.tableHeaderStyle,
+                headerDecoration: WebReportTheme.tableHeaderDecoration,
+                headerHeight: 22,
+                cellHeight: 20,
+                cellAlignment: pw.Alignment.centerLeft,
+                cellStyle: WebReportTheme.tableCellStyle,
+                columnWidths: const {
+                  0: pw.FixedColumnWidth(24),
+                  1: pw.FlexColumnWidth(3.0),
+                  2: pw.FlexColumnWidth(2.0),
+                  3: pw.FlexColumnWidth(2.0),
+                  4: pw.FlexColumnWidth(2.5),
+                },
+                headers: const [
+                  '#',
+                  'Office / Department',
+                  'Officer Name',
+                  'Contact Number',
+                  'Address & Area',
+                ],
+                data: List.generate(offices.length, (index) {
+                  final item = offices[index];
+                  final emergencyBadge = item.isEmergency ? ' [Emergency]' : '';
+                  final contacts = [item.contactNumber, item.secondaryContact]
+                      .where((s) => s != null && s.isNotEmpty)
+                      .join('\n');
+                  final addressPart = [item.address, item.area].where((s) => s.isNotEmpty).join('\nArea: ');
+
+                  return [
+                    '${index + 1}',
+                    '${item.name}$emergencyBadge',
+                    item.officerName.isNotEmpty ? item.officerName : '-',
+                    contacts.isNotEmpty ? contacts : '-',
+                    addressPart.isNotEmpty ? addressPart : '-',
+                  ];
+                }),
+                oddRowDecoration: WebReportTheme.oddRowDecoration,
+              ),
           ];
         },
       ),
@@ -233,28 +128,157 @@ class GovOfficeReportGenerator {
     );
   }
 
-  static pw.Widget _statPill(String label, String value, PdfColor color) {
-    return pw.Column(
-      children: [
-        pw.Text(label, style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey700)),
-        pw.SizedBox(height: 1),
-        pw.Text(
-          value,
-          style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: color),
-        ),
-      ],
+  /// Official File Tracker & Departmental Work Movement Report
+  static Future<void> generateAndPrintFileTrackerReport({
+    required List<WorkTrackerModel> trackers,
+    String? statusFilter,
+  }) async {
+    final pdf = pw.Document();
+    final nowStr = DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now());
+
+    final totalCount = trackers.length;
+    final inProcessCount = trackers
+        .where((t) => t.currentStatus.toLowerCase().contains('process') || t.currentStatus.toLowerCase().contains('pending'))
+        .length;
+    final completedCount = trackers
+        .where((t) =>
+            t.currentStatus.toLowerCase().contains('complete') ||
+            t.currentStatus.toLowerCase().contains('dispatched') ||
+            t.currentStatus.toLowerCase().contains('approved'))
+        .length;
+    final actionRequiredCount = trackers
+        .where((t) => t.currentStatus.toLowerCase().contains('action') || t.currentStatus.toLowerCase().contains('review'))
+        .length;
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(WebReportTheme.marginPt),
+        header: (pw.Context context) {
+          if (context.pageNumber == 1) return pw.SizedBox.shrink();
+          return WebReportTheme.buildContinuationHeader(
+            context,
+            title: 'Municipal File Tracker (Continued)',
+          );
+        },
+        footer: (pw.Context context) => WebReportTheme.buildFooter(context),
+        build: (pw.Context context) {
+          return [
+            WebReportTheme.buildHeader(
+              title: 'Municipal File Tracker',
+              subtitle: 'Department Inward/Outward Document Progression & Approval Dossier',
+              metaLines: [
+                'Date: $nowStr',
+                'Found: $totalCount',
+                if (statusFilter != null && statusFilter != 'All') 'Status: $statusFilter',
+              ],
+            ),
+            pw.SizedBox(height: 12),
+
+            // Summary
+            pw.Container(
+              padding: const pw.EdgeInsets.all(10),
+              decoration: pw.BoxDecoration(
+                color: WebReportTheme.slate50,
+                borderRadius: pw.BorderRadius.circular(6),
+                border: pw.Border.all(color: WebReportTheme.slate200, width: 0.8),
+              ),
+              child: pw.Row(
+                children: [
+                  _buildSummaryItem('Total Files', '$totalCount'),
+                  _buildSummaryItem('In Process', '$inProcessCount', highlightColor: PdfColors.amber800),
+                  _buildSummaryItem('Completed', '$completedCount', highlightColor: PdfColors.green700),
+                  _buildSummaryItem('Action Required', '$actionRequiredCount', highlightColor: PdfColors.red700),
+                ],
+              ),
+            ),
+            pw.SizedBox(height: 12),
+
+            if (trackers.isEmpty)
+              pw.Container(
+                alignment: pw.Alignment.center,
+                padding: const pw.EdgeInsets.all(40),
+                child: pw.Text(
+                  'No file tracking records found for the selected view.',
+                  style: const pw.TextStyle(fontSize: 11, color: WebReportTheme.slate500),
+                ),
+              )
+            else
+              pw.TableHelper.fromTextArray(
+                border: WebReportTheme.tableBorder,
+                headerStyle: WebReportTheme.tableHeaderStyle,
+                headerDecoration: WebReportTheme.tableHeaderDecoration,
+                headerHeight: 22,
+                cellHeight: 20,
+                cellAlignment: pw.Alignment.centerLeft,
+                cellStyle: WebReportTheme.tableCellStyle,
+                columnWidths: const {
+                  0: pw.FixedColumnWidth(24),
+                  1: pw.FlexColumnWidth(2.8),
+                  2: pw.FlexColumnWidth(2.0),
+                  3: pw.FlexColumnWidth(1.4),
+                  4: pw.FlexColumnWidth(1.4),
+                  5: pw.FlexColumnWidth(1.4),
+                  6: pw.FlexColumnWidth(1.4),
+                },
+                headers: const [
+                  '#',
+                  'File Title & Scope',
+                  'Subject / Dept',
+                  'Inward No.',
+                  'Outward No.',
+                  'Status',
+                  'Updated',
+                ],
+                data: List.generate(trackers.length, (index) {
+                  final t = trackers[index];
+                  final descPart = t.description.isNotEmpty ? '\n${t.description}' : '';
+                  final deptPart = t.department.isNotEmpty ? '\nDept: ${t.department}' : '';
+                  final updatedStr = DateFormat('dd/MM/yyyy').format(t.updatedAt);
+
+                  return [
+                    '${index + 1}',
+                    '${t.title}$descPart',
+                    '${t.subject}$deptPart',
+                    t.inwardNumber.isNotEmpty ? t.inwardNumber : '-',
+                    t.outwardNumber.isNotEmpty ? t.outwardNumber : '-',
+                    t.currentStatus,
+                    updatedStr,
+                  ];
+                }),
+                oddRowDecoration: WebReportTheme.oddRowDecoration,
+              ),
+          ];
+        },
+      ),
+    );
+
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => pdf.save(),
+      name: 'Municipal_File_Tracker_Report_${DateFormat('yyyyMMdd').format(DateTime.now())}.pdf',
     );
   }
 
-  static pw.Widget _tableHeader(String text, {bool alignCenter = false}) {
-    return pw.Padding(
-      padding: const pw.EdgeInsets.all(5),
-      child: pw.Text(
-        text,
-        style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.grey800),
-        textAlign: alignCenter ? pw.TextAlign.center : pw.TextAlign.left,
+  static pw.Widget _buildSummaryItem(String label, String value, {PdfColor? highlightColor}) {
+    return pw.Expanded(
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            label,
+            style: const pw.TextStyle(fontSize: 8, color: WebReportTheme.slate500),
+          ),
+          pw.SizedBox(height: 2),
+          pw.Text(
+            value,
+            style: pw.TextStyle(
+              fontSize: 10,
+              fontWeight: pw.FontWeight.bold,
+              color: highlightColor ?? WebReportTheme.slate800,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
-

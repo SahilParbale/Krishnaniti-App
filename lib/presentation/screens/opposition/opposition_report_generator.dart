@@ -3,201 +3,115 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../data/models/opposition_model.dart';
+import '../../widgets/app_pdf_report_theme.dart';
 
 class OppositionReportGenerator {
+  OppositionReportGenerator._();
+
   static Future<void> generateAndPrintReport({
     required List<OppositionMemberModel> members,
     required String Function(String) getCandidateName,
   }) async {
     final pdf = pw.Document();
-
     final now = DateTime.now();
-    final formattedDate = DateFormat('dd/MM/yyyy, hh:mm a').format(now);
+    final formattedDate = DateFormat('dd/MM/yyyy').format(now);
 
     final totalMembers = members.length;
     final totalCandidates = members.where((m) => m.isCandidate).length;
     final totalWorkers = members.where((m) => !m.isCandidate).length;
-    int totalControversies = 0;
-    for (final m in members) {
-      totalControversies += m.negativeStories.length;
-    }
 
     pdf.addPage(
       pw.MultiPage(
-        pageFormat: PdfPageFormat.a4.landscape,
-        margin: const pw.EdgeInsets.all(24),
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(WebReportTheme.marginPt),
+        header: (pw.Context context) {
+          if (context.pageNumber == 1) return pw.SizedBox.shrink();
+          return WebReportTheme.buildContinuationHeader(
+            context,
+            title: 'Opposition Intelligence (Continued)',
+          );
+        },
+        footer: (pw.Context context) => WebReportTheme.buildFooter(context),
         build: (pw.Context context) {
           return [
-            // Official PMC & Office Header
+            WebReportTheme.buildHeader(
+              title: 'Opposition Information',
+              subtitle: 'Track and monitor opposition workers, strongholds, and key public campaigns',
+              dateFormatted: formattedDate,
+              totalCount: totalMembers,
+            ),
+            pw.SizedBox(height: 12),
+
+            // Summary metrics
             pw.Container(
-              padding: const pw.EdgeInsets.only(bottom: 12),
-              decoration: const pw.BoxDecoration(
-                border: pw.Border(
-                  bottom: pw.BorderSide(color: PdfColors.blue800, width: 2),
-                ),
+              padding: const pw.EdgeInsets.all(10),
+              decoration: pw.BoxDecoration(
+                color: WebReportTheme.slate50,
+                borderRadius: pw.BorderRadius.circular(6),
+                border: pw.Border.all(color: WebReportTheme.slate200, width: 0.8),
               ),
               child: pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(
-                        'PUNE MUNICIPAL CORPORATION - PRABHAG 12',
-                        style: pw.TextStyle(
-                          fontSize: 11,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.blue900,
-                        ),
-                      ),
-                      pw.SizedBox(height: 2),
-                      pw.Text(
-                        'OPPOSITION INFORMATION & STRATEGIC DIRECTORY',
-                        style: pw.TextStyle(
-                          fontSize: 16,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.blue800,
-                        ),
-                      ),
-                      pw.SizedBox(height: 2),
-                      pw.Text(
-                        'Opposition Intelligence - Candidates, Cadre, Strongholds & Controversies',
-                        style: const pw.TextStyle(
-                          fontSize: 10,
-                          color: PdfColors.grey700,
-                        ),
-                      ),
-                    ],
-                  ),
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.end,
-                    children: [
-                      pw.Container(
-                        padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: pw.BoxDecoration(
-                          color: PdfColors.red50,
-                          borderRadius: pw.BorderRadius.circular(4),
-                          border: pw.Border.all(color: PdfColors.red300),
-                        ),
-                        child: pw.Text(
-                          'CONFIDENTIAL / INTERNAL USE ONLY',
-                          style: pw.TextStyle(
-                            fontSize: 9,
-                            fontWeight: pw.FontWeight.bold,
-                            color: PdfColors.red800,
-                          ),
-                        ),
-                      ),
-                      pw.SizedBox(height: 4),
-                      pw.Text(
-                        'Generated: $formattedDate',
-                        style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
-                      ),
-                    ],
-                  ),
+                  _buildSummaryItem('Total Members', '$totalMembers'),
+                  _buildSummaryItem('Candidates', '$totalCandidates', highlightColor: WebReportTheme.brand700),
+                  _buildSummaryItem('Workers', '$totalWorkers', highlightColor: WebReportTheme.slate700),
                 ],
               ),
             ),
-
             pw.SizedBox(height: 12),
 
-            // Summary Metrics
-            pw.Row(
-              children: [
-                _buildPdfKpiCard('Total Records', totalMembers.toString(), PdfColors.blue50, PdfColors.blue900),
-                pw.SizedBox(width: 8),
-                _buildPdfKpiCard('Candidates', totalCandidates.toString(), PdfColors.indigo50, PdfColors.indigo900),
-                pw.SizedBox(width: 8),
-                _buildPdfKpiCard('Cadre', totalWorkers.toString(), PdfColors.amber50, PdfColors.amber900),
-                pw.SizedBox(width: 8),
-                _buildPdfKpiCard('Controversies', totalControversies.toString(), PdfColors.red50, PdfColors.red900),
-              ],
-            ),
+            if (members.isEmpty)
+              pw.Container(
+                alignment: pw.Alignment.center,
+                padding: const pw.EdgeInsets.all(40),
+                child: pw.Text(
+                  'No opposition members found.',
+                  style: const pw.TextStyle(fontSize: 11, color: WebReportTheme.slate500),
+                ),
+              )
+            else
+              pw.TableHelper.fromTextArray(
+                border: WebReportTheme.tableBorder,
+                headerCount: 1,
+                headerStyle: WebReportTheme.tableHeaderStyle,
+                headerDecoration: WebReportTheme.tableHeaderDecoration,
+                headerHeight: 22,
+                cellHeight: 20,
+                cellAlignment: pw.Alignment.centerLeft,
+                cellStyle: WebReportTheme.tableCellStyle,
+                columnWidths: const {
+                  0: pw.FixedColumnWidth(24),
+                  1: pw.FlexColumnWidth(2.8),
+                  2: pw.FlexColumnWidth(1.6),
+                  3: pw.FlexColumnWidth(1.6),
+                  4: pw.FlexColumnWidth(1.8),
+                  5: pw.FlexColumnWidth(2.6),
+                },
+                headers: const [
+                  '#',
+                  'Name & Party',
+                  'Role / Designation',
+                  'Type',
+                  'Mobile',
+                  'Area & Strongholds',
+                ],
+                data: List.generate(members.length, (index) {
+                  final m = members[index];
+                  final partyStr = m.party.isNotEmpty ? '\nParty: ${m.party}' : '';
+                  final strongholdsStr = m.strongholds.isNotEmpty ? '\nStrongholds: ${m.strongholds.take(2).join(", ")}' : '';
+                  final areaStr = m.area?.isNotEmpty == true ? m.area! : '-';
 
-            pw.SizedBox(height: 14),
-
-            // Directory Table
-            pw.TableHelper.fromTextArray(
-              headers: [
-                '#',
-                'Name',
-                'Party',
-                'Type',
-                'Role / Designation',
-                'Base Area',
-                'Mobile',
-                'Strongholds',
-                'Status / Linked Candidate',
-                'Contr.',
-              ],
-              data: List.generate(members.length, (index) {
-                final m = members[index];
-                String statusOrCand = '-';
-                if (m.isCandidate) {
-                  statusOrCand = '${m.candidacyStatus ?? 'Declared'} (${m.constituency ?? 'Prabhag 12'})';
-                } else if (m.candidateId != null && m.candidateId!.isNotEmpty) {
-                  final candName = getCandidateName(m.candidateId!);
-                  statusOrCand = candName.isNotEmpty ? 'Cand: $candName' : 'Linked';
-                }
-
-                return [
-                  (index + 1).toString(),
-                  m.name,
-                  m.party,
-                  m.isCandidate ? 'Candidate' : 'Worker',
-                  m.role ?? '-',
-                  m.area ?? '-',
-                  m.mobile ?? '-',
-                  m.strongholds.isNotEmpty ? m.strongholds.take(3).join(', ') : '-',
-                  statusOrCand,
-                  m.negativeStories.length.toString(),
-                ];
-              }),
-              headerStyle: pw.TextStyle(
-                fontWeight: pw.FontWeight.bold,
-                fontSize: 8.5,
-                color: PdfColors.white,
+                  return [
+                    '${index + 1}',
+                    '${m.name}$partyStr',
+                    m.role ?? '-',
+                    m.isCandidate ? 'Candidate' : 'Worker',
+                    m.mobile ?? '-',
+                    '$areaStr$strongholdsStr',
+                  ];
+                }),
+                oddRowDecoration: WebReportTheme.oddRowDecoration,
               ),
-              headerDecoration: const pw.BoxDecoration(color: PdfColor.fromInt(0xFF0284C7)),
-              rowDecoration: const pw.BoxDecoration(
-                border: pw.Border(
-                  bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
-                ),
-              ),
-              cellStyle: const pw.TextStyle(fontSize: 8, color: PdfColors.grey900),
-              cellAlignment: pw.Alignment.centerLeft,
-              cellPadding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 5),
-              columnWidths: {
-                0: const pw.FixedColumnWidth(22),
-                1: const pw.FlexColumnWidth(2.2),
-                2: const pw.FixedColumnWidth(48),
-                3: const pw.FixedColumnWidth(55),
-                4: const pw.FlexColumnWidth(1.8),
-                5: const pw.FlexColumnWidth(1.6),
-                6: const pw.FixedColumnWidth(68),
-                7: const pw.FlexColumnWidth(2.0),
-                8: const pw.FlexColumnWidth(1.8),
-                9: const pw.FixedColumnWidth(30),
-              },
-            ),
-
-            pw.SizedBox(height: 16),
-
-            // Footer note
-            pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-              children: [
-                pw.Text(
-                  'Note: This report is strictly prepared for internal campaign analysis and electoral strategy.',
-                  style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey600),
-                ),
-                pw.Text(
-                  'Nagarsevak Central Command System',
-                  style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800),
-                ),
-              ],
-            ),
           ];
         },
       ),
@@ -209,31 +123,26 @@ class OppositionReportGenerator {
     );
   }
 
-  static pw.Widget _buildPdfKpiCard(String label, String value, PdfColor bg, PdfColor text) {
+  static pw.Widget _buildSummaryItem(String label, String value, {PdfColor? highlightColor}) {
     return pw.Expanded(
-      child: pw.Container(
-        padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: pw.BoxDecoration(
-          color: bg,
-          borderRadius: pw.BorderRadius.circular(6),
-          border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
-        ),
-        child: pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Text(
-              label,
-              style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey700),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            label,
+            style: const pw.TextStyle(fontSize: 8, color: WebReportTheme.slate500),
+          ),
+          pw.SizedBox(height: 2),
+          pw.Text(
+            value,
+            style: pw.TextStyle(
+              fontSize: 10,
+              fontWeight: pw.FontWeight.bold,
+              color: highlightColor ?? WebReportTheme.slate800,
             ),
-            pw.SizedBox(height: 2),
-            pw.Text(
-              value,
-              style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold, color: text),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
-

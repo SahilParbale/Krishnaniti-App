@@ -4,6 +4,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../data/models/voter_model.dart';
+import '../../widgets/app_pdf_report_theme.dart';
 
 class VoterSlipGenerator {
   VoterSlipGenerator._();
@@ -209,215 +210,101 @@ class VoterSlipGenerator {
     );
   }
 
-  /// Generate and download complete filtered voter list in landscape A4
+  /// Generate and download complete filtered voter list matching web VoterReportGenerator.tsx
   static Future<void> downloadVotersListReport({
     required List<VoterModel> voters,
     String? currentFilterSummary,
     int totalCount = 42560,
   }) async {
     final pdf = pw.Document();
-    final nowStr = DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.now());
+    final nowStr = DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now());
 
     pdf.addPage(
       pw.MultiPage(
-        pageFormat: PdfPageFormat.a4.landscape,
-        margin: const pw.EdgeInsets.all(20),
+        pageFormat: WebReportTheme.pageFormat,
+        margin: WebReportTheme.pageMargin,
         header: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(
-                        'PUNE MUNICIPAL CORPORATION - ELECTORAL SERVICES & PULSE CELL',
-                        style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900),
-                      ),
-                      pw.Text(
-                        'VOTER SEARCH DIRECTORY & ELECTORAL ROLL',
-                        style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.grey800),
-                      ),
-                      pw.Text(
-                        'Prabhag No. 12 (Kasba Peth - Shaniwar Peth - Raviwar Peth)',
-                        style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.grey600),
-                      ),
-                    ],
-                  ),
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.end,
-                    children: [
-                      pw.Container(
-                        padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: const pw.BoxDecoration(
-                          color: PdfColors.blue50,
-                          borderRadius: pw.BorderRadius.all(pw.Radius.circular(4)),
-                        ),
-                        child: pw.Text(
-                          'Page ${context.pageNumber} of ${context.pagesCount}',
-                          style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800),
-                        ),
-                      ),
-                      pw.SizedBox(height: 2),
-                      pw.Text('Report Date: $nowStr', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
-                    ],
-                  ),
-                ],
-              ),
-              if (currentFilterSummary != null && currentFilterSummary.isNotEmpty) ...[
-                pw.SizedBox(height: 4),
-                pw.Text('Applied Filters: $currentFilterSummary',
-                    style: const pw.TextStyle(fontSize: 8, color: PdfColors.blue700)),
-              ],
-              pw.Divider(color: PdfColors.blue900, thickness: 1.2),
-              pw.SizedBox(height: 4),
-            ],
+          if (context.pageNumber > 1) {
+            return WebReportTheme.buildContinuationHeader(
+              context,
+              title: 'Voters List',
+            );
+          }
+          return WebReportTheme.buildHeader(
+            title: 'Voters List',
+            subtitle: currentFilterSummary?.isNotEmpty == true
+                ? 'Filtered: $currentFilterSummary'
+                : 'Detailed Electoral Roll Report',
+            dateFormatted: nowStr,
+            totalCount: voters.length,
+            foundLabel: 'Found',
           );
         },
+        footer: (pw.Context context) => WebReportTheme.buildFooter(context),
         build: (pw.Context context) {
           return [
-            // KPI Summary Row
-            pw.Container(
-              padding: const pw.EdgeInsets.all(8),
-              margin: const pw.EdgeInsets.only(bottom: 10),
-              decoration: pw.BoxDecoration(
-                color: PdfColors.grey100,
-                borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
-                border: pw.Border.all(color: PdfColors.grey300),
-              ),
-              child: pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
-                children: [
-                  _buildKpiItem('Total Ward Roll', NumberFormat('#,##,###').format(totalCount)),
-                  _buildKpiItem('Results Shown', '${voters.length}'),
-                  _buildKpiItem('Favourable Voters', '${voters.where((v) => v.favour == "Favourable").length}'),
-                  _buildKpiItem('Neutral Voters', '${voters.where((v) => v.favour == "Neutral").length}'),
-                  _buildKpiItem('Against Voters', '${voters.where((v) => v.favour == "Against").length}'),
-                ],
-              ),
-            ),
-
-            // Table of Voters
-            pw.Table(
-              border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
-              columnWidths: {
-                0: const pw.FixedColumnWidth(26), // Sr.
-                1: const pw.FlexColumnWidth(3.0), // Name
-                2: const pw.FlexColumnWidth(1.8), // EPIC
-                3: const pw.FixedColumnWidth(44), // Age/Sex
-                4: const pw.FlexColumnWidth(3.0), // Address
-                5: const pw.FlexColumnWidth(1.6), // Booth
-                6: const pw.FlexColumnWidth(1.5), // Mobile
-                7: const pw.FlexColumnWidth(1.2), // Favour
+            // Table of Voters matching web VoterReportGenerator.tsx
+            pw.TableHelper.fromTextArray(
+              border: WebReportTheme.tableBorder,
+              headerCount: 1,
+              headerStyle: WebReportTheme.tableHeaderStyle,
+              headerDecoration: WebReportTheme.tableHeaderDecoration,
+              oddRowDecoration: WebReportTheme.oddRowDecoration,
+              cellStyle: WebReportTheme.tableCellStyle,
+              columnWidths: const {
+                0: pw.FlexColumnWidth(0.6), // # (5%)
+                1: pw.FlexColumnWidth(2.2), // Name (20%)
+                2: pw.FlexColumnWidth(1.4), // EPIC No (12%)
+                3: pw.FlexColumnWidth(0.8), // Age/Sex (6%)
+                4: pw.FlexColumnWidth(2.6), // Address (25%)
+                5: pw.FlexColumnWidth(1.2), // Ward / Booth (10%)
+                6: pw.FlexColumnWidth(1.1), // Caste / Favour (10%)
               },
-              children: [
-                pw.TableRow(
-                  decoration: const pw.BoxDecoration(color: PdfColors.blue800),
-                  children: [
-                    _buildHeaderCell('#'),
-                    _buildHeaderCell('Voter Name'),
-                    _buildHeaderCell('EPIC No.'),
-                    _buildHeaderCell('Age / Gender'),
-                    _buildHeaderCell('Residential Address'),
-                    _buildHeaderCell('Booth / Part'),
-                    _buildHeaderCell('Mobile'),
-                    _buildHeaderCell('Political Stance'),
-                  ],
-                ),
-                ...voters.asMap().entries.map((entry) {
-                  final idx = entry.key;
-                  final v = entry.value;
-                  final isEven = idx % 2 == 0;
-
-                  return pw.TableRow(
-                    decoration: pw.BoxDecoration(color: isEven ? PdfColors.white : PdfColors.grey50),
-                    children: [
-                      _buildCell('${v.serialNo ?? (idx + 1)}', alignCenter: true),
-                      _buildCell(v.displayName, isBold: true),
-                      _buildCell(v.epicNo),
-                      _buildCell('${v.age} / ${v.gender}', alignCenter: true),
-                      _buildCell('${v.houseNo != null ? "#${v.houseNo}, " : ""}${v.address}'),
-                      _buildCell(v.booth),
-                      _buildCell(v.mobile != null ? '+91 ${v.mobile}' : '-'),
-                      _buildCell(v.favourLabelMarathi,
-                          textColor: v.favour == 'Favourable'
-                              ? PdfColors.green800
-                              : (v.favour == 'Against' ? PdfColors.red800 : PdfColors.blue800),
-                          isBold: true),
-                    ],
-                  );
-                }),
+              headers: [
+                '#',
+                'Name',
+                'EPIC No',
+                'Age/Sex',
+                'Address',
+                'Booth',
+                'Favour',
               ],
+              data: voters.asMap().entries.map((entry) {
+                final idx = entry.key;
+                final v = entry.value;
+                final addressStr = v.houseNo != null && v.houseNo!.isNotEmpty
+                    ? '#${v.houseNo}, ${v.address}'
+                    : v.address;
+                return [
+                  '${v.serialNo ?? (idx + 1)}',
+                  v.displayName,
+                  v.epicNo,
+                  '${v.age} / ${v.gender}',
+                  addressStr,
+                  v.booth,
+                  v.favour ?? '-',
+                ];
+              }).toList(),
+              cellAlignments: {
+                0: pw.Alignment.center,
+                1: pw.Alignment.centerLeft,
+                2: pw.Alignment.centerLeft,
+                3: pw.Alignment.center,
+                4: pw.Alignment.centerLeft,
+                5: pw.Alignment.center,
+                6: pw.Alignment.center,
+              },
             ),
           ];
-        },
-        footer: (pw.Context context) {
-          return pw.Container(
-            margin: const pw.EdgeInsets.only(top: 8),
-            padding: const pw.EdgeInsets.only(top: 6),
-            decoration: const pw.BoxDecoration(
-              border: pw.Border(top: pw.BorderSide(color: PdfColors.grey300, width: 0.5)),
-            ),
-            child: pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-              children: [
-                pw.Text('Nagarsevak Election Management Suite â€¢ Confidential Ward Roll Document',
-                    style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey600)),
-                pw.Text('Pune Municipal Corporation â€¢ Prabhag 12',
-                    style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey600)),
-              ],
-            ),
-          );
         },
       ),
     );
 
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Voter_Directory_Prabhag12.pdf',
-    );
-  }
-
-  static pw.Widget _buildHeaderCell(String text) {
-    return pw.Padding(
-      padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 4),
-      child: pw.Text(
-        text,
-        style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.white),
-      ),
-    );
-  }
-
-  static pw.Widget _buildCell(
-    String text, {
-    bool isBold = false,
-    bool alignCenter = false,
-    PdfColor? textColor,
-  }) {
-    return pw.Padding(
-      padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 4),
-      child: pw.Text(
-        text,
-        textAlign: alignCenter ? pw.TextAlign.center : pw.TextAlign.left,
-        style: pw.TextStyle(
-          fontSize: 8,
-          fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
-          color: textColor ?? PdfColors.black,
-        ),
-      ),
-    );
-  }
-
-  static pw.Widget _buildKpiItem(String title, String value) {
-    return pw.Column(
-      children: [
-        pw.Text(value, style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
-        pw.SizedBox(height: 1),
-        pw.Text(title, style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey700)),
-      ],
+      name: 'Voter_List_${DateFormat('yyyy-MM-dd').format(DateTime.now())}.pdf',
     );
   }
 }
+
 

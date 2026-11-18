@@ -3,6 +3,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../data/models/karyakarta_work_model.dart';
+import '../../widgets/app_pdf_report_theme.dart';
 
 class KaryakartaWorkReportGenerator {
   KaryakartaWorkReportGenerator._();
@@ -16,7 +17,7 @@ class KaryakartaWorkReportGenerator {
   }) async {
     final pdf = pw.Document();
     final now = DateTime.now();
-    final nowStr = DateFormat('dd/MM/yyyy, hh:mm a').format(now);
+    final nowStr = DateFormat('dd/MM/yyyy HH:mm').format(now);
 
     final staffIds = staffList.map((s) => s.id).toSet();
     final tabTasks = tasks.where((t) => t.assignedStaffId != null && staffIds.contains(t.assignedStaffId)).toList();
@@ -39,272 +40,118 @@ class KaryakartaWorkReportGenerator {
 
     pdf.addPage(
       pw.MultiPage(
-        pageFormat: PdfPageFormat.a4.landscape,
-        margin: const pw.EdgeInsets.all(22),
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(WebReportTheme.marginPt),
         header: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(
-                        'PUNE MUNICIPAL CORPORATION - NAGARSEVAK OFFICE PRABHAG 12',
-                        style: pw.TextStyle(
-                          fontSize: 11,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.blue900,
-                        ),
-                      ),
-                      pw.SizedBox(height: 2),
-                      pw.Text(
-                        'Cadre Work & Workload Performance Report',
-                        style: pw.TextStyle(
-                          fontSize: 14,
-                          fontWeight: pw.FontWeight.bold,
-                          color: const PdfColor.fromInt(0xFF0F172A),
-                        ),
-                      ),
-                      pw.SizedBox(height: 2),
-                      pw.Text(
-                        'Team Category: $activeTabLabel · Prabhag No. 12 (Kasba - Shaniwar - Raviwar - Somwar Peth)',
-                        style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.grey700),
-                      ),
-                    ],
-                  ),
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.end,
-                    children: [
-                      pw.Container(
-                        padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: pw.BoxDecoration(
-                          color: const PdfColor.fromInt(0xFFEFF6FF),
-                          borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
-                          border: pw.Border.all(color: PdfColors.blue300, width: 0.5),
-                        ),
-                        child: pw.Text(
-                          'Page ${context.pageNumber} of ${context.pagesCount}',
-                          style: pw.TextStyle(
-                            fontSize: 8,
-                            fontWeight: pw.FontWeight.bold,
-                            color: PdfColors.blue900,
-                          ),
-                        ),
-                      ),
-                      pw.SizedBox(height: 4),
-                      pw.Text(
-                        'Date: $nowStr',
-                        style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
-                      ),
-                      pw.Text(
-                        'Central Command System',
-                        style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              pw.SizedBox(height: 4),
-              pw.Divider(color: PdfColors.blue900, thickness: 1.5),
-              pw.SizedBox(height: 6),
-            ],
+          if (context.pageNumber == 1) return pw.SizedBox.shrink();
+          return WebReportTheme.buildContinuationHeader(
+            context,
+            title: 'Team Workload Monitor (Continued)',
           );
         },
+        footer: (pw.Context context) => WebReportTheme.buildFooter(context),
         build: (pw.Context context) {
           return [
-            // KPI Summary Cards in a row
-            pw.Row(
-              children: [
-                _buildKpiCard('Total Workload', '$totalLoad', '$totalTasks Tasks · $totalComplaints Complaints', PdfColors.blue50, PdfColors.blue900),
-                pw.SizedBox(width: 8),
-                _buildKpiCard('Pending Workload', '$pendingLoad', 'Needs Attention', PdfColors.amber50, PdfColors.amber800),
-                pw.SizedBox(width: 8),
-                _buildKpiCard('In Progress', '$inProgressLoad', 'Being Worked On', const PdfColor.fromInt(0xFFEFF6FF), const PdfColor.fromInt(0xFF1D4ED8)),
-                pw.SizedBox(width: 8),
-                _buildKpiCard('Completed', '$completedLoad', 'Resolved & Closed', const PdfColor.fromInt(0xFFECFDF5), const PdfColor.fromInt(0xFF047857)),
-              ],
+            WebReportTheme.buildHeader(
+              title: 'Team Workload Monitor',
+              subtitle: 'Department: $activeTabLabel',
+              dateFormatted: nowStr,
+              totalCount: staffList.length,
+              foundLabel: 'Members',
             ),
-
             pw.SizedBox(height: 12),
 
-            // Staff Workload Matrix Table
-            pw.Table(
-              border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
-              columnWidths: {
-                0: const pw.FixedColumnWidth(26), // Sr No
-                1: const pw.FlexColumnWidth(2.6), // Member & Mobile
-                2: const pw.FlexColumnWidth(2.0), // Role & Area
-                3: const pw.FlexColumnWidth(1.2), // Tasks (P/T)
-                4: const pw.FlexColumnWidth(1.2), // Complaints (P/T)
-                5: const pw.FlexColumnWidth(1.1), // Pending Load
-                6: const pw.FlexColumnWidth(1.0), // Done
-                7: const pw.FlexColumnWidth(1.3), // Progress %
-                8: const pw.FlexColumnWidth(1.2), // Status
-              },
-              children: [
-                // Header Row
-                pw.TableRow(
-                  decoration: const pw.BoxDecoration(color: PdfColors.grey200),
-                  children: [
-                    _buildCell('Sr.', isHeader: true, align: pw.TextAlign.center),
-                    _buildCell('Cadre / Staff Member', isHeader: true),
-                    _buildCell('Role & Area', isHeader: true),
-                    _buildCell('Tasks (P/T)', isHeader: true, align: pw.TextAlign.center),
-                    _buildCell('Complaints (P/T)', isHeader: true, align: pw.TextAlign.center),
-                    _buildCell('Pending', isHeader: true, align: pw.TextAlign.center),
-                    _buildCell('Completed', isHeader: true, align: pw.TextAlign.center),
-                    _buildCell('Progress %', isHeader: true, align: pw.TextAlign.center),
-                    _buildCell('Status', isHeader: true, align: pw.TextAlign.center),
-                  ],
+            // Summary KPI strip matching web style
+            pw.Container(
+              padding: const pw.EdgeInsets.all(10),
+              decoration: pw.BoxDecoration(
+                color: WebReportTheme.slate50,
+                borderRadius: pw.BorderRadius.circular(6),
+                border: pw.Border.all(color: WebReportTheme.slate200, width: 0.8),
+              ),
+              child: pw.Row(
+                children: [
+                  _buildSummaryItem('Total Workload', '$totalLoad'),
+                  _buildSummaryItem('Pending', '$pendingLoad', highlightColor: PdfColors.amber800),
+                  _buildSummaryItem('In Progress', '$inProgressLoad', highlightColor: WebReportTheme.brand700),
+                  _buildSummaryItem('Completed', '$completedLoad', highlightColor: PdfColors.green700),
+                ],
+              ),
+            ),
+            pw.SizedBox(height: 12),
+
+            if (staffList.isEmpty)
+              pw.Container(
+                alignment: pw.Alignment.center,
+                padding: const pw.EdgeInsets.all(40),
+                child: pw.Text(
+                  'No team members found for the selected category.',
+                  style: const pw.TextStyle(fontSize: 11, color: WebReportTheme.slate500),
                 ),
-                // Data Rows
-                ...staffList.asMap().entries.map((entry) {
+              )
+            else
+              pw.TableHelper.fromTextArray(
+                border: WebReportTheme.tableBorder,
+                headerCount: 1,
+                headerStyle: WebReportTheme.tableHeaderStyle,
+                headerDecoration: WebReportTheme.tableHeaderDecoration,
+                headerHeight: 22,
+                cellHeight: 20,
+                cellAlignment: pw.Alignment.centerLeft,
+                cellStyle: WebReportTheme.tableCellStyle,
+                columnWidths: const {
+                  0: pw.FixedColumnWidth(24),
+                  1: pw.FlexColumnWidth(2.6),
+                  2: pw.FlexColumnWidth(2.2),
+                  3: pw.FlexColumnWidth(1.4),
+                  4: pw.FlexColumnWidth(1.4),
+                  5: pw.FlexColumnWidth(1.1),
+                  6: pw.FlexColumnWidth(1.1),
+                  7: pw.FlexColumnWidth(1.2),
+                },
+                headers: const [
+                  '#',
+                  'Member & Mobile',
+                  'Role & Area',
+                  'Tasks',
+                  'Complaints',
+                  'Pending',
+                  'Done',
+                  'Progress',
+                ],
+                data: staffList.asMap().entries.map((entry) {
                   final index = entry.key + 1;
                   final member = entry.value;
 
                   final mTasks = tasks.where((t) => t.assignedStaffId == member.id).toList();
                   final mComplaints = complaints.where((c) => c.assignedTo == member.id).toList();
 
-                  final mT_pending = mTasks.where((t) => t.isPending || t.isInProgress).length;
-                  final mC_pending = mComplaints.where((c) => c.isPending || c.isInProgress).length;
+                  final mTPending = mTasks.where((t) => t.isPending || t.isInProgress).length;
+                  final mCPending = mComplaints.where((c) => c.isPending || c.isInProgress).length;
 
                   final totalAssigned = mTasks.length + mComplaints.length;
                   final totalCompleted =
                       mTasks.where((t) => t.isCompleted).length +
                       mComplaints.where((c) => c.isResolved).length;
 
-                  final totalPending = mT_pending + mC_pending;
+                  final totalPending = mTPending + mCPending;
                   final progressPct = totalAssigned > 0 ? ((totalCompleted / totalAssigned) * 100).round() : 0;
+                  final phoneStr = member.mobile.isNotEmpty ? '\n${member.mobile}' : '';
+                  final areaStr = (member.area != null && member.area!.isNotEmpty) ? '\n${member.area}' : '';
 
-                  final isEven = entry.key % 2 == 0;
-                  final rowBg = isEven ? PdfColors.white : const PdfColor.fromInt(0xFFF8FAFC);
-
-                  String perfStatus = 'Active';
-                  PdfColor statusColor = PdfColors.blue800;
-                  if (progressPct >= 80) {
-                    perfStatus = 'Excellent';
-                    statusColor = const PdfColor.fromInt(0xFF047857);
-                  } else if (totalPending > 3) {
-                    perfStatus = 'High Load';
-                    statusColor = PdfColors.amber800;
-                  }
-
-                  return pw.TableRow(
-                    decoration: pw.BoxDecoration(color: rowBg),
-                    children: [
-                      _buildCell('$index', align: pw.TextAlign.center),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 5),
-                        child: pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          children: [
-                            pw.Text(
-                              member.displayName,
-                              style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900),
-                            ),
-                            pw.Text(
-                              'Ph: ${member.mobile}',
-                              style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey700),
-                            ),
-                          ],
-                        ),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 5),
-                        child: pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          children: [
-                            pw.Text(
-                              member.role,
-                              style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey800),
-                            ),
-                            if (member.area != null && member.area!.isNotEmpty)
-                              pw.Text(
-                                'Area: ${member.area}',
-                                style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey600),
-                              ),
-                          ],
-                        ),
-                      ),
-                      _buildCell('$mT_pending / ${mTasks.length}', align: pw.TextAlign.center, bold: mT_pending > 0),
-                      _buildCell('$mC_pending / ${mComplaints.length}', align: pw.TextAlign.center, bold: mC_pending > 0),
-                      _buildCell('$totalPending', align: pw.TextAlign.center, bold: true, textColor: totalPending > 0 ? PdfColors.amber800 : PdfColors.grey600),
-                      _buildCell('$totalCompleted', align: pw.TextAlign.center, bold: true, textColor: const PdfColor.fromInt(0xFF047857)),
-                      _buildCell('$progressPct%', align: pw.TextAlign.center, bold: true),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 5),
-                        child: pw.Container(
-                          alignment: pw.Alignment.center,
-                          padding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                          decoration: pw.BoxDecoration(
-                            color: statusColor == const PdfColor.fromInt(0xFF047857) ? const PdfColor.fromInt(0xFFECFDF5) : PdfColors.amber50,
-                            borderRadius: const pw.BorderRadius.all(pw.Radius.circular(3)),
-                          ),
-                          child: pw.Text(
-                            perfStatus,
-                            style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold, color: statusColor),
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                }),
-              ],
-            ),
-
-            pw.SizedBox(height: 16),
-
-            // Summary notes & Signature block
-            pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: pw.CrossAxisAlignment.end,
-              children: [
-                pw.Container(
-                  width: 320,
-                  padding: const pw.EdgeInsets.all(8),
-                  decoration: pw.BoxDecoration(
-                    color: const PdfColor.fromInt(0xFFF8FAFC),
-                    borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
-                    border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
-                  ),
-                  child: pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(
-                        'Important Instructions:',
-                        style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900),
-                      ),
-                      pw.SizedBox(height: 2),
-                      pw.Text(
-                        '1. Pending tasks and complaints must be addressed within 3 days.\n'
-                        '2. Verify resolution directly with citizens after grievance redressal.\n'
-                        '3. Submit daily workload report to the office every evening.',
-                        style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey700),
-                      ),
-                    ],
-                  ),
-                ),
-                pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.center,
-                  children: [
-                    pw.Container(width: 140, height: 1, color: PdfColors.grey700),
-                    pw.SizedBox(height: 4),
-                    pw.Text(
-                      'Corporator / Ward Committee Chairman',
-                      style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900),
-                    ),
-                    pw.Text(
-                      'Ward 12, Pune Municipal Corporation',
-                      style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey600),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+                  return [
+                    '$index',
+                    '${member.displayName}$phoneStr',
+                    '${member.role}$areaStr',
+                    '$mTPending / ${mTasks.length}',
+                    '$mCPending / ${mComplaints.length}',
+                    '$totalPending',
+                    '$totalCompleted',
+                    '$progressPct%',
+                  ];
+                }).toList(),
+                oddRowDecoration: WebReportTheme.oddRowDecoration,
+              ),
           ];
         },
       ),
@@ -316,51 +163,26 @@ class KaryakartaWorkReportGenerator {
     );
   }
 
-  static pw.Widget _buildKpiCard(String title, String value, String sub, PdfColor bg, PdfColor textColor) {
+  static pw.Widget _buildSummaryItem(String label, String value, {PdfColor? highlightColor}) {
     return pw.Expanded(
-      child: pw.Container(
-        padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: pw.BoxDecoration(
-          color: bg,
-          borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
-          border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
-        ),
-        child: pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Text(title, style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey700)),
-            pw.SizedBox(height: 2),
-            pw.Text(
-              value,
-              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: textColor),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            label,
+            style: const pw.TextStyle(fontSize: 8, color: WebReportTheme.slate500),
+          ),
+          pw.SizedBox(height: 2),
+          pw.Text(
+            value,
+            style: pw.TextStyle(
+              fontSize: 10,
+              fontWeight: pw.FontWeight.bold,
+              color: highlightColor ?? WebReportTheme.slate800,
             ),
-            pw.SizedBox(height: 1),
-            pw.Text(sub, style: const pw.TextStyle(fontSize: 6.5, color: PdfColors.grey600)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  static pw.Widget _buildCell(
-    String text, {
-    bool isHeader = false,
-    pw.TextAlign align = pw.TextAlign.left,
-    bool bold = false,
-    PdfColor? textColor,
-  }) {
-    return pw.Padding(
-      padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-      child: pw.Text(
-        text,
-        textAlign: align,
-        style: pw.TextStyle(
-          fontSize: isHeader ? 8 : 7.5,
-          fontWeight: (isHeader || bold) ? pw.FontWeight.bold : pw.FontWeight.normal,
-          color: textColor ?? (isHeader ? PdfColors.grey800 : PdfColors.grey800),
-        ),
+          ),
+        ],
       ),
     );
   }
 }
-

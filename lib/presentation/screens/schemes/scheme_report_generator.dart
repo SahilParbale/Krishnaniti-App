@@ -3,6 +3,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../data/models/scheme_model.dart';
+import '../../widgets/app_pdf_report_theme.dart';
 
 class SchemeReportGenerator {
   SchemeReportGenerator._();
@@ -14,141 +15,82 @@ class SchemeReportGenerator {
     String? categoryFilter,
   }) async {
     final pdf = pw.Document();
-    final nowStr = DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.now());
-
+    final nowStr = DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now());
     final total = schemes.length;
 
     pdf.addPage(
       pw.MultiPage(
-        pageFormat: PdfPageFormat.a4.landscape,
-        margin: const pw.EdgeInsets.all(24),
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(WebReportTheme.marginPt),
         header: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(
-                        'GOVERNMENT WELFARE SCHEMES DIRECTORY',
-                        style: pw.TextStyle(
-                          fontSize: 16,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.blue900,
-                        ),
-                      ),
-                      pw.SizedBox(height: 3),
-                      pw.Text(
-                        'Prabhag Ward 12 - Public Welfare & Citizen Assistance Desk',
-                        style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
-                      ),
-                    ],
-                  ),
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.end,
-                    children: [
-                      pw.Text('Generated: $nowStr', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
-                      if (categoryFilter != null && categoryFilter != 'All')
-                        pw.Text('Category: $categoryFilter', style: const pw.TextStyle(fontSize: 9, color: PdfColors.blue800)),
-                    ],
-                  ),
-                ],
-              ),
-              pw.SizedBox(height: 10),
-              // Summary Strip
-              pw.Container(
-                padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: pw.BoxDecoration(
-                  color: PdfColors.blue50,
-                  borderRadius: pw.BorderRadius.circular(6),
-                  border: pw.Border.all(color: PdfColors.blue200),
-                ),
-                child: pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text('Total Schemes Listed: $total', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10, color: PdfColors.blue900)),
-                    pw.Text('Official Ward Citizen Information Notice', style: const pw.TextStyle(fontSize: 9.5, color: PdfColors.grey700)),
-                  ],
-                ),
-              ),
-              pw.SizedBox(height: 10),
-              pw.Divider(color: PdfColors.grey400, thickness: 0.5),
-              pw.SizedBox(height: 6),
-            ],
+          if (context.pageNumber == 1) return pw.SizedBox.shrink();
+          return WebReportTheme.buildContinuationHeader(
+            context,
+            title: 'Government Schemes Directory (Continued)',
           );
         },
-        footer: (pw.Context context) {
-          return pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-            children: [
-              pw.Text(
-                'Confidential & Public Notice - Nagarsevak Ward Management System',
-                style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
-              ),
-              pw.Text(
-                'Page ${context.pageNumber} of ${context.pagesCount}',
-                style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
-              ),
-            ],
-          );
-        },
+        footer: (pw.Context context) => WebReportTheme.buildFooter(context),
         build: (pw.Context context) {
           return [
-            pw.Table(
-              border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
-              columnWidths: {
-                0: const pw.FixedColumnWidth(28), // Sr
-                1: const pw.FlexColumnWidth(2.8), // Name
-                2: const pw.FlexColumnWidth(1.2), // Category
-                3: const pw.FlexColumnWidth(2.6), // Eligibility
-                4: const pw.FlexColumnWidth(2.8), // Benefits
-                5: const pw.FlexColumnWidth(2.4), // Documents
-              },
-              children: [
-                // Header
-                pw.TableRow(
-                  decoration: const pw.BoxDecoration(color: PdfColors.blue100),
-                  children: [
-                    _cellHeader('Sr', align: pw.TextAlign.center),
-                    _cellHeader('Scheme Name'),
-                    _cellHeader('Category'),
-                    _cellHeader('Eligibility Criteria'),
-                    _cellHeader('Entitlements / Benefits'),
-                    _cellHeader('Documents Required'),
-                  ],
-                ),
-                // Rows
-                ...schemes.asMap().entries.map((entry) {
-                  final idx = entry.key + 1;
-                  final s = entry.value;
-                  final isEven = idx % 2 == 0;
-                  return pw.TableRow(
-                    decoration: pw.BoxDecoration(color: isEven ? PdfColors.grey50 : PdfColors.white),
-                    children: [
-                      _cellText('$idx', align: pw.TextAlign.center),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(5),
-                        child: pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          children: [
-                            pw.Text(s.name, style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
-                            pw.SizedBox(height: 2),
-                            pw.Text(s.description, style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey700), maxLines: 3),
-                          ],
-                        ),
-                      ),
-                      _cellText(s.category),
-                      _cellText(s.eligibility, maxLines: 4),
-                      _cellText(s.benefits, maxLines: 4),
-                      _cellText(s.documents, maxLines: 4),
-                    ],
-                  );
-                }),
+            WebReportTheme.buildHeader(
+              title: isMarathi ? 'शासकीय योजना' : 'Government Schemes',
+              subtitle: 'Official Directory of State & Central Welfare Schemes',
+              metaLines: [
+                'Date: $nowStr',
+                'Found: $total',
+                if (categoryFilter != null && categoryFilter != 'All') 'Category: $categoryFilter',
               ],
             ),
+            pw.SizedBox(height: 12),
+
+            if (schemes.isEmpty)
+              pw.Container(
+                alignment: pw.Alignment.center,
+                padding: const pw.EdgeInsets.all(40),
+                child: pw.Text(
+                  'No government schemes found for the selected view.',
+                  style: const pw.TextStyle(fontSize: 11, color: WebReportTheme.slate500),
+                ),
+              )
+            else
+              pw.TableHelper.fromTextArray(
+                border: WebReportTheme.tableBorder,
+                headerStyle: WebReportTheme.tableHeaderStyle,
+                headerDecoration: WebReportTheme.tableHeaderDecoration,
+                headerHeight: 22,
+                cellHeight: 20,
+                cellAlignment: pw.Alignment.centerLeft,
+                cellStyle: WebReportTheme.tableCellStyle,
+                columnWidths: const {
+                  0: pw.FixedColumnWidth(24),
+                  1: pw.FlexColumnWidth(2.5),
+                  2: pw.FlexColumnWidth(3.5),
+                  3: pw.FlexColumnWidth(1.5),
+                  4: pw.FlexColumnWidth(3.0),
+                },
+                headers: const [
+                  '#',
+                  'Scheme Name',
+                  'Description',
+                  'Category',
+                  'Benefits',
+                ],
+                data: List.generate(schemes.length, (index) {
+                  final item = schemes[index];
+                  final nameStr = item.localizedName(isMarathi);
+                  final descStr = item.localizedDescription(isMarathi);
+                  final benStr = item.localizedBenefits(isMarathi);
+
+                  return [
+                    '${index + 1}',
+                    nameStr,
+                    descStr,
+                    item.category.isNotEmpty ? item.category : '-',
+                    benStr,
+                  ];
+                }),
+                oddRowDecoration: WebReportTheme.oddRowDecoration,
+              ),
           ];
         },
       ),
@@ -166,178 +108,116 @@ class SchemeReportGenerator {
     required bool isMarathi,
   }) async {
     final pdf = pw.Document();
-    final nowStr = DateFormat('dd MMMM yyyy').format(DateTime.now());
+    final nameEn = SchemeModel.extractLocalized(scheme.name, false);
+    final nameMr = SchemeModel.extractLocalized(scheme.name, true);
+
+    final descEn = SchemeModel.extractLocalized(scheme.description, false);
+    final descMr = SchemeModel.extractLocalized(scheme.description, true);
+
+    final eligEn = SchemeModel.extractLocalized(scheme.eligibility, false);
+    final eligMr = SchemeModel.extractLocalized(scheme.eligibility, true);
+
+    final benEn = SchemeModel.extractLocalized(scheme.benefits, false);
+    final benMr = SchemeModel.extractLocalized(scheme.benefits, true);
+
+    final docEn = SchemeModel.extractLocalized(scheme.documents, false);
+    final docMr = SchemeModel.extractLocalized(scheme.documents, true);
 
     pdf.addPage(
-      pw.Page(
+      pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(32),
+        margin: const pw.EdgeInsets.all(WebReportTheme.marginPt),
+        footer: (pw.Context context) => WebReportTheme.buildFooter(context),
         build: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              // Top Header
-              pw.Container(
-                padding: const pw.EdgeInsets.all(14),
-                decoration: pw.BoxDecoration(
-                  color: PdfColors.blue900,
-                  borderRadius: pw.BorderRadius.circular(8),
+          return [
+            // Header
+            pw.Container(
+              padding: const pw.EdgeInsets.only(bottom: 12),
+              decoration: const pw.BoxDecoration(
+                border: pw.Border(
+                  bottom: pw.BorderSide(color: WebReportTheme.brand600, width: 2),
                 ),
-                child: pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.start,
-                      children: [
-                        pw.Text(
-                          'NAGARSEVAK PUBLIC WELFARE DESK',
-                          style: pw.TextStyle(
-                            fontSize: 16,
-                            fontWeight: pw.FontWeight.bold,
-                            color: PdfColors.white,
-                          ),
-                        ),
-                        pw.SizedBox(height: 3),
-                        pw.Text(
-                          'Prabhag Ward 12 | Government Scheme Public Information Slip',
-                          style: const pw.TextStyle(fontSize: 9.5, color: PdfColors.blue100),
-                        ),
-                      ],
+              ),
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
+                children: [
+                  pw.Text(
+                    nameEn,
+                    textAlign: pw.TextAlign.center,
+                    style: pw.TextStyle(
+                      fontSize: 18,
+                      fontWeight: pw.FontWeight.bold,
+                      color: WebReportTheme.brand700,
                     ),
-                    pw.Container(
-                      padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: pw.BoxDecoration(
-                        color: PdfColors.white,
-                        borderRadius: pw.BorderRadius.circular(4),
-                      ),
-                      child: pw.Text(
-                        scheme.category.toUpperCase(),
-                        style: pw.TextStyle(
-                          fontSize: 10,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.blue900,
-                        ),
+                  ),
+                  if (nameMr.isNotEmpty && nameMr != nameEn) ...[
+                    pw.SizedBox(height: 3),
+                    pw.Text(
+                      nameMr,
+                      textAlign: pw.TextAlign.center,
+                      style: pw.TextStyle(
+                        fontSize: 14,
+                        fontWeight: pw.FontWeight.bold,
+                        color: WebReportTheme.brand600,
                       ),
                     ),
                   ],
-                ),
-              ),
-
-              pw.SizedBox(height: 18),
-
-              // Title
-              pw.Text(
-                scheme.name,
-                style: pw.TextStyle(
-                  fontSize: 18,
-                  fontWeight: pw.FontWeight.bold,
-                  color: PdfColors.blue900,
-                ),
-              ),
-              pw.SizedBox(height: 6),
-              pw.Text(
-                scheme.description,
-                style: const pw.TextStyle(fontSize: 10.5, color: PdfColors.grey800, lineSpacing: 2),
-              ),
-
-              pw.SizedBox(height: 16),
-              pw.Divider(color: PdfColors.grey300),
-              pw.SizedBox(height: 12),
-
-              // Benefit Box
-              pw.Container(
-                width: double.infinity,
-                padding: const pw.EdgeInsets.all(12),
-                decoration: pw.BoxDecoration(
-                  color: PdfColors.green50,
-                  borderRadius: pw.BorderRadius.circular(6),
-                  border: pw.Border.all(color: PdfColors.green300),
-                ),
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Text('FINANCIAL BENEFITS & ENTITLEMENTS', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.green900)),
-                    pw.SizedBox(height: 5),
-                    pw.Text(scheme.benefits, style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey900, lineSpacing: 1.5)),
-                  ],
-                ),
-              ),
-
-              pw.SizedBox(height: 12),
-
-              // Eligibility Box
-              pw.Container(
-                width: double.infinity,
-                padding: const pw.EdgeInsets.all(12),
-                decoration: pw.BoxDecoration(
-                  color: PdfColors.blue50,
-                  borderRadius: pw.BorderRadius.circular(6),
-                  border: pw.Border.all(color: PdfColors.blue300),
-                ),
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Text('ELIGIBILITY CRITERIA', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
-                    pw.SizedBox(height: 5),
-                    pw.Text(scheme.eligibility, style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey900, lineSpacing: 1.5)),
-                  ],
-                ),
-              ),
-
-              pw.SizedBox(height: 12),
-
-              // Documents Required Box
-              pw.Container(
-                width: double.infinity,
-                padding: const pw.EdgeInsets.all(12),
-                decoration: pw.BoxDecoration(
-                  color: PdfColors.amber50,
-                  borderRadius: pw.BorderRadius.circular(6),
-                  border: pw.Border.all(color: PdfColors.amber300),
-                ),
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Text('REQUIRED DOCUMENTS CHECKLIST', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.amber900)),
-                    pw.SizedBox(height: 5),
-                    pw.Text(scheme.documents, style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey900, lineSpacing: 1.5)),
-                  ],
-                ),
-              ),
-
-              pw.Spacer(),
-
-              // How to Apply / Office Contact
-              pw.Container(
-                padding: const pw.EdgeInsets.all(12),
-                decoration: pw.BoxDecoration(
-                  color: PdfColors.grey100,
-                  borderRadius: pw.BorderRadius.circular(6),
-                  border: pw.Border.all(color: PdfColors.grey300),
-                ),
-                child: pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.start,
-                      children: [
-                        pw.Text('Where to Apply / Assistance Desk:', style: pw.TextStyle(fontSize: 9.5, fontWeight: pw.FontWeight.bold, color: PdfColors.grey900)),
-                        pw.SizedBox(height: 2),
-                        pw.Text('Nagarsevak Office, Prabhag 12 | Mon - Sat, 10:00 AM to 6:00 PM', style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.grey700)),
-                      ],
+                  pw.SizedBox(height: 6),
+                  pw.Container(
+                    padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                    decoration: pw.BoxDecoration(
+                      color: WebReportTheme.brand50,
+                      borderRadius: pw.BorderRadius.circular(12),
                     ),
-                    pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.end,
-                      children: [
-                        pw.Text('Issued: $nowStr', style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.grey600)),
-                        pw.Text('Helpline: 1800-11-6163 / Ward Desk', style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
-                      ],
+                    child: pw.Text(
+                      scheme.category.isNotEmpty ? scheme.category : 'Government Scheme',
+                      style: pw.TextStyle(
+                        fontSize: 9,
+                        fontWeight: pw.FontWeight.bold,
+                        color: WebReportTheme.brand700,
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          );
+            ),
+            pw.SizedBox(height: 14),
+
+            // Description Box
+            _buildFlyerSection(
+              title: 'Description / माहिती',
+              accentColor: WebReportTheme.brand600,
+              contentEn: descEn,
+              contentMr: descMr,
+            ),
+            pw.SizedBox(height: 12),
+
+            // Eligibility Box
+            _buildFlyerSection(
+              title: 'Eligibility / पात्रता',
+              accentColor: PdfColors.green700,
+              contentEn: eligEn,
+              contentMr: eligMr,
+            ),
+            pw.SizedBox(height: 12),
+
+            // Benefits Box
+            _buildFlyerSection(
+              title: 'Benefits / फायदे',
+              accentColor: PdfColors.amber700,
+              contentEn: benEn,
+              contentMr: benMr,
+            ),
+            pw.SizedBox(height: 12),
+
+            // Required Documents Box
+            _buildFlyerSection(
+              title: 'Required Documents / आवश्यक कागदपत्रे',
+              accentColor: PdfColors.purple700,
+              contentEn: docEn,
+              contentMr: docMr,
+            ),
+          ];
         },
       ),
     );
@@ -354,7 +234,7 @@ class SchemeReportGenerator {
     required bool isMarathi,
   }) async {
     final pdf = pw.Document();
-    final nowStr = DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.now());
+    final nowStr = DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now());
 
     final total = applications.length;
     final approved = applications.where((a) => a.isApproved).length;
@@ -363,99 +243,103 @@ class SchemeReportGenerator {
 
     pdf.addPage(
       pw.MultiPage(
-        pageFormat: PdfPageFormat.a4.landscape,
-        margin: const pw.EdgeInsets.all(24),
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(WebReportTheme.marginPt),
         header: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(
-                        'GOVERNMENT SCHEME BENEFICIARIES & APPLICATIONS REGISTER',
-                        style: pw.TextStyle(fontSize: 15, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900),
-                      ),
-                      pw.SizedBox(height: 3),
-                      pw.Text('Prabhag 12 - Nagarsevak Citizen Welfare & Entitlement Tracking', style: const pw.TextStyle(fontSize: 9.5, color: PdfColors.grey700)),
-                    ],
-                  ),
-                  pw.Text('Generated: $nowStr', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
-                ],
-              ),
-              pw.SizedBox(height: 10),
-              // Metrics bar
-              pw.Container(
-                padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: pw.BoxDecoration(
-                  color: PdfColors.blue50,
-                  borderRadius: pw.BorderRadius.circular(6),
-                  border: pw.Border.all(color: PdfColors.blue200),
-                ),
-                child: pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
-                  children: [
-                    _statPill('Total Applications', '$total', PdfColors.blue900),
-                    _statPill('Approved', '$approved', PdfColors.green800),
-                    _statPill('In Verification / Pending', '$pending', PdfColors.amber800),
-                    _statPill('Rejected', '$rejected', PdfColors.red800),
-                  ],
-                ),
-              ),
-              pw.SizedBox(height: 10),
-              pw.Divider(color: PdfColors.grey400, thickness: 0.5),
-              pw.SizedBox(height: 6),
-            ],
+          if (context.pageNumber == 1) return pw.SizedBox.shrink();
+          return WebReportTheme.buildContinuationHeader(
+            context,
+            title: 'Scheme Beneficiaries (Continued)',
           );
         },
+        footer: (pw.Context context) => WebReportTheme.buildFooter(context),
         build: (pw.Context context) {
           return [
-            pw.Table(
-              border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
-              columnWidths: {
-                0: const pw.FixedColumnWidth(28), // Sr
-                1: const pw.FlexColumnWidth(2.2), // Applicant Name
-                2: const pw.FlexColumnWidth(1.5), // Mobile
-                3: const pw.FlexColumnWidth(2.2), // Address
-                4: const pw.FlexColumnWidth(2.5), // Scheme
-                5: const pw.FlexColumnWidth(1.2), // Status
-                6: const pw.FlexColumnWidth(2.4), // Benefit / Notes
-              },
-              children: [
-                pw.TableRow(
-                  decoration: const pw.BoxDecoration(color: PdfColors.blue100),
-                  children: [
-                    _cellHeader('Sr', align: pw.TextAlign.center),
-                    _cellHeader('Applicant Citizen'),
-                    _cellHeader('Mobile'),
-                    _cellHeader('Residential Address'),
-                    _cellHeader('Applied Scheme'),
-                    _cellHeader('Status'),
-                    _cellHeader('Benefit Sanctioned / Notes'),
-                  ],
-                ),
-                ...applications.asMap().entries.map((entry) {
-                  final idx = entry.key + 1;
-                  final a = entry.value;
-                  final isEven = idx % 2 == 0;
-                  return pw.TableRow(
-                    decoration: pw.BoxDecoration(color: isEven ? PdfColors.grey50 : PdfColors.white),
-                    children: [
-                      _cellText('$idx', align: pw.TextAlign.center),
-                      _cellText(a.applicantName, isBold: true),
-                      _cellText(a.mobile),
-                      _cellText(a.address),
-                      _cellText(a.schemeName ?? 'Scheme #${a.schemeId}'),
-                      _cellText(a.status, isBold: true),
-                      _cellText(a.benefit ?? a.notes ?? a.rejectionReason ?? '-'),
-                    ],
-                  );
-                }),
+            WebReportTheme.buildHeader(
+              title: 'Government Schemes',
+              subtitle: 'Application & Beneficiary Dossier',
+              metaLines: [
+                'Date: $nowStr',
+                'Total Applications: $total',
               ],
             ),
+            pw.SizedBox(height: 12),
+
+            // Overview summary bar
+            pw.Container(
+              padding: const pw.EdgeInsets.all(10),
+              decoration: pw.BoxDecoration(
+                color: WebReportTheme.slate50,
+                borderRadius: pw.BorderRadius.circular(6),
+                border: pw.Border.all(color: WebReportTheme.slate200, width: 0.8),
+              ),
+              child: pw.Row(
+                children: [
+                  _buildSummaryItem('Total Applications', '$total'),
+                  _buildSummaryItem('Approved', '$approved', highlightColor: PdfColors.green700),
+                  _buildSummaryItem('Pending', '$pending', highlightColor: PdfColors.amber800),
+                  _buildSummaryItem('Rejected', '$rejected', highlightColor: PdfColors.red700),
+                ],
+              ),
+            ),
+            pw.SizedBox(height: 12),
+
+            if (applications.isEmpty)
+              pw.Container(
+                alignment: pw.Alignment.center,
+                padding: const pw.EdgeInsets.all(40),
+                child: pw.Text(
+                  'No scheme application records found for the selected view.',
+                  style: const pw.TextStyle(fontSize: 11, color: WebReportTheme.slate500),
+                ),
+              )
+            else
+              pw.TableHelper.fromTextArray(
+                border: WebReportTheme.tableBorder,
+                headerStyle: WebReportTheme.tableHeaderStyle,
+                headerDecoration: WebReportTheme.tableHeaderDecoration,
+                headerHeight: 22,
+                cellHeight: 20,
+                cellAlignment: pw.Alignment.centerLeft,
+                cellStyle: WebReportTheme.tableCellStyle,
+                columnWidths: const {
+                  0: pw.FixedColumnWidth(24),
+                  1: pw.FlexColumnWidth(2.0),
+                  2: pw.FlexColumnWidth(2.0),
+                  3: pw.FlexColumnWidth(2.6),
+                  4: pw.FlexColumnWidth(1.4),
+                  5: pw.FlexColumnWidth(1.2),
+                  6: pw.FlexColumnWidth(2.2),
+                },
+                headers: const [
+                  '#',
+                  'Applicant Name',
+                  'Mobile / Address',
+                  'Scheme Name',
+                  'Date',
+                  'Status',
+                  'Benefit / Reason',
+                ],
+                data: List.generate(applications.length, (index) {
+                  final app = applications[index];
+                  final contactPart = [app.mobile, app.address].where((s) => s.isNotEmpty).join('\n');
+                  final dateStr = DateFormat('dd/MM/yyyy').format(app.createdAt);
+                  final notePart = app.isRejected
+                      ? (app.rejectionReason ?? '-')
+                      : (app.benefit ?? '-');
+
+                  return [
+                    '${index + 1}',
+                    app.applicantName,
+                    contactPart,
+                    app.schemeName ?? '-',
+                    dateStr,
+                    app.status,
+                    notePart,
+                  ];
+                }),
+                oddRowDecoration: WebReportTheme.oddRowDecoration,
+              ),
           ];
         },
       ),
@@ -463,44 +347,93 @@ class SchemeReportGenerator {
 
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Scheme_Beneficiaries_${DateFormat('yyyyMMdd').format(DateTime.now())}.pdf',
+      name: 'Scheme_Applications_Report_${DateFormat('yyyyMMdd').format(DateTime.now())}.pdf',
     );
   }
 
-  static pw.Widget _statPill(String label, String val, PdfColor col) {
-    return pw.Row(
-      children: [
-        pw.Text('$label: ', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
-        pw.Text(val, style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: col)),
-      ],
-    );
-  }
-
-  static pw.Widget _cellHeader(String text, {pw.TextAlign align = pw.TextAlign.left}) {
-    return pw.Padding(
-      padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-      child: pw.Text(
-        text,
-        textAlign: align,
-        style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5, color: PdfColors.blue900),
+  static pw.Widget _buildFlyerSection({
+    required String title,
+    required PdfColor accentColor,
+    required String contentEn,
+    required String contentMr,
+  }) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(12),
+      decoration: pw.BoxDecoration(
+        color: WebReportTheme.slate50,
+        borderRadius: pw.BorderRadius.circular(6),
+        border: pw.Border(
+          left: pw.BorderSide(color: accentColor, width: 3),
+          top: const pw.BorderSide(color: WebReportTheme.slate200, width: 0.5),
+          right: const pw.BorderSide(color: WebReportTheme.slate200, width: 0.5),
+          bottom: const pw.BorderSide(color: WebReportTheme.slate200, width: 0.5),
+        ),
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            title,
+            style: pw.TextStyle(
+              fontSize: 11,
+              fontWeight: pw.FontWeight.bold,
+              color: WebReportTheme.slate800,
+            ),
+          ),
+          pw.SizedBox(height: 6),
+          pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Expanded(
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text('English', style: const pw.TextStyle(fontSize: 8, color: WebReportTheme.slate500)),
+                    pw.SizedBox(height: 2),
+                    pw.Text(contentEn.isNotEmpty ? contentEn : '-', style: const pw.TextStyle(fontSize: 9, color: WebReportTheme.slate700)),
+                  ],
+                ),
+              ),
+              if (contentMr.isNotEmpty && contentMr != contentEn) ...[
+                pw.SizedBox(width: 12),
+                pw.Expanded(
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text('मराठी', style: const pw.TextStyle(fontSize: 8, color: WebReportTheme.slate500)),
+                      pw.SizedBox(height: 2),
+                      pw.Text(contentMr, style: const pw.TextStyle(fontSize: 9, color: WebReportTheme.slate700)),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
       ),
     );
   }
 
-  static pw.Widget _cellText(String text, {pw.TextAlign align = pw.TextAlign.left, bool isBold = false, int? maxLines}) {
-    return pw.Padding(
-      padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 5),
-      child: pw.Text(
-        text,
-        textAlign: align,
-        maxLines: maxLines,
-        style: pw.TextStyle(
-          fontSize: 8,
-          fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
-          color: PdfColors.grey900,
-        ),
+  static pw.Widget _buildSummaryItem(String label, String value, {PdfColor? highlightColor}) {
+    return pw.Expanded(
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            label,
+            style: const pw.TextStyle(fontSize: 8, color: WebReportTheme.slate500),
+          ),
+          pw.SizedBox(height: 2),
+          pw.Text(
+            value,
+            style: pw.TextStyle(
+              fontSize: 10,
+              fontWeight: pw.FontWeight.bold,
+              color: highlightColor ?? WebReportTheme.slate800,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
-

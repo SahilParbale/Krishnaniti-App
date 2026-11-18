@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../data/models/work_tracker_model.dart';
 import '../../../data/repositories/file_tracker_repository.dart';
 import '../../providers/auth_provider.dart';
+import 'gov_office_report_generator.dart';
 
 class FileTrackerTabView extends ConsumerStatefulWidget {
   const FileTrackerTabView({super.key});
@@ -710,6 +711,17 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
                     ),
                   ),
                   const SizedBox(width: 8),
+                  IconButton(
+                    tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Export File Register PDF',
+                    icon: const Icon(Icons.picture_as_pdf_rounded, color: Color(0xFF0284C7)),
+                    onPressed: _trackers.isEmpty
+                        ? null
+                        : () => GovOfficeReportGenerator.generateAndPrintFileTrackerReport(
+                              trackers: _trackers,
+                              statusFilter: _selectedStatus,
+                            ),
+                  ),
+                  const SizedBox(width: 4),
                   ElevatedButton.icon(
                     onPressed: () => _showAddEditModal(),
                     icon: const Icon(Icons.add_rounded, size: 18),
