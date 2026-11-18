@@ -1092,6 +1092,7 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
 
           // Booth Filter Dropdown (Themed Component)
           AppDropdown<String>(
+            title: 'Filter by Booth',
             value: _selectedBooth,
             height: 36,
             isExpanded: false,

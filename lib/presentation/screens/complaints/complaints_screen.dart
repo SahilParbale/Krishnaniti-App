@@ -357,6 +357,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
 
                   // Area Filter Dropdown (Themed Component)
                   AppDropdown<String>(
+                    title: isMr ? 'भाग निवडा' : 'Filter by Area',
                     value: _selectedArea,
                     height: 42,
                     isExpanded: false,

@@ -545,6 +545,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
           ),
           // Area Dropdown (Themed Component)
           AppDropdown<String>(
+            title: 'Filter by Area',
             value: _selectedArea,
             height: 36,
             isExpanded: false,

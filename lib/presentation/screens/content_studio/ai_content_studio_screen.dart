@@ -705,6 +705,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                     ),
                     const SizedBox(height: 6),
                     AppDropdown<AiContentType>(
+                      title: 'सामग्री प्रकार (Content Type)',
                       value: _selectedType,
                       items: AiContentType.values.map((type) {
                         return DropdownMenuItem<AiContentType>(
@@ -748,6 +749,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                     ),
                     const SizedBox(height: 6),
                     AppDropdown<AiToneType>(
+                      title: 'संभाषण सूर (Tone / Sentiment)',
                       value: _selectedTone,
                       items: AiToneType.values.map((tone) {
                         return DropdownMenuItem<AiToneType>(

@@ -807,6 +807,7 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                               children: [
                                 Expanded(
                                   child: AppDropdown<String>(
+                                    title: isMr ? 'स्थिती निवडा' : 'Filter by Status',
                                     value: _selectedStatus,
                                     items: _statusList.map((s) {
                                       return DropdownMenuItem(
@@ -825,6 +826,7 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: AppDropdown<String>(
+                                    title: isMr ? 'प्रभाग / परिसर निवडा' : 'Filter by Area',
                                     value: _areas.contains(_selectedArea) ? _selectedArea : 'All',
                                     items: _areas.map((a) {
                                       return DropdownMenuItem(

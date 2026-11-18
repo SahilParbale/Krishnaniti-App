@@ -336,6 +336,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                 ),
                 const SizedBox(height: 6),
                 AppDropdown<String>(
+                  title: isMr ? 'वर्गवारी निवडा' : 'Select Category',
                   value: selectedCategory,
                   items: categories
                       .map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 13))))
@@ -1291,6 +1292,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
           const SizedBox(height: 8),
 
           AppDropdown<String>(
+            title: isMr ? AppStrings.selectStaffMr : AppStrings.selectStaff,
             value: _staffList.any((s) => s.id == _assignedStaffId) ? _assignedStaffId : null,
             hint: isMr ? AppStrings.selectStaffMr : AppStrings.selectStaff,
             items: _staffList.map((s) {

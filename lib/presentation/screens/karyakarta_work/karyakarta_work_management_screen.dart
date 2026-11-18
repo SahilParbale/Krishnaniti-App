@@ -590,6 +590,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
         Expanded(
           flex: 2,
           child: AppDropdown<String>(
+            title: 'Filter by Area',
             value: _selectedArea,
             height: 42,
             isExpanded: true,
@@ -1284,6 +1285,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
               children: [
                 // Reassign dropdown
                 AppDropdown<String>(
+                  title: 'Assign Task To',
                   value: task.assignedStaffId ?? '',
                   height: 30,
                   isExpanded: false,
@@ -1438,6 +1440,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
               children: [
                 // Reassign dropdown
                 AppDropdown<String>(
+                  title: 'Assign Complaint To',
                   value: complaint.assignedTo ?? '',
                   height: 30,
                   isExpanded: false,
@@ -1600,6 +1603,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
           ),
           const SizedBox(width: 8),
           AppDropdown<String>(
+            title: 'Assign Task',
             value: '',
             height: 32,
             isExpanded: false,
@@ -1660,6 +1664,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
           ),
           const SizedBox(width: 8),
           AppDropdown<String>(
+            title: 'Assign Complaint',
             value: '',
             height: 32,
             isExpanded: false,

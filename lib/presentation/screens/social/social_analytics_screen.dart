@@ -322,6 +322,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                           children: [
                             const Text('Sort: ', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
                             AppDropdown<String>(
+                              title: 'Sort By',
                               value: _sortBy,
                               height: 36,
                               isExpanded: false,

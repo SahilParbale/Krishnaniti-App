@@ -763,6 +763,7 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                     if (_uniqueAreas.isNotEmpty) ...[
                       const SizedBox(width: 8),
                       AppDropdown<String>(
+                        title: isMr ? 'भाग निवडा' : 'Filter by Area',
                         value: _selectedArea,
                         height: 40,
                         isExpanded: false,

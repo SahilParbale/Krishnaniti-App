@@ -718,6 +718,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
               // Area Dropdown
               Expanded(
                 child: AppDropdown<String>(
+                  title: isMr ? 'परिसर निवडा' : 'Filter by Area',
                   value: _selectedArea,
                   items: [
                     DropdownMenuItem(value: 'all', child: Text(isMr ? 'सर्व परिसर' : 'All Areas', style: const TextStyle(fontSize: 12))),

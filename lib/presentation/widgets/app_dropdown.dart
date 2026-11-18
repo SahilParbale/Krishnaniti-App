@@ -24,6 +24,72 @@ String _extractText(Widget widget) {
   return '';
 }
 
+/// Helper to derive a clean, contextual, user-facing title for the dropdown modal
+/// instead of falling back to a generic 'Select Option'.
+String _resolveDropdownTitle<T>({
+  String? explicitTitle,
+  String? label,
+  String? hintText,
+  required List<DropdownMenuItem<T>> items,
+}) {
+  if (explicitTitle != null &&
+      explicitTitle.trim().isNotEmpty &&
+      !_isGenericOption(explicitTitle)) {
+    return explicitTitle.trim();
+  }
+  if (label != null &&
+      label.trim().isNotEmpty &&
+      !_isGenericOption(label)) {
+    return label.trim();
+  }
+  if (hintText != null &&
+      hintText.trim().isNotEmpty &&
+      !_isGenericOption(hintText)) {
+    return hintText.trim();
+  }
+
+  // Deduce from items
+  for (final item in items) {
+    final text = _extractText(item.child).trim();
+    if (text.isEmpty) continue;
+
+    // English patterns
+    if (text.startsWith('All ') || text.startsWith('all ')) {
+      final noun = text.substring(4).trim();
+      if (noun.isNotEmpty) return 'Select $noun';
+    }
+    if (text.startsWith('Select ') && !_isGenericOption(text)) {
+      return text;
+    }
+    if (text.startsWith('Choose ') && !_isGenericOption(text)) {
+      return text;
+    }
+    if (text.startsWith('Filter by ')) {
+      return text;
+    }
+
+    // Marathi patterns
+    if (text.startsWith('सर्व ')) {
+      final noun = text.substring(5).trim();
+      if (noun.isNotEmpty) return '$noun निवडा';
+    }
+    if (text.endsWith(' निवडा') && text != 'पर्याय निवडा') {
+      return text;
+    }
+  }
+
+  return 'Select Option';
+}
+
+bool _isGenericOption(String text) {
+  final lower = text.trim().toLowerCase();
+  return lower == 'select option' ||
+      lower == 'select options' ||
+      lower == 'select...' ||
+      lower == 'select' ||
+      lower == 'पर्याय निवडा';
+}
+
 /// Unified, themed dropdown component matching the Krishnaniti civic application theme.
 /// Replaces clunky default Flutter dropdowns with an elegant bottom-sheet picker.
 class AppDropdown<T> extends StatelessWidget {
@@ -31,6 +97,8 @@ class AppDropdown<T> extends StatelessWidget {
   final List<DropdownMenuItem<T>> items;
   final ValueChanged<T?>? onChanged;
   final String? hintText;
+  final String? label;
+  final String? title;
   final Widget? prefixIcon;
   final double height;
   final double? width;
@@ -47,6 +115,8 @@ class AppDropdown<T> extends StatelessWidget {
     required this.onChanged,
     String? hint,
     String? hintText,
+    this.label,
+    this.title,
     this.prefixIcon,
     this.height = 40,
     this.width,
@@ -61,6 +131,13 @@ class AppDropdown<T> extends StatelessWidget {
     if (onChanged == null) return;
     FocusScope.of(context).unfocus();
 
+    final modalTitle = _resolveDropdownTitle(
+      explicitTitle: title,
+      label: label,
+      hintText: hintText,
+      items: items,
+    );
+
     showModalBottomSheet<T>(
       context: context,
       isScrollControlled: true,
@@ -68,7 +145,8 @@ class AppDropdown<T> extends StatelessWidget {
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black54,
       builder: (ctx) => _AppDropdownModalSheet<T>(
-        title: hintText ?? 'Select Option',
+        title: modalTitle,
+        subtitle: '${items.length} options available',
         icon: prefixIcon,
         items: items,
         selectedValue: value,
@@ -99,8 +177,9 @@ class AppDropdown<T> extends StatelessWidget {
         );
       }
     }
+    final displayHint = hintText ?? label ?? (title != null ? title! : 'Select');
     return Text(
-      hintText ?? 'Select Option',
+      displayHint,
       style: const TextStyle(
         fontSize: 12.5,
         color: AppColors.textMuted,
@@ -163,6 +242,7 @@ class AppDropdown<T> extends StatelessWidget {
 /// Uses the unified Krishnaniti modal sheet picker matching the Society selector.
 class AppDropdownFormField<T> extends FormField<T> {
   final String? label;
+  final String? title;
   final bool isRequired;
   final List<DropdownMenuItem<T>> items;
   final ValueChanged<T?>? onChanged;
@@ -176,6 +256,7 @@ class AppDropdownFormField<T> extends FormField<T> {
   AppDropdownFormField({
     super.key,
     this.label,
+    this.title,
     this.isRequired = false,
     T? value,
     required this.items,
@@ -198,6 +279,13 @@ class AppDropdownFormField<T> extends FormField<T> {
               if (onChanged == null) return;
               FocusScope.of(context).unfocus();
 
+              final modalTitle = _resolveDropdownTitle(
+                explicitTitle: title,
+                label: label,
+                hintText: hintText,
+                items: items,
+              );
+
               showModalBottomSheet<T>(
                 context: context,
                 isScrollControlled: true,
@@ -205,7 +293,7 @@ class AppDropdownFormField<T> extends FormField<T> {
                 backgroundColor: Colors.transparent,
                 barrierColor: Colors.black54,
                 builder: (ctx) => _AppDropdownModalSheet<T>(
-                  title: label ?? hintText ?? 'Select Option',
+                  title: modalTitle,
                   subtitle: '${items.length} options available',
                   icon: prefixIcon,
                   items: items,
@@ -238,8 +326,9 @@ class AppDropdownFormField<T> extends FormField<T> {
                   );
                 }
               }
+              final displayHint = hintText ?? (label != null ? 'Select $label' : (title ?? 'Select'));
               return Text(
-                hintText ?? (label != null ? 'Select $label' : 'Select Option'),
+                displayHint,
                 style: const TextStyle(
                   color: AppColors.textMuted,
                   fontSize: 12.5,

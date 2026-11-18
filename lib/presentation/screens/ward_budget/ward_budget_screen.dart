@@ -746,6 +746,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                             Expanded(
                               flex: 2,
                               child: AppDropdown<String>(
+                                title: isMr ? 'परिसर निवडा' : 'Filter by Area',
                                 value: _areas.contains(_selectedArea) ? _selectedArea : 'All',
                                 height: 48,
                                 items: _areas.map((a) {
@@ -765,6 +766,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                             const SizedBox(width: 8),
                             // Financial Year Selector
                             AppDropdown<String>(
+                              title: isMr ? 'आर्थिक वर्ष निवडा' : 'Select Financial Year',
                               value: _selectedYear,
                               height: 48,
                               isExpanded: false,

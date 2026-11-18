@@ -34,14 +34,10 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _areaController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
-  final FocusNode _areaFocusNode = FocusNode();
-  final FocusNode _dateFocusNode = FocusNode();
 
   String _searchQuery = '';
   String _areaSearch = '';
   String _dateSearch = '';
-  bool _showAreaDropdown = false;
-  bool _showDateDropdown = false;
   String _selectedStatus = 'All'; // 'All', 'Pending', 'Approved', 'Rejected'
   bool _isLoading = false;
 
@@ -59,8 +55,6 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
     _searchController.dispose();
     _areaController.dispose();
     _dateController.dispose();
-    _areaFocusNode.dispose();
-    _dateFocusNode.dispose();
     super.dispose();
   }
 
@@ -287,8 +281,6 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                         onTap: () {
                           setState(() {
                             _isOutgoing = true;
-                            _showAreaDropdown = false;
-                            _showDateDropdown = false;
                           });
                         },
                         borderRadius: BorderRadius.circular(9),
@@ -335,8 +327,6 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                         onTap: () {
                           setState(() {
                             _isOutgoing = false;
-                            _showAreaDropdown = false;
-                            _showDateDropdown = false;
                           });
                         },
                         borderRadius: BorderRadius.circular(9),
@@ -428,6 +418,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                       if (_isOutgoing) ...[
                         const SizedBox(width: 8),
                         AppDropdown<String>(
+                          title: isMr ? 'स्थिती निवडा' : 'Filter by Status',
                           value: _selectedStatus,
                           height: 40,
                           isExpanded: false,
@@ -465,80 +456,57 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
 
                   const SizedBox(height: 8),
 
-                  // Row 2: Search by Area & Filter by Date (matching Nagarsevak-Managment)
+                  // Row 2: Search by Area & Filter by Date (Krishnaniti Themed Pickers)
                   Row(
                     children: [
-                      // Area Search Input with suggestions dropdown
+                      // Area Search / Filter Button
                       Expanded(
-                        child: Container(
-                          height: 38,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF8FAFC),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: _showAreaDropdown || _areaSearch.isNotEmpty
-                                  ? const Color(0xFF0284C7)
-                                  : const Color(0xFFE2E8F0),
+                        child: InkWell(
+                          onTap: () => _openAreaPickerSheet(context, isMr),
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            height: 38,
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            decoration: BoxDecoration(
+                              color: _areaSearch.isNotEmpty ? const Color(0xFFE0F2FE) : const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: _areaSearch.isNotEmpty
+                                    ? const Color(0xFF0284C7)
+                                    : const Color(0xFFE2E8F0),
+                              ),
                             ),
-                          ),
-                          child: TextField(
-                            controller: _areaController,
-                            focusNode: _areaFocusNode,
-                            onChanged: (val) {
-                              setState(() {
-                                _areaSearch = val.trim();
-                                _showAreaDropdown = true;
-                                _showDateDropdown = false;
-                              });
-                            },
-                            onTap: () {
-                              setState(() {
-                                _showAreaDropdown = true;
-                                _showDateDropdown = false;
-                              });
-                            },
-                            style: const TextStyle(fontSize: 12.5),
-                            decoration: InputDecoration(
-                              hintText: isMr ? AppStrings.searchAreaPlaceholderMr : AppStrings.searchAreaPlaceholder,
-                              hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-                              prefixIcon: const Icon(Icons.location_on_outlined, color: Color(0xFF0284C7), size: 16),
-                              suffixIcon: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (_areaSearch.isNotEmpty)
-                                    GestureDetector(
-                                      onTap: () {
-                                        _areaController.clear();
-                                        setState(() {
-                                          _areaSearch = '';
-                                          _showAreaDropdown = false;
-                                        });
-                                      },
-                                      child: const Padding(
-                                        padding: EdgeInsets.symmetric(horizontal: 4),
-                                        child: Icon(Icons.close_rounded, size: 15, color: Color(0xFF64748B)),
-                                      ),
-                                    ),
-                                  GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        _showAreaDropdown = !_showAreaDropdown;
-                                        _showDateDropdown = false;
-                                      });
-                                    },
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(right: 6),
-                                      child: Icon(
-                                        _showAreaDropdown ? Icons.arrow_drop_up_rounded : Icons.arrow_drop_down_rounded,
-                                        size: 20,
-                                        color: const Color(0xFF64748B),
-                                      ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.location_on_outlined, color: Color(0xFF0284C7), size: 16),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    _areaSearch.isNotEmpty
+                                        ? _areaSearch
+                                        : (isMr ? AppStrings.searchAreaPlaceholderMr : AppStrings.searchAreaPlaceholder),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: _areaSearch.isNotEmpty ? FontWeight.w600 : FontWeight.w500,
+                                      color: _areaSearch.isNotEmpty ? const Color(0xFF0F172A) : const Color(0xFF94A3B8),
                                     ),
                                   ),
-                                ],
-                              ),
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(vertical: 9),
+                                ),
+                                if (_areaSearch.isNotEmpty)
+                                  GestureDetector(
+                                    onTap: () {
+                                      _areaController.clear();
+                                      setState(() => _areaSearch = '');
+                                    },
+                                    child: const Padding(
+                                      padding: EdgeInsets.symmetric(horizontal: 4),
+                                      child: Icon(Icons.close_rounded, size: 15, color: Color(0xFF64748B)),
+                                    ),
+                                  ),
+                                const Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: Color(0xFF0284C7)),
+                              ],
                             ),
                           ),
                         ),
@@ -546,116 +514,60 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
 
                       const SizedBox(width: 8),
 
-                      // Date Search Input with suggestions dropdown & calendar picker
+                      // Date Search / Filter Button
                       Expanded(
-                        child: Container(
-                          height: 38,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF8FAFC),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: _showDateDropdown || _dateSearch.isNotEmpty
-                                  ? const Color(0xFF0284C7)
-                                  : const Color(0xFFE2E8F0),
+                        child: InkWell(
+                          onTap: () => _openDateFilterSheet(context, isMr),
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            height: 38,
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            decoration: BoxDecoration(
+                              color: _dateSearch.isNotEmpty ? const Color(0xFFE0F2FE) : const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: _dateSearch.isNotEmpty
+                                    ? const Color(0xFF0284C7)
+                                    : const Color(0xFFE2E8F0),
+                              ),
                             ),
-                          ),
-                          child: TextField(
-                            controller: _dateController,
-                            focusNode: _dateFocusNode,
-                            onChanged: (val) {
-                              setState(() {
-                                _dateSearch = val.trim();
-                                _showDateDropdown = true;
-                                _showAreaDropdown = false;
-                              });
-                            },
-                            onTap: () {
-                              setState(() {
-                                _showDateDropdown = true;
-                                _showAreaDropdown = false;
-                              });
-                            },
-                            style: const TextStyle(fontSize: 12.5),
-                            decoration: InputDecoration(
-                              hintText: isMr ? AppStrings.filterDatePlaceholderMr : AppStrings.filterDatePlaceholder,
-                              hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-                              prefixIcon: const Icon(Icons.calendar_today_outlined, color: Color(0xFF0284C7), size: 15),
-                              suffixIcon: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (_dateSearch.isNotEmpty)
-                                    GestureDetector(
-                                      onTap: () {
-                                        _dateController.clear();
-                                        setState(() {
-                                          _dateSearch = '';
-                                          _showDateDropdown = false;
-                                        });
-                                      },
-                                      child: const Padding(
-                                        padding: EdgeInsets.symmetric(horizontal: 4),
-                                        child: Icon(Icons.close_rounded, size: 15, color: Color(0xFF64748B)),
-                                      ),
-                                    ),
-                                  GestureDetector(
-                                    onTap: () => _pickCustomDate(context, isMr),
-                                    child: const Padding(
-                                      padding: EdgeInsets.only(right: 6),
-                                      child: Icon(Icons.date_range_rounded, size: 18, color: Color(0xFF0284C7)),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.calendar_today_outlined, color: Color(0xFF0284C7), size: 15),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    _dateSearch.isNotEmpty
+                                        ? _dateSearch
+                                        : (isMr ? AppStrings.filterDatePlaceholderMr : AppStrings.filterDatePlaceholder),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: _dateSearch.isNotEmpty ? FontWeight.w600 : FontWeight.w500,
+                                      color: _dateSearch.isNotEmpty ? const Color(0xFF0F172A) : const Color(0xFF94A3B8),
                                     ),
                                   ),
-                                ],
-                              ),
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(vertical: 9),
+                                ),
+                                if (_dateSearch.isNotEmpty)
+                                  GestureDetector(
+                                    onTap: () {
+                                      _dateController.clear();
+                                      setState(() => _dateSearch = '');
+                                    },
+                                    child: const Padding(
+                                      padding: EdgeInsets.symmetric(horizontal: 4),
+                                      child: Icon(Icons.close_rounded, size: 15, color: Color(0xFF64748B)),
+                                    ),
+                                  ),
+                                const Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: Color(0xFF0284C7)),
+                              ],
                             ),
                           ),
                         ),
                       ),
                     ],
                   ),
-
-                  // Area Suggestions Dropdown (matching getAreaSuggestions() from Nagarsevak-Managment)
-                  if (_showAreaDropdown) ...[
-                    const SizedBox(height: 6),
-                    Container(
-                      constraints: const BoxConstraints(maxHeight: 180),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x14000000),
-                            blurRadius: 8,
-                            offset: Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: _buildAreaSuggestionsList(isMr),
-                    ),
-                  ],
-
-                  // Date Suggestions Dropdown (matching getDateSuggestions() from Nagarsevak-Managment)
-                  if (_showDateDropdown) ...[
-                    const SizedBox(height: 6),
-                    Container(
-                      constraints: const BoxConstraints(maxHeight: 180),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x14000000),
-                            blurRadius: 8,
-                            offset: Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: _buildDateSuggestionsList(isMr),
-                    ),
-                  ],
 
                   // Active Filter Chips / Clear All Row
                   if (_areaSearch.isNotEmpty || _dateSearch.isNotEmpty || (_isOutgoing && _selectedStatus != 'All')) ...[
@@ -713,17 +625,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
 
             // Letters List
             Expanded(
-              child: GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onTap: () {
-                  if (_showAreaDropdown || _showDateDropdown) {
-                    setState(() {
-                      _showAreaDropdown = false;
-                      _showDateDropdown = false;
-                    });
-                  }
-                },
-                child: _isLoading
+              child: _isLoading
                     ? const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0284C7)))
                     : filtered.isEmpty
                         ? Center(
@@ -781,7 +683,6 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                             },
                           ),
                         ),
-              ),
             ),
           ],
         ),
@@ -817,8 +718,6 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
       _dateController.text = formatted;
       setState(() {
         _dateSearch = formatted;
-        _showDateDropdown = false;
-        _showAreaDropdown = false;
       });
     }
   }
@@ -832,167 +731,54 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
       _areaSearch = '';
       _dateSearch = '';
       _selectedStatus = 'All';
-      _showAreaDropdown = false;
-      _showDateDropdown = false;
     });
   }
 
-  Widget _buildAreaSuggestionsList(bool isMr) {
-    final suggestions = _areaSuggestions;
-    final filtered = _areaSearch.isEmpty
-        ? suggestions
-        : suggestions.where((s) => s.key.toLowerCase().contains(_areaSearch.toLowerCase())).toList();
-
-    if (filtered.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        child: Text(
-          isMr ? AppStrings.noAreasFoundMr : AppStrings.noAreasFound,
-          style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B), fontStyle: FontStyle.italic),
-        ),
-      );
-    }
-
-    return ListView.separated(
-      shrinkWrap: true,
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      itemCount: filtered.length,
-      separatorBuilder: (_, _) => const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
-      itemBuilder: (ctx, idx) {
-        final item = filtered[idx];
-        return InkWell(
-          onTap: () {
-            _areaController.text = item.key;
-            setState(() {
-              _areaSearch = item.key;
-              _showAreaDropdown = false;
-            });
-            _areaFocusNode.unfocus();
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.location_on_outlined, size: 14, color: Color(0xFF0284C7)),
-                    const SizedBox(width: 6),
-                    Text(
-                      item.key,
-                      style: const TextStyle(fontSize: 12.5, color: Color(0xFF334155), fontWeight: FontWeight.w500),
-                    ),
-                  ],
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE0F2FE),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    '${item.value}',
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF0284C7)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+  void _openAreaPickerSheet(BuildContext context, bool isMr) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black54,
+      builder: (ctx) => _LettersAreaPickerSheet(
+        initialArea: _areaSearch,
+        areas: _areaSuggestions,
+        isMr: isMr,
+        onSelect: (selected) {
+          Navigator.pop(ctx);
+          _areaController.text = selected ?? '';
+          setState(() {
+            _areaSearch = selected ?? '';
+          });
+        },
+      ),
     );
   }
 
-  Widget _buildDateSuggestionsList(bool isMr) {
-    final suggestions = _dateSuggestions;
-    final filtered = _dateSearch.isEmpty
-        ? suggestions
-        : suggestions.where((d) => d.key.toLowerCase().contains(_dateSearch.toLowerCase())).toList();
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Quick button to pick any custom date via DatePicker
-        InkWell(
-          onTap: () {
-            setState(() => _showDateDropdown = false);
-            _pickCustomDate(context, isMr);
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Row(
-              children: [
-                const Icon(Icons.calendar_month_rounded, size: 16, color: Color(0xFF0284C7)),
-                const SizedBox(width: 8),
-                Text(
-                  isMr ? 'कॅलेंडरमधून निवडा...' : 'Choose from calendar...',
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0284C7)),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const Divider(height: 1, thickness: 1, color: Color(0xFFE2E8F0)),
-        if (filtered.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            child: Text(
-              isMr ? 'कोणतीही तारीख सापडली नाही' : 'No dates found',
-              style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B), fontStyle: FontStyle.italic),
-            ),
-          )
-        else
-          Flexible(
-            child: ListView.separated(
-              shrinkWrap: true,
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              itemCount: filtered.length,
-              separatorBuilder: (_, _) => const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
-              itemBuilder: (ctx, idx) {
-                final item = filtered[idx];
-                return InkWell(
-                  onTap: () {
-                    _dateController.text = item.key;
-                    setState(() {
-                      _dateSearch = item.key;
-                      _showDateDropdown = false;
-                    });
-                    _dateFocusNode.unfocus();
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.schedule_rounded, size: 14, color: Color(0xFF64748B)),
-                            const SizedBox(width: 6),
-                            Text(
-                              item.key,
-                              style: const TextStyle(fontSize: 12.5, color: Color(0xFF334155), fontWeight: FontWeight.w500),
-                            ),
-                          ],
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE0F2FE),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            '${item.value}',
-                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF0284C7)),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-      ],
+  void _openDateFilterSheet(BuildContext context, bool isMr) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black54,
+      builder: (ctx) => _LettersDateFilterSheet(
+        initialDate: _dateSearch,
+        dates: _dateSuggestions,
+        isMr: isMr,
+        onPickCalendar: () async {
+          Navigator.pop(ctx);
+          await _pickCustomDate(context, isMr);
+        },
+        onSelect: (selected) {
+          Navigator.pop(ctx);
+          _dateController.text = selected ?? '';
+          setState(() {
+            _dateSearch = selected ?? '';
+          });
+        },
+      ),
     );
   }
 
@@ -1261,6 +1047,632 @@ class _LetterCard extends StatelessWidget {
       child: Text(
         label,
         style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: text),
+      ),
+    );
+  }
+}
+
+/// Themed Krishnaniti bottom sheet modal picker for letter areas.
+class _LettersAreaPickerSheet extends StatefulWidget {
+  final String initialArea;
+  final List<MapEntry<String, int>> areas;
+  final bool isMr;
+  final ValueChanged<String?> onSelect;
+
+  const _LettersAreaPickerSheet({
+    required this.initialArea,
+    required this.areas,
+    required this.isMr,
+    required this.onSelect,
+  });
+
+  @override
+  State<_LettersAreaPickerSheet> createState() => _LettersAreaPickerSheetState();
+}
+
+class _LettersAreaPickerSheetState extends State<_LettersAreaPickerSheet> {
+  final _searchCtrl = TextEditingController();
+  late List<MapEntry<String, int>> _filteredAreas;
+
+  @override
+  void initState() {
+    super.initState();
+    _filteredAreas = widget.areas;
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  void _filter(String query) {
+    final q = query.trim().toLowerCase();
+    setState(() {
+      if (q.isEmpty) {
+        _filteredAreas = widget.areas;
+      } else {
+        _filteredAreas = widget.areas.where((a) => a.key.toLowerCase().contains(q)).toList();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final maxSheetHeight = mediaQuery.size.height * 0.75;
+    final isMr = widget.isMr;
+
+    return Container(
+      constraints: BoxConstraints(maxHeight: maxSheetHeight),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 20,
+            offset: Offset(0, -4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Drag handle
+          Center(
+            child: Container(
+              width: 44,
+              height: 5,
+              margin: const EdgeInsets.only(top: 10, bottom: 6),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
+          ),
+
+          // Header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 6, 12, 10),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE0F2FE),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.location_on_rounded,
+                    color: Color(0xFF0284C7),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        isMr ? 'क्षेत्र निवडा' : 'Filter by Area',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${widget.areas.length} ${isMr ? 'क्षेत्रे उपलब्ध' : 'areas available'}',
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                  onPressed: () => Navigator.pop(context),
+                  tooltip: 'Close',
+                ),
+              ],
+            ),
+          ),
+
+          // Live Search Bar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+            child: TextField(
+              controller: _searchCtrl,
+              onChanged: _filter,
+              style: const TextStyle(fontSize: 13.5),
+              decoration: InputDecoration(
+                hintText: isMr ? 'क्षेत्र शोधा...' : 'Search area...',
+                hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFF94A3B8)),
+                suffixIcon: _searchCtrl.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear_rounded, size: 16, color: Color(0xFF94A3B8)),
+                        onPressed: () {
+                          _searchCtrl.clear();
+                          _filter('');
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: const Color(0xFFF8FAFC),
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+                ),
+              ),
+            ),
+          ),
+
+          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+
+          // Options List
+          Flexible(
+            child: ListView(
+              shrinkWrap: true,
+              padding: EdgeInsets.fromLTRB(12, 8, 12, mediaQuery.viewInsets.bottom + 16),
+              children: [
+                // "All Areas" Reset Option
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: InkWell(
+                    onTap: () => widget.onSelect(null),
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: widget.initialArea.isEmpty
+                            ? const Color(0xFF0284C7).withValues(alpha: 0.08)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.all_inclusive_rounded,
+                            size: 18,
+                            color: widget.initialArea.isEmpty ? const Color(0xFF0284C7) : const Color(0xFF64748B),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              isMr ? 'सर्व क्षेत्रे (Clear Filter)' : 'All Areas (Clear Filter)',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: widget.initialArea.isEmpty ? FontWeight.w700 : FontWeight.w500,
+                                color: widget.initialArea.isEmpty ? const Color(0xFF0284C7) : const Color(0xFF1E293B),
+                              ),
+                            ),
+                          ),
+                          if (widget.initialArea.isEmpty)
+                            const Icon(Icons.check_rounded, color: Color(0xFF0284C7), size: 18),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                const Divider(height: 8, thickness: 0.5, color: Color(0xFFE2E8F0)),
+
+                if (_filteredAreas.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Center(
+                      child: Text(
+                        isMr ? AppStrings.noAreasFoundMr : AppStrings.noAreasFound,
+                        style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                      ),
+                    ),
+                  )
+                else
+                  ..._filteredAreas.map((item) {
+                    final isSelected = widget.initialArea == item.key;
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: InkWell(
+                        onTap: () => widget.onSelect(item.key),
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? const Color(0xFF0284C7).withValues(alpha: 0.08)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.location_on_outlined,
+                                size: 18,
+                                color: isSelected ? const Color(0xFF0284C7) : const Color(0xFF64748B),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  item.key,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                    color: isSelected ? const Color(0xFF0284C7) : const Color(0xFF1E293B),
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE0F2FE),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  '${item.value}',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF0284C7),
+                                  ),
+                                ),
+                              ),
+                              if (isSelected) ...[
+                                const SizedBox(width: 8),
+                                const Icon(Icons.check_rounded, color: Color(0xFF0284C7), size: 18),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Themed Krishnaniti bottom sheet modal picker for letter dates.
+class _LettersDateFilterSheet extends StatefulWidget {
+  final String initialDate;
+  final List<MapEntry<String, int>> dates;
+  final bool isMr;
+  final VoidCallback onPickCalendar;
+  final ValueChanged<String?> onSelect;
+
+  const _LettersDateFilterSheet({
+    required this.initialDate,
+    required this.dates,
+    required this.isMr,
+    required this.onPickCalendar,
+    required this.onSelect,
+  });
+
+  @override
+  State<_LettersDateFilterSheet> createState() => _LettersDateFilterSheetState();
+}
+
+class _LettersDateFilterSheetState extends State<_LettersDateFilterSheet> {
+  final _searchCtrl = TextEditingController();
+  late List<MapEntry<String, int>> _filteredDates;
+
+  @override
+  void initState() {
+    super.initState();
+    _filteredDates = widget.dates;
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  void _filter(String query) {
+    final q = query.trim().toLowerCase();
+    setState(() {
+      if (q.isEmpty) {
+        _filteredDates = widget.dates;
+      } else {
+        _filteredDates = widget.dates.where((d) => d.key.toLowerCase().contains(q)).toList();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final maxSheetHeight = mediaQuery.size.height * 0.75;
+    final isMr = widget.isMr;
+
+    return Container(
+      constraints: BoxConstraints(maxHeight: maxSheetHeight),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 20,
+            offset: Offset(0, -4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Drag handle
+          Center(
+            child: Container(
+              width: 44,
+              height: 5,
+              margin: const EdgeInsets.only(top: 10, bottom: 6),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
+          ),
+
+          // Header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 6, 12, 10),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE0F2FE),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.calendar_today_rounded,
+                    color: Color(0xFF0284C7),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        isMr ? 'तारीख निवडा' : 'Filter by Date',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${widget.dates.length} ${isMr ? 'तारखा नोंदवलेल्या' : 'letter dates recorded'}',
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                  onPressed: () => Navigator.pop(context),
+                  tooltip: 'Close',
+                ),
+              ],
+            ),
+          ),
+
+          // Calendar Quick Pick Action Banner
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: InkWell(
+              onTap: widget.onPickCalendar,
+              borderRadius: BorderRadius.circular(10),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0F9FF),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFBAE6FD)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.calendar_month_rounded, size: 18, color: Color(0xFF0284C7)),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        isMr ? 'कॅलेंडरमधून तारीख निवडा (Custom Date)' : 'Pick any date from calendar',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF0284C7),
+                        ),
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right_rounded, size: 20, color: Color(0xFF0284C7)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // Live Search Bar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+            child: TextField(
+              controller: _searchCtrl,
+              onChanged: _filter,
+              style: const TextStyle(fontSize: 13.5),
+              decoration: InputDecoration(
+                hintText: isMr ? 'तारीख शोधा (उदा. Oct 2026)...' : 'Search date (e.g. Oct 2026)...',
+                hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFF94A3B8)),
+                suffixIcon: _searchCtrl.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear_rounded, size: 16, color: Color(0xFF94A3B8)),
+                        onPressed: () {
+                          _searchCtrl.clear();
+                          _filter('');
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: const Color(0xFFF8FAFC),
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5),
+                ),
+              ),
+            ),
+          ),
+
+          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+
+          // Options List
+          Flexible(
+            child: ListView(
+              shrinkWrap: true,
+              padding: EdgeInsets.fromLTRB(12, 8, 12, mediaQuery.viewInsets.bottom + 16),
+              children: [
+                // "All Dates" Reset Option
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: InkWell(
+                    onTap: () => widget.onSelect(null),
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: widget.initialDate.isEmpty
+                            ? const Color(0xFF0284C7).withValues(alpha: 0.08)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.all_inclusive_rounded,
+                            size: 18,
+                            color: widget.initialDate.isEmpty ? const Color(0xFF0284C7) : const Color(0xFF64748B),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              isMr ? 'सर्व तारखा (Clear Date Filter)' : 'All Dates (Clear Date Filter)',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: widget.initialDate.isEmpty ? FontWeight.w700 : FontWeight.w500,
+                                color: widget.initialDate.isEmpty ? const Color(0xFF0284C7) : const Color(0xFF1E293B),
+                              ),
+                            ),
+                          ),
+                          if (widget.initialDate.isEmpty)
+                            const Icon(Icons.check_rounded, color: Color(0xFF0284C7), size: 18),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                const Divider(height: 8, thickness: 0.5, color: Color(0xFFE2E8F0)),
+
+                if (_filteredDates.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Center(
+                      child: Text(
+                        isMr ? 'कोणतीही तारीख सापडली नाही' : 'No dates found',
+                        style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                      ),
+                    ),
+                  )
+                else
+                  ..._filteredDates.map((item) {
+                    final isSelected = widget.initialDate == item.key;
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: InkWell(
+                        onTap: () => widget.onSelect(item.key),
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? const Color(0xFF0284C7).withValues(alpha: 0.08)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.calendar_today_outlined,
+                                size: 17,
+                                color: isSelected ? const Color(0xFF0284C7) : const Color(0xFF64748B),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  item.key,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                    color: isSelected ? const Color(0xFF0284C7) : const Color(0xFF1E293B),
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE0F2FE),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  '${item.value} ${isMr ? 'पत्रे' : 'letters'}',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF0284C7),
+                                  ),
+                                ),
+                              ),
+                              if (isSelected) ...[
+                                const SizedBox(width: 8),
+                                const Icon(Icons.check_rounded, color: Color(0xFF0284C7), size: 18),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
