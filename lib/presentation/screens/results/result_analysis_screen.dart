@@ -376,6 +376,7 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
                         ),
                         const SizedBox(height: 6),
                         AppDropdown<String>(
+                          title: 'Select Ward',
                           value: _availableWards.contains(_selectedWard) ? _selectedWard : null,
                           hint: 'Select Ward',
                           items: _availableWards.map((w) {
@@ -408,6 +409,7 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
                         ),
                         const SizedBox(height: 6),
                         AppDropdown<String>(
+                          title: 'Select Candidate',
                           value: _availableCandidates.contains(_selectedCandidate) ? _selectedCandidate : null,
                           hint: 'Select Candidate',
                           prefixIcon: const Icon(Icons.person_pin_rounded, color: Color(0xFF0284C7), size: 18),

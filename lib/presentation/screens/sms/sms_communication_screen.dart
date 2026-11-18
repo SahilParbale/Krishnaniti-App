@@ -693,6 +693,7 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
                       // Age Filter
                       Expanded(
                         child: AppDropdown<String>(
+                          title: 'Filter by Age',
                           value: _ageFilter,
                           height: 38,
                           padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -716,6 +717,7 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
                       // Gender Filter
                       Expanded(
                         child: AppDropdown<String>(
+                          title: 'Filter by Gender',
                           value: _genderFilter,
                           height: 38,
                           padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -737,6 +739,7 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
                       // Booth Filter
                       Expanded(
                         child: AppDropdown<String>(
+                          title: 'Filter by Booth',
                           value: _boothFilter,
                           height: 38,
                           padding: const EdgeInsets.symmetric(horizontal: 8),

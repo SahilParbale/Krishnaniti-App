@@ -1039,6 +1039,7 @@ class _WhatsAppCommunicationScreenState
                       // Age
                       Expanded(
                         child: _buildDropdownFilter(
+                          title: 'Filter by Age',
                           value: _ageFilter,
                           items: const [
                             DropdownMenuItem(value: 'All', child: Text('All Ages')),
@@ -1059,6 +1060,7 @@ class _WhatsAppCommunicationScreenState
                       // Gender
                       Expanded(
                         child: _buildDropdownFilter(
+                          title: 'Filter by Gender',
                           value: _genderFilter,
                           items: const [
                             DropdownMenuItem(value: 'All', child: Text('All Genders')),
@@ -1077,6 +1079,7 @@ class _WhatsAppCommunicationScreenState
                       // Booth
                       Expanded(
                         child: _buildDropdownFilter(
+                          title: 'Filter by Booth',
                           value: _boothFilter,
                           items: const [
                             DropdownMenuItem(value: 'All', child: Text('All Booths')),
@@ -1623,11 +1626,13 @@ class _WhatsAppCommunicationScreenState
   // Helpers
   // ─────────────────────────────────────────────────────────────
   Widget _buildDropdownFilter({
+    String? title,
     required String value,
     required List<DropdownMenuItem<String>> items,
     required ValueChanged<String?> onChanged,
   }) {
     return AppDropdown<String>(
+      title: title,
       value: value,
       height: 38,
       isExpanded: true,

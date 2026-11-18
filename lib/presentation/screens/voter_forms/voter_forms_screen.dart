@@ -1213,6 +1213,7 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
               // Status Filter Dropdown
               Expanded(
                 child: AppDropdown<String>(
+                  title: 'Filter by Status',
                   value: _selectedStatus,
                   items: const [
                     DropdownMenuItem(value: 'All', child: Text('All Status')),
@@ -1234,6 +1235,7 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
               // Form Type Filter Dropdown
               Expanded(
                 child: AppDropdown<String>(
+                  title: 'Filter by Form Type',
                   value: _selectedFormType,
                   items: const [
                     DropdownMenuItem(value: 'All', child: Text('All Forms')),

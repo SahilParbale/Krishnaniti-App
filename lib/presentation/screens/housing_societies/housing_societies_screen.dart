@@ -871,6 +871,7 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
               // Area Filter Dropdown
               Expanded(
                 child: AppDropdown<String>(
+                  title: 'Filter by Area',
                   value: _selectedArea,
                   items: [
                     const DropdownMenuItem(value: 'all', child: Text('All Areas')),
@@ -889,6 +890,7 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
               // Status Filter Dropdown
               Expanded(
                 child: AppDropdown<String>(
+                  title: 'Filter by Status',
                   value: _selectedStatus,
                   items: const [
                     DropdownMenuItem(value: 'all', child: Text('All Status')),

@@ -757,6 +757,7 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                         children: [
                           // FY Selector
                           AppDropdown<String>(
+                            title: isMr ? 'आर्थिक वर्ष निवडा' : 'Select Financial Year',
                             value: _year,
                             height: 40,
                             isExpanded: false,

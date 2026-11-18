@@ -954,59 +954,22 @@ class _NewComplaintBottomSheetState
   // HELPER WIDGETS
   // ---------------------------------------------------------------------------
   Widget _buildSocietyPicker(bool isMr, List<String> societies) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        AppFieldLabel(
-          label: isMr ? 'सोसायटीचे नाव' : 'Society Name',
-          isRequired: false,
-        ),
-        InkWell(
-          onTap: () => _openSocietySelectionSheet(societies, isMr),
-          borderRadius: BorderRadius.circular(10),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFCBD5E1)),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    _selectedSociety.isNotEmpty
-                        ? _selectedSociety
-                        : (isMr ? 'सोसायटी निवडा' : 'Select Society'),
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: _selectedSociety.isNotEmpty ? const Color(0xFF0F172A) : const Color(0xFF94A3B8),
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const Icon(Icons.arrow_drop_down_rounded, color: Color(0xFF64748B)),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _openSocietySelectionSheet(List<String> societies, bool isMr) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _SocietySearchModal(
-        societies: societies,
-        current: _selectedSociety,
-        onSelect: (selected) {
-          setState(() => _selectedSociety = selected);
-          Navigator.pop(context);
-        },
-      ),
+    return AppDropdownFormField<String>(
+      label: isMr ? 'सोसायटीचे नाव' : 'Society Name',
+      isRequired: false,
+      hintText: isMr ? 'सोसायटी निवडा' : 'Select Society',
+      prefixIcon: const Icon(Icons.apartment_rounded, size: 18, color: Color(0xFF64748B)),
+      value: _selectedSociety.isNotEmpty ? _selectedSociety : null,
+      items: societies.asMap().entries.map((e) {
+        final formattedName = '${e.key + 1} - ${e.value}';
+        return DropdownMenuItem<String>(
+          value: formattedName,
+          child: Text(formattedName, overflow: TextOverflow.ellipsis),
+        );
+      }).toList(),
+      onChanged: (val) {
+        setState(() => _selectedSociety = val ?? '');
+      },
     );
   }
 
@@ -1480,115 +1443,4 @@ class _VoterSearchModalSheetState
   }
 }
 
-// -----------------------------------------------------------------------------
-// SUB-COMPONENT: SOCIETY SEARCH MODAL (matching ComplaintForm.tsx)
-// -----------------------------------------------------------------------------
-class _SocietySearchModal extends StatefulWidget {
-  final List<String> societies;
-  final String current;
-  final ValueChanged<String> onSelect;
 
-  const _SocietySearchModal({
-    required this.societies,
-    required this.current,
-    required this.onSelect,
-  });
-
-  @override
-  State<_SocietySearchModal> createState() => _SocietySearchModalState();
-}
-
-class _SocietySearchModalState extends State<_SocietySearchModal> {
-  final _searchCtrl = TextEditingController();
-  List<MapEntry<int, String>> _filtered = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _filtered = widget.societies.asMap().entries.toList();
-  }
-
-  @override
-  void dispose() {
-    _searchCtrl.dispose();
-    super.dispose();
-  }
-
-  void _filter(String q) {
-    final query = q.toLowerCase();
-    setState(() {
-      _filtered = widget.societies
-          .asMap()
-          .entries
-          .where((e) {
-            final formatted = '${e.key + 1} - ${e.value}'.toLowerCase();
-            return formatted.contains(query) || e.value.toLowerCase().contains(query);
-          })
-          .toList();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.75,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        children: [
-          // 1. FIXED STANDARDIZED HEADER
-          AppModalHeader(
-            icon: Icons.apartment_rounded,
-            title: 'Select Housing Society',
-            subtitle: 'Housing societies in ward',
-            onClose: () => Navigator.pop(context),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: TextField(
-              controller: _searchCtrl,
-              onChanged: _filter,
-              decoration: InputDecoration(
-                hintText: 'Search society...',
-                prefixIcon: const Icon(Icons.search_rounded),
-                filled: true,
-                fillColor: const Color(0xFFF8FAFC),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: ListView.separated(
-              itemCount: _filtered.length,
-              separatorBuilder: (_, _) => Divider(height: 1, color: Colors.grey.shade100),
-              itemBuilder: (context, idx) {
-                final entry = _filtered[idx];
-                final formattedName = '${entry.key + 1} - ${entry.value}';
-                final isSelected = entry.value == widget.current || formattedName == widget.current;
-                return ListTile(
-                  onTap: () => widget.onSelect(formattedName),
-                  title: Text(
-                    formattedName,
-                    style: TextStyle(
-                      fontSize: 13.5,
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                      color: isSelected ? const Color(0xFF0284C7) : const Color(0xFF1E293B),
-                    ),
-                  ),
-                  trailing: isSelected
-                      ? const Icon(Icons.check_rounded, color: Color(0xFF0284C7))
-                      : null,
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

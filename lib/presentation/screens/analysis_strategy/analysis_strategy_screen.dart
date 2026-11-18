@@ -1004,6 +1004,7 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
           const SizedBox(height: 8),
 
           AppDropdown<String>(
+            title: 'Select Area',
             value: null,
             hintText: 'Select Area...',
             prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF0284C7)),

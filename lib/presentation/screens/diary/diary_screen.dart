@@ -762,29 +762,26 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                     ),
                     if (_uniqueAreas.isNotEmpty) ...[
                       const SizedBox(width: 8),
-                      PopupMenuButton<String>(
-                        initialValue: _selectedArea,
-                        tooltip: 'Filter by Area',
-                        icon: Container(
-                          padding: const EdgeInsets.all(9),
-                          decoration: BoxDecoration(
-                            color: _selectedArea != 'All' ? const Color(0xFFE0F2FE) : const Color(0xFFF1F5F9),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: _selectedArea != 'All' ? const Color(0xFF0284C7) : const Color(0xFFCBD5E1),
-                            ),
-                          ),
-                          child: Icon(
-                            Icons.location_on_outlined,
-                            size: 18,
-                            color: _selectedArea != 'All' ? const Color(0xFF0284C7) : const Color(0xFF475569),
-                          ),
+                      AppDropdown<String>(
+                        title: isMr ? 'भाग निवडा' : 'Filter by Area',
+                        value: _selectedArea,
+                        height: 40,
+                        isExpanded: false,
+                        backgroundColor: _selectedArea != 'All' ? const Color(0xFFE0F2FE) : const Color(0xFFF1F5F9),
+                        borderColor: _selectedArea != 'All' ? const Color(0xFF0284C7) : const Color(0xFFCBD5E1),
+                        hintText: 'Filter by Area',
+                        prefixIcon: Icon(
+                          Icons.location_on_outlined,
+                          size: 16,
+                          color: _selectedArea != 'All' ? const Color(0xFF0284C7) : const Color(0xFF475569),
                         ),
-                        onSelected: (val) => setState(() => _selectedArea = val),
-                        itemBuilder: (ctx) => [
-                          const PopupMenuItem(value: 'All', child: Text('All Areas (सर्व परिसर)')),
-                          ..._uniqueAreas.map((a) => PopupMenuItem(value: a, child: Text(a))),
+                        items: [
+                          const DropdownMenuItem(value: 'All', child: Text('All Areas (सर्व परिसर)')),
+                          ..._uniqueAreas.map((a) => DropdownMenuItem(value: a, child: Text(a))),
                         ],
+                        onChanged: (val) {
+                          if (val != null) setState(() => _selectedArea = val);
+                        },
                       ),
                     ],
                     const SizedBox(width: 8),
