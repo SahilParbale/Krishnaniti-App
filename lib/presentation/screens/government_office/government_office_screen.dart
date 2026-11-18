@@ -12,6 +12,7 @@ import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
 import 'gov_office_report_generator.dart';
 import 'government_office_detail_screen.dart';
+import 'file_tracker_tab_view.dart';
 
 class GovernmentOfficeScreen extends ConsumerStatefulWidget {
   const GovernmentOfficeScreen({super.key});
@@ -803,16 +804,20 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
         ),
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
-            : RefreshIndicator(
-                onRefresh: _loadData,
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.only(bottom: 80),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Two Tab Bar Switcher (Offices vs Cooperative)
-                      _buildTabBar(isMr),
+            : Column(
+                children: [
+                  _buildTabBar(isMr),
+                  Expanded(
+                    child: _activeTab == 'Files'
+                        ? const FileTrackerTabView()
+                        : RefreshIndicator(
+                            onRefresh: _loadData,
+                            child: SingleChildScrollView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              padding: const EdgeInsets.only(bottom: 80),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
 
                       // Executive Stat Strip
                       Container(
@@ -954,6 +959,9 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                   ),
                 ),
               ),
+                  ),
+                ],
+              ),
       ),
     );
   }
@@ -999,7 +1007,7 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      isMr ? 'सरकारी कार्यालये' : 'Offices',
+                      isMr ? 'कार्यालये' : 'Offices',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: _activeTab == 'Offices' ? FontWeight.bold : FontWeight.w600,

@@ -184,4 +184,29 @@ class BarCustomizationRepository {
       return null;
     }
   }
+
+  /// Queries tenant_feature_overrides table to retrieve per-tenant feature toggle matrix (matching TenantContext.tsx)
+  Future<Map<String, bool>> getTenantFeatureOverrides() async {
+    try {
+      final tenantId = _activeTenantId;
+      if (tenantId == null || tenantId.isEmpty) return {};
+
+      final res = await _client
+          .from('tenant_feature_overrides')
+          .select('is_enabled, features!inner(feature_key)')
+          .eq('tenant_id', tenantId);
+
+      final Map<String, bool> overrides = {};
+      for (final row in res as List<dynamic>) {
+        final feat = row['features'];
+        if (feat is Map && feat['feature_key'] != null) {
+          overrides[feat['feature_key'].toString()] = row['is_enabled'] == true;
+        }
+      }
+      return overrides;
+    } catch (_) {
+      return {};
+    }
+  }
+
 }

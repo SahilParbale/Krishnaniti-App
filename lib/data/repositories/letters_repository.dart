@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/supabase_service.dart';
 import '../models/letter_model.dart';
+import '../models/letter_type_model.dart';
 
 final lettersRepoProvider = Provider<LettersRepository>((ref) => LettersRepository());
 
@@ -226,4 +227,83 @@ class LettersRepository {
       return 0;
     }
   }
+
+  // ─────────────────────────────────────────────────────────────
+  // Letter Types Management (from table: letter_types)
+  // ─────────────────────────────────────────────────────────────
+
+  Future<List<LetterTypeModel>> getLetterTypes() async {
+    try {
+      var query = _client.from('letter_types').select('*');
+      if (_tenantId != null && _tenantId!.isNotEmpty) {
+        query = query.or('tenant_id.eq.${_tenantId},tenant_id.is.null');
+      }
+      final response = await query.order('name');
+      final list = (response as List<dynamic>)
+          .map((item) => LetterTypeModel.fromJson(item as Map<String, dynamic>))
+          .toList();
+      return list;
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<LetterTypeModel?> createLetterType({
+    required String name,
+    String? nameMarathi,
+    String? description,
+    String? templateContent,
+  }) async {
+    final payload = {
+      'name': name,
+      if (nameMarathi != null) 'name_marathi': nameMarathi,
+      if (description != null) 'description': description,
+      if (templateContent != null) 'template_content': templateContent,
+      'is_active': true,
+      if (_tenantId != null) 'tenant_id': _tenantId,
+      'created_at': DateTime.now().toIso8601String(),
+    };
+
+    try {
+      final res = await _client.from('letter_types').insert(payload).select().single();
+      return LetterTypeModel.fromJson(res);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<bool> updateLetterType(LetterTypeModel type) async {
+    try {
+      final payload = {
+        'name': type.name,
+        'name_marathi': type.nameMarathi,
+        'description': type.description,
+        'template_content': type.templateContent,
+        'is_active': type.isActive,
+      };
+
+      var query = _client.from('letter_types').update(payload).eq('id', type.id);
+      if (_tenantId != null) {
+        query = query.eq('tenant_id', _tenantId!);
+      }
+      await query;
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> deleteLetterType(String id) async {
+    try {
+      var query = _client.from('letter_types').delete().eq('id', id);
+      if (_tenantId != null) {
+        query = query.eq('tenant_id', _tenantId!);
+      }
+      await query;
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
 }

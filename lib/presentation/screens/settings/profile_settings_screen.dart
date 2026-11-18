@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_config.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../navigation/app_drawer.dart';
@@ -120,6 +121,15 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
       final client = SupabaseService.instance.client;
       final tenantId = SupabaseService.instance.activeTenantId ?? AppConfig.defaultTenantId;
 
+      if (_profileImageUrl.isNotEmpty && !_profileImageUrl.startsWith('http')) {
+        final uploaded = await _uploadBrandingAsset(_profileImageUrl, 'profile');
+        if (uploaded != null) _profileImageUrl = uploaded;
+      }
+      if (_partyLogoUrl.isNotEmpty && !_partyLogoUrl.startsWith('http')) {
+        final uploaded = await _uploadBrandingAsset(_partyLogoUrl, 'logo');
+        if (uploaded != null) _partyLogoUrl = uploaded;
+      }
+
       final response = await client
           .from('tenants')
           .select('name, config')
@@ -156,6 +166,15 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
     try {
       final client = SupabaseService.instance.client;
       final tenantId = SupabaseService.instance.activeTenantId ?? AppConfig.defaultTenantId;
+
+      if (_profileImageUrl.isNotEmpty && !_profileImageUrl.startsWith('http')) {
+        final uploaded = await _uploadBrandingAsset(_profileImageUrl, 'profile');
+        if (uploaded != null) _profileImageUrl = uploaded;
+      }
+      if (_partyLogoUrl.isNotEmpty && !_partyLogoUrl.startsWith('http')) {
+        final uploaded = await _uploadBrandingAsset(_partyLogoUrl, 'logo');
+        if (uploaded != null) _partyLogoUrl = uploaded;
+      }
 
       final mergedConfig = {
         ..._rawConfig,
@@ -323,6 +342,47 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
     );
   }
 
+
+  Future<String?> _uploadBrandingAsset(String localPath, String prefix) async {
+    try {
+      final client = SupabaseService.instance.client;
+      final tenantId = SupabaseService.instance.activeTenantId ?? AppConfig.defaultTenantId;
+
+      if (_profileImageUrl.isNotEmpty && !_profileImageUrl.startsWith('http')) {
+        final uploaded = await _uploadBrandingAsset(_profileImageUrl, 'profile');
+        if (uploaded != null) _profileImageUrl = uploaded;
+      }
+      if (_partyLogoUrl.isNotEmpty && !_partyLogoUrl.startsWith('http')) {
+        final uploaded = await _uploadBrandingAsset(_partyLogoUrl, 'logo');
+        if (uploaded != null) _partyLogoUrl = uploaded;
+      }
+      final file = File(localPath);
+      if (!file.existsSync()) return null;
+
+      final bytes = await file.readAsBytes();
+      final ext = localPath.split('.').last;
+      final fileName = '$tenantId/branding/${prefix}_${DateTime.now().millisecondsSinceEpoch}.$ext';
+
+      try {
+        await client.storage.from('app-assets').uploadBinary(
+              fileName,
+              bytes,
+              fileOptions: const FileOptions(upsert: true),
+            );
+        return client.storage.from('app-assets').getPublicUrl(fileName);
+      } catch (_) {
+        await client.storage.from('documents').uploadBinary(
+              fileName,
+              bytes,
+              fileOptions: const FileOptions(upsert: true),
+            );
+        return client.storage.from('documents').getPublicUrl(fileName);
+      }
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<void> _pickImageSource(bool isProfile, ImageSource source) async {
     try {
       final picked = await _picker.pickImage(
@@ -338,6 +398,17 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
             _profileImageUrl = picked.path;
           } else {
             _partyLogoUrl = picked.path;
+          }
+        });
+        _uploadBrandingAsset(picked.path, isProfile ? 'profile' : 'logo').then((uploadedUrl) {
+          if (uploadedUrl != null && mounted) {
+            setState(() {
+              if (isProfile) {
+                _profileImageUrl = uploadedUrl;
+              } else {
+                _partyLogoUrl = uploadedUrl;
+              }
+            });
           }
         });
         final isMr = ref.read(isMarathiProvider);
@@ -484,6 +555,15 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
     try {
       final client = SupabaseService.instance.client;
       final tenantId = SupabaseService.instance.activeTenantId ?? AppConfig.defaultTenantId;
+
+      if (_profileImageUrl.isNotEmpty && !_profileImageUrl.startsWith('http')) {
+        final uploaded = await _uploadBrandingAsset(_profileImageUrl, 'profile');
+        if (uploaded != null) _profileImageUrl = uploaded;
+      }
+      if (_partyLogoUrl.isNotEmpty && !_partyLogoUrl.startsWith('http')) {
+        final uploaded = await _uploadBrandingAsset(_partyLogoUrl, 'logo');
+        if (uploaded != null) _partyLogoUrl = uploaded;
+      }
       final user = ref.read(currentUserProvider);
 
       final newTicket = {

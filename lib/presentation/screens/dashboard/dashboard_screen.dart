@@ -1,6 +1,10 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/constants/app_config.dart';
+import '../../../core/services/supabase_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../../data/models/complaint_model.dart';
 import '../../../data/repositories/complaints_repository.dart';
 import '../../../data/repositories/voters_repository.dart';
@@ -42,13 +46,60 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     return 'Ward Summary: $pending pending citizen requests require priority attention. $resolved works have been resolved successfully with active monitoring.';
   }
 
+  RealtimeChannel? _realtimeChannel;
+
   @override
   void initState() {
     super.initState();
     _loadDashboardData();
+    _subscribeRealtime();
+  }
+
+  @override
+  void dispose() {
+    if (_realtimeChannel != null) {
+      try {
+        SupabaseService.instance.client.removeChannel(_realtimeChannel!);
+      } catch (_) {}
+    }
+    super.dispose();
+  }
+
+  void _subscribeRealtime() {
+    try {
+      final client = SupabaseService.instance.client;
+      final tenantId = SupabaseService.instance.activeTenantId ?? AppConfig.defaultTenantId;
+
+      _realtimeChannel = client
+          .channel('dashboard-realtime-$tenantId')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'complaints',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'tenant_id',
+              value: tenantId,
+            ),
+            callback: (payload) => _loadDashboardData(),
+          )
+          .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'tasks',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'tenant_id',
+              value: tenantId,
+            ),
+            callback: (payload) => _loadDashboardData(),
+          )
+          .subscribe();
+    } catch (_) {}
   }
 
   Future<void> _loadDashboardData() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
     try {
       final cRepo = ref.read(complaintsRepoProvider);
@@ -56,10 +107,22 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
       final lRepo = ref.read(lettersRepoProvider);
 
       final results = await Future.wait([
-        cRepo.getComplaintStats().catchError((_) => {'total': 0, 'pending': 0, 'inProgress': 0, 'resolved': 0}),
-        vRepo.getVotersCount().catchError((_) => 0),
-        lRepo.getLettersCount().catchError((_) => 0),
-        cRepo.getComplaints(limit: 10).catchError((_) => <ComplaintModel>[]),
+        cRepo.getComplaintStats().catchError((e) {
+          debugPrint('Error loading complaint stats: $e');
+          return {'total': 0, 'pending': 0, 'inProgress': 0, 'resolved': 0};
+        }),
+        vRepo.getVotersCount().catchError((e) {
+          debugPrint('Error loading voters count: $e');
+          return 0;
+        }),
+        lRepo.getLettersCount().catchError((e) {
+          debugPrint('Error loading letters count: $e');
+          return 0;
+        }),
+        cRepo.getComplaints(limit: 10).catchError((e) {
+          debugPrint('Error loading recent complaints: $e');
+          return <ComplaintModel>[];
+        }),
       ]);
 
       if (mounted) {
@@ -71,7 +134,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
           _isLoading = false;
         });
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Dashboard data load exception: $e');
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -376,10 +440,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final totalVal = (_complaintStats['total'] ?? 128);
-    final pendingVal = (_complaintStats['pending'] ?? 32);
-    final inProgressVal = (_complaintStats['inProgress'] ?? 76);
-    final resolvedVal = (_complaintStats['resolved'] ?? 20);
+    final totalVal = _complaintStats['total'] ?? 0;
+    final pendingVal = _complaintStats['pending'] ?? 0;
+    final inProgressVal = _complaintStats['inProgress'] ?? 0;
+    final resolvedVal = _complaintStats['resolved'] ?? 0;
 
     final displayedActivities = _activityFilter == 'pending'
         ? _recentActivity.where((a) => a.status.toLowerCase() == 'pending').toList()
@@ -487,7 +551,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                             child: Image.network(
                               'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => const Icon(Icons.person, color: Color(0xFF0284C7), size: 20),
+                              errorBuilder: (context, error, stackTrace) => const Icon(Icons.person, color: Color(0xFF0284C7), size: 20),
                             ),
                           ),
                         ),
@@ -559,7 +623,130 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                     const SizedBox(height: 14),
 
                     // ==========================================
-                    // 2) QUICK ACTIONS ROW (tutorial-quick-actions)
+                    // 2) AI INSIGHT BANNER (tutorial-ai-insight)
+                    // ==========================================
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF0F7FF),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFBFDBFE), width: 1.2),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(7),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFDBEAFE),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.auto_awesome_rounded,
+                              size: 18,
+                              color: Color(0xFF0284C7),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'AI Daily Briefing & Ward Pulse',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF0F172A),
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  _dailyBriefing,
+                                  style: const TextStyle(
+                                    fontSize: 11.5,
+                                    height: 1.4,
+                                    color: Color(0xFF334155),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // ==========================================
+                    // 3) 4 STAT CARDS (LIVE CITIZEN & GRIEVANCE STATS) (tutorial-stats)
+                    // ==========================================
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _StatCardItem(
+                            title: 'Total Citizens',
+                            value: NumberFormat.decimalPattern().format(_voterCount),
+                            icon: Icons.people_alt_rounded,
+                            iconColor: const Color(0xFF0284C7),
+                            badgeColor: const Color(0xFFE0F2FE),
+                            borderColor: const Color(0xFFBAE6FD),
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              ref.read(activeScreenProvider.notifier).setScreen('voters');
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _StatCardItem(
+                            title: 'Pending Issues',
+                            value: NumberFormat.decimalPattern().format(pendingVal),
+                            icon: Icons.error_outline_rounded,
+                            iconColor: const Color(0xFFDC2626),
+                            badgeColor: const Color(0xFFFEF2F2),
+                            borderColor: const Color(0xFFFECACA),
+                            onTap: () {
+                              setState(() => _activityFilter = 'pending');
+                              widget.onTabChange(1);
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _StatCardItem(
+                            title: 'In Progress',
+                            value: NumberFormat.decimalPattern().format(inProgressVal),
+                            icon: Icons.timelapse_rounded,
+                            iconColor: const Color(0xFFD97706),
+                            badgeColor: const Color(0xFFFFFBEB),
+                            borderColor: const Color(0xFFFDE68A),
+                            onTap: () => widget.onTabChange(1),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _StatCardItem(
+                            title: 'Resolved',
+                            value: NumberFormat.decimalPattern().format(resolvedVal),
+                            icon: Icons.check_circle_outline_rounded,
+                            iconColor: const Color(0xFF16A34A),
+                            badgeColor: const Color(0xFFF0FDF4),
+                            borderColor: const Color(0xFFBBF7D0),
+                            onTap: () => widget.onTabChange(1),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 18),
+
+                    // ==========================================
+                    // 4) QUICK ACTIONS ROW (tutorial-quick-actions)
                     // ==========================================
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -587,13 +774,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 _QuickActionPill(
                                   icon: Icons.search_rounded,
                                   label: 'Search Voter',
-                                  onTap: () => _openModuleDetail(
-                                    'Voter Search',
-                                    'Search voter directory and voter slips',
-                                    'Political',
-                                    Icons.search_rounded,
-                                    const [],
-                                  ),
+                                  onTap: () {
+                                    HapticFeedback.selectionClick();
+                                    ref.read(activeScreenProvider.notifier).setScreen('voters');
+                                  },
                                 ),
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
@@ -941,132 +1125,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                     const SizedBox(height: 14),
 
                     // ==========================================
-                    // 3) AI INSIGHT BANNER (tutorial-ai-insight)
-                    // ==========================================
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF0F7FF),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFFBFDBFE), width: 1.2),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(7),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFDBEAFE),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Icon(
-                              Icons.auto_awesome_rounded,
-                              size: 18,
-                              color: Color(0xFF0284C7),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'AI Daily Briefing & Ward Pulse',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                    color: Color(0xFF0F172A),
-                                  ),
-                                ),
-                                const SizedBox(height: 3),
-                                Text(
-                                  _dailyBriefing,
-                                  style: const TextStyle(
-                                    fontSize: 11.5,
-                                    height: 1.4,
-                                    color: Color(0xFF334155),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // ==========================================
-                    // 4) 4 STAT CARDS (tutorial-stats)
-                    // ==========================================
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _StatCardItem(
-                            title: 'Total Citizens',
-                            value: _voterCount.toString(),
-                            icon: Icons.people_alt_rounded,
-                            iconColor: const Color(0xFF0284C7),
-                            badgeColor: const Color(0xFFE0F2FE),
-                            borderColor: const Color(0xFFBAE6FD),
-                            onTap: () => _openModuleDetail(
-                              'Voter Search',
-                              'Digital electoral roll lookup by name, EPIC and address',
-                              'Political',
-                              Icons.person_search_outlined,
-                              ['42,560 Registered Voters', '28 Booths Mapped', 'Instant Slip Print/Share'],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: _StatCardItem(
-                            title: 'Pending Issues',
-                            value: pendingVal.toString(),
-                            icon: Icons.error_outline_rounded,
-                            iconColor: const Color(0xFFDC2626),
-                            badgeColor: const Color(0xFFFEF2F2),
-                            borderColor: const Color(0xFFFECACA),
-                            onTap: () {
-                              setState(() => _activityFilter = 'pending');
-                              widget.onTabChange(1);
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _StatCardItem(
-                            title: 'In Progress',
-                            value: inProgressVal.toString(),
-                            icon: Icons.timelapse_rounded,
-                            iconColor: const Color(0xFFD97706),
-                            badgeColor: const Color(0xFFFFFBEB),
-                            borderColor: const Color(0xFFFDE68A),
-                            onTap: () => widget.onTabChange(1),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: _StatCardItem(
-                            title: 'Resolved',
-                            value: resolvedVal.toString(),
-                            icon: Icons.check_circle_outline_rounded,
-                            iconColor: const Color(0xFF16A34A),
-                            badgeColor: const Color(0xFFF0FDF4),
-                            borderColor: const Color(0xFFBBF7D0),
-                            onTap: () => widget.onTabChange(1),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 18),
-
-                    // ==========================================
                     // 5) STATUS OVERVIEW CHART (tutorial-status-chart)
                     // ==========================================
                     Container(
@@ -1148,7 +1206,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                     FittedBox(
                                       fit: BoxFit.scaleDown,
                                       child: Text(
-                                        '${totalVal > 0 ? ((resolvedVal / totalVal) * 100).round() : 72}%',
+                                        '${totalVal > 0 ? ((resolvedVal / totalVal) * 100).round() : 0}%',
                                         style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                                       ),
                                     ),
@@ -1170,7 +1228,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                     FittedBox(
                                       fit: BoxFit.scaleDown,
                                       child: Text(
-                                        '24 Hrs',
+                                        '—',
                                         style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                                       ),
                                     ),
@@ -1192,7 +1250,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                     FittedBox(
                                       fit: BoxFit.scaleDown,
                                       child: Text(
-                                        '88%',
+                                        '—',
                                         style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                                       ),
                                     ),

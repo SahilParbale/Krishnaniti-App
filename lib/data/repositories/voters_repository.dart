@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../core/constants/app_config.dart';
 import '../../core/services/supabase_service.dart';
 import '../models/voter_model.dart';
 
@@ -146,7 +147,7 @@ class VotersRepository {
       if (_tenantId != null && _tenantId!.isNotEmpty) {
         baseQuery = baseQuery.eq('tenant_id', _tenantId!);
       }
-      final response = await baseQuery;
+      final response = await baseQuery.limit(5000);
       final list = response as List<dynamic>;
 
       int fav = 0;
@@ -167,8 +168,11 @@ class VotersRepository {
         if (b != null && b.isNotEmpty) booths.add(b);
       }
 
+      final exactTotal = await getVotersCount();
+      final total = exactTotal > 0 ? exactTotal : list.length;
+
       return {
-        'total': list.length,
+        'total': total,
         'favourable': fav,
         'against': against,
         'neutral': neutral,
@@ -177,8 +181,9 @@ class VotersRepository {
         'booths': booths.length,
       };
     } catch (_) {
+      final exactTotal = await getVotersCount();
       return {
-        'total': 0,
+        'total': exactTotal,
         'favourable': 0,
         'against': 0,
         'neutral': 0,
@@ -189,9 +194,66 @@ class VotersRepository {
     }
   }
 
+  /// Fetches the live total count of registered citizens/voters directly from Supabase database.
+  /// Matches web architecture: supabase.from('voters').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId)
+  /// Also checks tenant citizenCount / config in database as seamless fallback.
   Future<int> getVotersCount() async {
-    final stats = await getVotersStats();
-    return stats['total'] ?? 0;
+    final tenantId = _tenantId ?? AppConfig.defaultTenantId;
+
+    // 1. Direct count query on 'voters' table for active tenant (mirrors Dashboard.tsx)
+    try {
+      final res = await _client
+          .from('voters')
+          .count(CountOption.exact)
+          .eq('tenant_id', tenantId);
+      if (res > 0) return res;
+    } catch (_) {}
+
+    // 2. Direct count query on 'voters' table without tenant filter (single-tenant mode)
+    try {
+      final res = await _client
+          .from('voters')
+          .count(CountOption.exact);
+      if (res > 0) return res;
+    } catch (_) {}
+
+    // 3. Check 'tenants' table for 'citizenCount' or config['total_citizens'] in Supabase
+    try {
+      final tRes = await _client
+          .from('tenants')
+          .select('citizenCount, config')
+          .eq('id', tenantId)
+          .maybeSingle();
+
+      if (tRes != null) {
+        if (tRes['citizenCount'] != null) {
+          final raw = tRes['citizenCount'].toString().replaceAll(RegExp(r'[^0-9]'), '');
+          final parsed = int.tryParse(raw);
+          if (parsed != null && parsed > 0) return parsed;
+        }
+
+        final cfg = tRes['config'];
+        if (cfg is Map) {
+          final countVal = cfg['total_citizens'] ?? cfg['citizen_count'] ?? cfg['registered_voters'];
+          if (countVal != null) {
+            final raw = countVal.toString().replaceAll(RegExp(r'[^0-9]'), '');
+            final parsed = int.tryParse(raw);
+            if (parsed != null && parsed > 0) return parsed;
+          }
+        }
+      }
+    } catch (_) {}
+
+    // 4. Check 'sadasya' (members/cadre) table in database as citizen fallback
+    try {
+      final sCount = await _client
+          .from('sadasya')
+          .count(CountOption.exact)
+          .eq('tenant_id', tenantId);
+      if (sCount > 0) return sCount;
+    } catch (_) {}
+
+    return 0;
   }
 
   Future<void> addVoter(VoterModel voter) async {

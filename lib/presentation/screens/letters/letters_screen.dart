@@ -9,6 +9,7 @@ import '../../providers/auth_provider.dart';
 import '../dashboard/dashboard_screen.dart';
 import 'letter_detail_screen.dart';
 import 'new_letter_bottom_sheet.dart';
+import 'letter_type_manager_sheet.dart';
 import '../../navigation/app_drawer.dart';
 import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_date_picker.dart';
@@ -265,7 +266,13 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
               ),
             ],
           ),
-          actions: const [],
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.tune_rounded, color: Colors.white, size: 22),
+              tooltip: isMr ? 'पत्रांचे प्रकार व्यवस्थापित करा' : 'Manage Letter Types',
+              onPressed: () => LetterTypeManagerSheet.show(context),
+            ),
+          ],
         ),
         body: Column(
           children: [

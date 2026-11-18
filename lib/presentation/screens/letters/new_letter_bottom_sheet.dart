@@ -13,6 +13,7 @@ import '../../widgets/app_image_picker.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_date_picker.dart';
 import 'letter_form_constants.dart';
+import '../../../data/models/letter_type_model.dart';
 import '../../widgets/app_dropdown.dart';
 
 /// Modal Bottom Sheet that slides up from the bottom with downward-dismiss capability,
@@ -69,6 +70,8 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
   final _mobileCtrl = TextEditingController(text: '+91 ');
   String _selectedGender = 'Male';
   String _selectedLetterType = 'Residential Certificate';
+  List<LetterTypeModel> _dbLetterTypes = [];
+
   final _areaCtrl = TextEditingController();
   final _subjectCtrl = TextEditingController();
   final _addressCtrl = TextEditingController();
@@ -132,6 +135,7 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
     }
 
     _loadStaff();
+    _loadLetterTypes();
   }
 
   @override
@@ -155,6 +159,40 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
     _bearerLastNameCtrl.dispose();
     _bearerMobileCtrl.dispose();
     super.dispose();
+  }
+
+
+  Future<void> _loadLetterTypes() async {
+    try {
+      final repo = ref.read(lettersRepoProvider);
+      final types = await repo.getLetterTypes();
+      if (mounted && types.isNotEmpty) {
+        setState(() {
+          _dbLetterTypes = types;
+        });
+      }
+    } catch (_) {}
+  }
+
+  List<DropdownMenuItem<String>> _buildLetterTypeDropdownItems(bool isMr) {
+    final Map<String, LetterTypeOption> optionsMap = {
+      for (final opt in kLetterTypeOptions) opt.key: opt,
+    };
+
+    for (final dbType in _dbLetterTypes) {
+      optionsMap[dbType.name] = LetterTypeOption(
+        key: dbType.name,
+        en: dbType.name,
+        mr: dbType.nameMarathi?.isNotEmpty == true ? dbType.nameMarathi! : dbType.name,
+      );
+    }
+
+    return optionsMap.values.map((t) {
+      return DropdownMenuItem<String>(
+        value: t.key,
+        child: Text(isMr ? t.mr : t.en, overflow: TextOverflow.ellipsis),
+      );
+    }).toList();
   }
 
   Future<void> _loadStaff() async {
@@ -852,12 +890,7 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
                     child: _buildDropdown(
                       label: isMr ? 'पत्राचा प्रकार' : 'Letter Type',
                       value: _selectedLetterType,
-                      items: kLetterTypeOptions.map((t) {
-                        return DropdownMenuItem(
-                          value: t.key,
-                          child: Text(isMr ? t.mr : t.en, overflow: TextOverflow.ellipsis),
-                        );
-                      }).toList(),
+                      items: _buildLetterTypeDropdownItems(isMr),
                       onChanged: (val) {
                         if (val != null) {
                           setState(() => _selectedLetterType = val);
