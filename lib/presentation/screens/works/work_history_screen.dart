@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,7 +9,7 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_image_picker.dart';
 import '../../widgets/app_pdf_button.dart';
-import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_load_more_footer.dart';
 import '../../widgets/app_shimmer_card.dart';
 import 'ahwal_report_generator.dart';
 import 'work_detail_screen.dart';
@@ -38,8 +37,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
   bool _loading = true;
   List<WorkHistoryModel> _items = [];
 
-  int _currentPage = 1;
-  int _pageSize = 20;
+  int _displayedLimit = 20;
 
   // Ahwal Selection Mode State matching lines 54-58
   bool _selectionMode = false;
@@ -132,18 +130,8 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
     }).toList();
   }
 
-  int get _totalPages {
-    final count = _filteredItems.length;
-    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
-  }
-
-  List<WorkHistoryModel> get _pagedWorks {
-    final all = _filteredItems;
-    final startIndex = (_currentPage - 1) * _pageSize;
-    if (startIndex >= all.length) return [];
-    final endIndex = min(startIndex + _pageSize, all.length);
-    return all.sublist(startIndex, endIndex);
-  }
+  List<WorkHistoryModel> get _visibleWorks =>
+      _filteredItems.take(_displayedLimit).toList();
 
   void _toggleSelectionMode() {
     setState(() {
@@ -770,7 +758,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                             ),
                             child: TextField(
                               controller: _searchCtrl,
-                              onChanged: (_) => setState(() => _currentPage = 1),
+                              onChanged: (_) => setState(() => _displayedLimit = 20),
                               style: const TextStyle(fontSize: 13),
                               decoration: InputDecoration(
                                 hintText: isMr ? 'कामे, वर्णन किंवा ठिकाण शोधा...' : 'Search works, description or location...',
@@ -781,7 +769,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                                         icon: const Icon(Icons.close, size: 16, color: Color(0xFF64748B)),
                                         onPressed: () {
                                           _searchCtrl.clear();
-                                          setState(() => _currentPage = 1);
+                                          setState(() => _displayedLimit = 20);
                                         },
                                       )
                                     : null,
@@ -975,31 +963,27 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                     if (_loading) ...[
                       const AppShimmerList(count: 6),
                     ] else if (_viewMode == 'report') ...[
-                      _buildReportTableView(isMr, _pagedWorks),
+                      _buildReportTableView(isMr, _visibleWorks),
                     ] else ...[
-                      _buildCardsGridView(isMr, _pagedWorks),
+                      _buildCardsGridView(isMr, _visibleWorks),
                     ],
+
+                    if (!_loading && filtered.isNotEmpty)
+                      AppLoadMoreFooter(
+                        currentCount: _visibleWorks.length,
+                        totalCount: filtered.length,
+                        pageSize: 20,
+                        onLoadMore: () {
+                          setState(() => _displayedLimit += 20);
+                        },
+                        label: isMr ? 'कामे' : 'works',
+                        isMarathi: isMr,
+                      ),
 
                     const SizedBox(height: 20),
                   ],
                 ),
               ),
-        bottomNavigationBar: AppPaginationBar(
-          currentPage: _currentPage,
-          totalPages: _totalPages,
-          totalItems: filtered.length,
-          pageSize: _pageSize,
-          isLoading: _loading,
-          onPageChanged: (newPage) {
-            setState(() => _currentPage = newPage);
-          },
-          onPageSizeChanged: (newSize) {
-            setState(() {
-              _pageSize = newSize;
-              _currentPage = 1;
-            });
-          },
-        ),
         floatingActionButton: FloatingActionButton.extended(
           backgroundColor: const Color(0xFF0284C7),
           foregroundColor: Colors.white,

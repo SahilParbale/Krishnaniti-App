@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,7 +8,7 @@ import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
-import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_load_more_footer.dart';
 import '../../widgets/app_shimmer_card.dart';
 import 'social_org_detail_screen.dart';
 import 'social_org_report_generator.dart';
@@ -38,20 +37,10 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
     'mandals': 0,
   };
 
-  int _currentPage = 1;
-  int _pageSize = 20;
+  int _displayedLimit = 20;
 
-  int get _totalPages {
-    final count = _organizations.length;
-    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
-  }
-
-  List<SocialOrganizationModel> get _pagedOrgs {
-    final startIndex = (_currentPage - 1) * _pageSize;
-    if (startIndex >= _organizations.length) return [];
-    final endIndex = min(startIndex + _pageSize, _organizations.length);
-    return _organizations.sublist(startIndex, endIndex);
-  }
+  List<SocialOrganizationModel> get _visibleOrgs =>
+      _organizations.take(_displayedLimit).toList();
 
   @override
   void initState() {
@@ -788,6 +777,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
 
   @override
   Widget build(BuildContext context) {
+    final isMarathi = ref.watch(isMarathiProvider);
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       drawer: const NagarsevakAppDrawer(),
@@ -908,7 +898,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                       child: TextField(
                         controller: _searchController,
                         onChanged: (_) {
-                          setState(() => _currentPage = 1);
+                          setState(() => _displayedLimit = 20);
                           _loadOrganizations();
                         },
                         decoration: InputDecoration(
@@ -920,7 +910,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                                   icon: const Icon(Icons.clear_rounded, size: 18),
                                   onPressed: () {
                                     _searchController.clear();
-                                    setState(() => _currentPage = 1);
+                                    setState(() => _displayedLimit = 20);
                                     _loadOrganizations();
                                   },
                                 )
@@ -980,7 +970,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                     _buildFilterChip('All Types (${_stats['total']})', 'all', _selectedType, (val) {
                       setState(() {
                         _selectedType = val;
-                        _currentPage = 1;
+                        _displayedLimit = 20;
                       });
                       _loadOrganizations();
                     }),
@@ -988,7 +978,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                     _buildFilterChip('Ganesh Mandals', 'ganpati_mandal', _selectedType, (val) {
                       setState(() {
                         _selectedType = val;
-                        _currentPage = 1;
+                        _displayedLimit = 20;
                       });
                       _loadOrganizations();
                     }),
@@ -996,7 +986,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                     _buildFilterChip('Navratri Mandals', 'navratri_mandal', _selectedType, (val) {
                       setState(() {
                         _selectedType = val;
-                        _currentPage = 1;
+                        _displayedLimit = 20;
                       });
                       _loadOrganizations();
                     }),
@@ -1004,7 +994,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                     _buildFilterChip('Sports Clubs', 'sports_cricket', _selectedType, (val) {
                       setState(() {
                         _selectedType = val;
-                        _currentPage = 1;
+                        _displayedLimit = 20;
                       });
                       _loadOrganizations();
                     }),
@@ -1012,7 +1002,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                     _buildFilterChip('NGOs & Trusts', 'ngo', _selectedType, (val) {
                       setState(() {
                         _selectedType = val;
-                        _currentPage = 1;
+                        _displayedLimit = 20;
                       });
                       _loadOrganizations();
                     }),
@@ -1062,41 +1052,36 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                     ],
                   ),
                 )
-              else if (_viewMode == 0)
-                // CARDS VIEW
-                ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _pagedOrgs.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 12),
-                  itemBuilder: (ctx, idx) {
-                    final org = _pagedOrgs[idx];
-                    return _buildOrgCard(org);
-                  },
-                )
-              else
-                // SPREADSHEET TABLE VIEW
-                _buildSpreadsheetTable(),
+              else ...[
+                if (_viewMode == 0)
+                  // CARDS VIEW
+                  ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _visibleOrgs.length,
+                    separatorBuilder: (context, index) => const SizedBox(height: 12),
+                    itemBuilder: (ctx, idx) {
+                      final org = _visibleOrgs[idx];
+                      return _buildOrgCard(org);
+                    },
+                  )
+                else
+                  // SPREADSHEET TABLE VIEW
+                  _buildSpreadsheetTable(),
+                AppLoadMoreFooter(
+                  currentCount: _visibleOrgs.length,
+                  totalCount: _organizations.length,
+                  pageSize: 20,
+                  onLoadMore: () => setState(() => _displayedLimit += 20),
+                  label: isMarathi ? 'संस्था' : 'organizations',
+                  isMarathi: isMarathi,
+                ),
+              ],
 
               const SizedBox(height: 20),
             ],
           ),
         ),
-      ),
-      bottomNavigationBar: AppPaginationBar(
-        currentPage: _currentPage,
-        totalPages: _totalPages,
-        totalItems: _organizations.length,
-        pageSize: _pageSize,
-        onPageChanged: (newPage) {
-          setState(() => _currentPage = newPage);
-        },
-        onPageSizeChanged: (newSize) {
-          setState(() {
-            _pageSize = newSize;
-            _currentPage = 1;
-          });
-        },
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showOrgForm(),
@@ -1562,13 +1547,13 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
               DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
               DataColumn(label: Text('Action', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
             ],
-            rows: List.generate(_pagedOrgs.length, (index) {
-              final o = _pagedOrgs[index];
+            rows: List.generate(_visibleOrgs.length, (index) {
+              final o = _visibleOrgs[index];
               final theme = _getTheme(o.type);
 
               return DataRow(
                 cells: [
-                  DataCell(Text(((_currentPage - 1) * _pageSize + index + 1).toString(), style: const TextStyle(fontSize: 11))),
+                  DataCell(Text((index + 1).toString(), style: const TextStyle(fontSize: 11))),
                   DataCell(
                     Text(
                       o.displayName,

@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,7 +9,7 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_pdf_button.dart';
-import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_load_more_footer.dart';
 import '../../widgets/app_shimmer_card.dart';
 import 'ward_provision_report_generator.dart';
 
@@ -27,20 +26,10 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
   String _year = '2024-2025';
   bool _loading = true;
   List<WardProvisionModel> _provisions = [];
-  int _currentPage = 1;
-  int _pageSize = 20;
+  int _displayedLimit = 20;
 
-  int get _totalPages {
-    final count = _provisions.length;
-    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
-  }
-
-  List<WardProvisionModel> get _pagedProvisions {
-    final startIndex = (_currentPage - 1) * _pageSize;
-    if (startIndex >= _provisions.length) return [];
-    final endIndex = min(startIndex + _pageSize, _provisions.length);
-    return _provisions.sublist(startIndex, endIndex);
-  }
+  List<WardProvisionModel> get _visibleProvisions =>
+      _provisions.take(_displayedLimit).toList();
 
   @override
   void initState() {
@@ -57,7 +46,7 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
         setState(() {
           _provisions = data;
           _loading = false;
-          _currentPage = 1;
+          _displayedLimit = 20;
         });
       }
     } catch (_) {
@@ -788,7 +777,7 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                               if (val != null) {
                                 setState(() {
                                   _year = val;
-                                  _currentPage = 1;
+                                  _displayedLimit = 20;
                                 });
                                 _loadProvisions();
                               }
@@ -989,7 +978,7 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                                   DataColumn(label: Text(isMr ? 'तारीख' : 'Date', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
                                   const DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
                                 ],
-                                rows: _pagedProvisions.map((item) {
+                                rows: _visibleProvisions.map((item) {
                                   return DataRow(
                                     cells: [
                                       // Title & Category + Reference matching lines 282-291
@@ -1131,21 +1120,20 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                             ),
                     ),
 
+                    if (!_loading && _provisions.isNotEmpty)
+                      AppLoadMoreFooter(
+                        currentCount: _visibleProvisions.length,
+                        totalCount: _provisions.length,
+                        pageSize: 20,
+                        onLoadMore: () => setState(() => _displayedLimit += 20),
+                        label: isMr ? 'तरतुदी' : 'provisions',
+                        isMarathi: isMr,
+                      ),
+
                     const SizedBox(height: 80),
                   ],
                 ),
               ),
-        bottomNavigationBar: AppPaginationBar(
-          currentPage: _currentPage,
-          totalPages: _totalPages,
-          totalItems: _provisions.length,
-          pageSize: _pageSize,
-          onPageChanged: (page) => setState(() => _currentPage = page),
-          onPageSizeChanged: (size) => setState(() {
-            _pageSize = size;
-            _currentPage = 1;
-          }),
-        ),
         floatingActionButton: FloatingActionButton.extended(
           backgroundColor: const Color(0xFF0284C7),
           foregroundColor: Colors.white,

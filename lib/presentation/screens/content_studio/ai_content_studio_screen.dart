@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,7 +7,7 @@ import '../../../data/repositories/ai_content_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_pdf_button.dart';
-import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_load_more_footer.dart';
 import 'ai_content_detail_screen.dart';
 import 'ai_content_report_generator.dart';
 
@@ -37,20 +36,10 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
   List<AiContentHistoryItem> _allHistory = [];
   List<AiPromptTemplate> _templates = [];
   String _historyFilter = 'all'; // 'all' or contentType.id
-  int _historyPage = 1;
-  int _historyPageSize = 10;
+  int _historyLimit = 10;
 
-  int get _totalHistoryPages {
-    final count = _filteredHistory.length;
-    return (count / _historyPageSize).ceil() < 1 ? 1 : (count / _historyPageSize).ceil();
-  }
-
-  List<AiContentHistoryItem> get _pagedHistory {
-    final filtered = _filteredHistory;
-    final startIndex = (_historyPage - 1) * _historyPageSize;
-    if (startIndex >= filtered.length) return [];
-    final endIndex = min(startIndex + _historyPageSize, filtered.length);
-    return filtered.sublist(startIndex, endIndex);
+  List<AiContentHistoryItem> get _visibleHistory {
+    return _filteredHistory.take(_historyLimit).toList();
   }
 
   late TabController _tabController;
@@ -84,7 +73,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
         _allHistory = history;
         _templates = templates;
         _isLoading = false;
-        _historyPage = 1;
+        _historyLimit = 10;
       });
     }
   }
@@ -1149,7 +1138,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                           onPressed: () {
                             setState(() {
                               _historySearchCtrl.clear();
-                              _historyPage = 1;
+                              _historyLimit = 10;
                             });
                           },
                         )
@@ -1162,7 +1151,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                     borderSide: BorderSide.none,
                   ),
                 ),
-                onChanged: (val) => setState(() => _historyPage = 1),
+                onChanged: (val) => setState(() => _historyLimit = 10),
               ),
 
               const SizedBox(height: 10),
@@ -1212,24 +1201,27 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                 )
               : ListView.separated(
                   padding: const EdgeInsets.all(16),
-                  itemCount: _pagedHistory.length,
+                  itemCount: _visibleHistory.length + (filtered.isNotEmpty ? 1 : 0),
                   separatorBuilder: (context, index) => const SizedBox(height: 12),
                   itemBuilder: (ctx, idx) {
-                    final item = _pagedHistory[idx];
+                    if (idx == _visibleHistory.length) {
+                      return AppLoadMoreFooter(
+                        currentCount: _visibleHistory.length,
+                        totalCount: filtered.length,
+                        pageSize: 10,
+                        label: 'drafts',
+                        isMarathi: false,
+                        onLoadMore: () {
+                          setState(() {
+                            _historyLimit += 10;
+                          });
+                        },
+                      );
+                    }
+                    final item = _visibleHistory[idx];
                     return _buildHistoryCard(item);
                   },
                 ),
-        ),
-        AppPaginationBar(
-          currentPage: _historyPage,
-          totalPages: _totalHistoryPages,
-          totalItems: filtered.length,
-          pageSize: _historyPageSize,
-          onPageChanged: (page) => setState(() => _historyPage = page),
-          onPageSizeChanged: (size) => setState(() {
-            _historyPageSize = size;
-            _historyPage = 1;
-          }),
         ),
       ],
     );
@@ -1253,7 +1245,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
       onSelected: (_) {
         setState(() {
           _historyFilter = value;
-          _historyPage = 1;
+          _historyLimit = 10;
         });
       },
     );

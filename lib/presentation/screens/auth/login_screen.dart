@@ -24,6 +24,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController(text: 'Password@123');
   bool _obscurePassword = true;
+  bool _isSigningIn = false;
 
   @override
   void initState() {
@@ -68,30 +69,47 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     HapticFeedback.mediumImpact();
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
+    final isMr = ref.read(isMarathiProvider);
 
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter both Email and Password'),
-          backgroundColor: Color(0xFFDC2626),
+        SnackBar(
+          content: Text(
+            isMr ? 'कृपया ईमेल आणि पासवर्ड दोन्ही प्रविष्ट करा' : 'Please enter both Email and Password',
+          ),
+          backgroundColor: const Color(0xFFDC2626),
         ),
       );
       return;
     }
 
-    await ref.read(authStateProvider.notifier).signIn(
-      email,
-      password,
-      role: _activeRole,
-      isStaff: _subRole == 'staff',
-    );
+    setState(() => _isSigningIn = true);
 
-    if (mounted) {
-      final user = ref.read(currentUserProvider);
-      if (user != null) {
+    try {
+      await ref.read(authStateProvider.notifier).signIn(
+        email,
+        password,
+        role: _activeRole,
+        isStaff: _subRole == 'staff',
+      );
+
+      if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const MainScaffold()),
           (route) => false,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSigningIn = false);
+        final errorMsg = e.toString().replaceFirst('Exception: ', '');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isMr ? 'लॉगिन अयशस्वी: $errorMsg' : 'Sign in failed: $errorMsg',
+            ),
+            backgroundColor: const Color(0xFFDC2626),
+          ),
         );
       }
     }
@@ -183,24 +201,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final isMr = ref.watch(isMarathiProvider);
     final authState = ref.watch(authStateProvider);
-    final isLoading = authState.isLoading;
-
-    ref.listen(authStateProvider, (previous, next) {
-      if (next.hasValue && next.value != null) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const MainScaffold()),
-          (route) => false,
-        );
-      }
-      if (next.hasError) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Sign in failed: ${next.error}'),
-            backgroundColor: const Color(0xFFDC2626),
-          ),
-        );
-      }
-    });
+    final isLoading = _isSigningIn || authState.isLoading;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(

@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,7 +9,7 @@ import '../../providers/auth_provider.dart';
 import '../../navigation/app_drawer.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
-import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_load_more_footer.dart';
 import '../../widgets/app_shimmer_card.dart';
 import 'team_member_profile_screen.dart';
 import 'team_report_generator.dart';
@@ -32,21 +31,10 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
   Map<String, int> _teamStats = {};
   String _selectedCategory = 'All'; // 'All', 'Office', 'Party', 'Cooperative'
   String _viewMode = 'cards'; // 'cards' or 'table'
-  int _currentPage = 1;
-  int _pageSize = 20;
+  int _displayedLimit = 20;
 
-  int get _totalPages {
-    final count = _filteredMembers.length;
-    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
-  }
-
-  List<TeamMemberModel> get _pagedMembers {
-    final filtered = _filteredMembers;
-    final startIndex = (_currentPage - 1) * _pageSize;
-    if (startIndex >= filtered.length) return [];
-    final endIndex = min(startIndex + _pageSize, filtered.length);
-    return filtered.sublist(startIndex, endIndex);
-  }
+  List<TeamMemberModel> get _visibleMembers =>
+      _filteredMembers.take(_displayedLimit).toList();
 
   @override
   void initState() {
@@ -75,7 +63,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
         _allMembers = members;
         _teamStats = stats;
         _isLoading = false;
-        _currentPage = 1;
+        _displayedLimit = 20;
       });
     }
   }
@@ -1006,25 +994,26 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                   if (filtered.isEmpty)
                     _buildEmptyState()
                   else if (_viewMode == 'table')
-                    _buildTableView(_pagedMembers)
+                    _buildTableView(_visibleMembers)
                   else
-                    ..._pagedMembers.map((m) => _buildTeamCard(m)),
+                    ..._visibleMembers.map((m) => _buildTeamCard(m)),
+
+                  if (!_isLoading && filtered.isNotEmpty)
+                    AppLoadMoreFooter(
+                      currentCount: _visibleMembers.length,
+                      totalCount: filtered.length,
+                      pageSize: 20,
+                      onLoadMore: () {
+                        setState(() => _displayedLimit += 20);
+                      },
+                      label: ref.watch(isMarathiProvider) ? 'सदस्य' : 'members',
+                      isMarathi: ref.watch(isMarathiProvider),
+                    ),
 
                   const SizedBox(height: 80),
                 ],
               ),
             ),
-      bottomNavigationBar: AppPaginationBar(
-        currentPage: _currentPage,
-        totalPages: _totalPages,
-        totalItems: filtered.length,
-        pageSize: _pageSize,
-        onPageChanged: (page) => setState(() => _currentPage = page),
-        onPageSizeChanged: (size) => setState(() {
-          _pageSize = size;
-          _currentPage = 1;
-        }),
-      ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: const Color(0xFF0284C7),
         icon: const Icon(Icons.person_add_rounded, color: Colors.white),
@@ -1152,7 +1141,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
           Expanded(
             child: TextField(
               controller: _searchCtrl,
-              onChanged: (_) => setState(() => _currentPage = 1),
+              onChanged: (_) => setState(() => _displayedLimit = 20),
               decoration: InputDecoration(
                 hintText: 'Search name, role, wing, area, or keyword...',
                 hintStyle: TextStyle(fontSize: 12.5, color: Colors.grey.shade400),
@@ -1162,7 +1151,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                         icon: const Icon(Icons.clear, size: 16),
                         onPressed: () {
                           _searchCtrl.clear();
-                          setState(() => _currentPage = 1);
+                          setState(() => _displayedLimit = 20);
                         },
                       )
                     : null,
@@ -1220,7 +1209,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                     onSelected: (_) {
                       setState(() {
                         _selectedCategory = cat['key']!;
-                        _currentPage = 1;
+                        _displayedLimit = 20;
                       });
                       _loadTeam();
                     },
@@ -1535,7 +1524,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
 
               return DataRow(
                 cells: [
-                  DataCell(Text('${(_currentPage - 1) * _pageSize + idx + 1}', style: const TextStyle(fontSize: 11))),
+                  DataCell(Text('${idx + 1}', style: const TextStyle(fontSize: 11))),
                   DataCell(
                     InkWell(
                       onTap: () {

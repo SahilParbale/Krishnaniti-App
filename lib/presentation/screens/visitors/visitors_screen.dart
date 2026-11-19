@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,7 +10,7 @@ import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
-import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_load_more_footer.dart';
 import '../../widgets/app_shimmer_card.dart';
 import 'visitor_detail_screen.dart';
 import 'visitor_report_generator.dart';
@@ -35,8 +34,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
   final TextEditingController _searchCtrl = TextEditingController();
   bool _isLoading = true;
 
-  int _currentPage = 1;
-  int _pageSize = 20;
+  int _displayedLimit = 20;
 
   List<VisitorModel> _allVisitors = [];
 
@@ -115,18 +113,8 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
       ..sort((a, b) => b.visitDate.compareTo(a.visitDate));
   }
 
-  int get _totalPages {
-    final count = _filteredVisitors.length;
-    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
-  }
-
-  List<VisitorModel> get _pagedVisitors {
-    final all = _filteredVisitors;
-    final startIndex = (_currentPage - 1) * _pageSize;
-    if (startIndex >= all.length) return [];
-    final endIndex = min(startIndex + _pageSize, all.length);
-    return all.sublist(startIndex, endIndex);
-  }
+  List<VisitorModel> get _visibleVisitors =>
+      _filteredVisitors.take(_displayedLimit).toList();
 
   Future<void> _makePhoneCall(String number) async {
     final uri = Uri.parse('tel:$number');
@@ -725,7 +713,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                         icon: Icons.today_rounded,
                         onTap: () => setState(() {
                           _activeTab = 'today';
-                          _currentPage = 1;
+                          _displayedLimit = 20;
                         }),
                       ),
                     ),
@@ -739,7 +727,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                         icon: Icons.people_alt_rounded,
                         onTap: () => setState(() {
                           _activeTab = 'all';
-                          _currentPage = 1;
+                          _displayedLimit = 20;
                         }),
                       ),
                     ),
@@ -753,7 +741,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                         icon: Icons.volunteer_activism_rounded,
                         onTap: () => setState(() {
                           _activeTab = 'complaints_help';
-                          _currentPage = 1;
+                          _displayedLimit = 20;
                         }),
                       ),
                     ),
@@ -771,7 +759,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                   Expanded(
                     child: TextField(
                       controller: _searchCtrl,
-                      onChanged: (_) => setState(() => _currentPage = 1),
+                      onChanged: (_) => setState(() => _displayedLimit = 20),
                       decoration: InputDecoration(
                         hintText: isMr ? 'नाव किंवा मोबाईल नंबर शोधा...' : 'Search by name or mobile...',
                         hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
@@ -781,7 +769,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                                 icon: const Icon(Icons.clear, size: 16),
                                 onPressed: () {
                                   _searchCtrl.clear();
-                                  setState(() => _currentPage = 1);
+                                  setState(() => _displayedLimit = 20);
                                 },
                               )
                             : null,
@@ -821,7 +809,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                         if (val != null) {
                           setState(() {
                             _selectedArea = val;
-                            _currentPage = 1;
+                            _displayedLimit = 20;
                           });
                         }
                       },
@@ -876,31 +864,28 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                           onRefresh: _fetchVisitors,
                           child: ListView.builder(
                             padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-                            itemCount: _pagedVisitors.length,
+                            itemCount: _visibleVisitors.length +
+                                (filtered.isNotEmpty ? 1 : 0),
                             itemBuilder: (ctx, index) {
-                              final visitor = _pagedVisitors[index];
+                              if (index == _visibleVisitors.length) {
+                                return AppLoadMoreFooter(
+                                  currentCount: _visibleVisitors.length,
+                                  totalCount: filtered.length,
+                                  pageSize: 20,
+                                  onLoadMore: () {
+                                    setState(() => _displayedLimit += 20);
+                                  },
+                                  label: isMr ? 'भेटी' : 'visitors',
+                                  isMarathi: isMr,
+                                );
+                              }
+                              final visitor = _visibleVisitors[index];
                               return _buildVisitorCard(visitor, isMr);
                             },
                           ),
                         ),
             ),
           ],
-        ),
-        bottomNavigationBar: AppPaginationBar(
-          currentPage: _currentPage,
-          totalPages: _totalPages,
-          totalItems: filtered.length,
-          pageSize: _pageSize,
-          isLoading: _isLoading,
-          onPageChanged: (newPage) {
-            setState(() => _currentPage = newPage);
-          },
-          onPageSizeChanged: (newSize) {
-            setState(() {
-              _pageSize = newSize;
-              _currentPage = 1;
-            });
-          },
         ),
       ),
     );

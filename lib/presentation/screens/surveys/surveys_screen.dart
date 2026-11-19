@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,8 +9,9 @@ import '../../../data/models/voter_model.dart';
 import '../../../data/repositories/surveys_repository.dart';
 import '../../../data/repositories/voters_repository.dart';
 import '../../navigation/app_drawer.dart';
+import '../../providers/auth_provider.dart';
 import '../../widgets/app_pdf_button.dart';
-import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_load_more_footer.dart';
 import '../../widgets/app_shimmer_card.dart';
 import 'create_survey_screen.dart';
 import 'survey_detail_screen.dart';
@@ -37,21 +37,10 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
   String _statusFilter = 'All'; // 'All', 'Active', 'Draft', 'Closed'
   String _displayMode = 'cards'; // 'cards' or 'table'
   Map<String, int> _areaCounts = {};
-  int _currentPage = 1;
-  int _pageSize = 20;
+  int _displayedLimit = 20;
 
-  int get _totalPages {
-    final count = _filteredSurveys.length;
-    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
-  }
-
-  List<SurveyModel> get _pagedSurveys {
-    final filtered = _filteredSurveys;
-    final startIndex = (_currentPage - 1) * _pageSize;
-    if (startIndex >= filtered.length) return [];
-    final endIndex = min(startIndex + _pageSize, filtered.length);
-    return filtered.sublist(startIndex, endIndex);
-  }
+  List<SurveyModel> get _visibleSurveys =>
+      _filteredSurveys.take(_displayedLimit).toList();
 
   @override
   void initState() {
@@ -91,7 +80,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
         _areaCounts = areas;
         _surveyResponseCounts = counts;
         _isLoading = false;
-        _currentPage = 1;
+        _displayedLimit = 20;
       });
     }
   }
@@ -373,25 +362,26 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                   if (filtered.isEmpty)
                     _buildEmptyState()
                   else if (_displayMode == 'table')
-                    _buildSurveysTable(_pagedSurveys)
+                    _buildSurveysTable(_visibleSurveys)
                   else
-                    ..._pagedSurveys.map((s) => _buildSurveyCard(s)),
+                    ..._visibleSurveys.map((s) => _buildSurveyCard(s)),
+
+                  if (!_isLoading && filtered.isNotEmpty)
+                    AppLoadMoreFooter(
+                      currentCount: _visibleSurveys.length,
+                      totalCount: filtered.length,
+                      pageSize: 20,
+                      onLoadMore: () {
+                        setState(() => _displayedLimit += 20);
+                      },
+                      label: ref.watch(isMarathiProvider) ? 'सर्व्हेक्षणे' : 'surveys',
+                      isMarathi: ref.watch(isMarathiProvider),
+                    ),
 
                   const SizedBox(height: 80),
                 ],
               ),
             ),
-      bottomNavigationBar: AppPaginationBar(
-        currentPage: _currentPage,
-        totalPages: _totalPages,
-        totalItems: filtered.length,
-        pageSize: _pageSize,
-        onPageChanged: (page) => setState(() => _currentPage = page),
-        onPageSizeChanged: (size) => setState(() {
-          _pageSize = size;
-          _currentPage = 1;
-        }),
-      ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: const Color(0xFF0284C7),
         icon: const Icon(Icons.add_rounded, color: Colors.white),
@@ -545,7 +535,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
           Expanded(
             child: TextField(
               controller: _searchCtrl,
-              onChanged: (_) => setState(() => _currentPage = 1),
+              onChanged: (_) => setState(() => _displayedLimit = 20),
               decoration: InputDecoration(
                 hintText: 'Search survey, topic, or area...',
                 hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade400),
@@ -555,7 +545,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                         icon: const Icon(Icons.clear_rounded, size: 18),
                         onPressed: () {
                           _searchCtrl.clear();
-                          setState(() => _currentPage = 1);
+                          setState(() => _displayedLimit = 20);
                         },
                       )
                     : null,
@@ -618,7 +608,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
               if (val != null) {
                 setState(() {
                   _selectedArea = val;
-                  _currentPage = 1;
+                  _displayedLimit = 20;
                 });
               }
             },
@@ -671,7 +661,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                     selected: isSel,
                     onSelected: (_) => setState(() {
                       _statusFilter = t['key']!;
-                      _currentPage = 1;
+                      _displayedLimit = 20;
                     }),
                     selectedColor: const Color(0xFF0284C7),
                     labelStyle: TextStyle(

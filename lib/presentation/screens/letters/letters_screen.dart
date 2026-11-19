@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,7 +14,7 @@ import '../../navigation/app_drawer.dart';
 import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_date_picker.dart';
 import '../../widgets/app_pdf_button.dart';
-import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_load_more_footer.dart';
 import '../../widgets/app_shimmer_card.dart';
 import 'letter_report_generator.dart';
 
@@ -45,8 +44,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
   String _selectedStatus = 'All'; // 'All', 'Pending', 'Approved', 'Rejected'
   bool _isLoading = false;
 
-  int _currentPage = 1;
-  int _pageSize = 20;
+  int _displayedLimit = 20;
 
   List<LetterModel> _outgoingLetters = [];
   List<LetterModel> _incomingLetters = [];
@@ -159,18 +157,8 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
     }).toList();
   }
 
-  int get _totalPages {
-    final count = _filteredLetters.length;
-    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
-  }
-
-  List<LetterModel> get _pagedLetters {
-    final all = _filteredLetters;
-    final startIndex = (_currentPage - 1) * _pageSize;
-    if (startIndex >= all.length) return [];
-    final endIndex = min(startIndex + _pageSize, all.length);
-    return all.sublist(startIndex, endIndex);
-  }
+  List<LetterModel> get _visibleLetters =>
+      _filteredLetters.take(_displayedLimit).toList();
 
   void _openDetailScreen(LetterModel letter) {
     Navigator.push(
@@ -307,7 +295,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                         onTap: () {
                           setState(() {
                             _isOutgoing = true;
-                            _currentPage = 1;
+                            _displayedLimit = 20;
                           });
                         },
                         borderRadius: BorderRadius.circular(9),
@@ -354,7 +342,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                         onTap: () {
                           setState(() {
                             _isOutgoing = false;
-                            _currentPage = 1;
+                            _displayedLimit = 20;
                           });
                         },
                         borderRadius: BorderRadius.circular(9),
@@ -421,7 +409,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                             controller: _searchController,
                             onChanged: (val) => setState(() {
                               _searchQuery = val.trim();
-                              _currentPage = 1;
+                              _displayedLimit = 20;
                             }),
                             style: const TextStyle(fontSize: 13),
                             decoration: InputDecoration(
@@ -436,7 +424,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                                         _searchController.clear();
                                         setState(() {
                                           _searchQuery = '';
-                                          _currentPage = 1;
+                                          _displayedLimit = 20;
                                         });
                                       },
                                     )
@@ -468,7 +456,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                             if (val != null) {
                               setState(() {
                                 _selectedStatus = val;
-                                _currentPage = 1;
+                                _displayedLimit = 20;
                               });
                             }
                           },
@@ -707,41 +695,38 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                       : RefreshIndicator(
                           onRefresh: _fetchLetters,
                           color: const Color(0xFF0284C7),
-                          child: ListView.separated(
+                          child: ListView.builder(
                             padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
-                            itemCount: _pagedLetters.length,
-                            separatorBuilder: (_, _) => const SizedBox(height: 12),
+                            itemCount: _visibleLetters.length +
+                                (filtered.isNotEmpty ? 1 : 0),
                             itemBuilder: (ctx, idx) {
-                              final item = _pagedLetters[idx];
-                              return _LetterCard(
-                                letter: item,
-                                isMr: isMr,
-                                onTap: () => _openDetailScreen(item),
-                                onWhatsApp: () => _shareOnWhatsApp(item),
+                              if (idx == _visibleLetters.length) {
+                                return AppLoadMoreFooter(
+                                  currentCount: _visibleLetters.length,
+                                  totalCount: filtered.length,
+                                  pageSize: 20,
+                                  onLoadMore: () {
+                                    setState(() => _displayedLimit += 20);
+                                  },
+                                  label: isMr ? 'पत्रे' : 'letters',
+                                  isMarathi: isMr,
+                                );
+                              }
+                              final item = _visibleLetters[idx];
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: _LetterCard(
+                                  letter: item,
+                                  isMr: isMr,
+                                  onTap: () => _openDetailScreen(item),
+                                  onWhatsApp: () => _shareOnWhatsApp(item),
+                                ),
                               );
                             },
                           ),
                         ),
             ),
           ],
-        ),
-
-        // Bottom Pagination Bar (Audit & Electoral Data Style)
-        bottomNavigationBar: AppPaginationBar(
-          currentPage: _currentPage,
-          totalPages: _totalPages,
-          totalItems: filtered.length,
-          pageSize: _pageSize,
-          isLoading: _isLoading,
-          onPageChanged: (newPage) {
-            setState(() => _currentPage = newPage);
-          },
-          onPageSizeChanged: (newSize) {
-            setState(() {
-              _pageSize = newSize;
-              _currentPage = 1;
-            });
-          },
         ),
 
         // Floating Action Button (+ New Outgoing or + Scan Incoming)
@@ -788,7 +773,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
       _areaSearch = '';
       _dateSearch = '';
       _selectedStatus = 'All';
-      _currentPage = 1;
+      _displayedLimit = 20;
     });
   }
 

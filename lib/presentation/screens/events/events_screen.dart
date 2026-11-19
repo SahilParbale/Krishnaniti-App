@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,7 +10,7 @@ import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_pdf_button.dart';
 import '../../widgets/app_date_picker.dart';
-import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_load_more_footer.dart';
 import '../../widgets/app_shimmer_card.dart';
 import 'event_detail_screen.dart';
 import 'event_invite_modal.dart';
@@ -33,20 +32,10 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
 
   List<EventModel> _allEvents = [];
 
-  int _currentPage = 1;
-  int _pageSize = 20;
+  int _displayedLimit = 20;
 
-  int get _totalPages {
-    final count = _filteredEvents.length;
-    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
-  }
-
-  List<EventModel> get _pagedEvents {
-    final startIndex = (_currentPage - 1) * _pageSize;
-    if (startIndex >= _filteredEvents.length) return [];
-    final endIndex = min(startIndex + _pageSize, _filteredEvents.length);
-    return _filteredEvents.sublist(startIndex, endIndex);
-  }
+  List<EventModel> get _visibleEvents =>
+      _filteredEvents.take(_displayedLimit).toList();
 
   @override
   void initState() {
@@ -491,6 +480,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isMr = ref.watch(isMarathiProvider);
     final filtered = _filteredEvents;
     final totalEvents = _allEvents.length;
     final upcomingEvents = _allEvents.where((e) => e.isUpcoming).length;
@@ -575,30 +565,27 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
 
                       // Events Content (Grid or Report Table)
                       if (_viewMode == 'grid')
-                        _buildGridCardsView(_pagedEvents)
+                        _buildGridCardsView(_visibleEvents)
                       else
-                        _buildReportTableView(_pagedEvents),
+                        _buildReportTableView(_visibleEvents),
+
+                      if (!_isLoading && filtered.isNotEmpty)
+                        AppLoadMoreFooter(
+                          currentCount: _visibleEvents.length,
+                          totalCount: filtered.length,
+                          pageSize: 20,
+                          onLoadMore: () {
+                            setState(() => _displayedLimit += 20);
+                          },
+                          label: isMr ? 'कार्यक्रम' : 'events',
+                          isMarathi: isMr,
+                        ),
 
                       const SizedBox(height: 20),
                     ],
                   ),
                 ),
               ),
-        bottomNavigationBar: AppPaginationBar(
-          currentPage: _currentPage,
-          totalPages: _totalPages,
-          totalItems: filtered.length,
-          pageSize: _pageSize,
-          onPageChanged: (newPage) {
-            setState(() => _currentPage = newPage);
-          },
-          onPageSizeChanged: (newSize) {
-            setState(() {
-              _pageSize = newSize;
-              _currentPage = 1;
-            });
-          },
-        ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: _showCreateEventDialog,
           backgroundColor: const Color(0xFF0284C7),
@@ -703,7 +690,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                             icon: const Icon(Icons.clear_rounded, size: 18),
                             onPressed: () => setState(() {
                               _searchCtrl.clear();
-                              _currentPage = 1;
+                              _displayedLimit = 20;
                             }),
                           )
                         : null,
@@ -713,7 +700,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
                     enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
                   ),
-                  onChanged: (_) => setState(() => _currentPage = 1),
+                  onChanged: (_) => setState(() => _displayedLimit = 20),
                 ),
               ),
               const SizedBox(width: 8),
@@ -767,7 +754,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                     if (val != null) {
                       setState(() {
                         _selectedArea = val;
-                        _currentPage = 1;
+                        _displayedLimit = 20;
                       });
                     }
                   },
@@ -821,7 +808,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
       side: BorderSide.none,
       onSelected: (_) => setState(() {
         _selectedCategory = value;
-        _currentPage = 1;
+        _displayedLimit = 20;
       }),
     );
   }

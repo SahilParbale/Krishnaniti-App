@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,7 +11,7 @@ import 'complaint_detail_screen.dart';
 import '../../navigation/app_drawer.dart';
 import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_pdf_button.dart';
-import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_load_more_footer.dart';
 import '../../widgets/app_shimmer_card.dart';
 import 'complaint_report_generator.dart';
 
@@ -44,8 +43,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
   String _searchQuery = '';
   bool _isLoading = false;
 
-  int _currentPage = 1;
-  int _pageSize = 20;
+  int _displayedLimit = 20;
 
   // Area Complaints Dataset
   List<ComplaintModel> _areaComplaints = [];
@@ -127,18 +125,8 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
     }).toList();
   }
 
-  int get _totalPages {
-    final count = _filteredComplaints.length;
-    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
-  }
-
-  List<ComplaintModel> get _pagedComplaints {
-    final all = _filteredComplaints;
-    final startIndex = (_currentPage - 1) * _pageSize;
-    if (startIndex >= all.length) return [];
-    final endIndex = min(startIndex + _pageSize, all.length);
-    return all.sublist(startIndex, endIndex);
-  }
+  List<ComplaintModel> get _visibleComplaints =>
+      _filteredComplaints.take(_displayedLimit).toList();
 
   // Available unique areas for dropdown
   List<String> get _availableAreas {
@@ -257,7 +245,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                           setState(() {
                             _activeTab = 'Complaints';
                             _selectedStatus = 'All';
-                            _currentPage = 1;
+                            _displayedLimit = 20;
                           });
                         },
                       ),
@@ -273,7 +261,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                           setState(() {
                             _activeTab = 'Personal Help';
                             _selectedStatus = 'All';
-                            _currentPage = 1;
+                            _displayedLimit = 20;
                           });
                         },
                       ),
@@ -298,7 +286,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                       isSelected: _selectedStatus == 'All',
                       onTap: () => setState(() {
                         _selectedStatus = 'All';
-                        _currentPage = 1;
+                        _displayedLimit = 20;
                       }),
                     ),
                   ),
@@ -312,7 +300,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                       isSelected: _selectedStatus == 'Pending',
                       onTap: () => setState(() {
                         _selectedStatus = 'Pending';
-                        _currentPage = 1;
+                        _displayedLimit = 20;
                       }),
                     ),
                   ),
@@ -326,7 +314,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                       isSelected: _selectedStatus == 'InProgress',
                       onTap: () => setState(() {
                         _selectedStatus = 'InProgress';
-                        _currentPage = 1;
+                        _displayedLimit = 20;
                       }),
                     ),
                   ),
@@ -340,7 +328,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                       isSelected: _selectedStatus == 'Resolved',
                       onTap: () => setState(() {
                         _selectedStatus = 'Resolved';
-                        _currentPage = 1;
+                        _displayedLimit = 20;
                       }),
                     ),
                   ),
@@ -367,7 +355,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                         controller: _searchController,
                         onChanged: (val) => setState(() {
                           _searchQuery = val.trim();
-                          _currentPage = 1;
+                          _displayedLimit = 20;
                         }),
                         style: const TextStyle(fontSize: 13.5, color: Color(0xFF0F172A)),
                         decoration: InputDecoration(
@@ -381,7 +369,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                                     _searchController.clear();
                                     setState(() {
                                       _searchQuery = '';
-                                      _currentPage = 1;
+                                      _displayedLimit = 20;
                                     });
                                   },
                                 )
@@ -417,7 +405,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                       if (val != null) {
                         setState(() {
                           _selectedArea = val;
-                          _currentPage = 1;
+                          _displayedLimit = 20;
                         });
                       }
                     },
@@ -457,7 +445,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                       isSelected: _selectedStatus == 'All',
                       onTap: () => setState(() {
                         _selectedStatus = 'All';
-                        _currentPage = 1;
+                        _displayedLimit = 20;
                       }),
                     ),
                     const SizedBox(width: 8),
@@ -467,7 +455,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                       isSelected: _selectedStatus == 'Pending',
                       onTap: () => setState(() {
                         _selectedStatus = 'Pending';
-                        _currentPage = 1;
+                        _displayedLimit = 20;
                       }),
                     ),
                     if (_activeTab == 'Complaints') ...[
@@ -478,7 +466,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                         isSelected: _selectedStatus == 'Assigned',
                         onTap: () => setState(() {
                           _selectedStatus = 'Assigned';
-                          _currentPage = 1;
+                          _displayedLimit = 20;
                         }),
                       ),
                     ],
@@ -489,7 +477,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                       isSelected: _selectedStatus == 'InProgress',
                       onTap: () => setState(() {
                         _selectedStatus = 'InProgress';
-                        _currentPage = 1;
+                        _displayedLimit = 20;
                       }),
                     ),
                     const SizedBox(width: 8),
@@ -499,7 +487,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                       isSelected: _selectedStatus == 'Resolved',
                       onTap: () => setState(() {
                         _selectedStatus = 'Resolved';
-                        _currentPage = 1;
+                        _displayedLimit = 20;
                       }),
                     ),
                   ],
@@ -573,9 +561,22 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                           color: const Color(0xFF0284C7),
                           child: ListView.builder(
                             padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-                            itemCount: _pagedComplaints.length,
+                            itemCount: _visibleComplaints.length +
+                                (filtered.isNotEmpty ? 1 : 0),
                             itemBuilder: (context, index) {
-                              final item = _pagedComplaints[index];
+                              if (index == _visibleComplaints.length) {
+                                return AppLoadMoreFooter(
+                                  currentCount: _visibleComplaints.length,
+                                  totalCount: filtered.length,
+                                  pageSize: 20,
+                                  onLoadMore: () {
+                                    setState(() => _displayedLimit += 20);
+                                  },
+                                  label: isMr ? 'तक्रारी' : 'complaints',
+                                  isMarathi: isMr,
+                                );
+                              }
+                              final item = _visibleComplaints[index];
                               return _ComplaintCard(
                                 complaint: item,
                                 isMr: isMr,
@@ -587,24 +588,6 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                         ),
             ),
           ],
-        ),
-
-        // Bottom Pagination Bar (Audit & Electoral Data Style)
-        bottomNavigationBar: AppPaginationBar(
-          currentPage: _currentPage,
-          totalPages: _totalPages,
-          totalItems: filtered.length,
-          pageSize: _pageSize,
-          isLoading: _isLoading,
-          onPageChanged: (newPage) {
-            setState(() => _currentPage = newPage);
-          },
-          onPageSizeChanged: (newSize) {
-            setState(() {
-              _pageSize = newSize;
-              _currentPage = 1;
-            });
-          },
         ),
 
         // Floating Action Button (+ New Request Bottom Pop up) matching Nagarsevak-Managment

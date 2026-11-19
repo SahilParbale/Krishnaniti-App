@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,11 +7,12 @@ import '../../../data/models/karyakarta_work_model.dart';
 import '../../../data/repositories/karyakarta_work_repository.dart';
 import 'karyakarta_work_report_generator.dart';
 import '../../navigation/app_drawer.dart';
+import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_pdf_button.dart';
 import '../../widgets/app_date_picker.dart';
-import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_load_more_footer.dart';
 import '../../widgets/app_shimmer_card.dart';
 
 class KaryakartaWorkManagementScreen extends ConsumerStatefulWidget {
@@ -40,20 +40,10 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
   String _drilldownTab = 'tasks'; // 'tasks' or 'complaints'
 
   final TextEditingController _searchController = TextEditingController();
-  int _currentPage = 1;
-  int _pageSize = 20;
+  int _displayedLimit = 20;
 
-  int get _totalPages {
-    final count = _workloads.length;
-    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
-  }
-
-  List<KaryakartaStaffWorkload> get _pagedWorkloads {
-    final startIndex = (_currentPage - 1) * _pageSize;
-    if (startIndex >= _workloads.length) return [];
-    final endIndex = min(startIndex + _pageSize, _workloads.length);
-    return _workloads.sublist(startIndex, endIndex);
-  }
+  List<KaryakartaStaffWorkload> get _visibleWorkloads =>
+      _workloads.take(_displayedLimit).toList();
 
   @override
   void initState() {
@@ -111,7 +101,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
     setState(() {
       _activeTab = tabId;
       _selectedMemberWorkload = null;
-      _currentPage = 1;
+      _displayedLimit = 20;
     });
     _loadData();
   }
@@ -343,6 +333,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
 
   @override
   Widget build(BuildContext context) {
+    final isMarathi = ref.watch(isMarathiProvider);
     final tabColor = _getTabColor(_activeTab);
 
     return Scaffold(
@@ -449,18 +440,27 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                 const AppShimmerList(count: 4)
               else if (_workloads.isEmpty)
                 _buildEmptyState()
-              else
+              else ...[
                 ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _pagedWorkloads.length,
+                  itemCount: _visibleWorkloads.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 10),
                   itemBuilder: (ctx, index) {
-                    final workload = _pagedWorkloads[index];
+                    final workload = _visibleWorkloads[index];
                     final isSelected = _selectedMemberWorkload?.staff.id == workload.staff.id;
                     return _buildStaffWorkloadCard(workload, isSelected);
                   },
                 ),
+                AppLoadMoreFooter(
+                  currentCount: _visibleWorkloads.length,
+                  totalCount: _workloads.length,
+                  pageSize: 20,
+                  onLoadMore: () => setState(() => _displayedLimit += 20),
+                  label: isMarathi ? 'कार्यकर्ते' : 'members',
+                  isMarathi: isMarathi,
+                ),
+              ],
 
               const SizedBox(height: 20),
 
@@ -472,17 +472,6 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
             ],
           ),
         ),
-      ),
-      bottomNavigationBar: AppPaginationBar(
-        currentPage: _currentPage,
-        totalPages: _totalPages,
-        totalItems: _workloads.length,
-        pageSize: _pageSize,
-        onPageChanged: (page) => setState(() => _currentPage = page),
-        onPageSizeChanged: (size) => setState(() {
-          _pageSize = size;
-          _currentPage = 1;
-        }),
       ),
     );
   }
@@ -585,7 +574,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
               controller: _searchController,
               onChanged: (val) {
                 _searchQuery = val;
-                setState(() => _currentPage = 1);
+                setState(() => _displayedLimit = 20);
                 _loadData();
               },
               style: const TextStyle(fontSize: 13),
@@ -599,7 +588,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                         onPressed: () {
                           _searchController.clear();
                           _searchQuery = '';
-                          setState(() => _currentPage = 1);
+                          setState(() => _displayedLimit = 20);
                           _loadData();
                         },
                       )
@@ -628,7 +617,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
               if (val != null) {
                 setState(() {
                   _selectedArea = val;
-                  _currentPage = 1;
+                  _displayedLimit = 20;
                 });
                 _loadData();
               }

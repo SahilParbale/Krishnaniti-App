@@ -19,13 +19,13 @@ class AuthNotifier extends Notifier<AsyncValue<UserModel?>> {
   }
 
   Future<void> signIn(String email, String password, {String? role, bool isStaff = false}) async {
-    state = const AsyncValue.loading();
     try {
       final repo = ref.read(authRepositoryProvider);
       final user = await repo.signIn(email: email, password: password, role: role, isStaff: isStaff);
       state = AsyncValue.data(user);
-    } catch (e, st) {
-      state = AsyncValue.error(e, st);
+    } catch (e) {
+      state = AsyncValue.data(null);
+      rethrow;
     }
   }
 

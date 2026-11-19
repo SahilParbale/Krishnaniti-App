@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,7 +9,7 @@ import '../../../data/models/whatsapp_broadcast_model.dart';
 import '../../../data/repositories/sms_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../widgets/app_pdf_button.dart';
-import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_load_more_footer.dart';
 import '../../widgets/app_shimmer_card.dart';
 import 'communication_history_report_generator.dart';
 
@@ -30,28 +29,16 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
 
   bool _isLoadingVoters = false;
   List<VoterModel> _voters = [];
-  int _voterPage = 1;
-  int _voterPageSize = 20;
+  int _displayedVotersLimit = 20;
 
-  List<VoterModel> get _pagedVoters {
-    final startIndex = (_voterPage - 1) * _voterPageSize;
-    if (startIndex >= _voters.length) return [];
-    final endIndex = min(startIndex + _voterPageSize, _voters.length);
-    return _voters.sublist(startIndex, endIndex);
-  }
+  List<VoterModel> get _visibleVoters => _voters.take(_displayedVotersLimit).toList();
 
   // History state
   bool _isLoadingHistory = false;
   List<WhatsAppBroadcastModel> _callHistory = [];
-  int _historyPage = 1;
-  int _historyPageSize = 10;
+  int _displayedHistoryLimit = 20;
 
-  List<WhatsAppBroadcastModel> get _pagedHistory {
-    final startIndex = (_historyPage - 1) * _historyPageSize;
-    if (startIndex >= _callHistory.length) return [];
-    final endIndex = min(startIndex + _historyPageSize, _callHistory.length);
-    return _callHistory.sublist(startIndex, endIndex);
-  }
+  List<WhatsAppBroadcastModel> get _visibleHistory => _callHistory.take(_displayedHistoryLimit).toList();
 
   @override
   void initState() {
@@ -89,7 +76,7 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
         setState(() {
           _voters = list;
           _isLoadingVoters = false;
-          _voterPage = 1;
+          _displayedVotersLimit = 20;
         });
       }
     } catch (_) {
@@ -117,7 +104,7 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
         setState(() {
           _callHistory = list;
           _isLoadingHistory = false;
-          _historyPage = 1;
+          _displayedHistoryLimit = 20;
         });
       }
     } catch (_) {
@@ -426,10 +413,23 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
                       onRefresh: _loadVoters,
                       child: ListView.separated(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        itemCount: _pagedVoters.length,
+                        itemCount: _visibleVoters.length + (_voters.isNotEmpty ? 1 : 0),
                         separatorBuilder: (_, __) => const SizedBox(height: 8),
                         itemBuilder: (context, index) {
-                          final voter = _pagedVoters[index];
+                          if (index == _visibleVoters.length) {
+                            return AppLoadMoreFooter(
+                              currentCount: _visibleVoters.length,
+                              totalCount: _voters.length,
+                              pageSize: 20,
+                              label: 'voters',
+                              onLoadMore: () {
+                                setState(() {
+                                  _displayedVotersLimit += 20;
+                                });
+                              },
+                            );
+                          }
+                          final voter = _visibleVoters[index];
                           final hasPhone = (voter.mobile != null && voter.mobile!.isNotEmpty);
                           final name = voter.nameMarathi.isNotEmpty
                               ? voter.nameMarathi
@@ -506,17 +506,6 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
                       ),
                     ),
         ),
-        AppPaginationBar(
-          currentPage: _voterPage,
-          totalPages: (_voters.length / _voterPageSize).ceil() < 1 ? 1 : (_voters.length / _voterPageSize).ceil(),
-          totalItems: _voters.length,
-          pageSize: _voterPageSize,
-          onPageChanged: (page) => setState(() => _voterPage = page),
-          onPageSizeChanged: (size) => setState(() {
-            _voterPageSize = size;
-            _voterPage = 1;
-          }),
-        ),
       ],
     );
   }
@@ -552,10 +541,23 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
             onRefresh: _loadHistory,
             child: ListView.separated(
               padding: const EdgeInsets.all(16),
-              itemCount: _pagedHistory.length,
+              itemCount: _visibleHistory.length + (_callHistory.isNotEmpty ? 1 : 0),
               separatorBuilder: (_, __) => const SizedBox(height: 10),
               itemBuilder: (context, index) {
-                final item = _pagedHistory[index];
+                if (index == _visibleHistory.length) {
+                  return AppLoadMoreFooter(
+                    currentCount: _visibleHistory.length,
+                    totalCount: _callHistory.length,
+                    pageSize: 20,
+                    label: 'calls',
+                    onLoadMore: () {
+                      setState(() {
+                        _displayedHistoryLimit += 20;
+                      });
+                    },
+                  );
+                }
+                final item = _visibleHistory[index];
                 final dateStr = DateFormat('dd MMM yyyy, hh:mm a').format(item.sentAt);
 
                 return Card(
@@ -619,17 +621,6 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
               },
             ),
           ),
-        ),
-        AppPaginationBar(
-          currentPage: _historyPage,
-          totalPages: (_callHistory.length / _historyPageSize).ceil() < 1 ? 1 : (_callHistory.length / _historyPageSize).ceil(),
-          totalItems: _callHistory.length,
-          pageSize: _historyPageSize,
-          onPageChanged: (page) => setState(() => _historyPage = page),
-          onPageSizeChanged: (size) => setState(() {
-            _historyPageSize = size;
-            _historyPage = 1;
-          }),
         ),
       ],
     );

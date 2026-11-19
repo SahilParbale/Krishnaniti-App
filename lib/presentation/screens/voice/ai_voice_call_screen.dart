@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,7 +8,7 @@ import '../../../data/models/whatsapp_broadcast_model.dart';
 import '../../../data/repositories/sms_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../widgets/app_pdf_button.dart';
-import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_load_more_footer.dart';
 import '../../widgets/app_shimmer_card.dart';
 import 'communication_history_report_generator.dart';
 
@@ -38,14 +37,10 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
   List<VoterModel> _voters = [];
   final Set<String> _selectedVoterIds = {};
   bool _isAllSelected = false;
-  int _voterPage = 1;
-  int _voterPageSize = 20;
+  int _displayedVotersLimit = 20;
 
-  List<VoterModel> get _pagedVoters {
-    final startIndex = (_voterPage - 1) * _voterPageSize;
-    if (startIndex >= _voters.length) return [];
-    final endIndex = min(startIndex + _voterPageSize, _voters.length);
-    return _voters.sublist(startIndex, endIndex);
+  List<VoterModel> get _visibleVoters {
+    return _voters.take(_displayedVotersLimit).toList();
   }
 
   // Campaign Calling State
@@ -54,14 +49,10 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
   // History State
   bool _isLoadingHistory = false;
   List<WhatsAppBroadcastModel> _aiCallLogs = [];
-  int _historyPage = 1;
-  int _historyPageSize = 10;
+  int _displayedHistoryLimit = 20;
 
-  List<WhatsAppBroadcastModel> get _pagedHistory {
-    final startIndex = (_historyPage - 1) * _historyPageSize;
-    if (startIndex >= _aiCallLogs.length) return [];
-    final endIndex = min(startIndex + _historyPageSize, _aiCallLogs.length);
-    return _aiCallLogs.sublist(startIndex, endIndex);
+  List<WhatsAppBroadcastModel> get _visibleHistory {
+    return _aiCallLogs.take(_displayedHistoryLimit).toList();
   }
 
   @override
@@ -104,7 +95,7 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
         setState(() {
           _voters = list;
           _isLoadingVoters = false;
-          _voterPage = 1;
+          _displayedVotersLimit = 20;
           _updateSelectAllState();
         });
       }
@@ -133,7 +124,7 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
         setState(() {
           _aiCallLogs = list;
           _isLoadingHistory = false;
-          _historyPage = 1;
+          _displayedHistoryLimit = 20;
         });
       }
     } catch (_) {
@@ -581,10 +572,10 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
                         ListView.separated(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _pagedVoters.length,
+                          itemCount: _visibleVoters.length,
                           separatorBuilder: (_, __) => const SizedBox(height: 6),
                           itemBuilder: (ctx, i) {
-                            final v = _pagedVoters[i];
+                            final v = _visibleVoters[i];
                             final isSelected = _selectedVoterIds.contains(v.id);
 
                             return Card(
@@ -633,17 +624,17 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
                             );
                           },
                         ),
-                        const SizedBox(height: 10),
-                        AppPaginationBar(
-                          currentPage: _voterPage,
-                          totalPages: (_voters.length / _voterPageSize).ceil() < 1 ? 1 : (_voters.length / _voterPageSize).ceil(),
-                          totalItems: _voters.length,
-                          pageSize: _voterPageSize,
-                          onPageChanged: (page) => setState(() => _voterPage = page),
-                          onPageSizeChanged: (size) => setState(() {
-                            _voterPageSize = size;
-                            _voterPage = 1;
-                          }),
+                        const SizedBox(height: 8),
+                        AppLoadMoreFooter(
+                          currentCount: _visibleVoters.length,
+                          totalCount: _voters.length,
+                          pageSize: 20,
+                          label: 'voters',
+                          onLoadMore: () {
+                            setState(() {
+                              _displayedVotersLimit += 20;
+                            });
+                          },
                         ),
                       ],
                     ),
@@ -734,10 +725,23 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
             color: _kAiPurple,
             child: ListView.separated(
               padding: const EdgeInsets.all(16),
-              itemCount: _pagedHistory.length,
+              itemCount: _visibleHistory.length + (_aiCallLogs.isNotEmpty ? 1 : 0),
               separatorBuilder: (_, __) => const SizedBox(height: 10),
               itemBuilder: (context, index) {
-                final item = _pagedHistory[index];
+                if (index == _visibleHistory.length) {
+                  return AppLoadMoreFooter(
+                    currentCount: _visibleHistory.length,
+                    totalCount: _aiCallLogs.length,
+                    pageSize: 20,
+                    label: 'calls',
+                    onLoadMore: () {
+                      setState(() {
+                        _displayedHistoryLimit += 20;
+                      });
+                    },
+                  );
+                }
+                final item = _visibleHistory[index];
                 final dateStr = DateFormat('dd MMM yyyy, hh:mm a').format(item.sentAt);
 
                 return Card(
@@ -798,17 +802,6 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
               },
             ),
           ),
-        ),
-        AppPaginationBar(
-          currentPage: _historyPage,
-          totalPages: (_aiCallLogs.length / _historyPageSize).ceil() < 1 ? 1 : (_aiCallLogs.length / _historyPageSize).ceil(),
-          totalItems: _aiCallLogs.length,
-          pageSize: _historyPageSize,
-          onPageChanged: (page) => setState(() => _historyPage = page),
-          onPageSizeChanged: (size) => setState(() {
-            _historyPageSize = size;
-            _historyPage = 1;
-          }),
         ),
       ],
     );

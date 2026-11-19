@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,7 +12,7 @@ import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_image_picker.dart';
 import '../../widgets/app_pdf_button.dart';
 import '../../widgets/app_date_picker.dart';
-import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_load_more_footer.dart';
 import '../../widgets/app_shimmer_card.dart';
 import 'gallery_detail_screen.dart';
 import 'gallery_report_generator.dart';
@@ -30,24 +29,13 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
   final TextEditingController _searchCtrl = TextEditingController();
   String _selectedCategory = 'all'; // 'all' or GalleryCategory.id
   String _viewMode = 'grid'; // 'grid' | 'list'
-  int _currentPage = 1;
-  int _pageSize = 20;
+  int _displayedLimit = 20;
 
   bool _isLoading = true;
   List<GalleryItemModel> _allGalleryItems = [];
 
-  int get _totalPages {
-    final count = _filteredItems.length;
-    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
-  }
-
-  List<GalleryItemModel> get _pagedItems {
-    final filtered = _filteredItems;
-    final startIndex = (_currentPage - 1) * _pageSize;
-    if (startIndex >= filtered.length) return [];
-    final endIndex = min(startIndex + _pageSize, filtered.length);
-    return filtered.sublist(startIndex, endIndex);
-  }
+  List<GalleryItemModel> get _visibleItems =>
+      _filteredItems.take(_displayedLimit).toList();
 
   @override
   void initState() {
@@ -69,7 +57,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
       setState(() {
         _allGalleryItems = items;
         _isLoading = false;
-        _currentPage = 1;
+        _displayedLimit = 20;
       });
     }
   }
@@ -404,6 +392,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isMarathi = ref.watch(isMarathiProvider);
     final filtered = _filteredItems;
     final totalCount = _allGalleryItems.length;
     final eventsCount = _allGalleryItems.where((i) => i.category == GalleryCategory.event).length;
@@ -486,26 +475,24 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
 
                       // Gallery Grid or List Content
                       if (_viewMode == 'grid')
-                        _buildGridView(_pagedItems)
+                        _buildGridView(_visibleItems)
                       else
-                        _buildListView(_pagedItems),
+                        _buildListView(_visibleItems),
+                      if (!_isLoading && filtered.isNotEmpty)
+                        AppLoadMoreFooter(
+                          currentCount: _visibleItems.length,
+                          totalCount: filtered.length,
+                          pageSize: 20,
+                          onLoadMore: () => setState(() => _displayedLimit += 20),
+                          label: isMarathi ? 'छायाचित्रे' : 'photos',
+                          isMarathi: isMarathi,
+                        ),
 
                       const SizedBox(height: 60),
                     ],
                   ),
                 ),
               ),
-        bottomNavigationBar: AppPaginationBar(
-          currentPage: _currentPage,
-          totalPages: _totalPages,
-          totalItems: filtered.length,
-          pageSize: _pageSize,
-          onPageChanged: (page) => setState(() => _currentPage = page),
-          onPageSizeChanged: (size) => setState(() {
-            _pageSize = size;
-            _currentPage = 1;
-          }),
-        ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: _showAddPhotoDialog,
           backgroundColor: const Color(0xFF0284C7),
@@ -609,7 +596,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                             icon: const Icon(Icons.clear_rounded, size: 18),
                             onPressed: () => setState(() {
                               _searchCtrl.clear();
-                              _currentPage = 1;
+                              _displayedLimit = 20;
                             }),
                           )
                         : null,
@@ -619,7 +606,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
                     enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
                   ),
-                  onChanged: (_) => setState(() => _currentPage = 1),
+                  onChanged: (_) => setState(() => _displayedLimit = 20),
                 ),
               ),
               const SizedBox(width: 8),
@@ -696,7 +683,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
       side: BorderSide.none,
       onSelected: (_) => setState(() {
         _selectedCategory = value;
-        _currentPage = 1;
+        _displayedLimit = 20;
       }),
     );
   }

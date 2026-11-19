@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,7 +9,7 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_pdf_button.dart';
-import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_load_more_footer.dart';
 import '../../widgets/app_shimmer_card.dart';
 import 'ward_budget_detail_screen.dart';
 import 'ward_budget_report_generator.dart';
@@ -28,24 +27,13 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
   String _selectedYear = '2024-2025'; // '2024-2025' | '2023-2024' | 'All'
   String _selectedArea = 'All';
   String _viewMode = 'grid'; // 'grid' | 'table'
-  int _currentPage = 1;
-  int _pageSize = 20;
+  int _displayedLimit = 20;
 
   bool _isLoading = true;
   List<WardBudgetModel> _allBudgets = [];
 
-  int get _totalPages {
-    final count = _filteredBudgets.length;
-    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
-  }
-
-  List<WardBudgetModel> get _pagedBudgets {
-    final filtered = _filteredBudgets;
-    final startIndex = (_currentPage - 1) * _pageSize;
-    if (startIndex >= filtered.length) return [];
-    final endIndex = min(startIndex + _pageSize, filtered.length);
-    return filtered.sublist(startIndex, endIndex);
-  }
+  List<WardBudgetModel> get _visibleBudgets =>
+      _filteredBudgets.take(_displayedLimit).toList();
 
   final List<String> _years = ['2024-2025', '2023-2024', 'All'];
 
@@ -71,7 +59,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
       setState(() {
         _allBudgets = items;
         _isLoading = false;
-        _currentPage = 1;
+        _displayedLimit = 20;
       });
     }
   }
@@ -731,7 +719,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                               flex: 3,
                               child: TextField(
                                 controller: _searchCtrl,
-                                onChanged: (_) => setState(() => _currentPage = 1),
+                                onChanged: (_) => setState(() => _displayedLimit = 20),
                                 decoration: InputDecoration(
                                   hintText: isMr ? 'बजेट खाते किंवा परिसर शोधा...' : 'Search budget head or area...',
                                   hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
@@ -741,7 +729,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                                           icon: const Icon(Icons.clear, size: 18),
                                           onPressed: () {
                                             _searchCtrl.clear();
-                                            setState(() => _currentPage = 1);
+                                            setState(() => _displayedLimit = 20);
                                           },
                                         )
                                       : null,
@@ -781,7 +769,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                                   if (val != null) {
                                     setState(() {
                                       _selectedArea = val;
-                                      _currentPage = 1;
+                                      _displayedLimit = 20;
                                     });
                                   }
                                 },
@@ -808,7 +796,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                                 if (val != null) {
                                   setState(() {
                                     _selectedYear = val;
-                                    _currentPage = 1;
+                                    _displayedLimit = 20;
                                   });
                                   _loadData();
                                 }
@@ -884,25 +872,24 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                             ],
                           ),
                         )
-                      else if (_viewMode == 'grid')
-                        _buildGridCardView(_pagedBudgets, isMr, numFormat)
-                      else
-                        _buildTableView(_pagedBudgets, isMr, numFormat),
+                      else ...[
+                        if (_viewMode == 'grid')
+                          _buildGridCardView(_visibleBudgets, isMr, numFormat)
+                        else
+                          _buildTableView(_visibleBudgets, isMr, numFormat),
+                        AppLoadMoreFooter(
+                          currentCount: _visibleBudgets.length,
+                          totalCount: displayed.length,
+                          pageSize: 20,
+                          onLoadMore: () => setState(() => _displayedLimit += 20),
+                          label: isMr ? 'बजेट नोंदी' : 'budgets',
+                          isMarathi: isMr,
+                        ),
+                      ],
                     ],
                   ),
                 ),
               ),
-        bottomNavigationBar: AppPaginationBar(
-          currentPage: _currentPage,
-          totalPages: _totalPages,
-          totalItems: displayed.length,
-          pageSize: _pageSize,
-          onPageChanged: (page) => setState(() => _currentPage = page),
-          onPageSizeChanged: (size) => setState(() {
-            _pageSize = size;
-            _currentPage = 1;
-          }),
-        ),
       ),
     );
   }
@@ -1206,7 +1193,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
               DataColumn(label: Text(isMr ? 'कृती' : 'Actions', style: const TextStyle(fontWeight: FontWeight.bold))),
             ],
             rows: items.asMap().entries.map((entry) {
-              final idx = (_currentPage - 1) * _pageSize + entry.key + 1;
+              final idx = entry.key + 1;
               final item = entry.value;
               final percent = item.utilizationPercentage;
 

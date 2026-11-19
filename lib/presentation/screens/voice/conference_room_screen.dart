@@ -12,7 +12,7 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_date_picker.dart';
 import '../../widgets/app_pdf_button.dart';
-import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_load_more_footer.dart';
 import '../../widgets/app_shimmer_card.dart';
 import 'conference_meeting_report_generator.dart';
 
@@ -102,14 +102,10 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
   String _viewMode = 'grid'; // 'grid' | 'report'
   String? _copiedMeetingId;
   List<ConferenceMeetingModel> _meetings = [];
-  int _currentPage = 1;
-  int _pageSize = 10;
+  int _displayedLimit = 10;
 
-  List<ConferenceMeetingModel> _getPagedMeetings(List<ConferenceMeetingModel> list) {
-    final startIndex = (_currentPage - 1) * _pageSize;
-    if (startIndex >= list.length) return [];
-    final endIndex = min(startIndex + _pageSize, list.length);
-    return list.sublist(startIndex, endIndex);
+  List<ConferenceMeetingModel> _getVisibleMeetings(List<ConferenceMeetingModel> list) {
+    return list.take(_displayedLimit).toList();
   }
 
   @override
@@ -119,7 +115,7 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
         setState(() {
-          _currentPage = 1;
+          _displayedLimit = 10;
         });
       }
     });
@@ -177,7 +173,7 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
         setState(() {
           _meetings = list;
           _isLoading = false;
-          _currentPage = 1;
+          _displayedLimit = 10;
         });
       }
     } catch (_) {
@@ -1402,22 +1398,11 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                     onRefresh: _loadMeetings,
                     color: const Color(0xFF0284C7),
                     child: _viewMode == 'grid'
-                        ? _buildGridView(_getPagedMeetings(displayMeetings), isMr)
-                        : _buildReportView(_getPagedMeetings(displayMeetings), isMr),
+                        ? _buildGridView(_getVisibleMeetings(displayMeetings), displayMeetings.length, isMr)
+                        : _buildReportView(_getVisibleMeetings(displayMeetings), displayMeetings.length, isMr),
                   ),
           ),
         ],
-      ),
-      bottomNavigationBar: AppPaginationBar(
-        currentPage: _currentPage,
-        totalPages: (displayMeetings.length / _pageSize).ceil() < 1 ? 1 : (displayMeetings.length / _pageSize).ceil(),
-        totalItems: displayMeetings.length,
-        pageSize: _pageSize,
-        onPageChanged: (page) => setState(() => _currentPage = page),
-        onPageSizeChanged: (size) => setState(() {
-          _pageSize = size;
-          _currentPage = 1;
-        }),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showCreateMeetingDialog,
@@ -1436,8 +1421,8 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
   // ─────────────────────────────────────────────────────────────
   // 4. Grid View Layout (matching ConferenceRoom.tsx)
   // ─────────────────────────────────────────────────────────────
-  Widget _buildGridView(List<ConferenceMeetingModel> list, bool isMr) {
-    if (list.isEmpty) {
+  Widget _buildGridView(List<ConferenceMeetingModel> list, int totalCount, bool isMr) {
+    if (totalCount == 0) {
       return Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(32),
@@ -1488,9 +1473,23 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
 
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 90),
-      itemCount: list.length,
+      itemCount: list.length + (totalCount > 0 ? 1 : 0),
       separatorBuilder: (_, _) => const SizedBox(height: 14),
       itemBuilder: (context, index) {
+        if (index == list.length) {
+          return AppLoadMoreFooter(
+            currentCount: list.length,
+            totalCount: totalCount,
+            pageSize: 10,
+            label: isMr ? 'बैठका' : 'meetings',
+            isMarathi: isMr,
+            onLoadMore: () {
+              setState(() {
+                _displayedLimit += 10;
+              });
+            },
+          );
+        }
         final meeting = list[index];
         final dateStr = DateFormat('dd MMM yyyy').format(meeting.scheduledAt);
         final timeStr = DateFormat('hh:mm a').format(meeting.scheduledAt);
@@ -1707,7 +1706,7 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
   // ─────────────────────────────────────────────────────────────
   // 5. Report / Table View Layout (matching ConferenceRoom.tsx)
   // ─────────────────────────────────────────────────────────────
-  Widget _buildReportView(List<ConferenceMeetingModel> list, bool isMr) {
+  Widget _buildReportView(List<ConferenceMeetingModel> list, int totalCount, bool isMr) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 90),
       children: [
@@ -1947,6 +1946,19 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
             ],
           ),
         ),
+        if (totalCount > 0)
+          AppLoadMoreFooter(
+            currentCount: list.length,
+            totalCount: totalCount,
+            pageSize: 10,
+            label: isMr ? 'बैठका' : 'meetings',
+            isMarathi: isMr,
+            onLoadMore: () {
+              setState(() {
+                _displayedLimit += 10;
+              });
+            },
+          ),
       ],
     );
   }

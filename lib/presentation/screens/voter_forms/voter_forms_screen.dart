@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,7 +12,7 @@ import '../../navigation/app_drawer.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_pdf_button.dart';
-import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_load_more_footer.dart';
 import '../../widgets/app_shimmer_card.dart';
 
 class VoterFormsScreen extends ConsumerStatefulWidget {
@@ -28,8 +27,7 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
   final TextEditingController _searchController = TextEditingController();
   String _selectedStatus = 'All';
   String _selectedFormType = 'All';
-  int _currentPage = 1;
-  int _pageSize = 20;
+  int _displayedLimit = 20;
 
   bool _isLoading = true;
   List<VoterApplicationModel> _applications = [];
@@ -41,17 +39,8 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
     'rejected': 0,
   };
 
-  int get _totalPages {
-    final count = _applications.length;
-    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
-  }
-
-  List<VoterApplicationModel> get _pagedApplications {
-    final startIndex = (_currentPage - 1) * _pageSize;
-    if (startIndex >= _applications.length) return [];
-    final endIndex = min(startIndex + _pageSize, _applications.length);
-    return _applications.sublist(startIndex, endIndex);
-  }
+  List<VoterApplicationModel> get _visibleApplications =>
+      _applications.take(_displayedLimit).toList();
 
   @override
   void initState() {
@@ -86,7 +75,7 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
         _applications = apps;
         _stats = stats;
         _isLoading = false;
-        _currentPage = 1;
+        _displayedLimit = 20;
       });
     }
   }
@@ -745,19 +734,6 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
           ),
         ],
       ),
-      bottomNavigationBar: _tabController.index == 1
-          ? AppPaginationBar(
-              currentPage: _currentPage,
-              totalPages: _totalPages,
-              totalItems: _applications.length,
-              pageSize: _pageSize,
-              onPageChanged: (page) => setState(() => _currentPage = page),
-              onPageSizeChanged: (size) => setState(() {
-                _pageSize = size;
-                _currentPage = 1;
-              }),
-            )
-          : null,
     );
   }
 
@@ -1107,9 +1083,21 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
             ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: _pagedApplications.length,
+              itemCount: _visibleApplications.length,
               separatorBuilder: (context, index) => const SizedBox(height: 12),
-              itemBuilder: (context, index) => _buildApplicationCard(_pagedApplications[index]),
+              itemBuilder: (context, index) => _buildApplicationCard(_visibleApplications[index]),
+            ),
+
+          if (!_isLoading && _applications.isNotEmpty)
+            AppLoadMoreFooter(
+              currentCount: _visibleApplications.length,
+              totalCount: _applications.length,
+              pageSize: 20,
+              onLoadMore: () {
+                setState(() => _displayedLimit += 20);
+              },
+              label: 'applications',
+              isMarathi: false,
             ),
 
           const SizedBox(height: 80),

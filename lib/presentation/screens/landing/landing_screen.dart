@@ -113,16 +113,28 @@ class _LandingScreenState extends ConsumerState<LandingScreen> {
 
   Future<void> _handleDirectDemoLogin() async {
     HapticFeedback.mediumImpact();
-    await ref.read(authStateProvider.notifier).signIn(
-      'demo_nagarsevak@demo.com',
-      'Password@123',
-      role: 'nagarsevak',
-    );
-    if (mounted) {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const MainScaffold()),
-        (route) => false,
+    try {
+      await ref.read(authStateProvider.notifier).signIn(
+        'demo_nagarsevak@demo.com',
+        'Password@123',
+        role: 'nagarsevak',
       );
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const MainScaffold()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        final errorMsg = e.toString().replaceFirst('Exception: ', '');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Sign in failed: $errorMsg'),
+            backgroundColor: const Color(0xFFDC2626),
+          ),
+        );
+      }
     }
   }
 

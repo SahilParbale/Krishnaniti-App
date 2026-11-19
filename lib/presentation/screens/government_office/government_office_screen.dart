@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,7 +10,7 @@ import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
-import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_load_more_footer.dart';
 import '../../widgets/app_shimmer_card.dart';
 import 'gov_office_report_generator.dart';
 import 'government_office_detail_screen.dart';
@@ -34,32 +33,13 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
   List<GovernmentOfficeModel> _allOffices = [];
   List<TeamMemberModel> _allStaff = [];
 
-  int _currentPage = 1;
-  int _pageSize = 20;
+  int _displayedLimit = 20;
 
-  int get _officeTotalPages {
-    final count = _filteredOffices.length;
-    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
-  }
+  List<GovernmentOfficeModel> get _visibleOffices =>
+      _filteredOffices.take(_displayedLimit).toList();
 
-  int get _staffTotalPages {
-    final count = _filteredStaff.length;
-    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
-  }
-
-  List<GovernmentOfficeModel> get _pagedOffices {
-    final startIndex = (_currentPage - 1) * _pageSize;
-    if (startIndex >= _filteredOffices.length) return [];
-    final endIndex = min(startIndex + _pageSize, _filteredOffices.length);
-    return _filteredOffices.sublist(startIndex, endIndex);
-  }
-
-  List<TeamMemberModel> get _pagedStaff {
-    final startIndex = (_currentPage - 1) * _pageSize;
-    if (startIndex >= _filteredStaff.length) return [];
-    final endIndex = min(startIndex + _pageSize, _filteredStaff.length);
-    return _filteredStaff.sublist(startIndex, endIndex);
-  }
+  List<TeamMemberModel> get _visibleStaff =>
+      _filteredStaff.take(_displayedLimit).toList();
 
   @override
   void initState() {
@@ -900,7 +880,7 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                             Expanded(
                               child: TextField(
                                 controller: _searchCtrl,
-                                onChanged: (_) => setState(() => _currentPage = 1),
+                                onChanged: (_) => setState(() => _displayedLimit = 20),
                                 decoration: InputDecoration(
                                   hintText: _activeTab == 'Offices'
                                       ? (isMr ? 'कार्यालय, अधिकारी किंवा विभाग शोधा...' : 'Search by office, officer or area...')
@@ -912,7 +892,7 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                                           icon: const Icon(Icons.clear, size: 18),
                                           onPressed: () {
                                             _searchCtrl.clear();
-                                            setState(() => _currentPage = 1);
+                                            setState(() => _displayedLimit = 20);
                                           },
                                         )
                                       : null,
@@ -975,18 +955,37 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                             isMr ? 'कोणतेही कार्यालय सापडले नाही' : 'No Government Offices Found',
                             isMr ? 'कृपया शोध निकष बदला किंवा नवीन कार्यालय जोडा.' : 'Try adjusting your search terms or add an office.',
                           )
-                        else if (_viewMode == 'grid')
-                          _buildOfficeGrid(_pagedOffices, isMr)
-                        else
-                          _buildOfficeTable(_pagedOffices, isMr),
+                        else ...[
+                          if (_viewMode == 'grid')
+                            _buildOfficeGrid(_visibleOffices, isMr)
+                          else
+                            _buildOfficeTable(_visibleOffices, isMr),
+                          AppLoadMoreFooter(
+                            currentCount: _visibleOffices.length,
+                            totalCount: displayedOffices.length,
+                            pageSize: 20,
+                            onLoadMore: () => setState(() => _displayedLimit += 20),
+                            label: isMr ? 'कार्यालये' : 'offices',
+                            isMarathi: isMr,
+                          ),
+                        ],
                       ] else ...[
                         if (displayedStaff.isEmpty)
                           _buildEmptyState(
                             isMr ? 'कोणतेही सहकारी कर्मचारी आढळले नाहीत' : 'No Cooperative Workers Found',
                             isMr ? 'कृपया या श्रेणीमध्ये नवीन कर्मचारी जोडा.' : 'Start by adding workers to this category.',
                           )
-                        else
-                          _buildStaffGrid(_pagedStaff, isMr),
+                        else ...[
+                          _buildStaffGrid(_visibleStaff, isMr),
+                          AppLoadMoreFooter(
+                            currentCount: _visibleStaff.length,
+                            totalCount: displayedStaff.length,
+                            pageSize: 20,
+                            onLoadMore: () => setState(() => _displayedLimit += 20),
+                            label: isMr ? 'कर्मचारी' : 'workers',
+                            isMarathi: isMr,
+                          ),
+                        ],
                       ],
                     ],
                   ),
@@ -994,23 +993,6 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
               ),
                   ),
                 ],
-              ),
-        bottomNavigationBar: _activeTab == 'Files'
-            ? null
-            : AppPaginationBar(
-                currentPage: _currentPage,
-                totalPages: _activeTab == 'Offices' ? _officeTotalPages : _staffTotalPages,
-                totalItems: _activeTab == 'Offices' ? displayedOffices.length : displayedStaff.length,
-                pageSize: _pageSize,
-                onPageChanged: (newPage) {
-                  setState(() => _currentPage = newPage);
-                },
-                onPageSizeChanged: (newSize) {
-                  setState(() {
-                    _pageSize = newSize;
-                    _currentPage = 1;
-                  });
-                },
               ),
       ),
     );
@@ -1039,7 +1021,7 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
               onTap: () => setState(() {
                 _activeTab = 'Offices';
                 _searchCtrl.clear();
-                _currentPage = 1;
+                _displayedLimit = 20;
               }),
               borderRadius: BorderRadius.circular(8),
               child: Container(
@@ -1076,7 +1058,7 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
               onTap: () => setState(() {
                 _activeTab = 'Cooperative';
                 _searchCtrl.clear();
-                _currentPage = 1;
+                _displayedLimit = 20;
               }),
               borderRadius: BorderRadius.circular(8),
               child: Container(

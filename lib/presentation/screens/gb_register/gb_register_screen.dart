@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,7 +10,7 @@ import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_pdf_button.dart';
 import '../../widgets/app_date_picker.dart';
-import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_load_more_footer.dart';
 import '../../widgets/app_shimmer_card.dart';
 import 'gb_register_detail_screen.dart';
 import 'gb_register_report_generator.dart';
@@ -34,20 +33,10 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
   bool _isLoading = true;
   List<GbRegisterEntryModel> _allEntries = [];
 
-  int _currentPage = 1;
-  int _pageSize = 20;
+  int _displayedLimit = 20;
 
-  int get _totalPages {
-    final count = _filteredEntries.length;
-    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
-  }
-
-  List<GbRegisterEntryModel> get _pagedEntries {
-    final startIndex = (_currentPage - 1) * _pageSize;
-    if (startIndex >= _filteredEntries.length) return [];
-    final endIndex = min(startIndex + _pageSize, _filteredEntries.length);
-    return _filteredEntries.sublist(startIndex, endIndex);
-  }
+  List<GbRegisterEntryModel> get _visibleEntries =>
+      _filteredEntries.take(_displayedLimit).toList();
 
   final List<String> _meetingTypes = ['All', 'GB', 'Standing Committee', 'Ward Committee', 'Special GB', 'Other'];
   final List<String> _statusList = ['All', 'Raised', 'In Discussion', 'Resolved', 'Action Taken'];
@@ -719,7 +708,7 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                                 Expanded(
                                   child: TextField(
                                     controller: _searchCtrl,
-                                    onChanged: (_) => setState(() => _currentPage = 1),
+                                    onChanged: (_) => setState(() => _displayedLimit = 20),
                                     decoration: InputDecoration(
                                       hintText: isMr
                                           ? 'ठराव, विषय, खाते किंवा संदर्भ क्रमांक शोधा...'
@@ -731,7 +720,7 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                                               icon: const Icon(Icons.clear, size: 18),
                                               onPressed: () {
                                                 _searchCtrl.clear();
-                                                setState(() => _currentPage = 1);
+                                                setState(() => _displayedLimit = 20);
                                               },
                                             )
                                           : null,
@@ -817,7 +806,7 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                                         if (val) {
                                           setState(() {
                                             _selectedMeetingType = type;
-                                            _currentPage = 1;
+                                            _displayedLimit = 20;
                                           });
                                         }
                                       },
@@ -848,7 +837,7 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                                       if (val != null) {
                                         setState(() {
                                           _selectedStatus = val;
-                                          _currentPage = 1;
+                                          _displayedLimit = 20;
                                         });
                                       }
                                     },
@@ -872,7 +861,7 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                                       if (val != null) {
                                         setState(() {
                                           _selectedArea = val;
-                                          _currentPage = 1;
+                                          _displayedLimit = 20;
                                         });
                                       }
                                     },
@@ -913,29 +902,24 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                             ],
                           ),
                         )
-                      else if (_viewMode == 'grid')
-                        _buildGridCardView(_pagedEntries, isMr)
-                      else
-                        _buildTableView(_pagedEntries, isMr),
+                      else ...[
+                        if (_viewMode == 'grid')
+                          _buildGridCardView(_visibleEntries, isMr)
+                        else
+                          _buildTableView(_visibleEntries, isMr),
+                        AppLoadMoreFooter(
+                          currentCount: _visibleEntries.length,
+                          totalCount: displayed.length,
+                          pageSize: 20,
+                          onLoadMore: () => setState(() => _displayedLimit += 20),
+                          label: isMr ? 'ठराव' : 'records',
+                          isMarathi: isMr,
+                        ),
+                      ],
                     ],
                   ),
                 ),
               ),
-        bottomNavigationBar: AppPaginationBar(
-          currentPage: _currentPage,
-          totalPages: _totalPages,
-          totalItems: displayed.length,
-          pageSize: _pageSize,
-          onPageChanged: (newPage) {
-            setState(() => _currentPage = newPage);
-          },
-          onPageSizeChanged: (newSize) {
-            setState(() {
-              _pageSize = newSize;
-              _currentPage = 1;
-            });
-          },
-        ),
       ),
     );
   }

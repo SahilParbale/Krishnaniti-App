@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,7 +10,7 @@ import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
-import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_load_more_footer.dart';
 import '../../widgets/app_shimmer_card.dart';
 import 'sadasya_profile_screen.dart';
 import 'sadasya_report_generator.dart';
@@ -35,21 +34,10 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
   String _displayMode = 'cards'; // 'cards' or 'table'
   Map<String, int> _areaCounts = {};
 
-  int _currentPage = 1;
-  int _pageSize = 20;
+  int _displayedLimit = 20;
 
-  int get _totalPages {
-    final count = _filteredMembers.length;
-    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
-  }
-
-  List<SadasyaModel> get _pagedMembers {
-    final all = _filteredMembers;
-    final startIndex = (_currentPage - 1) * _pageSize;
-    if (startIndex >= all.length) return [];
-    final endIndex = min(startIndex + _pageSize, all.length);
-    return all.sublist(startIndex, endIndex);
-  }
+  List<SadasyaModel> get _visibleMembers =>
+      _filteredMembers.take(_displayedLimit).toList();
 
   @override
   void initState() {
@@ -173,25 +161,22 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
               else
                 _buildCardsView(),
 
+              if (!_isLoading && _filteredMembers.isNotEmpty)
+                AppLoadMoreFooter(
+                  currentCount: _visibleMembers.length,
+                  totalCount: _filteredMembers.length,
+                  pageSize: 20,
+                  onLoadMore: () {
+                    setState(() => _displayedLimit += 20);
+                  },
+                  label: ref.watch(isMarathiProvider) ? 'सदस्य' : 'members',
+                  isMarathi: ref.watch(isMarathiProvider),
+                ),
+
               const SizedBox(height: 20),
             ],
           ),
         ),
-      ),
-      bottomNavigationBar: AppPaginationBar(
-        currentPage: _currentPage,
-        totalPages: _totalPages,
-        totalItems: _filteredMembers.length,
-        pageSize: _pageSize,
-        onPageChanged: (newPage) {
-          setState(() => _currentPage = newPage);
-        },
-        onPageSizeChanged: (newSize) {
-          setState(() {
-            _pageSize = newSize;
-            _currentPage = 1;
-          });
-        },
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openAddMemberDialog,
@@ -461,7 +446,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
             Expanded(
               child: TextField(
                 controller: _searchCtrl,
-                onChanged: (_) => setState(() => _currentPage = 1),
+                onChanged: (_) => setState(() => _displayedLimit = 20),
                 decoration: InputDecoration(
                   hintText: 'Search by name, mobile, or address...',
                   hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
@@ -471,7 +456,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
                           icon: const Icon(Icons.clear_rounded, size: 18),
                           onPressed: () {
                             _searchCtrl.clear();
-                            setState(() => _currentPage = 1);
+                            setState(() => _displayedLimit = 20);
                           },
                         )
                       : null,
@@ -602,7 +587,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
       selected: isSelected,
       onSelected: (_) => setState(() {
         _voterFilter = key;
-        _currentPage = 1;
+        _displayedLimit = 20;
       }),
       selectedColor: const Color(0xFF0284C7),
       backgroundColor: Colors.white,
@@ -630,7 +615,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
       selected: isSelected,
       onSelected: (_) => setState(() {
         _selectedArea = areaKey;
-        _currentPage = 1;
+        _displayedLimit = 20;
       }),
       selectedColor: const Color(0xFFE0F2FE),
       backgroundColor: Colors.white,
@@ -648,10 +633,10 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: _pagedMembers.length,
+      itemCount: _visibleMembers.length,
       separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
-        final member = _pagedMembers[index];
+        final member = _visibleMembers[index];
 
         return Card(
           elevation: 0,
@@ -915,7 +900,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
               DataColumn(label: Text('Role', style: TextStyle(fontWeight: FontWeight.bold))),
               DataColumn(label: Text('Action', style: TextStyle(fontWeight: FontWeight.bold))),
             ],
-            rows: _pagedMembers.map((m) {
+            rows: _visibleMembers.map((m) {
               return DataRow(
                 cells: [
                   DataCell(

@@ -10,7 +10,7 @@ import '../../providers/auth_provider.dart';
 import '../../navigation/app_drawer.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
-import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_load_more_footer.dart';
 import '../../widgets/app_shimmer_card.dart';
 import 'voter_profile_screen.dart';
 import 'voter_slip_generator.dart';
@@ -28,14 +28,14 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   bool _isLoading = true;
+  bool _isLoadingMore = false;
   List<VoterModel> _allVoters = [];
   Map<String, int> _voterStats = {};
   List<String> _boothsList = [];
 
   int _currentPage = 1;
-  int _pageSize = 25;
+  final int _pageSize = 25;
   int _totalItems = 0;
-  int _totalPages = 1;
 
   String _selectedBooth = 'All';
   String _selectedFavour = 'All'; // 'All', 'Favourable', 'Neutral', 'Against', 'Swing'
@@ -77,10 +77,36 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
       setState(() {
         _allVoters = result.items;
         _totalItems = result.totalCount;
-        _totalPages = result.totalPages;
         _voterStats = stats;
         _boothsList = booths;
         _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadMoreVoters() async {
+    if (_isLoadingMore || _allVoters.length >= _totalItems) return;
+    setState(() => _isLoadingMore = true);
+    final repo = ref.read(votersRepoProvider);
+    final nextPage = _currentPage + 1;
+
+    final result = await repo.getPaginatedVoters(
+      page: nextPage,
+      pageSize: _pageSize,
+      query: _searchCtrl.text.trim(),
+      boothFilter: _selectedBooth != 'All' ? _selectedBooth : null,
+      favourFilter: _selectedFavour != 'All' ? _selectedFavour : null,
+      genderFilter: _selectedGender != 'All' ? _selectedGender : null,
+      ageRangeFilter: _selectedAgeRange != 'All' ? _selectedAgeRange : null,
+      isFriendOnly: _friendsOnly,
+    );
+
+    if (mounted) {
+      setState(() {
+        _currentPage = nextPage;
+        _allVoters.addAll(result.items);
+        _totalItems = result.totalCount;
+        _isLoadingMore = false;
       });
     }
   }
@@ -944,27 +970,20 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
             else
               ...filtered.map((v) => _buildVoterCard(v)),
 
+            if (!_isLoading && filtered.isNotEmpty)
+              AppLoadMoreFooter(
+                currentCount: _allVoters.length,
+                totalCount: _totalItems,
+                isLoading: _isLoadingMore,
+                pageSize: _pageSize,
+                onLoadMore: _loadMoreVoters,
+                label: ref.watch(isMarathiProvider) ? 'मतदार' : 'voters',
+                isMarathi: ref.watch(isMarathiProvider),
+              ),
+
             const SizedBox(height: 20),
           ],
         ),
-      ),
-      bottomNavigationBar: AppPaginationBar(
-        currentPage: _currentPage,
-        totalPages: _totalPages,
-        totalItems: _totalItems,
-        pageSize: _pageSize,
-        isLoading: _isLoading,
-        onPageChanged: (newPage) {
-          setState(() => _currentPage = newPage);
-          _loadVoters();
-        },
-        onPageSizeChanged: (newSize) {
-          setState(() {
-            _pageSize = newSize;
-            _currentPage = 1;
-          });
-          _loadVoters();
-        },
       ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: const Color(0xFF0284C7),

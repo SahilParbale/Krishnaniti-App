@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,7 +10,7 @@ import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_pdf_button.dart';
 import '../../widgets/app_date_picker.dart';
-import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_load_more_footer.dart';
 import '../../widgets/app_shimmer_card.dart';
 import 'diary_detail_screen.dart';
 import 'diary_report_generator.dart';
@@ -35,8 +34,7 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
   final TextEditingController _searchCtrl = TextEditingController();
   bool _isLoading = true;
 
-  int _currentPage = 1;
-  int _pageSize = 20;
+  int _displayedLimit = 20;
 
   List<DiaryTaskModel> _allTasks = [];
 
@@ -142,30 +140,20 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
       });
   }
 
-  int get _totalPages {
-    final count = _filteredTasks.length;
-    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
-  }
-
-  List<DiaryTaskModel> get _pagedTasks {
-    final all = _filteredTasks;
-    final startIndex = (_currentPage - 1) * _pageSize;
-    if (startIndex >= all.length) return [];
-    final endIndex = min(startIndex + _pageSize, all.length);
-    return all.sublist(startIndex, endIndex);
-  }
+  List<DiaryTaskModel> get _visibleTasks =>
+      _filteredTasks.take(_displayedLimit).toList();
 
   void _changeTimelineDate(int days) {
     setState(() {
       _selectedTimelineDate = _selectedTimelineDate.add(Duration(days: days));
-      _currentPage = 1;
+      _displayedLimit = 20;
     });
   }
 
   void _jumpToToday() {
     setState(() {
       _selectedTimelineDate = DateTime.now();
-      _currentPage = 1;
+      _displayedLimit = 20;
     });
   }
 
@@ -610,7 +598,7 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                         icon: Icons.access_time_rounded,
                         onTap: () => setState(() {
                           _activeTab = 'timeline';
-                          _currentPage = 1;
+                          _displayedLimit = 20;
                         }),
                       ),
                     ),
@@ -624,7 +612,7 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                         icon: Icons.format_list_bulleted_rounded,
                         onTap: () => setState(() {
                           _activeTab = 'all';
-                          _currentPage = 1;
+                          _displayedLimit = 20;
                         }),
                       ),
                     ),
@@ -638,7 +626,7 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                         icon: Icons.check_circle_outline_rounded,
                         onTap: () => setState(() {
                           _activeTab = 'completed';
-                          _currentPage = 1;
+                          _displayedLimit = 20;
                         }),
                       ),
                     ),
@@ -714,7 +702,7 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                                 if (picked != null) {
                                   setState(() {
                                     _selectedTimelineDate = picked;
-                                    _currentPage = 1;
+                                    _displayedLimit = 20;
                                   });
                                 }
                               },
@@ -764,7 +752,7 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                     Expanded(
                       child: TextField(
                         controller: _searchCtrl,
-                        onChanged: (_) => setState(() => _currentPage = 1),
+                        onChanged: (_) => setState(() => _displayedLimit = 20),
                         decoration: InputDecoration(
                           hintText: isMr ? 'शीर्षक, पत्ता, कार्यालय किंवा व्यक्ती शोधा...' : 'Search title, address, office...',
                           hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
@@ -774,7 +762,7 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                                   icon: const Icon(Icons.clear, size: 16),
                                   onPressed: () {
                                     _searchCtrl.clear();
-                                    setState(() => _currentPage = 1);
+                                    setState(() => _displayedLimit = 20);
                                   },
                                 )
                               : null,
@@ -815,7 +803,7 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                           if (val != null) {
                             setState(() {
                               _selectedArea = val;
-                              _currentPage = 1;
+                              _displayedLimit = 20;
                             });
                           }
                         },
@@ -873,30 +861,25 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                           onRefresh: _fetchTasks,
                           child: ListView.builder(
                             padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-                            itemCount: _pagedTasks.length,
+                            itemCount: _visibleTasks.length + (filtered.isNotEmpty ? 1 : 0),
                             itemBuilder: (ctx, index) {
-                              final task = _pagedTasks[index];
+                              if (index == _visibleTasks.length) {
+                                return AppLoadMoreFooter(
+                                  currentCount: _visibleTasks.length,
+                                  totalCount: filtered.length,
+                                  pageSize: 20,
+                                  onLoadMore: () => setState(() => _displayedLimit += 20),
+                                  label: isMr ? 'कामे' : 'tasks',
+                                  isMarathi: isMr,
+                                );
+                              }
+                              final task = _visibleTasks[index];
                               return _buildTaskCard(task, isMr);
                             },
                           ),
                         ),
             ),
           ],
-        ),
-        bottomNavigationBar: AppPaginationBar(
-          currentPage: _currentPage,
-          totalPages: _totalPages,
-          totalItems: filtered.length,
-          pageSize: _pageSize,
-          onPageChanged: (newPage) {
-            setState(() => _currentPage = newPage);
-          },
-          onPageSizeChanged: (newSize) {
-            setState(() {
-              _pageSize = newSize;
-              _currentPage = 1;
-            });
-          },
         ),
       ),
     );

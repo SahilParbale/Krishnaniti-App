@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,7 +9,7 @@ import 'whatsapp_history_report_generator.dart';
 import '../../navigation/app_drawer.dart';
 import '../../widgets/app_pdf_button.dart';
 import '../../widgets/app_dropdown.dart';
-import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_load_more_footer.dart';
 import '../../widgets/app_shimmer_card.dart';
 
 // WhatsApp brand colors
@@ -47,28 +46,18 @@ class _WhatsAppCommunicationScreenState
   List<VoterModel> _voters = [];
   final Set<String> _selectedVoterIds = {};
   bool _isAllVisibleSelected = false;
-  int _voterPage = 1;
-  int _voterPageSize = 20;
+  int _voterLimit = 20;
 
-  List<VoterModel> get _pagedVoters {
-    final startIndex = (_voterPage - 1) * _voterPageSize;
-    if (startIndex >= _voters.length) return [];
-    final endIndex = min(startIndex + _voterPageSize, _voters.length);
-    return _voters.sublist(startIndex, endIndex);
-  }
+  List<VoterModel> get _visibleVoters =>
+      _voters.take(_voterLimit).toList();
 
   // History state
   bool _isLoadingHistory = false;
   List<WhatsAppBroadcastModel> _broadcastHistory = [];
-  int _historyPage = 1;
-  int _historyPageSize = 10;
+  int _historyLimit = 10;
 
-  List<WhatsAppBroadcastModel> get _pagedHistory {
-    final startIndex = (_historyPage - 1) * _historyPageSize;
-    if (startIndex >= _broadcastHistory.length) return [];
-    final endIndex = min(startIndex + _historyPageSize, _broadcastHistory.length);
-    return _broadcastHistory.sublist(startIndex, endIndex);
-  }
+  List<WhatsAppBroadcastModel> get _visibleHistory =>
+      _broadcastHistory.take(_historyLimit).toList();
 
   // Compose state
   bool _isSending = false;
@@ -133,7 +122,7 @@ class _WhatsAppCommunicationScreenState
         setState(() {
           _voters = list;
           _isLoadingVoters = false;
-          _voterPage = 1;
+          _voterLimit = 20;
           _updateSelectAllStatus();
         });
       }
@@ -151,7 +140,7 @@ class _WhatsAppCommunicationScreenState
         setState(() {
           _broadcastHistory = logs;
           _isLoadingHistory = false;
-          _historyPage = 1;
+          _historyLimit = 10;
         });
       }
     } catch (_) {
@@ -1188,10 +1177,10 @@ class _WhatsAppCommunicationScreenState
               ListView.separated(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: _pagedVoters.length,
+                itemCount: _visibleVoters.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 8),
                 itemBuilder: (ctx, idx) {
-                  final voter = _pagedVoters[idx];
+                  final voter = _visibleVoters[idx];
                   final isSelected = _selectedVoterIds.contains(voter.id);
 
                   return InkWell(
@@ -1313,16 +1302,13 @@ class _WhatsAppCommunicationScreenState
                 },
               ),
               const SizedBox(height: 12),
-              AppPaginationBar(
-                currentPage: _voterPage,
-                totalPages: (_voters.length / _voterPageSize).ceil() < 1 ? 1 : (_voters.length / _voterPageSize).ceil(),
-                totalItems: _voters.length,
-                pageSize: _voterPageSize,
-                onPageChanged: (page) => setState(() => _voterPage = page),
-                onPageSizeChanged: (size) => setState(() {
-                  _voterPageSize = size;
-                  _voterPage = 1;
-                }),
+              AppLoadMoreFooter(
+                currentCount: _visibleVoters.length,
+                totalCount: _voters.length,
+                pageSize: 20,
+                onLoadMore: () => setState(() => _voterLimit += 20),
+                label: 'मतदार',
+                isMarathi: true,
               ),
             ],
           ],
@@ -1395,28 +1381,29 @@ class _WhatsAppCommunicationScreenState
                             padding: const EdgeInsets.fromLTRB(14, 0, 14, 20),
                             sliver: SliverList(
                               delegate: SliverChildBuilderDelegate(
-                                (ctx, idx) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 10),
-                                  child: _buildBroadcastHistoryCard(_pagedHistory[idx]),
-                                ),
-                                childCount: _pagedHistory.length,
+                                (ctx, idx) {
+                                  if (idx == _visibleHistory.length) {
+                                    return AppLoadMoreFooter(
+                                      currentCount: _visibleHistory.length,
+                                      totalCount: _broadcastHistory.length,
+                                      pageSize: 10,
+                                      onLoadMore: () => setState(() => _historyLimit += 10),
+                                      label: 'इतिहास',
+                                      isMarathi: true,
+                                    );
+                                  }
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 10),
+                                    child: _buildBroadcastHistoryCard(_visibleHistory[idx]),
+                                  );
+                                },
+                                childCount: _visibleHistory.length + (_broadcastHistory.isNotEmpty ? 1 : 0),
                               ),
                             ),
                           ),
                         ],
                       ),
           ),
-        ),
-        AppPaginationBar(
-          currentPage: _historyPage,
-          totalPages: (_broadcastHistory.length / _historyPageSize).ceil() < 1 ? 1 : (_broadcastHistory.length / _historyPageSize).ceil(),
-          totalItems: _broadcastHistory.length,
-          pageSize: _historyPageSize,
-          onPageChanged: (page) => setState(() => _historyPage = page),
-          onPageSizeChanged: (size) => setState(() {
-            _historyPageSize = size;
-            _historyPage = 1;
-          }),
         ),
       ],
     );
