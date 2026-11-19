@@ -475,10 +475,13 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      body: RefreshIndicator(
+        onRefresh: _refreshSociety,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Hero Header Card
             Container(
@@ -832,7 +835,8 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildMetricBlock({

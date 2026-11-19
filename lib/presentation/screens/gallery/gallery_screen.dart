@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,6 +13,8 @@ import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_image_picker.dart';
 import '../../widgets/app_pdf_button.dart';
 import '../../widgets/app_date_picker.dart';
+import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_shimmer_card.dart';
 import 'gallery_detail_screen.dart';
 import 'gallery_report_generator.dart';
 import '../../widgets/app_dropdown.dart';
@@ -27,9 +30,24 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
   final TextEditingController _searchCtrl = TextEditingController();
   String _selectedCategory = 'all'; // 'all' or GalleryCategory.id
   String _viewMode = 'grid'; // 'grid' | 'list'
-  bool _isLoading = true;
+  int _currentPage = 1;
+  int _pageSize = 20;
 
+  bool _isLoading = true;
   List<GalleryItemModel> _allGalleryItems = [];
+
+  int get _totalPages {
+    final count = _filteredItems.length;
+    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
+  }
+
+  List<GalleryItemModel> get _pagedItems {
+    final filtered = _filteredItems;
+    final startIndex = (_currentPage - 1) * _pageSize;
+    if (startIndex >= filtered.length) return [];
+    final endIndex = min(startIndex + _pageSize, filtered.length);
+    return filtered.sublist(startIndex, endIndex);
+  }
 
   @override
   void initState() {
@@ -51,6 +69,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
       setState(() {
         _allGalleryItems = items;
         _isLoading = false;
+        _currentPage = 1;
       });
     }
   }
@@ -445,7 +464,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
           actions: const [],
         ),
         body: _isLoading
-            ? const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)))
+            ? const AppShimmerList(count: 6)
             : RefreshIndicator(
                 onRefresh: _loadGallery,
                 color: const Color(0xFF0284C7),
@@ -467,15 +486,26 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
 
                       // Gallery Grid or List Content
                       if (_viewMode == 'grid')
-                        _buildGridView(filtered)
+                        _buildGridView(_pagedItems)
                       else
-                        _buildListView(filtered),
+                        _buildListView(_pagedItems),
 
                       const SizedBox(height: 60),
                     ],
                   ),
                 ),
               ),
+        bottomNavigationBar: AppPaginationBar(
+          currentPage: _currentPage,
+          totalPages: _totalPages,
+          totalItems: filtered.length,
+          pageSize: _pageSize,
+          onPageChanged: (page) => setState(() => _currentPage = page),
+          onPageSizeChanged: (size) => setState(() {
+            _pageSize = size;
+            _currentPage = 1;
+          }),
+        ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: _showAddPhotoDialog,
           backgroundColor: const Color(0xFF0284C7),
@@ -577,7 +607,10 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                     suffixIcon: _searchCtrl.text.isNotEmpty
                         ? IconButton(
                             icon: const Icon(Icons.clear_rounded, size: 18),
-                            onPressed: () => setState(() => _searchCtrl.clear()),
+                            onPressed: () => setState(() {
+                              _searchCtrl.clear();
+                              _currentPage = 1;
+                            }),
                           )
                         : null,
                     filled: true,
@@ -586,7 +619,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
                     enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
                   ),
-                  onChanged: (_) => setState(() {}),
+                  onChanged: (_) => setState(() => _currentPage = 1),
                 ),
               ),
               const SizedBox(width: 8),
@@ -661,7 +694,10 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
       selectedColor: const Color(0xFF0284C7),
       backgroundColor: const Color(0xFFF1F5F9),
       side: BorderSide.none,
-      onSelected: (_) => setState(() => _selectedCategory = value),
+      onSelected: (_) => setState(() {
+        _selectedCategory = value;
+        _currentPage = 1;
+      }),
     );
   }
 

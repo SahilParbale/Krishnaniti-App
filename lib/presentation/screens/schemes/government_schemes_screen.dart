@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +9,8 @@ import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
+import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_shimmer_card.dart';
 import 'scheme_detail_screen.dart';
 import 'scheme_report_generator.dart';
 import '../../widgets/app_dropdown.dart';
@@ -44,6 +47,33 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
   bool _isLoading = true;
   List<SchemeModel> _schemes = [];
   List<SchemeApplicationModel> _applications = [];
+
+  int _currentPage = 1;
+  int _pageSize = 20;
+
+  int get _schemesTotalPages {
+    final count = _filteredSchemes.length;
+    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
+  }
+
+  int get _appsTotalPages {
+    final count = _filteredApplications.length;
+    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
+  }
+
+  List<SchemeModel> get _pagedSchemes {
+    final startIndex = (_currentPage - 1) * _pageSize;
+    if (startIndex >= _filteredSchemes.length) return [];
+    final endIndex = min(startIndex + _pageSize, _filteredSchemes.length);
+    return _filteredSchemes.sublist(startIndex, endIndex);
+  }
+
+  List<SchemeApplicationModel> get _pagedApplications {
+    final startIndex = (_currentPage - 1) * _pageSize;
+    if (startIndex >= _filteredApplications.length) return [];
+    final endIndex = min(startIndex + _pageSize, _filteredApplications.length);
+    return _filteredApplications.sublist(startIndex, endIndex);
+  }
 
   final List<Map<String, dynamic>> _categories = [
     {
@@ -933,7 +963,10 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
           actions: const [],
         ),
         body: _isLoading
-            ? const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)))
+            ? const Padding(
+                padding: EdgeInsets.all(16),
+                child: AppShimmerList(count: 6),
+              )
             : Column(
                 children: [
                   // 1) PRIMARY TABS: Schemes vs Applications
@@ -970,6 +1003,21 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                   ),
                 ],
               ),
+        bottomNavigationBar: AppPaginationBar(
+          currentPage: _currentPage,
+          totalPages: _activeTab == 'schemes' ? _schemesTotalPages : _appsTotalPages,
+          totalItems: _activeTab == 'schemes' ? displayedSchemes.length : displayedApps.length,
+          pageSize: _pageSize,
+          onPageChanged: (newPage) {
+            setState(() => _currentPage = newPage);
+          },
+          onPageSizeChanged: (newSize) {
+            setState(() {
+              _pageSize = newSize;
+              _currentPage = 1;
+            });
+          },
+        ),
         floatingActionButton: _activeTab == 'schemes'
             ? FloatingActionButton.extended(
                 backgroundColor: const Color(0xFF0284C7),
@@ -996,7 +1044,10 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
   }) {
     return Expanded(
       child: InkWell(
-        onTap: () => setState(() => _activeTab = id),
+        onTap: () => setState(() {
+          _activeTab = id;
+          _currentPage = 1;
+        }),
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
@@ -1071,7 +1122,7 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                           Expanded(
                             child: TextField(
                               controller: _searchCtrl,
-                              onChanged: (_) => setState(() {}),
+                              onChanged: (_) => setState(() => _currentPage = 1),
                               style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
                               decoration: InputDecoration(
                                 hintText: isMr ? 'योजना, लाभ किंवा पात्रता शोधा...' : 'Search schemes, benefits, eligibility...',
@@ -1086,7 +1137,7 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                             GestureDetector(
                               onTap: () {
                                 _searchCtrl.clear();
-                                setState(() {});
+                                setState(() => _currentPage = 1);
                               },
                               child: const Icon(Icons.cancel, color: Color(0xFF94A3B8), size: 18),
                             ),
@@ -1139,7 +1190,10 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                     final label = isMr ? cat['labelMr'] as String : cat['labelEn'] as String;
 
                     return GestureDetector(
-                      onTap: () => setState(() => _selectedCategory = catId),
+                      onTap: () => setState(() {
+                        _selectedCategory = catId;
+                        _currentPage = 1;
+                      }),
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                         decoration: BoxDecoration(
@@ -1190,7 +1244,10 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                         ],
                       ),
                       GestureDetector(
-                        onTap: () => setState(() => _matchedSchemeIds = null),
+                        onTap: () => setState(() {
+                          _matchedSchemeIds = null;
+                          _currentPage = 1;
+                        }),
                         child: const Text('Reset', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFDC2626))),
                       ),
                     ],
@@ -1223,6 +1280,7 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                           setState(() {
                             _selectedCategory = 'All';
                             _matchedSchemeIds = null;
+                            _currentPage = 1;
                           });
                         },
                         child: const Text('Reset All Filters'),
@@ -1232,10 +1290,10 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                 )
               : ListView.separated(
                   padding: const EdgeInsets.all(16),
-                  itemCount: displayedSchemes.length,
+                  itemCount: _pagedSchemes.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 12),
                   itemBuilder: (ctx, idx) {
-                    final scheme = displayedSchemes[idx];
+                    final scheme = _pagedSchemes[idx];
                     return _buildSchemeCard(isMr, scheme);
                   },
                 ),
@@ -1456,7 +1514,7 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                           Expanded(
                             child: TextField(
                               controller: _appSearchCtrl,
-                              onChanged: (_) => setState(() {}),
+                              onChanged: (_) => setState(() => _currentPage = 1),
                               style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
                               decoration: InputDecoration(
                                 hintText: isMr ? 'नागरिक किंवा मोबाईल शोधा...' : 'Search applicant name, mobile, address...',
@@ -1471,7 +1529,7 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                             GestureDetector(
                               onTap: () {
                                 _appSearchCtrl.clear();
-                                setState(() {});
+                                setState(() => _currentPage = 1);
                               },
                               child: const Icon(Icons.cancel, color: Color(0xFF94A3B8), size: 18),
                             ),
@@ -1530,10 +1588,10 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                 )
               : ListView.separated(
                   padding: const EdgeInsets.all(16),
-                  itemCount: displayedApps.length,
+                  itemCount: _pagedApplications.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 12),
                   itemBuilder: (ctx, idx) {
-                    final app = displayedApps[idx];
+                    final app = _pagedApplications[idx];
                     return _buildApplicationCard(isMr, app);
                   },
                 ),
@@ -1546,7 +1604,10 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
     final isSel = _applicationStatusFilter.toLowerCase() == id.toLowerCase();
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _applicationStatusFilter = id),
+        onTap: () => setState(() {
+          _applicationStatusFilter = id;
+          _currentPage = 1;
+        }),
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 7),
           decoration: BoxDecoration(

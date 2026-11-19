@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +11,8 @@ import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_pdf_button.dart';
 import '../../widgets/app_date_picker.dart';
+import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_shimmer_card.dart';
 import 'event_detail_screen.dart';
 import 'event_invite_modal.dart';
 import 'event_report_generator.dart';
@@ -29,6 +32,21 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
   bool _isLoading = true;
 
   List<EventModel> _allEvents = [];
+
+  int _currentPage = 1;
+  int _pageSize = 20;
+
+  int get _totalPages {
+    final count = _filteredEvents.length;
+    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
+  }
+
+  List<EventModel> get _pagedEvents {
+    final startIndex = (_currentPage - 1) * _pageSize;
+    if (startIndex >= _filteredEvents.length) return [];
+    final endIndex = min(startIndex + _pageSize, _filteredEvents.length);
+    return _filteredEvents.sublist(startIndex, endIndex);
+  }
 
   @override
   void initState() {
@@ -532,7 +550,10 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
           actions: const [],
         ),
         body: _isLoading
-            ? const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)))
+            ? const Padding(
+                padding: EdgeInsets.all(16),
+                child: AppShimmerList(count: 6),
+              )
             : RefreshIndicator(
                 onRefresh: _loadEvents,
                 color: const Color(0xFF0284C7),
@@ -554,15 +575,30 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
 
                       // Events Content (Grid or Report Table)
                       if (_viewMode == 'grid')
-                        _buildGridCardsView(filtered)
+                        _buildGridCardsView(_pagedEvents)
                       else
-                        _buildReportTableView(filtered),
+                        _buildReportTableView(_pagedEvents),
 
-                      const SizedBox(height: 60),
+                      const SizedBox(height: 20),
                     ],
                   ),
                 ),
               ),
+        bottomNavigationBar: AppPaginationBar(
+          currentPage: _currentPage,
+          totalPages: _totalPages,
+          totalItems: filtered.length,
+          pageSize: _pageSize,
+          onPageChanged: (newPage) {
+            setState(() => _currentPage = newPage);
+          },
+          onPageSizeChanged: (newSize) {
+            setState(() {
+              _pageSize = newSize;
+              _currentPage = 1;
+            });
+          },
+        ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: _showCreateEventDialog,
           backgroundColor: const Color(0xFF0284C7),
@@ -665,7 +701,10 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                     suffixIcon: _searchCtrl.text.isNotEmpty
                         ? IconButton(
                             icon: const Icon(Icons.clear_rounded, size: 18),
-                            onPressed: () => setState(() => _searchCtrl.clear()),
+                            onPressed: () => setState(() {
+                              _searchCtrl.clear();
+                              _currentPage = 1;
+                            }),
                           )
                         : null,
                     filled: true,
@@ -674,7 +713,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
                     enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
                   ),
-                  onChanged: (_) => setState(() {}),
+                  onChanged: (_) => setState(() => _currentPage = 1),
                 ),
               ),
               const SizedBox(width: 8),
@@ -725,7 +764,12 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                     ..._allAreas.map((a) => DropdownMenuItem(value: a, child: Text(a, style: const TextStyle(fontSize: 12)))),
                   ],
                   onChanged: (val) {
-                    if (val != null) setState(() => _selectedArea = val);
+                    if (val != null) {
+                      setState(() {
+                        _selectedArea = val;
+                        _currentPage = 1;
+                      });
+                    }
                   },
                 ),
               ),
@@ -775,7 +819,10 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
       selectedColor: const Color(0xFF0284C7),
       backgroundColor: const Color(0xFFF1F5F9),
       side: BorderSide.none,
-      onSelected: (_) => setState(() => _selectedCategory = value),
+      onSelected: (_) => setState(() {
+        _selectedCategory = value;
+        _currentPage = 1;
+      }),
     );
   }
 

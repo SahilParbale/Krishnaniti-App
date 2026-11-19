@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +12,8 @@ import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_image_picker.dart';
 import '../../widgets/app_pdf_button.dart';
 import '../../widgets/app_date_picker.dart';
+import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_shimmer_card.dart';
 import 'newspaper_clipping_detail_screen.dart';
 import 'newspaper_report_generator.dart';
 
@@ -30,9 +33,24 @@ class _NewspaperClippingsScreenState
   String _selectedNewspaper = 'All'; // 'All' | 'Sakal' | 'Lokmat' | ...
   String _filterDate = '';
   String _viewMode = 'grid'; // 'grid' | 'table'
+  int _currentPage = 1;
+  int _pageSize = 20;
 
   bool _isLoading = true;
   List<NewspaperClippingModel> _allClippings = [];
+
+  int get _totalPages {
+    final count = _filteredClippings.length;
+    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
+  }
+
+  List<NewspaperClippingModel> get _pagedClippings {
+    final filtered = _filteredClippings;
+    final startIndex = (_currentPage - 1) * _pageSize;
+    if (startIndex >= filtered.length) return [];
+    final endIndex = min(startIndex + _pageSize, filtered.length);
+    return filtered.sublist(startIndex, endIndex);
+  }
 
   final List<String> _newspapers = [
     'All',
@@ -64,6 +82,7 @@ class _NewspaperClippingsScreenState
       setState(() {
         _allClippings = items;
         _isLoading = false;
+        _currentPage = 1;
       });
     }
   }
@@ -605,8 +624,7 @@ class _NewspaperClippingsScreenState
         ),
         drawer: const NagarsevakAppDrawer(),
         body: _isLoading
-            ? const Center(
-                child: CircularProgressIndicator(color: Color(0xFF0284C7)))
+            ? const AppShimmerList(count: 6)
             : RefreshIndicator(
                 onRefresh: _loadData,
                 color: const Color(0xFF0284C7),
@@ -653,7 +671,10 @@ class _NewspaperClippingsScreenState
                           children: [
                             if (_filterDate.isNotEmpty)
                               InkWell(
-                                onTap: () => setState(() => _filterDate = ''),
+                                onTap: () => setState(() {
+                                  _filterDate = '';
+                                  _currentPage = 1;
+                                }),
                                 child: Padding(
                                   padding: const EdgeInsets.only(right: 6),
                                   child: Row(
@@ -717,14 +738,25 @@ class _NewspaperClippingsScreenState
                     if (filtered.isEmpty)
                       _buildEmptyState()
                     else if (_viewMode == 'grid')
-                      ...filtered.map((item) => _buildClippingCard(item))
+                      ..._pagedClippings.map((item) => _buildClippingCard(item))
                     else
-                      _buildTableView(filtered),
+                      _buildTableView(_pagedClippings),
 
                     const SizedBox(height: 80),
                   ],
                 ),
               ),
+        bottomNavigationBar: AppPaginationBar(
+          currentPage: _currentPage,
+          totalPages: _totalPages,
+          totalItems: filtered.length,
+          pageSize: _pageSize,
+          onPageChanged: (page) => setState(() => _currentPage = page),
+          onPageSizeChanged: (size) => setState(() {
+            _pageSize = size;
+            _currentPage = 1;
+          }),
+        ),
         floatingActionButton: FloatingActionButton.extended(
           backgroundColor: const Color(0xFF0284C7),
           foregroundColor: Colors.white,
@@ -795,7 +827,10 @@ class _NewspaperClippingsScreenState
     final isSelected = _activeSentiment == id;
 
     return GestureDetector(
-      onTap: () => setState(() => _activeSentiment = id),
+      onTap: () => setState(() {
+        _activeSentiment = id;
+        _currentPage = 1;
+      }),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
@@ -999,7 +1034,7 @@ class _NewspaperClippingsScreenState
           ),
           child: TextField(
             controller: _searchCtrl,
-            onChanged: (_) => setState(() {}),
+            onChanged: (_) => setState(() => _currentPage = 1),
             decoration: InputDecoration(
               hintText: 'Search headline, topic, Sakal, Lokmat...',
               hintStyle:
@@ -1011,7 +1046,7 @@ class _NewspaperClippingsScreenState
                       icon: const Icon(Icons.clear, size: 18),
                       onPressed: () {
                         _searchCtrl.clear();
-                        setState(() {});
+                        setState(() => _currentPage = 1);
                       },
                     )
                   : null,
@@ -1060,7 +1095,10 @@ class _NewspaperClippingsScreenState
                     ),
                   ),
                   onSelected: (val) {
-                    setState(() => _selectedNewspaper = paper);
+                    setState(() {
+                      _selectedNewspaper = paper;
+                      _currentPage = 1;
+                    });
                   },
                 ),
               );

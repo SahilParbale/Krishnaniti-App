@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +10,8 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_pdf_button.dart';
+import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_shimmer_card.dart';
 import 'housing_society_detail_screen.dart';
 import 'housing_society_report_generator.dart';
 
@@ -34,6 +37,21 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
     'favourable': 0,
     'supportPercentage': 0,
   };
+
+  int _currentPage = 1;
+  int _pageSize = 20;
+
+  int get _totalPages {
+    final count = _societies.length;
+    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
+  }
+
+  List<HousingSocietyModel> get _pagedSocieties {
+    final startIndex = (_currentPage - 1) * _pageSize;
+    if (startIndex >= _societies.length) return [];
+    final endIndex = min(startIndex + _pageSize, _societies.length);
+    return _societies.sublist(startIndex, endIndex);
+  }
 
   @override
   void initState() {
@@ -665,12 +683,7 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
 
               // Content View
               if (_isLoading)
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(40),
-                    child: CircularProgressIndicator(color: Color(0xFF0284C7)),
-                  ),
-                )
+                const AppShimmerList(count: 6)
               else if (_societies.isEmpty)
                 Container(
                   width: double.infinity,
@@ -711,10 +724,25 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
               else
                 _buildTableView(),
 
-              const SizedBox(height: 80),
+              const SizedBox(height: 20),
             ],
           ),
         ),
+      ),
+      bottomNavigationBar: AppPaginationBar(
+        currentPage: _currentPage,
+        totalPages: _totalPages,
+        totalItems: _societies.length,
+        pageSize: _pageSize,
+        onPageChanged: (newPage) {
+          setState(() => _currentPage = newPage);
+        },
+        onPageSizeChanged: (newSize) {
+          setState(() {
+            _pageSize = newSize;
+            _currentPage = 1;
+          });
+        },
       ),
     );
   }
@@ -838,7 +866,10 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
         children: [
           TextField(
             controller: _searchController,
-            onChanged: (val) => _loadData(),
+            onChanged: (val) {
+              setState(() => _currentPage = 1);
+              _loadData();
+            },
             decoration: InputDecoration(
               hintText: 'Search society name, chairman, secretary or area...',
               hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
@@ -848,6 +879,7 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                       icon: const Icon(Icons.clear, size: 18),
                       onPressed: () {
                         _searchController.clear();
+                        setState(() => _currentPage = 1);
                         _loadData();
                       },
                     )
@@ -879,7 +911,10 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                   ],
                   onChanged: (val) {
                     if (val != null) {
-                      setState(() => _selectedArea = val);
+                      setState(() {
+                        _selectedArea = val;
+                        _currentPage = 1;
+                      });
                       _loadData();
                     }
                   },
@@ -899,7 +934,10 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                   ],
                   onChanged: (val) {
                     if (val != null) {
-                      setState(() => _selectedStatus = val);
+                      setState(() {
+                        _selectedStatus = val;
+                        _currentPage = 1;
+                      });
                       _loadData();
                     }
                   },
@@ -926,17 +964,17 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
               mainAxisSpacing: 14,
               childAspectRatio: 0.95,
             ),
-            itemCount: _societies.length,
-            itemBuilder: (context, index) => _buildSocietyCard(_societies[index]),
+            itemCount: _pagedSocieties.length,
+            itemBuilder: (context, index) => _buildSocietyCard(_pagedSocieties[index]),
           );
         }
 
         return ListView.separated(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          itemCount: _societies.length,
+          itemCount: _pagedSocieties.length,
           separatorBuilder: (context, index) => const SizedBox(height: 14),
-          itemBuilder: (context, index) => _buildSocietyCard(_societies[index]),
+          itemBuilder: (context, index) => _buildSocietyCard(_pagedSocieties[index]),
         );
       },
     );
@@ -1260,14 +1298,14 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
               DataColumn(label: Text('Status')),
               DataColumn(label: Text('Action')),
             ],
-            rows: List.generate(_societies.length, (index) {
-              final soc = _societies[index];
+            rows: List.generate(_pagedSocieties.length, (index) {
+              final soc = _pagedSocieties[index];
               return DataRow(
                 color: WidgetStateProperty.resolveWith<Color?>((Set<WidgetState> states) {
                   return index.isEven ? const Color(0xFFF8FAFC) : Colors.white;
                 }),
                 cells: [
-                  DataCell(Text((index + 1).toString(), style: const TextStyle(fontWeight: FontWeight.bold))),
+                  DataCell(Text(((_currentPage - 1) * _pageSize + index + 1).toString(), style: const TextStyle(fontWeight: FontWeight.bold))),
                   DataCell(
                     InkWell(
                       onTap: () {

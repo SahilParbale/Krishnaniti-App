@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/supabase_service.dart';
 import '../models/letter_model.dart';
 import '../models/letter_type_model.dart';
+import '../models/paginated_result.dart';
 
 final lettersRepoProvider = Provider<LettersRepository>((ref) => LettersRepository());
 
@@ -28,6 +29,56 @@ class LettersRepository {
           .toList();
     } catch (_) {
       return [];
+    }
+  }
+
+  Future<PaginatedResult<LetterModel>> getPaginatedLetters({
+    required bool isIncoming,
+    int page = 1,
+    int pageSize = 20,
+    String? statusFilter,
+    String? searchQuery,
+  }) async {
+    try {
+      final tableName = isIncoming ? 'incoming_letters' : 'letter_requests';
+      var query = _client.from(tableName).select('*');
+
+      if (_tenantId != null) {
+        query = query.eq('tenant_id', _tenantId!);
+      }
+
+      if (statusFilter != null && statusFilter != 'All' && statusFilter.isNotEmpty) {
+        query = query.eq('status', statusFilter);
+      }
+
+      if (searchQuery != null && searchQuery.trim().isNotEmpty) {
+        final q = searchQuery.trim();
+        query = query.or('letter_number.ilike.%$q%,subject.ilike.%$q%,sender_name.ilike.%$q%,recipient_name.ilike.%$q%');
+      }
+
+      final zeroBasedPage = page > 0 ? page - 1 : 0;
+      final start = zeroBasedPage * pageSize;
+      final end = start + pageSize - 1;
+
+      final response = await query
+          .order('created_at', ascending: false)
+          .range(start, end)
+          .count(CountOption.exact);
+
+      final items = (response.data as List<dynamic>)
+          .map((item) => LetterModel.fromJson(item as Map<String, dynamic>, isIncoming: isIncoming))
+          .toList();
+
+      final total = response.count;
+
+      return PaginatedResult<LetterModel>(
+        items: items,
+        totalCount: total,
+        currentPage: page,
+        pageSize: pageSize,
+      );
+    } catch (_) {
+      return PaginatedResult<LetterModel>.empty(pageSize: pageSize);
     }
   }
 

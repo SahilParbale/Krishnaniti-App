@@ -68,9 +68,10 @@ class WorkHistoryRepository {
       try {
         final fbRes = await _client
             .from('work_feedback')
-            .select('*')
+            .select('id, work_id, citizen_name, rating, comment, created_at')
             .eq('work_id', id)
-            .order('created_at', ascending: false);
+            .order('created_at', ascending: false)
+            .limit(30);
         final feedbacks = (fbRes as List<dynamic>)
             .map((f) => WorkFeedbackModel.fromJson(Map<String, dynamic>.from(f as Map)))
             .toList();

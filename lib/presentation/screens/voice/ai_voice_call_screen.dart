@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +9,8 @@ import '../../../data/models/whatsapp_broadcast_model.dart';
 import '../../../data/repositories/sms_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../widgets/app_pdf_button.dart';
+import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_shimmer_card.dart';
 import 'communication_history_report_generator.dart';
 
 const _kAiPurple = Color(0xFF0284C7);
@@ -35,6 +38,15 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
   List<VoterModel> _voters = [];
   final Set<String> _selectedVoterIds = {};
   bool _isAllSelected = false;
+  int _voterPage = 1;
+  int _voterPageSize = 20;
+
+  List<VoterModel> get _pagedVoters {
+    final startIndex = (_voterPage - 1) * _voterPageSize;
+    if (startIndex >= _voters.length) return [];
+    final endIndex = min(startIndex + _voterPageSize, _voters.length);
+    return _voters.sublist(startIndex, endIndex);
+  }
 
   // Campaign Calling State
   bool _isCalling = false;
@@ -42,6 +54,15 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
   // History State
   bool _isLoadingHistory = false;
   List<WhatsAppBroadcastModel> _aiCallLogs = [];
+  int _historyPage = 1;
+  int _historyPageSize = 10;
+
+  List<WhatsAppBroadcastModel> get _pagedHistory {
+    final startIndex = (_historyPage - 1) * _historyPageSize;
+    if (startIndex >= _aiCallLogs.length) return [];
+    final endIndex = min(startIndex + _historyPageSize, _aiCallLogs.length);
+    return _aiCallLogs.sublist(startIndex, endIndex);
+  }
 
   @override
   void initState() {
@@ -83,6 +104,7 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
         setState(() {
           _voters = list;
           _isLoadingVoters = false;
+          _voterPage = 1;
           _updateSelectAllState();
         });
       }
@@ -111,6 +133,7 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
         setState(() {
           _aiCallLogs = list;
           _isLoadingHistory = false;
+          _historyPage = 1;
         });
       }
     } catch (_) {
@@ -545,7 +568,7 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
 
           // Voter List
           _isLoadingVoters
-              ? const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator(color: _kAiPurple)))
+              ? const AppShimmerList(count: 6)
               : _voters.isEmpty
                   ? Center(
                       child: Padding(
@@ -553,60 +576,76 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
                         child: Text('No voters found with phone numbers', style: TextStyle(color: Colors.grey[600])),
                       ),
                     )
-                  : ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: _voters.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 6),
-                      itemBuilder: (ctx, i) {
-                        final v = _voters[i];
-                        final isSelected = _selectedVoterIds.contains(v.id);
+                  : Column(
+                      children: [
+                        ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _pagedVoters.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 6),
+                          itemBuilder: (ctx, i) {
+                            final v = _pagedVoters[i];
+                            final isSelected = _selectedVoterIds.contains(v.id);
 
-                        return Card(
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            side: BorderSide(
-                              color: isSelected ? _kAiPurple : (isDark ? Colors.grey[800]! : Colors.grey[200]!),
-                              width: isSelected ? 1.5 : 1,
-                            ),
-                          ),
-                          child: InkWell(
-                            onTap: () => _toggleVoter(v.id),
-                            borderRadius: BorderRadius.circular(10),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    isSelected ? Icons.check_box : Icons.check_box_outline_blank,
-                                    color: isSelected ? _kAiPurple : Colors.grey[400],
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          v.displayName,
-                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                                        ),
-                                        Text(
-                                          '${v.mobile ?? '-'} · ${v.address}',
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
+                            return Card(
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                side: BorderSide(
+                                  color: isSelected ? _kAiPurple : (isDark ? Colors.grey[800]! : Colors.grey[200]!),
+                                  width: isSelected ? 1.5 : 1,
+                                ),
                               ),
-                            ),
-                          ),
-                        );
-                      },
+                              child: InkWell(
+                                onTap: () => _toggleVoter(v.id),
+                                borderRadius: BorderRadius.circular(10),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        isSelected ? Icons.check_box : Icons.check_box_outline_blank,
+                                        color: isSelected ? _kAiPurple : Colors.grey[400],
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              v.displayName,
+                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                            ),
+                                            Text(
+                                              '${v.mobile ?? '-'} · ${v.address}',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 10),
+                        AppPaginationBar(
+                          currentPage: _voterPage,
+                          totalPages: (_voters.length / _voterPageSize).ceil() < 1 ? 1 : (_voters.length / _voterPageSize).ceil(),
+                          totalItems: _voters.length,
+                          pageSize: _voterPageSize,
+                          onPageChanged: (page) => setState(() => _voterPage = page),
+                          onPageSizeChanged: (size) => setState(() {
+                            _voterPageSize = size;
+                            _voterPage = 1;
+                          }),
+                        ),
+                      ],
                     ),
 
           const SizedBox(height: 20),
@@ -665,7 +704,7 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
 
   Widget _buildHistoryTab(ThemeData theme, bool isDark) {
     if (_isLoadingHistory && _aiCallLogs.isEmpty) {
-      return const Center(child: CircularProgressIndicator(color: _kAiPurple));
+      return const AppShimmerList(count: 6);
     }
 
     if (_aiCallLogs.isEmpty) {
@@ -687,74 +726,91 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: _loadHistory,
-      color: _kAiPurple,
-      child: ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: _aiCallLogs.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 10),
-        itemBuilder: (context, index) {
-          final item = _aiCallLogs[index];
-          final dateStr = DateFormat('dd MMM yyyy, hh:mm a').format(item.sentAt);
+    return Column(
+      children: [
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: _loadHistory,
+            color: _kAiPurple,
+            child: ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: _pagedHistory.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              itemBuilder: (context, index) {
+                final item = _pagedHistory[index];
+                final dateStr = DateFormat('dd MMM yyyy, hh:mm a').format(item.sentAt);
 
-          return Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: isDark ? Colors.grey[800]! : Colors.grey[200]!),
+                return Card(
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: isDark ? Colors.grey[800]! : Colors.grey[200]!),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                dateStr,
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: _kAiPurpleLight,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                'AI VOICE CALL',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: _kAiPurple,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          item.message.isNotEmpty ? item.message : item.title,
+                          style: TextStyle(fontSize: 12.5, color: isDark ? Colors.grey[300] : Colors.grey[700]),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Text(
+                              '${item.recipients} Recipients · ${item.sentCount} Completed',
+                              style: TextStyle(fontSize: 11, color: Colors.grey[600], fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          dateStr,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: _kAiPurpleLight,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          'AI VOICE CALL',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: _kAiPurple,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    item.message.isNotEmpty ? item.message : item.title,
-                    style: TextStyle(fontSize: 12.5, color: isDark ? Colors.grey[300] : Colors.grey[700]),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Text(
-                        '${item.recipients} Recipients · ${item.sentCount} Completed',
-                        style: TextStyle(fontSize: 11, color: Colors.grey[600], fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
+          ),
+        ),
+        AppPaginationBar(
+          currentPage: _historyPage,
+          totalPages: (_aiCallLogs.length / _historyPageSize).ceil() < 1 ? 1 : (_aiCallLogs.length / _historyPageSize).ceil(),
+          totalItems: _aiCallLogs.length,
+          pageSize: _historyPageSize,
+          onPageChanged: (page) => setState(() => _historyPage = page),
+          onPageSizeChanged: (size) => setState(() {
+            _historyPageSize = size;
+            _historyPage = 1;
+          }),
+        ),
+      ],
     );
   }
 }

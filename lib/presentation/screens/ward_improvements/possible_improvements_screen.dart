@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +9,8 @@ import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
+import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_shimmer_card.dart';
 import 'improvement_detail_screen.dart';
 import 'improvement_report_generator.dart';
 import '../../widgets/app_dropdown.dart';
@@ -34,6 +37,21 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
 
   bool _loading = true;
   List<ImprovementModel> _improvements = [];
+  int _currentPage = 1;
+  int _pageSize = 20;
+
+  int get _totalPages {
+    final count = _filteredImprovements.length;
+    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
+  }
+
+  List<ImprovementModel> get _pagedImprovements {
+    final filtered = _filteredImprovements;
+    final startIndex = (_currentPage - 1) * _pageSize;
+    if (startIndex >= filtered.length) return [];
+    final endIndex = min(startIndex + _pageSize, filtered.length);
+    return filtered.sublist(startIndex, endIndex);
+  }
 
   @override
   void initState() {
@@ -57,6 +75,7 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
       setState(() {
         _improvements = items;
         _loading = false;
+        _currentPage = 1;
       });
     }
   }
@@ -516,7 +535,7 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
           actions: const [],
         ),
         body: _loading
-            ? const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)))
+            ? const AppShimmerList(count: 6)
             : RefreshIndicator(
                 onRefresh: _fetchData,
                 color: const Color(0xFF0284C7),
@@ -551,7 +570,7 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                             ),
                             child: TextField(
                               controller: _searchCtrl,
-                              onChanged: (_) => setState(() {}),
+                              onChanged: (_) => setState(() => _currentPage = 1),
                               style: const TextStyle(fontSize: 13),
                               decoration: InputDecoration(
                                 hintText: isMr ? 'सुधारणा, वर्णन किंवा ठिकाण शोधा...' : 'Search improvements, description or location...',
@@ -562,7 +581,7 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                                         icon: const Icon(Icons.close, size: 16, color: Color(0xFF64748B)),
                                         onPressed: () {
                                           _searchCtrl.clear();
-                                          setState(() {});
+                                          setState(() => _currentPage = 1);
                                         },
                                       )
                                     : null,
@@ -599,7 +618,10 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                                               icon: const Icon(Icons.close, size: 14, color: Color(0xFF64748B)),
                                               onPressed: () {
                                                 _areaSearchCtrl.clear();
-                                                setState(() => _showAreaDropdown = false);
+                                                setState(() {
+                                                  _showAreaDropdown = false;
+                                                  _currentPage = 1;
+                                                });
                                               },
                                             )
                                           : null,
@@ -634,7 +656,10 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                                               icon: const Icon(Icons.close, size: 14, color: Color(0xFF64748B)),
                                               onPressed: () {
                                                 _dateSearchCtrl.clear();
-                                                setState(() => _showDateDropdown = false);
+                                                setState(() {
+                                                  _showDateDropdown = false;
+                                                  _currentPage = 1;
+                                                });
                                               },
                                             )
                                           : null,
@@ -690,6 +715,7 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                                       setState(() {
                                         _areaSearchCtrl.text = item['area'] as String;
                                         _showAreaDropdown = false;
+                                        _currentPage = 1;
                                       });
                                     },
                                   );
@@ -741,6 +767,7 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                                       setState(() {
                                         _dateSearchCtrl.text = item['date'] as String;
                                         _showDateDropdown = false;
+                                        _currentPage = 1;
                                       });
                                     },
                                   );
@@ -858,15 +885,26 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
 
                     // Main Content: Report Table or Cards Grid
                     if (_viewMode == 'report') ...[
-                      _buildReportTableView(isMr, filtered),
+                      _buildReportTableView(isMr, _pagedImprovements),
                     ] else ...[
-                      _buildCardsGridView(isMr, filtered),
+                      _buildCardsGridView(isMr, _pagedImprovements),
                     ],
 
                     const SizedBox(height: 80),
                   ],
                 ),
               ),
+        bottomNavigationBar: AppPaginationBar(
+          currentPage: _currentPage,
+          totalPages: _totalPages,
+          totalItems: filtered.length,
+          pageSize: _pageSize,
+          onPageChanged: (page) => setState(() => _currentPage = page),
+          onPageSizeChanged: (size) => setState(() {
+            _pageSize = size;
+            _currentPage = 1;
+          }),
+        ),
         floatingActionButton: FloatingActionButton.extended(
           backgroundColor: const Color(0xFF0284C7),
           foregroundColor: Colors.white,
@@ -889,7 +927,10 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
     return Padding(
       padding: const EdgeInsets.only(right: 6),
       child: InkWell(
-        onTap: () => setState(() => _statusFilter = status),
+        onTap: () => setState(() {
+          _statusFilter = status;
+          _currentPage = 1;
+        }),
         borderRadius: BorderRadius.circular(20),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -1227,7 +1268,7 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                     ).then((_) => _fetchData());
                   },
                   cells: [
-                    DataCell(Text('${idx + 1}', style: const TextStyle(fontSize: 12))),
+                    DataCell(Text('${(_currentPage - 1) * _pageSize + idx + 1}', style: const TextStyle(fontSize: 12))),
                     DataCell(
                       SizedBox(
                         width: 170,

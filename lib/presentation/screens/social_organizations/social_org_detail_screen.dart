@@ -7,6 +7,7 @@ import '../../../data/repositories/social_organization_repository.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_dropdown.dart';
+import '../../widgets/app_pagination_bar.dart';
 
 class SocialOrgDetailScreen extends ConsumerStatefulWidget {
   final SocialOrganizationModel organization;
@@ -19,6 +20,8 @@ class SocialOrgDetailScreen extends ConsumerStatefulWidget {
 
 class _SocialOrgDetailScreenState extends ConsumerState<SocialOrgDetailScreen> {
   late SocialOrganizationModel _org;
+  int _eventsPage = 1;
+  static const int _eventsPageSize = 5;
 
   @override
   void initState() {
@@ -623,10 +626,13 @@ class _SocialOrgDetailScreenState extends ConsumerState<SocialOrgDetailScreen> {
           ],
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      body: RefreshIndicator(
+        onRefresh: _refreshOrg,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ==========================================
             // 1. ORGANIZATION HERO CARD
@@ -943,76 +949,97 @@ class _SocialOrgDetailScreenState extends ConsumerState<SocialOrgDetailScreen> {
                         style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
                       ),
                     )
-                  else
-                    ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: _org.eventsConducted.length,
-                      separatorBuilder: (context, index) => const Divider(height: 16),
-                      itemBuilder: (ctx, idx) {
-                        final evt = _org.eventsConducted[idx];
-                        return Row(
+                  else ...[
+                    Builder(
+                      builder: (context) {
+                        final pagedEvents = _org.eventsConducted
+                            .skip((_eventsPage - 1) * _eventsPageSize)
+                            .take(_eventsPageSize)
+                            .toList();
+                        return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              margin: const EdgeInsets.only(top: 4),
-                              width: 8,
-                              height: 8,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF0284C7),
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          evt.displayTitle,
-                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                                        ),
+                            ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: pagedEvents.length,
+                              separatorBuilder: (context, index) => const Divider(height: 16),
+                              itemBuilder: (ctx, idx) {
+                                final evt = pagedEvents[idx];
+                                return Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      margin: const EdgeInsets.only(top: 4),
+                                      width: 8,
+                                      height: 8,
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFF0284C7),
+                                        shape: BoxShape.circle,
                                       ),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFF1F5F9),
-                                          borderRadius: BorderRadius.circular(4),
-                                        ),
-                                        child: Text(
-                                          evt.year.toString(),
-                                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
-                                        ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  evt.displayTitle,
+                                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                                                ),
+                                              ),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: const Color(0xFFF1F5F9),
+                                                  borderRadius: BorderRadius.circular(4),
+                                                ),
+                                                child: Text(
+                                                  evt.year.toString(),
+                                                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+                                                ),
+                                              ),
+                                              IconButton(
+                                                padding: EdgeInsets.zero,
+                                                constraints: const BoxConstraints(),
+                                                icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFF94A3B8)),
+                                                onPressed: () async {
+                                                  await repo.deleteEvent(_org.id, evt.id);
+                                                  _refreshOrg();
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                          if (evt.displayDescription.isNotEmpty) ...[
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              evt.displayDescription,
+                                              style: const TextStyle(fontSize: 11.5, color: Color(0xFF475569), height: 1.3),
+                                            ),
+                                          ],
+                                        ],
                                       ),
-                                      IconButton(
-                                        padding: EdgeInsets.zero,
-                                        constraints: const BoxConstraints(),
-                                        icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFF94A3B8)),
-                                        onPressed: () async {
-                                          await repo.deleteEvent(_org.id, evt.id);
-                                          _refreshOrg();
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                  if (evt.displayDescription.isNotEmpty) ...[
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      evt.displayDescription,
-                                      style: const TextStyle(fontSize: 11.5, color: Color(0xFF475569), height: 1.3),
                                     ),
                                   ],
-                                ],
-                              ),
+                                );
+                              },
+                            ),
+                            AppInlinePagination(
+                              currentPage: _eventsPage,
+                              totalItems: _org.eventsConducted.length,
+                              pageSize: _eventsPageSize,
+                              onPageChanged: (p) => setState(() => _eventsPage = p),
+                              label: 'events',
                             ),
                           ],
                         );
                       },
                     ),
+                  ],
                 ],
               ),
             ),
@@ -1021,6 +1048,7 @@ class _SocialOrgDetailScreenState extends ConsumerState<SocialOrgDetailScreen> {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 }

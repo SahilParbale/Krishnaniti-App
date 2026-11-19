@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +12,8 @@ import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_pdf_button.dart';
 import '../../widgets/app_date_picker.dart';
+import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_shimmer_card.dart';
 
 class KaryakartaWorkManagementScreen extends ConsumerStatefulWidget {
   const KaryakartaWorkManagementScreen({super.key});
@@ -37,6 +40,20 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
   String _drilldownTab = 'tasks'; // 'tasks' or 'complaints'
 
   final TextEditingController _searchController = TextEditingController();
+  int _currentPage = 1;
+  int _pageSize = 20;
+
+  int get _totalPages {
+    final count = _workloads.length;
+    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
+  }
+
+  List<KaryakartaStaffWorkload> get _pagedWorkloads {
+    final startIndex = (_currentPage - 1) * _pageSize;
+    if (startIndex >= _workloads.length) return [];
+    final endIndex = min(startIndex + _pageSize, _workloads.length);
+    return _workloads.sublist(startIndex, endIndex);
+  }
 
   @override
   void initState() {
@@ -94,6 +111,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
     setState(() {
       _activeTab = tabId;
       _selectedMemberWorkload = null;
+      _currentPage = 1;
     });
     _loadData();
   }
@@ -428,22 +446,17 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
 
               // 6. Staff Workload Cards List
               if (_isLoading)
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 40),
-                    child: CircularProgressIndicator(),
-                  ),
-                )
+                const AppShimmerList(count: 4)
               else if (_workloads.isEmpty)
                 _buildEmptyState()
               else
                 ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _workloads.length,
+                  itemCount: _pagedWorkloads.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 10),
                   itemBuilder: (ctx, index) {
-                    final workload = _workloads[index];
+                    final workload = _pagedWorkloads[index];
                     final isSelected = _selectedMemberWorkload?.staff.id == workload.staff.id;
                     return _buildStaffWorkloadCard(workload, isSelected);
                   },
@@ -459,6 +472,17 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
             ],
           ),
         ),
+      ),
+      bottomNavigationBar: AppPaginationBar(
+        currentPage: _currentPage,
+        totalPages: _totalPages,
+        totalItems: _workloads.length,
+        pageSize: _pageSize,
+        onPageChanged: (page) => setState(() => _currentPage = page),
+        onPageSizeChanged: (size) => setState(() {
+          _pageSize = size;
+          _currentPage = 1;
+        }),
       ),
     );
   }
@@ -561,6 +585,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
               controller: _searchController,
               onChanged: (val) {
                 _searchQuery = val;
+                setState(() => _currentPage = 1);
                 _loadData();
               },
               style: const TextStyle(fontSize: 13),
@@ -574,6 +599,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                         onPressed: () {
                           _searchController.clear();
                           _searchQuery = '';
+                          setState(() => _currentPage = 1);
                           _loadData();
                         },
                       )
@@ -600,7 +626,10 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
             ],
             onChanged: (val) {
               if (val != null) {
-                setState(() => _selectedArea = val);
+                setState(() {
+                  _selectedArea = val;
+                  _currentPage = 1;
+                });
                 _loadData();
               }
             },

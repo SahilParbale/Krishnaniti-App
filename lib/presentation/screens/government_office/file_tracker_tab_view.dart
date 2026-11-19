@@ -1,9 +1,12 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../data/models/work_tracker_model.dart';
 import '../../../data/repositories/file_tracker_repository.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_shimmer_card.dart';
 import 'gov_office_report_generator.dart';
 
 class FileTrackerTabView extends ConsumerStatefulWidget {
@@ -18,6 +21,21 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
   String _selectedStatus = 'All';
   bool _isLoading = true;
   List<WorkTrackerModel> _trackers = [];
+
+  int _currentPage = 1;
+  int _pageSize = 20;
+
+  int get _totalPages {
+    final count = _trackers.length;
+    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
+  }
+
+  List<WorkTrackerModel> get _pagedTrackers {
+    final startIndex = (_currentPage - 1) * _pageSize;
+    if (startIndex >= _trackers.length) return [];
+    final endIndex = min(startIndex + _pageSize, _trackers.length);
+    return _trackers.sublist(startIndex, endIndex);
+  }
 
   final List<String> _statuses = [
     'All',
@@ -697,7 +715,10 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
                   Expanded(
                     child: TextField(
                       controller: _searchCtrl,
-                      onChanged: (_) => _fetchTrackers(),
+                      onChanged: (_) {
+                        setState(() => _currentPage = 1);
+                        _fetchTrackers();
+                      },
                       decoration: InputDecoration(
                         hintText: isMr ? 'शीर्षक, आवक/जावक क्र. शोधा...' : 'Search title, inward/outward no...',
                         hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
@@ -754,7 +775,10 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
                       backgroundColor: Colors.white,
                       onSelected: (val) {
                         if (val) {
-                          setState(() => _selectedStatus = s);
+                          setState(() {
+                            _selectedStatus = s;
+                            _currentPage = 1;
+                          });
                           _fetchTrackers();
                         }
                       },
@@ -771,7 +795,7 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
         // Files List
         Expanded(
           child: _isLoading
-              ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
+              ? const AppShimmerList(count: 6)
               : _trackers.isEmpty
                   ? Center(
                       child: Column(
@@ -795,10 +819,10 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
                       onRefresh: _fetchTrackers,
                       child: ListView.separated(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        itemCount: _trackers.length,
+                        itemCount: _pagedTrackers.length,
                         separatorBuilder: (_, _) => const SizedBox(height: 8),
                         itemBuilder: (context, index) {
-                          final item = _trackers[index];
+                          final item = _pagedTrackers[index];
                           final dateStr = DateFormat('dd MMM yyyy').format(item.updatedAt);
 
                           return InkWell(
@@ -892,6 +916,21 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
                         },
                       ),
                     ),
+        ),
+        AppPaginationBar(
+          currentPage: _currentPage,
+          totalPages: _totalPages,
+          totalItems: _trackers.length,
+          pageSize: _pageSize,
+          onPageChanged: (newPage) {
+            setState(() => _currentPage = newPage);
+          },
+          onPageSizeChanged: (newSize) {
+            setState(() {
+              _pageSize = newSize;
+              _currentPage = 1;
+            });
+          },
         ),
       ],
     );

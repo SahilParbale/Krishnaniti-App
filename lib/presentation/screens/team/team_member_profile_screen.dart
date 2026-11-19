@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -9,6 +10,7 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_date_picker.dart';
 import '../../widgets/app_dropdown.dart';
+import '../../widgets/app_pagination_bar.dart';
 
 class TeamMemberProfileScreen extends ConsumerStatefulWidget {
   final TeamMemberModel member;
@@ -23,6 +25,20 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
   late TeamMemberModel _member;
   List<TeamTaskModel> _tasks = [];
   bool _isLoadingTasks = true;
+  int _taskPage = 1;
+  static const int _taskPageSize = 5;
+
+  int get _totalTaskPages {
+    final count = _tasks.length;
+    return (count / _taskPageSize).ceil() < 1 ? 1 : (count / _taskPageSize).ceil();
+  }
+
+  List<TeamTaskModel> get _pagedTasks {
+    final startIndex = (_taskPage - 1) * _taskPageSize;
+    if (startIndex >= _tasks.length) return [];
+    final endIndex = min(startIndex + _taskPageSize, _tasks.length);
+    return _tasks.sublist(startIndex, endIndex);
+  }
 
   @override
   void initState() {
@@ -39,6 +55,7 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
       setState(() {
         _tasks = tasks;
         _isLoadingTasks = false;
+        _taskPage = 1;
       });
     }
   }
@@ -686,14 +703,14 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
                 ),
               ),
             )
-          else
+          else ...[
             ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: _tasks.length,
+              itemCount: _pagedTasks.length,
               separatorBuilder: (context, index) => const Divider(height: 14),
               itemBuilder: (ctx, idx) {
-                final t = _tasks[idx];
+                final t = _pagedTasks[idx];
                 final isDone = t.status == 'Completed' || t.status == 'Resolved';
 
                 Color prioColor = Colors.grey;
@@ -777,6 +794,15 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
                 );
               },
             ),
+            AppInlinePagination(
+              currentPage: _taskPage,
+              totalPages: _totalTaskPages,
+              totalItems: _tasks.length,
+              pageSize: _taskPageSize,
+              label: 'tasks',
+              onPageChanged: (page) => setState(() => _taskPage = page),
+            ),
+          ],
         ],
       ),
     );

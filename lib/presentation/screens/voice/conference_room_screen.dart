@@ -12,6 +12,8 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_date_picker.dart';
 import '../../widgets/app_pdf_button.dart';
+import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_shimmer_card.dart';
 import 'conference_meeting_report_generator.dart';
 
 class ConferenceMeetingModel {
@@ -100,6 +102,15 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
   String _viewMode = 'grid'; // 'grid' | 'report'
   String? _copiedMeetingId;
   List<ConferenceMeetingModel> _meetings = [];
+  int _currentPage = 1;
+  int _pageSize = 10;
+
+  List<ConferenceMeetingModel> _getPagedMeetings(List<ConferenceMeetingModel> list) {
+    final startIndex = (_currentPage - 1) * _pageSize;
+    if (startIndex >= list.length) return [];
+    final endIndex = min(startIndex + _pageSize, list.length);
+    return list.sublist(startIndex, endIndex);
+  }
 
   @override
   void initState() {
@@ -107,7 +118,9 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
-        setState(() {});
+        setState(() {
+          _currentPage = 1;
+        });
       }
     });
     _loadMeetings();
@@ -164,6 +177,7 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
         setState(() {
           _meetings = list;
           _isLoading = false;
+          _currentPage = 1;
         });
       }
     } catch (_) {
@@ -1383,16 +1397,27 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
           // Main Content
           Expanded(
             child: _isLoading && _meetings.isEmpty
-                ? const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)))
+                ? const AppShimmerList(count: 6)
                 : RefreshIndicator(
                     onRefresh: _loadMeetings,
                     color: const Color(0xFF0284C7),
                     child: _viewMode == 'grid'
-                        ? _buildGridView(displayMeetings, isMr)
-                        : _buildReportView(displayMeetings, isMr),
+                        ? _buildGridView(_getPagedMeetings(displayMeetings), isMr)
+                        : _buildReportView(_getPagedMeetings(displayMeetings), isMr),
                   ),
           ),
         ],
+      ),
+      bottomNavigationBar: AppPaginationBar(
+        currentPage: _currentPage,
+        totalPages: (displayMeetings.length / _pageSize).ceil() < 1 ? 1 : (displayMeetings.length / _pageSize).ceil(),
+        totalItems: displayMeetings.length,
+        pageSize: _pageSize,
+        onPageChanged: (page) => setState(() => _currentPage = page),
+        onPageSizeChanged: (size) => setState(() {
+          _pageSize = size;
+          _currentPage = 1;
+        }),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showCreateMeetingDialog,

@@ -99,16 +99,16 @@ class TeamRepository {
     await query;
   }
 
-  Future<List<TeamTaskModel>> getMemberTasks(String staffId) async {
+  Future<List<TeamTaskModel>> getMemberTasks(String staffId, {int limit = 50}) async {
     try {
       var query = _client
           .from('tasks')
-          .select('*')
+          .select('id, title, description, priority, status, due_date, created_at')
           .eq('assigned_to', staffId);
       if (_tenantId != null && _tenantId!.isNotEmpty) {
         query = query.eq('tenant_id', _tenantId!);
       }
-      final response = await query.order('created_at', ascending: false);
+      final response = await query.order('created_at', ascending: false).limit(limit);
       return (response as List<dynamic>)
           .map((json) => TeamTaskModel.fromJson(json as Map<String, dynamic>))
           .toList();

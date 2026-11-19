@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +9,8 @@ import '../voters/voter_profile_screen.dart';
 import 'duplicate_voters_report_generator.dart';
 import '../../navigation/app_drawer.dart';
 import '../../widgets/app_pdf_button.dart';
+import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_shimmer_card.dart';
 
 class DuplicateVotersScreen extends ConsumerStatefulWidget {
   const DuplicateVotersScreen({super.key});
@@ -29,6 +32,20 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
     'estimatedExtraRecords': 0,
     'cleanRecordsCount': 0,
   };
+  int _currentPage = 1;
+  int _pageSize = 20;
+
+  int get _totalPages {
+    final count = _duplicateGroups.length;
+    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
+  }
+
+  List<DuplicateVoterGroupModel> get _pagedGroups {
+    final startIndex = (_currentPage - 1) * _pageSize;
+    if (startIndex >= _duplicateGroups.length) return [];
+    final endIndex = min(startIndex + _pageSize, _duplicateGroups.length);
+    return _duplicateGroups.sublist(startIndex, endIndex);
+  }
 
   @override
   void initState() {
@@ -51,6 +68,7 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
         _duplicateGroups = groups;
         _stats = stats;
         _isLoading = false;
+        _currentPage = 1;
         // Default expand first 2 groups for great initial view
         if (_expandedGroups.isEmpty && groups.isNotEmpty) {
           _expandedGroups.addAll(groups.take(2).map((g) => g.normalizedKey));
@@ -268,27 +286,33 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
 
               // Duplicate Groups List
               if (_isLoading)
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(40),
-                    child: CircularProgressIndicator(color: Color(0xFF0284C7)),
-                  ),
-                )
+                const AppShimmerList(count: 6)
               else if (_duplicateGroups.isEmpty)
                 _buildEmptyState()
               else
                 ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _duplicateGroups.length,
+                  itemCount: _pagedGroups.length,
                   separatorBuilder: (context, index) => const SizedBox(height: 14),
-                  itemBuilder: (context, index) => _buildGroupCard(_duplicateGroups[index]),
+                  itemBuilder: (context, index) => _buildGroupCard(_pagedGroups[index]),
                 ),
 
               const SizedBox(height: 40),
             ],
           ),
         ),
+      ),
+      bottomNavigationBar: AppPaginationBar(
+        currentPage: _currentPage,
+        totalPages: _totalPages,
+        totalItems: _duplicateGroups.length,
+        pageSize: _pageSize,
+        onPageChanged: (page) => setState(() => _currentPage = page),
+        onPageSizeChanged: (size) => setState(() {
+          _pageSize = size;
+          _currentPage = 1;
+        }),
       ),
     );
   }

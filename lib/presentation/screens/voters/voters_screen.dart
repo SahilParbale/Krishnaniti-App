@@ -10,6 +10,8 @@ import '../../providers/auth_provider.dart';
 import '../../navigation/app_drawer.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
+import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_shimmer_card.dart';
 import 'voter_profile_screen.dart';
 import 'voter_slip_generator.dart';
 import '../../widgets/app_dropdown.dart';
@@ -29,6 +31,11 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
   List<VoterModel> _allVoters = [];
   Map<String, int> _voterStats = {};
   List<String> _boothsList = [];
+
+  int _currentPage = 1;
+  int _pageSize = 25;
+  int _totalItems = 0;
+  int _totalPages = 1;
 
   String _selectedBooth = 'All';
   String _selectedFavour = 'All'; // 'All', 'Favourable', 'Neutral', 'Against', 'Swing'
@@ -53,21 +60,24 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
     setState(() => _isLoading = true);
     final repo = ref.read(votersRepoProvider);
 
-    final voters = await repo.searchVoters(
+    final result = await repo.getPaginatedVoters(
+      page: _currentPage,
+      pageSize: _pageSize,
       query: _searchCtrl.text.trim(),
       boothFilter: _selectedBooth != 'All' ? _selectedBooth : null,
       favourFilter: _selectedFavour != 'All' ? _selectedFavour : null,
       genderFilter: _selectedGender != 'All' ? _selectedGender : null,
       ageRangeFilter: _selectedAgeRange != 'All' ? _selectedAgeRange : null,
       isFriendOnly: _friendsOnly,
-      pageSize: 100,
     );
     final stats = await repo.getVotersStats();
     final booths = await repo.getBoothsList();
 
     if (mounted) {
       setState(() {
-        _allVoters = voters;
+        _allVoters = result.items;
+        _totalItems = result.totalCount;
+        _totalPages = result.totalPages;
         _voterStats = stats;
         _boothsList = booths;
         _isLoading = false;
@@ -271,6 +281,7 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                           _selectedGender = 'All';
                           _selectedAgeRange = 'All';
                           _friendsOnly = false;
+                          _currentPage = 1;
                         });
                         Navigator.pop(ctx);
                         _loadVoters();
@@ -353,6 +364,7 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
+                      setState(() => _currentPage = 1);
                       Navigator.pop(ctx);
                       _loadVoters();
                     },
@@ -898,44 +910,62 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
           const SizedBox(width: 4),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)))
-          : RefreshIndicator(
-              onRefresh: _loadVoters,
-              color: const Color(0xFF0284C7),
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                children: [
-                  // KPI Stats Header Row
-                  _buildKpiStrip(totalRoll, favCount, neutralCount, boothsCount),
-                  const SizedBox(height: 14),
+      body: RefreshIndicator(
+        onRefresh: _loadVoters,
+        color: const Color(0xFF0284C7),
+        child: ListView(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          children: [
+            // KPI Stats Header Row
+            _buildKpiStrip(totalRoll, favCount, neutralCount, boothsCount),
+            const SizedBox(height: 14),
 
-                  // Search & Booth Filter Bar
-                  _buildSearchBar(),
-                  const SizedBox(height: 10),
+            // Search & Booth Filter Bar
+            _buildSearchBar(),
+            const SizedBox(height: 10),
 
-                  // Political Stance Filter Chips Row
-                  _buildStanceFilterChips(),
-                  const SizedBox(height: 10),
+            // Political Stance Filter Chips Row
+            _buildStanceFilterChips(),
+            const SizedBox(height: 10),
 
-                  // View Mode & Result Count Row
-                  _buildViewModeBar(filtered, totalRoll),
-                  const SizedBox(height: 14),
+            // View Mode & Result Count Row
+            _buildViewModeBar(filtered, _totalItems > 0 ? _totalItems : totalRoll),
+            const SizedBox(height: 14),
 
-                  // Render Voters by Selected View Mode
-                  if (filtered.isEmpty)
-                    _buildEmptyState()
-                  else if (_viewMode == 'family')
-                    ..._buildFamilyGroupedCards()
-                  else if (_viewMode == 'table')
-                    _buildTableView(filtered)
-                  else
-                    ...filtered.map((v) => _buildVoterCard(v)),
+            // Render Voters by Selected View Mode
+            if (_isLoading)
+              const AppShimmerList(count: 6)
+            else if (filtered.isEmpty)
+              _buildEmptyState()
+            else if (_viewMode == 'family')
+              ..._buildFamilyGroupedCards()
+            else if (_viewMode == 'table')
+              _buildTableView(filtered)
+            else
+              ...filtered.map((v) => _buildVoterCard(v)),
 
-                  const SizedBox(height: 60),
-                ],
-              ),
-            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+      bottomNavigationBar: AppPaginationBar(
+        currentPage: _currentPage,
+        totalPages: _totalPages,
+        totalItems: _totalItems,
+        pageSize: _pageSize,
+        isLoading: _isLoading,
+        onPageChanged: (newPage) {
+          setState(() => _currentPage = newPage);
+          _loadVoters();
+        },
+        onPageSizeChanged: (newSize) {
+          setState(() {
+            _pageSize = newSize;
+            _currentPage = 1;
+          });
+          _loadVoters();
+        },
+      ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: const Color(0xFF0284C7),
         foregroundColor: Colors.white,
@@ -1069,6 +1099,10 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
             child: TextField(
               controller: _searchCtrl,
               onChanged: (_) => setState(() {}),
+              onSubmitted: (_) {
+                setState(() => _currentPage = 1);
+                _loadVoters();
+              },
               decoration: InputDecoration(
                 hintText: 'Search name, EPIC, address, mobile or serial no...',
                 hintStyle: TextStyle(fontSize: 12.5, color: Colors.grey.shade400),
@@ -1078,7 +1112,8 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                         icon: const Icon(Icons.clear, size: 16),
                         onPressed: () {
                           _searchCtrl.clear();
-                          setState(() {});
+                          setState(() => _currentPage = 1);
+                          _loadVoters();
                         },
                       )
                     : null,
@@ -1110,7 +1145,10 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
             ],
             onChanged: (val) {
               if (val != null) {
-                setState(() => _selectedBooth = val);
+                setState(() {
+                  _selectedBooth = val;
+                  _currentPage = 1;
+                });
                 _loadVoters();
               }
             },
@@ -1155,7 +1193,10 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
               label: Text(c['label']!.toString()),
               selected: isSel,
               onSelected: (_) {
-                setState(() => _selectedFavour = c['key']!.toString());
+                setState(() {
+                  _selectedFavour = c['key']!.toString();
+                  _currentPage = 1;
+                });
                 _loadVoters();
               },
               selectedColor: clr,

@@ -63,13 +63,14 @@ class SurveysRepository {
     return null;
   }
 
-  Future<List<SurveyResponseModel>> getSurveyResponses(String surveyId) async {
+  Future<List<SurveyResponseModel>> getSurveyResponses(String surveyId, {int limit = 100}) async {
     try {
       var query = _client
           .from('survey_responses')
-          .select('*')
+          .select('id, survey_id, voter_id, answers, created_at')
           .eq('survey_id', surveyId)
-          .order('created_at', ascending: false);
+          .order('created_at', ascending: false)
+          .limit(limit);
       final response = await query;
       return (response as List<dynamic>)
           .map((item) => SurveyResponseModel.fromJson(item as Map<String, dynamic>))
@@ -136,7 +137,11 @@ class SurveysRepository {
 
     int totalResponses = 0;
     try {
-      final res = await _client.from('survey_responses').select('id');
+      var query = _client.from('survey_responses').select('id');
+      if (_tenantId != null && _tenantId!.isNotEmpty) {
+        query = query.eq('tenant_id', _tenantId!);
+      }
+      final res = await query.limit(500);
       totalResponses = (res as List).length;
     } catch (_) {}
 

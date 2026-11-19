@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/constants/app_config.dart';
 import '../../core/services/supabase_service.dart';
+import '../models/paginated_result.dart';
 import '../models/voter_model.dart';
 
 final votersRepoProvider = Provider((ref) => VotersRepository());
@@ -77,6 +78,84 @@ class VotersRepository {
     }
   }
 
+  Future<PaginatedResult<VoterModel>> getPaginatedVoters({
+    int page = 1,
+    int pageSize = 25,
+    String? query,
+    String? boothFilter,
+    String? favourFilter,
+    String? genderFilter,
+    String? ageRangeFilter,
+    bool isFriendOnly = false,
+  }) async {
+    try {
+      var dbQuery = _client.from('voters').select('*');
+
+      if (_tenantId != null && _tenantId!.isNotEmpty) {
+        dbQuery = dbQuery.eq('tenant_id', _tenantId!);
+      }
+
+      if (boothFilter != null && boothFilter.isNotEmpty && boothFilter != 'All') {
+        dbQuery = dbQuery.eq('booth', boothFilter);
+      }
+
+      if (favourFilter != null && favourFilter.isNotEmpty && favourFilter != 'All') {
+        dbQuery = dbQuery.eq('favour', favourFilter);
+      }
+
+      if (genderFilter != null && genderFilter.isNotEmpty && genderFilter != 'All') {
+        dbQuery = dbQuery.eq('gender', genderFilter);
+      }
+
+      if (isFriendOnly) {
+        dbQuery = dbQuery.eq('is_friend_relative', true);
+      }
+
+      if (ageRangeFilter != null && ageRangeFilter.isNotEmpty && ageRangeFilter != 'All') {
+        if (ageRangeFilter == '18-25') {
+          dbQuery = dbQuery.gte('age', 18).lte('age', 25);
+        } else if (ageRangeFilter == '26-40') {
+          dbQuery = dbQuery.gte('age', 26).lte('age', 40);
+        } else if (ageRangeFilter == '41-60') {
+          dbQuery = dbQuery.gte('age', 41).lte('age', 60);
+        } else if (ageRangeFilter == '60+') {
+          dbQuery = dbQuery.gt('age', 60);
+        }
+      }
+
+      if (query != null && query.trim().isNotEmpty) {
+        final q = query.trim();
+        dbQuery = dbQuery.or(
+          'name_marathi.ilike.%$q%,name_english.ilike.%$q%,epic_no.ilike.%$q%,mobile.ilike.%$q%',
+        );
+      }
+
+      final zeroBasedPage = page > 0 ? page - 1 : 0;
+      final start = zeroBasedPage * pageSize;
+      final end = start + pageSize - 1;
+
+      final response = await dbQuery
+          .order('serial_no', ascending: true)
+          .range(start, end)
+          .count(CountOption.exact);
+
+      final items = (response.data as List<dynamic>)
+          .map((item) => VoterModel.fromJson(item as Map<String, dynamic>))
+          .toList();
+
+      final total = response.count;
+
+      return PaginatedResult<VoterModel>(
+        items: items,
+        totalCount: total,
+        currentPage: page,
+        pageSize: pageSize,
+      );
+    } catch (_) {
+      return PaginatedResult<VoterModel>.empty(pageSize: pageSize);
+    }
+  }
+
   Future<List<VoterModel>> searchVoters({
     int page = 0,
     int pageSize = 30,
@@ -101,7 +180,7 @@ class VotersRepository {
 
   Future<List<VoterModel>> getFamilyMembers(String houseNo, String booth) async {
     try {
-      var query = _client.from('voters').select('*').eq('house_no', houseNo);
+      var query = _client.from('voters').select('id, name_en, name_mr, epic_no, house_no, booth, age, gender, mobile, relation_type, address, serial_no').eq('house_no', houseNo);
       if (_tenantId != null && _tenantId!.isNotEmpty) {
         query = query.eq('tenant_id', _tenantId!);
       }
@@ -109,7 +188,7 @@ class VotersRepository {
         query = query.eq('booth', booth);
       }
 
-      final List<dynamic> response = await query.order('age', ascending: false);
+      final List<dynamic> response = await query.order('age', ascending: false).limit(30);
       return response
           .map((item) => VoterModel.fromJson(item as Map<String, dynamic>))
           .toList();

@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +11,8 @@ import '../../../data/repositories/surveys_repository.dart';
 import '../../../data/repositories/voters_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../widgets/app_pdf_button.dart';
+import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_shimmer_card.dart';
 import 'create_survey_screen.dart';
 import 'survey_detail_screen.dart';
 import 'survey_report_generator.dart';
@@ -34,6 +37,21 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
   String _statusFilter = 'All'; // 'All', 'Active', 'Draft', 'Closed'
   String _displayMode = 'cards'; // 'cards' or 'table'
   Map<String, int> _areaCounts = {};
+  int _currentPage = 1;
+  int _pageSize = 20;
+
+  int get _totalPages {
+    final count = _filteredSurveys.length;
+    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
+  }
+
+  List<SurveyModel> get _pagedSurveys {
+    final filtered = _filteredSurveys;
+    final startIndex = (_currentPage - 1) * _pageSize;
+    if (startIndex >= filtered.length) return [];
+    final endIndex = min(startIndex + _pageSize, filtered.length);
+    return filtered.sublist(startIndex, endIndex);
+  }
 
   @override
   void initState() {
@@ -73,6 +91,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
         _areaCounts = areas;
         _surveyResponseCounts = counts;
         _isLoading = false;
+        _currentPage = 1;
       });
     }
   }
@@ -331,9 +350,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
         actions: const [],
       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF0284C7)),
-            )
+          ? const AppShimmerList(count: 6)
           : RefreshIndicator(
               onRefresh: _loadSurveys,
               color: const Color(0xFF0284C7),
@@ -356,14 +373,25 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                   if (filtered.isEmpty)
                     _buildEmptyState()
                   else if (_displayMode == 'table')
-                    _buildSurveysTable(filtered)
+                    _buildSurveysTable(_pagedSurveys)
                   else
-                    ...filtered.map((s) => _buildSurveyCard(s)),
+                    ..._pagedSurveys.map((s) => _buildSurveyCard(s)),
 
                   const SizedBox(height: 80),
                 ],
               ),
             ),
+      bottomNavigationBar: AppPaginationBar(
+        currentPage: _currentPage,
+        totalPages: _totalPages,
+        totalItems: filtered.length,
+        pageSize: _pageSize,
+        onPageChanged: (page) => setState(() => _currentPage = page),
+        onPageSizeChanged: (size) => setState(() {
+          _pageSize = size;
+          _currentPage = 1;
+        }),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: const Color(0xFF0284C7),
         icon: const Icon(Icons.add_rounded, color: Colors.white),
@@ -517,7 +545,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
           Expanded(
             child: TextField(
               controller: _searchCtrl,
-              onChanged: (_) => setState(() {}),
+              onChanged: (_) => setState(() => _currentPage = 1),
               decoration: InputDecoration(
                 hintText: 'Search survey, topic, or area...',
                 hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade400),
@@ -527,7 +555,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                         icon: const Icon(Icons.clear_rounded, size: 18),
                         onPressed: () {
                           _searchCtrl.clear();
-                          setState(() {});
+                          setState(() => _currentPage = 1);
                         },
                       )
                     : null,
@@ -587,7 +615,12 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
               ),
             ],
             onChanged: (val) {
-              if (val != null) setState(() => _selectedArea = val);
+              if (val != null) {
+                setState(() {
+                  _selectedArea = val;
+                  _currentPage = 1;
+                });
+              }
             },
           ),
           Container(
@@ -636,7 +669,10 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                   child: ChoiceChip(
                     label: Text(t['label']!),
                     selected: isSel,
-                    onSelected: (_) => setState(() => _statusFilter = t['key']!),
+                    onSelected: (_) => setState(() {
+                      _statusFilter = t['key']!;
+                      _currentPage = 1;
+                    }),
                     selectedColor: const Color(0xFF0284C7),
                     labelStyle: TextStyle(
                       fontSize: 11.5,

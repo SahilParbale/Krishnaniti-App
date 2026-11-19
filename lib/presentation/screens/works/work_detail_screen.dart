@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +9,7 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
+import '../../widgets/app_pagination_bar.dart';
 import 'ahwal_report_generator.dart';
 
 class WorkDetailScreen extends ConsumerStatefulWidget {
@@ -22,6 +24,21 @@ class WorkDetailScreen extends ConsumerStatefulWidget {
 class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
   late WorkHistoryModel _currentWork;
   bool _isDeleting = false;
+  int _feedbackPage = 1;
+  static const int _feedbackPageSize = 4;
+
+  int get _totalFeedbackPages {
+    final count = _currentWork.feedbacks.length;
+    return (count / _feedbackPageSize).ceil() < 1 ? 1 : (count / _feedbackPageSize).ceil();
+  }
+
+  List<WorkFeedbackModel> get _pagedFeedbacks {
+    final list = _currentWork.feedbacks;
+    final startIndex = (_feedbackPage - 1) * _feedbackPageSize;
+    if (startIndex >= list.length) return [];
+    final endIndex = min(startIndex + _feedbackPageSize, list.length);
+    return list.sublist(startIndex, endIndex);
+  }
 
   @override
   void initState() {
@@ -33,7 +50,10 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
     final repo = ref.read(workHistoryRepoProvider);
     final updated = await repo.getWorkById(_currentWork.id);
     if (updated != null && mounted) {
-      setState(() => _currentWork = updated);
+      setState(() {
+        _currentWork = updated;
+        _feedbackPage = 1;
+      });
     }
   }
 
@@ -870,14 +890,14 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                                 ),
                               ),
                             )
-                          else
+                          else ...[
                             ListView.separated(
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
-                              itemCount: w.feedbacks.length,
+                              itemCount: _pagedFeedbacks.length,
                               separatorBuilder: (_, _) => const SizedBox(height: 10),
                               itemBuilder: (ctx, i) {
-                                final fb = w.feedbacks[i];
+                                final fb = _pagedFeedbacks[i];
                                 return Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
@@ -919,6 +939,15 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                                 );
                               },
                             ),
+                            AppInlinePagination(
+                              currentPage: _feedbackPage,
+                              totalPages: _totalFeedbackPages,
+                              totalItems: w.feedbacks.length,
+                              pageSize: _feedbackPageSize,
+                              label: isMr ? 'प्रतिक्रिया' : 'feedbacks',
+                              onPageChanged: (page) => setState(() => _feedbackPage = page),
+                            ),
+                          ],
                         ],
                       ),
                     ),

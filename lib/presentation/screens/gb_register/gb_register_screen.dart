@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +11,8 @@ import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_pdf_button.dart';
 import '../../widgets/app_date_picker.dart';
+import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_shimmer_card.dart';
 import 'gb_register_detail_screen.dart';
 import 'gb_register_report_generator.dart';
 
@@ -30,6 +33,21 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
 
   bool _isLoading = true;
   List<GbRegisterEntryModel> _allEntries = [];
+
+  int _currentPage = 1;
+  int _pageSize = 20;
+
+  int get _totalPages {
+    final count = _filteredEntries.length;
+    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
+  }
+
+  List<GbRegisterEntryModel> get _pagedEntries {
+    final startIndex = (_currentPage - 1) * _pageSize;
+    if (startIndex >= _filteredEntries.length) return [];
+    final endIndex = min(startIndex + _pageSize, _filteredEntries.length);
+    return _filteredEntries.sublist(startIndex, endIndex);
+  }
 
   final List<String> _meetingTypes = ['All', 'GB', 'Standing Committee', 'Ward Committee', 'Special GB', 'Other'];
   final List<String> _statusList = ['All', 'Raised', 'In Discussion', 'Resolved', 'Action Taken'];
@@ -640,12 +658,15 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
           onPressed: _showAddModal,
         ),
         body: _isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? const Padding(
+                padding: EdgeInsets.all(16),
+                child: AppShimmerList(count: 6),
+              )
             : RefreshIndicator(
                 onRefresh: _loadData,
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.only(bottom: 80),
+                  padding: const EdgeInsets.only(bottom: 20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -698,7 +719,7 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                                 Expanded(
                                   child: TextField(
                                     controller: _searchCtrl,
-                                    onChanged: (_) => setState(() {}),
+                                    onChanged: (_) => setState(() => _currentPage = 1),
                                     decoration: InputDecoration(
                                       hintText: isMr
                                           ? 'ठराव, विषय, खाते किंवा संदर्भ क्रमांक शोधा...'
@@ -710,7 +731,7 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                                               icon: const Icon(Icons.clear, size: 18),
                                               onPressed: () {
                                                 _searchCtrl.clear();
-                                                setState(() {});
+                                                setState(() => _currentPage = 1);
                                               },
                                             )
                                           : null,
@@ -793,7 +814,12 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                                         color: isSelected ? const Color(0xFF0284C7) : const Color(0xFFCBD5E1),
                                       ),
                                       onSelected: (val) {
-                                        if (val) setState(() => _selectedMeetingType = type);
+                                        if (val) {
+                                          setState(() {
+                                            _selectedMeetingType = type;
+                                            _currentPage = 1;
+                                          });
+                                        }
                                       },
                                     ),
                                   );
@@ -819,7 +845,12 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                                       );
                                     }).toList(),
                                     onChanged: (val) {
-                                      if (val != null) setState(() => _selectedStatus = val);
+                                      if (val != null) {
+                                        setState(() {
+                                          _selectedStatus = val;
+                                          _currentPage = 1;
+                                        });
+                                      }
                                     },
                                   ),
                                 ),
@@ -838,7 +869,12 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                                       );
                                     }).toList(),
                                     onChanged: (val) {
-                                      if (val != null) setState(() => _selectedArea = val);
+                                      if (val != null) {
+                                        setState(() {
+                                          _selectedArea = val;
+                                          _currentPage = 1;
+                                        });
+                                      }
                                     },
                                   ),
                                 ),
@@ -878,13 +914,28 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                           ),
                         )
                       else if (_viewMode == 'grid')
-                        _buildGridCardView(displayed, isMr)
+                        _buildGridCardView(_pagedEntries, isMr)
                       else
-                        _buildTableView(displayed, isMr),
+                        _buildTableView(_pagedEntries, isMr),
                     ],
                   ),
                 ),
               ),
+        bottomNavigationBar: AppPaginationBar(
+          currentPage: _currentPage,
+          totalPages: _totalPages,
+          totalItems: displayed.length,
+          pageSize: _pageSize,
+          onPageChanged: (newPage) {
+            setState(() => _currentPage = newPage);
+          },
+          onPageSizeChanged: (newSize) {
+            setState(() {
+              _pageSize = newSize;
+              _currentPage = 1;
+            });
+          },
+        ),
       ),
     );
   }

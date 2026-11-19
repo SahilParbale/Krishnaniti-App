@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +9,8 @@ import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
+import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_shimmer_card.dart';
 import 'social_org_detail_screen.dart';
 import 'social_org_report_generator.dart';
 import '../../widgets/app_dropdown.dart';
@@ -34,6 +37,21 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
     'sports': 0,
     'mandals': 0,
   };
+
+  int _currentPage = 1;
+  int _pageSize = 20;
+
+  int get _totalPages {
+    final count = _organizations.length;
+    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
+  }
+
+  List<SocialOrganizationModel> get _pagedOrgs {
+    final startIndex = (_currentPage - 1) * _pageSize;
+    if (startIndex >= _organizations.length) return [];
+    final endIndex = min(startIndex + _pageSize, _organizations.length);
+    return _organizations.sublist(startIndex, endIndex);
+  }
 
   @override
   void initState() {
@@ -889,7 +907,10 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                       ),
                       child: TextField(
                         controller: _searchController,
-                        onChanged: (_) => _loadOrganizations(),
+                        onChanged: (_) {
+                          setState(() => _currentPage = 1);
+                          _loadOrganizations();
+                        },
                         decoration: InputDecoration(
                           hintText: 'Search by name, president, or area...',
                           hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
@@ -899,6 +920,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                                   icon: const Icon(Icons.clear_rounded, size: 18),
                                   onPressed: () {
                                     _searchController.clear();
+                                    setState(() => _currentPage = 1);
                                     _loadOrganizations();
                                   },
                                 )
@@ -956,27 +978,42 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                 child: Row(
                   children: [
                     _buildFilterChip('All Types (${_stats['total']})', 'all', _selectedType, (val) {
-                      setState(() => _selectedType = val);
+                      setState(() {
+                        _selectedType = val;
+                        _currentPage = 1;
+                      });
                       _loadOrganizations();
                     }),
                     const SizedBox(width: 6),
                     _buildFilterChip('Ganesh Mandals', 'ganpati_mandal', _selectedType, (val) {
-                      setState(() => _selectedType = val);
+                      setState(() {
+                        _selectedType = val;
+                        _currentPage = 1;
+                      });
                       _loadOrganizations();
                     }),
                     const SizedBox(width: 6),
                     _buildFilterChip('Navratri Mandals', 'navratri_mandal', _selectedType, (val) {
-                      setState(() => _selectedType = val);
+                      setState(() {
+                        _selectedType = val;
+                        _currentPage = 1;
+                      });
                       _loadOrganizations();
                     }),
                     const SizedBox(width: 6),
                     _buildFilterChip('Sports Clubs', 'sports_cricket', _selectedType, (val) {
-                      setState(() => _selectedType = val);
+                      setState(() {
+                        _selectedType = val;
+                        _currentPage = 1;
+                      });
                       _loadOrganizations();
                     }),
                     const SizedBox(width: 6),
                     _buildFilterChip('NGOs & Trusts', 'ngo', _selectedType, (val) {
-                      setState(() => _selectedType = val);
+                      setState(() {
+                        _selectedType = val;
+                        _currentPage = 1;
+                      });
                       _loadOrganizations();
                     }),
                   ],
@@ -989,12 +1026,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
               // 4. MAIN CONTENT (CARDS OR TABLE)
               // ==========================================
               if (_isLoading)
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 40),
-                    child: CircularProgressIndicator(),
-                  ),
-                )
+                const AppShimmerList(count: 6)
               else if (_organizations.isEmpty)
                 Container(
                   padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 20),
@@ -1035,10 +1067,10 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                 ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _organizations.length,
+                  itemCount: _pagedOrgs.length,
                   separatorBuilder: (context, index) => const SizedBox(height: 12),
                   itemBuilder: (ctx, idx) {
-                    final org = _organizations[idx];
+                    final org = _pagedOrgs[idx];
                     return _buildOrgCard(org);
                   },
                 )
@@ -1046,10 +1078,25 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                 // SPREADSHEET TABLE VIEW
                 _buildSpreadsheetTable(),
 
-              const SizedBox(height: 30),
+              const SizedBox(height: 20),
             ],
           ),
         ),
+      ),
+      bottomNavigationBar: AppPaginationBar(
+        currentPage: _currentPage,
+        totalPages: _totalPages,
+        totalItems: _organizations.length,
+        pageSize: _pageSize,
+        onPageChanged: (newPage) {
+          setState(() => _currentPage = newPage);
+        },
+        onPageSizeChanged: (newSize) {
+          setState(() {
+            _pageSize = newSize;
+            _currentPage = 1;
+          });
+        },
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showOrgForm(),
@@ -1515,13 +1562,13 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
               DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
               DataColumn(label: Text('Action', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
             ],
-            rows: List.generate(_organizations.length, (index) {
-              final o = _organizations[index];
+            rows: List.generate(_pagedOrgs.length, (index) {
+              final o = _pagedOrgs[index];
               final theme = _getTheme(o.type);
 
               return DataRow(
                 cells: [
-                  DataCell(Text((index + 1).toString(), style: const TextStyle(fontSize: 11))),
+                  DataCell(Text(((_currentPage - 1) * _pageSize + index + 1).toString(), style: const TextStyle(fontSize: 11))),
                   DataCell(
                     Text(
                       o.displayName,

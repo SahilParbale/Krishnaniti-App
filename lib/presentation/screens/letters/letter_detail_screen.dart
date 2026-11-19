@@ -35,7 +35,6 @@ class _LetterDetailScreenState extends ConsumerState<LetterDetailScreen> {
   void initState() {
     super.initState();
     _letter = widget.letter;
-    _refreshFromBackend();
   }
 
   Future<void> _refreshFromBackend() async {
@@ -554,10 +553,14 @@ class _LetterDetailScreenState extends ConsumerState<LetterDetailScreen> {
 
               // Main Scrollable Content
               Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                child: RefreshIndicator(
+                  onRefresh: _refreshFromBackend,
+                  color: const Color(0xFF0284C7),
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       // 1. Top Letter Overview Card (Dynamic status styling matching LetterDashboard.tsx)
                       _buildLetterOverviewCard(isMr),
@@ -580,6 +583,7 @@ class _LetterDetailScreenState extends ConsumerState<LetterDetailScreen> {
                   ),
                 ),
               ),
+            ),
             ],
           ),
         ),

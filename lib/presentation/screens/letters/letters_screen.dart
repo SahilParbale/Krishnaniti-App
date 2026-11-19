@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,6 +15,8 @@ import '../../navigation/app_drawer.dart';
 import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_date_picker.dart';
 import '../../widgets/app_pdf_button.dart';
+import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_shimmer_card.dart';
 import 'letter_report_generator.dart';
 
 class LettersScreen extends ConsumerStatefulWidget {
@@ -41,6 +44,9 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
   String _dateSearch = '';
   String _selectedStatus = 'All'; // 'All', 'Pending', 'Approved', 'Rejected'
   bool _isLoading = false;
+
+  int _currentPage = 1;
+  int _pageSize = 20;
 
   List<LetterModel> _outgoingLetters = [];
   List<LetterModel> _incomingLetters = [];
@@ -151,6 +157,19 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
 
       return true;
     }).toList();
+  }
+
+  int get _totalPages {
+    final count = _filteredLetters.length;
+    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
+  }
+
+  List<LetterModel> get _pagedLetters {
+    final all = _filteredLetters;
+    final startIndex = (_currentPage - 1) * _pageSize;
+    if (startIndex >= all.length) return [];
+    final endIndex = min(startIndex + _pageSize, all.length);
+    return all.sublist(startIndex, endIndex);
   }
 
   void _openDetailScreen(LetterModel letter) {
@@ -288,6 +307,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                         onTap: () {
                           setState(() {
                             _isOutgoing = true;
+                            _currentPage = 1;
                           });
                         },
                         borderRadius: BorderRadius.circular(9),
@@ -334,6 +354,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                         onTap: () {
                           setState(() {
                             _isOutgoing = false;
+                            _currentPage = 1;
                           });
                         },
                         borderRadius: BorderRadius.circular(9),
@@ -398,7 +419,10 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                           ),
                           child: TextField(
                             controller: _searchController,
-                            onChanged: (val) => setState(() => _searchQuery = val.trim()),
+                            onChanged: (val) => setState(() {
+                              _searchQuery = val.trim();
+                              _currentPage = 1;
+                            }),
                             style: const TextStyle(fontSize: 13),
                             decoration: InputDecoration(
                               hintText: isMr ? 'पत्र, नागरिक किंवा विषय शोधा...' : 'Search letters, citizen, subject...',
@@ -410,7 +434,10 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                                       padding: EdgeInsets.zero,
                                       onPressed: () {
                                         _searchController.clear();
-                                        setState(() => _searchQuery = '');
+                                        setState(() {
+                                          _searchQuery = '';
+                                          _currentPage = 1;
+                                        });
                                       },
                                     )
                                   : null,
@@ -438,7 +465,12 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                             DropdownMenuItem(value: 'Rejected', child: Text(isMr ? 'नाकारले' : 'Rejected', style: const TextStyle(fontSize: 12))),
                           ],
                           onChanged: (val) {
-                            if (val != null) setState(() => _selectedStatus = val);
+                            if (val != null) {
+                              setState(() {
+                                _selectedStatus = val;
+                                _currentPage = 1;
+                              });
+                            }
                           },
                         ),
                       ],
@@ -633,54 +665,54 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
             // Letters List
             Expanded(
               child: _isLoading
-                    ? const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0284C7)))
-                    : filtered.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFF1F5F9),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(Icons.mail_outline_rounded, size: 36, color: Color(0xFF94A3B8)),
+                  ? const AppShimmerList(count: 6)
+                  : filtered.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFF1F5F9),
+                                  shape: BoxShape.circle,
                                 ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  isMr ? AppStrings.noDataFoundMr : AppStrings.noDataFound,
-                                  style: const TextStyle(color: Color(0xFF64748B), fontSize: 14, fontWeight: FontWeight.w600),
-                                ),
-                                if (_searchQuery.isNotEmpty || _areaSearch.isNotEmpty || _dateSearch.isNotEmpty || (_isOutgoing && _selectedStatus != 'All')) ...[
-                                  const SizedBox(height: 10),
-                                  OutlinedButton.icon(
-                                    onPressed: _clearAllFilters,
-                                    icon: const Icon(Icons.filter_alt_off_rounded, size: 16),
-                                    label: Text(
-                                      isMr ? 'फिल्टर साफ करा' : 'Clear Filters',
-                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                                    ),
-                                    style: OutlinedButton.styleFrom(
-                                      foregroundColor: const Color(0xFF0284C7),
-                                      side: const BorderSide(color: Color(0xFF0284C7)),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                    ),
+                                child: const Icon(Icons.mail_outline_rounded, size: 36, color: Color(0xFF94A3B8)),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                isMr ? AppStrings.noDataFoundMr : AppStrings.noDataFound,
+                                style: const TextStyle(color: Color(0xFF64748B), fontSize: 14, fontWeight: FontWeight.w600),
+                              ),
+                              if (_searchQuery.isNotEmpty || _areaSearch.isNotEmpty || _dateSearch.isNotEmpty || (_isOutgoing && _selectedStatus != 'All')) ...[
+                                const SizedBox(height: 10),
+                                OutlinedButton.icon(
+                                  onPressed: _clearAllFilters,
+                                  icon: const Icon(Icons.filter_alt_off_rounded, size: 16),
+                                  label: Text(
+                                    isMr ? 'फिल्टर साफ करा' : 'Clear Filters',
+                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                                   ),
-                                ],
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: const Color(0xFF0284C7),
+                                    side: const BorderSide(color: Color(0xFF0284C7)),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  ),
+                                ),
                               ],
-                            ),
-                          )
+                            ],
+                          ),
+                        )
                       : RefreshIndicator(
                           onRefresh: _fetchLetters,
                           color: const Color(0xFF0284C7),
                           child: ListView.separated(
-                            padding: const EdgeInsets.fromLTRB(16, 14, 16, 88),
-                            itemCount: filtered.length,
+                            padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
+                            itemCount: _pagedLetters.length,
                             separatorBuilder: (_, _) => const SizedBox(height: 12),
                             itemBuilder: (ctx, idx) {
-                              final item = filtered[idx];
+                              final item = _pagedLetters[idx];
                               return _LetterCard(
                                 letter: item,
                                 isMr: isMr,
@@ -692,6 +724,24 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                         ),
             ),
           ],
+        ),
+
+        // Bottom Pagination Bar (Audit & Electoral Data Style)
+        bottomNavigationBar: AppPaginationBar(
+          currentPage: _currentPage,
+          totalPages: _totalPages,
+          totalItems: filtered.length,
+          pageSize: _pageSize,
+          isLoading: _isLoading,
+          onPageChanged: (newPage) {
+            setState(() => _currentPage = newPage);
+          },
+          onPageSizeChanged: (newSize) {
+            setState(() {
+              _pageSize = newSize;
+              _currentPage = 1;
+            });
+          },
         ),
 
         // Floating Action Button (+ New Outgoing or + Scan Incoming)
@@ -738,6 +788,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
       _areaSearch = '';
       _dateSearch = '';
       _selectedStatus = 'All';
+      _currentPage = 1;
     });
   }
 

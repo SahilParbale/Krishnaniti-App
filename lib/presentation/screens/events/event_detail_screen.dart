@@ -1,9 +1,11 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/event_model.dart';
 import '../../../data/repositories/events_repository.dart';
+import '../../widgets/app_pagination_bar.dart';
 import 'event_invite_modal.dart';
 import 'event_report_generator.dart';
 import '../../widgets/app_pdf_button.dart';
@@ -21,6 +23,8 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
   late EventModel _event;
   final TextEditingController _rsvpSearchCtrl = TextEditingController();
   String _rsvpStatusFilter = 'all'; // 'all' | 'Going' | 'Maybe' | 'Not Going'
+  int _rsvpPage = 1;
+  static const int _rsvpPageSize = 8;
 
   @override
   void initState() {
@@ -568,7 +572,10 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
               suffixIcon: _rsvpSearchCtrl.text.isNotEmpty
                   ? IconButton(
                       icon: const Icon(Icons.clear_rounded, size: 16),
-                      onPressed: () => setState(() => _rsvpSearchCtrl.clear()),
+                      onPressed: () => setState(() {
+                        _rsvpSearchCtrl.clear();
+                        _rsvpPage = 1;
+                      }),
                     )
                   : null,
               filled: true,
@@ -583,7 +590,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                 borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
               ),
             ),
-            onChanged: (_) => setState(() {}),
+            onChanged: (_) => setState(() => _rsvpPage = 1),
           ),
 
           const SizedBox(height: 10),
@@ -621,68 +628,91 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                 ),
               ),
             )
-          else
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: filteredRsvps.length,
-              separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
-              itemBuilder: (ctx, idx) {
-                final rsvp = filteredRsvps[idx];
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  child: Row(
-                    children: [
-                      // Status Icon
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: rsvp.status.color.withOpacity(0.12),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(rsvp.status.icon, size: 16, color: rsvp.status.color),
-                      ),
-                      const SizedBox(width: 12),
-                      // Voter Info
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              rsvp.voterNameMr,
-                              style: const TextStyle(
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF0F172A),
+          else ...[
+            Builder(
+              builder: (context) {
+                final totalRsvpPages = (filteredRsvps.length / _rsvpPageSize).ceil() < 1 ? 1 : (filteredRsvps.length / _rsvpPageSize).ceil();
+                final startIndex = (_rsvpPage - 1) * _rsvpPageSize;
+                final pagedRsvps = startIndex >= filteredRsvps.length
+                    ? <EventRsvpModel>[]
+                    : filteredRsvps.sublist(startIndex, min(startIndex + _rsvpPageSize, filteredRsvps.length));
+
+                return Column(
+                  children: [
+                    ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: pagedRsvps.length,
+                      separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                      itemBuilder: (ctx, idx) {
+                        final rsvp = pagedRsvps[idx];
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          child: Row(
+                            children: [
+                              // Status Icon
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: rsvp.status.color.withOpacity(0.12),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(rsvp.status.icon, size: 16, color: rsvp.status.color),
                               ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '${rsvp.address} • ${rsvp.responseSource}',
-                              style: const TextStyle(
-                                fontSize: 11.5,
-                                color: Color(0xFF64748B),
+                              const SizedBox(width: 12),
+                              // Voter Info
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      rsvp.voterNameMr,
+                                      style: const TextStyle(
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '${rsvp.address} • ${rsvp.responseSource}',
+                                      style: const TextStyle(
+                                        fontSize: 11.5,
+                                        color: Color(0xFF64748B),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Call & WhatsApp Action Buttons
-                      IconButton(
-                        icon: const Icon(Icons.call_outlined, size: 18, color: Color(0xFF0284C7)),
-                        onPressed: () => _handleCall(rsvp.mobile),
-                        tooltip: 'Call',
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18, color: Color(0xFF16A34A)),
-                        onPressed: () => _handleWhatsApp(rsvp.mobile, rsvp.voterNameMr),
-                        tooltip: 'WhatsApp Message',
-                      ),
-                    ],
-                  ),
+                              // Call & WhatsApp Action Buttons
+                              IconButton(
+                                icon: const Icon(Icons.call_outlined, size: 18, color: Color(0xFF0284C7)),
+                                onPressed: () => _handleCall(rsvp.mobile),
+                                tooltip: 'Call',
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18, color: Color(0xFF16A34A)),
+                                onPressed: () => _handleWhatsApp(rsvp.mobile, rsvp.voterNameMr),
+                                tooltip: 'WhatsApp Message',
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                    AppInlinePagination(
+                      currentPage: _rsvpPage,
+                      totalPages: totalRsvpPages,
+                      totalItems: filteredRsvps.length,
+                      pageSize: _rsvpPageSize,
+                      label: 'RSVPs',
+                      onPageChanged: (page) => setState(() => _rsvpPage = page),
+                    ),
+                  ],
                 );
               },
             ),
+          ],
         ],
       ),
     );
@@ -703,7 +733,10 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
       selectedColor: const Color(0xFF0284C7),
       backgroundColor: const Color(0xFFF1F5F9),
       side: BorderSide.none,
-      onSelected: (_) => setState(() => _rsvpStatusFilter = value),
+      onSelected: (_) => setState(() {
+        _rsvpStatusFilter = value;
+        _rsvpPage = 1;
+      }),
     );
   }
 }

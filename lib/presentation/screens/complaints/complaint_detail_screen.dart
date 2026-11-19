@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,6 +15,7 @@ import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_image_picker.dart';
 import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_pdf_button.dart';
+import '../../widgets/app_pagination_bar.dart';
 import 'complaint_report_generator.dart';
 
 class ComplaintDetailScreen extends ConsumerStatefulWidget {
@@ -32,6 +34,21 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
   late ComplaintModel _complaint;
   List<StaffModel> _staffList = [];
   String? _assignedStaffId;
+  int _updatePage = 1;
+  static const int _updatePageSize = 5;
+
+  int get _totalUpdatePages {
+    final count = _complaint.progressUpdates.length;
+    return (count / _updatePageSize).ceil() < 1 ? 1 : (count / _updatePageSize).ceil();
+  }
+
+  List<ComplaintProgressUpdate> get _pagedUpdates {
+    final list = _complaint.progressUpdates;
+    final startIndex = (_updatePage - 1) * _updatePageSize;
+    if (startIndex >= list.length) return [];
+    final endIndex = min(startIndex + _updatePageSize, list.length);
+    return list.sublist(startIndex, endIndex);
+  }
 
   @override
   void initState() {
@@ -50,8 +67,12 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
           _staffList = staff;
         });
       }
+    } catch (_) {}
+  }
 
-      // Re-fetch complaint by ID from Supabase if connected
+  Future<void> _refreshComplaint() async {
+    try {
+      final repo = ref.read(complaintsRepoProvider);
       final fresh = await repo.getComplaintById(_complaint.id);
       if (fresh != null && mounted) {
         setState(() {
@@ -634,32 +655,37 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
 
               // Main Scrollable Content
               Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // 1. Top Ticket Overview Card (Dynamic Colored Card matching ComplaintDetail.tsx)
-                      _buildTicketOverviewCard(isMr),
+                child: RefreshIndicator(
+                  onRefresh: _refreshComplaint,
+                  color: const Color(0xFF0284C7),
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // 1. Top Ticket Overview Card (Dynamic Colored Card matching ComplaintDetail.tsx)
+                        _buildTicketOverviewCard(isMr),
 
-                      const SizedBox(height: 16),
-
-                      // 2. Progress History Section (Timeline matching ComplaintDetail.tsx)
-                      _buildProgressHistorySection(isMr, isAdminOrStaff),
-
-                      const SizedBox(height: 16),
-
-                      // 3. Manage Ticket Actions Card (Status toggles & Assign Staff)
-                      if (isAdminOrStaff) ...[
-                        _buildManageTicketCard(isMr),
                         const SizedBox(height: 16),
+
+                        // 2. Progress History Section (Timeline matching ComplaintDetail.tsx)
+                        _buildProgressHistorySection(isMr, isAdminOrStaff),
+
+                        const SizedBox(height: 16),
+
+                        // 3. Manage Ticket Actions Card (Status toggles & Assign Staff)
+                        if (isAdminOrStaff) ...[
+                          _buildManageTicketCard(isMr),
+                          const SizedBox(height: 16),
+                        ],
+
+                        // 4. Ticket Details / Citizen Card (Monochrome box matching ComplaintDetail.tsx)
+                        _buildTicketDetailsCard(isMr),
+
+                        const SizedBox(height: 32),
                       ],
-
-                      // 4. Ticket Details / Citizen Card (Monochrome box matching ComplaintDetail.tsx)
-                      _buildTicketDetailsCard(isMr),
-
-                      const SizedBox(height: 32),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -960,14 +986,14 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                 ),
               ),
             )
-          else
+          else ...[
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: updates.length,
+              itemCount: _pagedUpdates.length,
               itemBuilder: (ctx, idx) {
-                final item = updates[idx];
-                final isLast = idx == updates.length - 1;
+                final item = _pagedUpdates[idx];
+                final isLast = idx == _pagedUpdates.length - 1;
                 final isResolved = item.status.toLowerCase() == 'resolved';
 
                 return IntrinsicHeight(
@@ -1156,6 +1182,15 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                 );
               },
             ),
+            AppInlinePagination(
+              currentPage: _updatePage,
+              totalPages: _totalUpdatePages,
+              totalItems: updates.length,
+              pageSize: _updatePageSize,
+              label: isMr ? 'नोंदी' : 'updates',
+              onPageChanged: (page) => setState(() => _updatePage = page),
+            ),
+          ],
         ],
       ),
     );

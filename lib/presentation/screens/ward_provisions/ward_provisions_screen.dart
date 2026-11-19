@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +10,8 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_pdf_button.dart';
+import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_shimmer_card.dart';
 import 'ward_provision_report_generator.dart';
 
 /// WardProvisions Screen matching EXACTLY the web page:
@@ -24,6 +27,20 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
   String _year = '2024-2025';
   bool _loading = true;
   List<WardProvisionModel> _provisions = [];
+  int _currentPage = 1;
+  int _pageSize = 20;
+
+  int get _totalPages {
+    final count = _provisions.length;
+    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
+  }
+
+  List<WardProvisionModel> get _pagedProvisions {
+    final startIndex = (_currentPage - 1) * _pageSize;
+    if (startIndex >= _provisions.length) return [];
+    final endIndex = min(startIndex + _pageSize, _provisions.length);
+    return _provisions.sublist(startIndex, endIndex);
+  }
 
   @override
   void initState() {
@@ -40,6 +57,7 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
         setState(() {
           _provisions = data;
           _loading = false;
+          _currentPage = 1;
         });
       }
     } catch (_) {
@@ -742,7 +760,7 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
           actions: const [],
         ),
         body: _loading
-            ? const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)))
+            ? const AppShimmerList(count: 6)
             : RefreshIndicator(
                 onRefresh: _loadProvisions,
                 color: const Color(0xFF0284C7),
@@ -768,7 +786,10 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                             ],
                             onChanged: (val) {
                               if (val != null) {
-                                setState(() => _year = val);
+                                setState(() {
+                                  _year = val;
+                                  _currentPage = 1;
+                                });
                                 _loadProvisions();
                               }
                             },
@@ -968,7 +989,7 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                                   DataColumn(label: Text(isMr ? 'तारीख' : 'Date', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
                                   const DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
                                 ],
-                                rows: _provisions.map((item) {
+                                rows: _pagedProvisions.map((item) {
                                   return DataRow(
                                     cells: [
                                       // Title & Category + Reference matching lines 282-291
@@ -1114,6 +1135,17 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                   ],
                 ),
               ),
+        bottomNavigationBar: AppPaginationBar(
+          currentPage: _currentPage,
+          totalPages: _totalPages,
+          totalItems: _provisions.length,
+          pageSize: _pageSize,
+          onPageChanged: (page) => setState(() => _currentPage = page),
+          onPageSizeChanged: (size) => setState(() {
+            _pageSize = size;
+            _currentPage = 1;
+          }),
+        ),
         floatingActionButton: FloatingActionButton.extended(
           backgroundColor: const Color(0xFF0284C7),
           foregroundColor: Colors.white,

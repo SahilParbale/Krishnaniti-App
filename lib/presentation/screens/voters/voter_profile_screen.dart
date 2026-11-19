@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../data/models/voter_model.dart';
 import '../../../data/repositories/voters_repository.dart';
+import '../../widgets/app_pagination_bar.dart';
 import 'voter_slip_generator.dart';
 
 class VoterProfileScreen extends ConsumerStatefulWidget {
@@ -20,6 +22,20 @@ class _VoterProfileScreenState extends ConsumerState<VoterProfileScreen> {
   late VoterModel _voter;
   List<VoterModel> _familyMembers = [];
   bool _isLoadingFamily = true;
+  int _familyPage = 1;
+  static const int _familyPageSize = 5;
+
+  int get _totalFamilyPages {
+    final count = _familyMembers.length;
+    return (count / _familyPageSize).ceil() < 1 ? 1 : (count / _familyPageSize).ceil();
+  }
+
+  List<VoterModel> get _pagedFamily {
+    final startIndex = (_familyPage - 1) * _familyPageSize;
+    if (startIndex >= _familyMembers.length) return [];
+    final endIndex = min(startIndex + _familyPageSize, _familyMembers.length);
+    return _familyMembers.sublist(startIndex, endIndex);
+  }
 
   @override
   void initState() {
@@ -41,6 +57,7 @@ class _VoterProfileScreenState extends ConsumerState<VoterProfileScreen> {
       setState(() {
         _familyMembers = family.where((m) => m.id != _voter.id).toList();
         _isLoadingFamily = false;
+        _familyPage = 1;
       });
     }
   }
@@ -705,106 +722,119 @@ class _VoterProfileScreenState extends ConsumerState<VoterProfileScreen> {
                         style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
                       ),
                     )
-                  : ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: _familyMembers.length,
-                      separatorBuilder: (_, __) => const Divider(height: 12),
-                      itemBuilder: (ctx, idx) {
-                        final m = _familyMembers[idx];
-                        String inferredRel = 'Family Member';
-                        if (m.relationType != null && m.relationType!.isNotEmpty) {
-                          if (m.relationType == 'Spouse') {
-                            inferredRel = 'Spouse';
-                          } else if (m.relationType == 'Son') {
-                            inferredRel = 'Son';
-                          } else if (m.relationType == 'Daughter') {
-                            inferredRel = 'Daughter';
-                          } else if (m.relationType == 'Head') {
-                            inferredRel = 'Head of Family';
-                          }
-                        } else {
-                          if (m.age > _voter.age + 18) {
-                            inferredRel = 'Father / Mother';
-                          } else if (m.age < _voter.age - 18) {
-                            inferredRel = 'Son / Daughter';
-                          } else if ((m.age - _voter.age).abs() < 8 && m.gender != _voter.gender) {
-                            inferredRel = 'Spouse';
-                          }
-                        }
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _pagedFamily.length,
+                          separatorBuilder: (_, __) => const Divider(height: 12),
+                          itemBuilder: (ctx, idx) {
+                            final m = _pagedFamily[idx];
+                            String inferredRel = 'Family Member';
+                            if (m.relationType != null && m.relationType!.isNotEmpty) {
+                              if (m.relationType == 'Spouse') {
+                                inferredRel = 'Spouse';
+                              } else if (m.relationType == 'Son') {
+                                inferredRel = 'Son';
+                              } else if (m.relationType == 'Daughter') {
+                                inferredRel = 'Daughter';
+                              } else if (m.relationType == 'Head') {
+                                inferredRel = 'Head of Family';
+                              }
+                            } else {
+                              if (m.age > _voter.age + 18) {
+                                inferredRel = 'Father / Mother';
+                              } else if (m.age < _voter.age - 18) {
+                                inferredRel = 'Son / Daughter';
+                              } else if ((m.age - _voter.age).abs() < 8 && m.gender != _voter.gender) {
+                                inferredRel = 'Spouse';
+                              }
+                            }
 
-                        return InkWell(
-                          onTap: () {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(builder: (_) => VoterProfileScreen(voter: m)),
-                            );
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 4),
-                            child: Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 16,
-                                  backgroundColor: const Color(0xFFF1F5F9),
-                                  child: Text(
-                                    m.displayName.isNotEmpty ? m.displayName.substring(0, 1) : 'V',
-                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        m.displayName,
-                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                            return InkWell(
+                              onTap: () {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => VoterProfileScreen(voter: m)),
+                                );
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 4),
+                                child: Row(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 16,
+                                      backgroundColor: const Color(0xFFF1F5F9),
+                                      child: Text(
+                                        m.displayName.isNotEmpty ? m.displayName.substring(0, 1) : 'V',
+                                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                                       ),
-                                      Row(
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            '$inferredRel • Age: ${m.age} Yrs • ${m.gender}',
-                                            style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                                            m.displayName,
+                                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                                           ),
-                                          if (m.serialNo != null) ...[
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              '• #${m.serialNo}',
-                                              style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
-                                            ),
-                                          ],
+                                          Row(
+                                            children: [
+                                              Text(
+                                                '$inferredRel • Age: ${m.age} Yrs • ${m.gender}',
+                                                style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                                              ),
+                                              if (m.serialNo != null) ...[
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  '• #${m.serialNo}',
+                                                  style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                                                ),
+                                              ],
+                                            ],
+                                          ),
                                         ],
                                       ),
-                                    ],
-                                  ),
-                                ),
-                                if (m.favour != null)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: m.favour == 'Favourable'
-                                          ? const Color(0xFFDCFCE7)
-                                          : (m.favour == 'Against' ? const Color(0xFFFEE2E2) : const Color(0xFFE0F2FE)),
-                                      borderRadius: BorderRadius.circular(6),
                                     ),
-                                    child: Text(
-                                      m.favourLabelMarathi,
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
-                                        color: m.favour == 'Favourable'
-                                            ? const Color(0xFF16A34A)
-                                            : (m.favour == 'Against' ? const Color(0xFFDC2626) : const Color(0xFF0284C7)),
+                                    if (m.favour != null)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: m.favour == 'Favourable'
+                                              ? const Color(0xFFDCFCE7)
+                                              : (m.favour == 'Against' ? const Color(0xFFFEE2E2) : const Color(0xFFE0F2FE)),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          m.favourLabelMarathi,
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            color: m.favour == 'Favourable'
+                                                ? const Color(0xFF16A34A)
+                                                : (m.favour == 'Against' ? const Color(0xFFDC2626) : const Color(0xFF0284C7)),
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                  ),
-                                const Icon(Icons.chevron_right, size: 18, color: Colors.grey),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
+                                    const Icon(Icons.chevron_right, size: 18, color: Colors.grey),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        AppInlinePagination(
+                          currentPage: _familyPage,
+                          totalPages: _totalFamilyPages,
+                          totalItems: _familyMembers.length,
+                          pageSize: _familyPageSize,
+                          label: 'voters',
+                          onPageChanged: (page) => setState(() => _familyPage = page),
+                        ),
+                      ],
                     ),
         ],
       ),

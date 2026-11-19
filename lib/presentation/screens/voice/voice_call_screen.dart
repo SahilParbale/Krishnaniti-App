@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +10,8 @@ import '../../../data/models/whatsapp_broadcast_model.dart';
 import '../../../data/repositories/sms_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../widgets/app_pdf_button.dart';
+import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_shimmer_card.dart';
 import 'communication_history_report_generator.dart';
 
 class VoiceCallScreen extends ConsumerStatefulWidget {
@@ -27,10 +30,28 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
 
   bool _isLoadingVoters = false;
   List<VoterModel> _voters = [];
+  int _voterPage = 1;
+  int _voterPageSize = 20;
+
+  List<VoterModel> get _pagedVoters {
+    final startIndex = (_voterPage - 1) * _voterPageSize;
+    if (startIndex >= _voters.length) return [];
+    final endIndex = min(startIndex + _voterPageSize, _voters.length);
+    return _voters.sublist(startIndex, endIndex);
+  }
 
   // History state
   bool _isLoadingHistory = false;
   List<WhatsAppBroadcastModel> _callHistory = [];
+  int _historyPage = 1;
+  int _historyPageSize = 10;
+
+  List<WhatsAppBroadcastModel> get _pagedHistory {
+    final startIndex = (_historyPage - 1) * _historyPageSize;
+    if (startIndex >= _callHistory.length) return [];
+    final endIndex = min(startIndex + _historyPageSize, _callHistory.length);
+    return _callHistory.sublist(startIndex, endIndex);
+  }
 
   @override
   void initState() {
@@ -68,6 +89,7 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
         setState(() {
           _voters = list;
           _isLoadingVoters = false;
+          _voterPage = 1;
         });
       }
     } catch (_) {
@@ -95,6 +117,7 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
         setState(() {
           _callHistory = list;
           _isLoadingHistory = false;
+          _historyPage = 1;
         });
       }
     } catch (_) {
@@ -387,7 +410,7 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
         // Voter List
         Expanded(
           child: _isLoadingVoters && _voters.isEmpty
-              ? const Center(child: CircularProgressIndicator())
+              ? const AppShimmerList(count: 6)
               : _voters.isEmpty
                   ? Center(
                       child: Column(
@@ -403,10 +426,10 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
                       onRefresh: _loadVoters,
                       child: ListView.separated(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        itemCount: _voters.length,
+                        itemCount: _pagedVoters.length,
                         separatorBuilder: (_, __) => const SizedBox(height: 8),
                         itemBuilder: (context, index) {
-                          final voter = _voters[index];
+                          final voter = _pagedVoters[index];
                           final hasPhone = (voter.mobile != null && voter.mobile!.isNotEmpty);
                           final name = voter.nameMarathi.isNotEmpty
                               ? voter.nameMarathi
@@ -483,13 +506,24 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
                       ),
                     ),
         ),
+        AppPaginationBar(
+          currentPage: _voterPage,
+          totalPages: (_voters.length / _voterPageSize).ceil() < 1 ? 1 : (_voters.length / _voterPageSize).ceil(),
+          totalItems: _voters.length,
+          pageSize: _voterPageSize,
+          onPageChanged: (page) => setState(() => _voterPage = page),
+          onPageSizeChanged: (size) => setState(() {
+            _voterPageSize = size;
+            _voterPage = 1;
+          }),
+        ),
       ],
     );
   }
 
   Widget _buildHistoryTab(ThemeData theme, bool isDark) {
     if (_isLoadingHistory && _callHistory.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const AppShimmerList(count: 6);
     }
 
     if (_callHistory.isEmpty) {
@@ -511,76 +545,93 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: _loadHistory,
-      child: ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: _callHistory.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 10),
-        itemBuilder: (context, index) {
-          final item = _callHistory[index];
-          final dateStr = DateFormat('dd MMM yyyy, hh:mm a').format(item.sentAt);
+    return Column(
+      children: [
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: _loadHistory,
+            child: ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: _pagedHistory.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              itemBuilder: (context, index) {
+                final item = _pagedHistory[index];
+                final dateStr = DateFormat('dd MMM yyyy, hh:mm a').format(item.sentAt);
 
-          return Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: isDark ? Colors.grey[800]! : Colors.grey[200]!),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CircleAvatar(
-                    backgroundColor: Colors.green.withOpacity(0.15),
-                    child: const Icon(Icons.phone_forwarded, color: Colors.green, size: 20),
+                return Card(
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: isDark ? Colors.grey[800]! : Colors.grey[200]!),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                dateStr,
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.green.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: const Text(
-                                'VOICE CALL',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.green,
-                                ),
-                              ),
-                            ),
-                          ],
+                        CircleAvatar(
+                          backgroundColor: Colors.green.withOpacity(0.15),
+                          child: const Icon(Icons.phone_forwarded, color: Colors.green, size: 20),
                         ),
-                        const SizedBox(height: 6),
-                        Text(
-                          item.message.isNotEmpty ? item.message : item.title,
-                          style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[300] : Colors.grey[700]),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      dateStr,
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.green.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: const Text(
+                                      'VOICE CALL',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.green,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                item.message.isNotEmpty ? item.message : item.title,
+                                style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[300] : Colors.grey[700]),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   ),
-                ],
-              ),
+                );
+              },
             ),
-          );
-        },
-      ),
+          ),
+        ),
+        AppPaginationBar(
+          currentPage: _historyPage,
+          totalPages: (_callHistory.length / _historyPageSize).ceil() < 1 ? 1 : (_callHistory.length / _historyPageSize).ceil(),
+          totalItems: _callHistory.length,
+          pageSize: _historyPageSize,
+          onPageChanged: (page) => setState(() => _historyPage = page),
+          onPageSizeChanged: (size) => setState(() {
+            _historyPageSize = size;
+            _historyPage = 1;
+          }),
+        ),
+      ],
     );
   }
 }

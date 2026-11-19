@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +11,8 @@ import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
+import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_shimmer_card.dart';
 import 'sadasya_profile_screen.dart';
 import 'sadasya_report_generator.dart';
 import '../../widgets/app_dropdown.dart';
@@ -31,6 +34,22 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
   String _voterFilter = 'all'; // 'all', 'voter', 'non-voter'
   String _displayMode = 'cards'; // 'cards' or 'table'
   Map<String, int> _areaCounts = {};
+
+  int _currentPage = 1;
+  int _pageSize = 20;
+
+  int get _totalPages {
+    final count = _filteredMembers.length;
+    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
+  }
+
+  List<SadasyaModel> get _pagedMembers {
+    final all = _filteredMembers;
+    final startIndex = (_currentPage - 1) * _pageSize;
+    if (startIndex >= all.length) return [];
+    final endIndex = min(startIndex + _pageSize, all.length);
+    return all.sublist(startIndex, endIndex);
+  }
 
   @override
   void initState() {
@@ -120,57 +139,60 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
       drawer: const NagarsevakAppDrawer(),
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: _buildAppBar(),
-      body: _isLoading
-          ? const Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(strokeWidth: 3, color: Color(0xFF0284C7)),
-                  SizedBox(height: 16),
-                  Text(
-                    'Loading party members...',
-                    style: TextStyle(fontSize: 14, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
-                  ),
-                ],
-              ),
-            )
-          : RefreshIndicator(
-              onRefresh: _loadMembers,
-              color: const Color(0xFF0284C7),
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header Summary Banner
-                    _buildHeaderBanner(totalCount),
+      body: RefreshIndicator(
+        onRefresh: _loadMembers,
+        color: const Color(0xFF0284C7),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header Summary Banner
+              _buildHeaderBanner(totalCount),
 
-                    const SizedBox(height: 14),
+              const SizedBox(height: 14),
 
-                    // 4 KPI Summary Cards
-                    _buildKpiStatsGrid(totalCount, voterCount, nonVoterCount, activeAreasCount),
+              // 4 KPI Summary Cards
+              _buildKpiStatsGrid(totalCount, voterCount, nonVoterCount, activeAreasCount),
 
-                    const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-                    // Controls: Search, Area Pills & View Switcher
-                    _buildSearchAndFilters(),
+              // Controls: Search, Area Pills & View Switcher
+              _buildSearchAndFilters(),
 
-                    const SizedBox(height: 12),
+              const SizedBox(height: 12),
 
-                    // List / Table
-                    if (_filteredMembers.isEmpty)
-                      _buildEmptyState()
-                    else if (_displayMode == 'table' || isDesktop)
-                      _buildTableView()
-                    else
-                      _buildCardsView(),
+              // List / Table
+              if (_isLoading)
+                const AppShimmerList(count: 6)
+              else if (_filteredMembers.isEmpty)
+                _buildEmptyState()
+              else if (_displayMode == 'table' || isDesktop)
+                _buildTableView()
+              else
+                _buildCardsView(),
 
-                    const SizedBox(height: 80),
-                  ],
-                ),
-              ),
-            ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: AppPaginationBar(
+        currentPage: _currentPage,
+        totalPages: _totalPages,
+        totalItems: _filteredMembers.length,
+        pageSize: _pageSize,
+        onPageChanged: (newPage) {
+          setState(() => _currentPage = newPage);
+        },
+        onPageSizeChanged: (newSize) {
+          setState(() {
+            _pageSize = newSize;
+            _currentPage = 1;
+          });
+        },
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openAddMemberDialog,
         backgroundColor: const Color(0xFF0284C7),
@@ -439,7 +461,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
             Expanded(
               child: TextField(
                 controller: _searchCtrl,
-                onChanged: (_) => setState(() {}),
+                onChanged: (_) => setState(() => _currentPage = 1),
                 decoration: InputDecoration(
                   hintText: 'Search by name, mobile, or address...',
                   hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
@@ -449,7 +471,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
                           icon: const Icon(Icons.clear_rounded, size: 18),
                           onPressed: () {
                             _searchCtrl.clear();
-                            setState(() {});
+                            setState(() => _currentPage = 1);
                           },
                         )
                       : null,
@@ -578,7 +600,10 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
         ),
       ),
       selected: isSelected,
-      onSelected: (_) => setState(() => _voterFilter = key),
+      onSelected: (_) => setState(() {
+        _voterFilter = key;
+        _currentPage = 1;
+      }),
       selectedColor: const Color(0xFF0284C7),
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(
@@ -603,7 +628,10 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
         ),
       ),
       selected: isSelected,
-      onSelected: (_) => setState(() => _selectedArea = areaKey),
+      onSelected: (_) => setState(() {
+        _selectedArea = areaKey;
+        _currentPage = 1;
+      }),
       selectedColor: const Color(0xFFE0F2FE),
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(
@@ -620,10 +648,10 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: _filteredMembers.length,
+      itemCount: _pagedMembers.length,
       separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
-        final member = _filteredMembers[index];
+        final member = _pagedMembers[index];
 
         return Card(
           elevation: 0,
@@ -887,7 +915,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
               DataColumn(label: Text('Role', style: TextStyle(fontWeight: FontWeight.bold))),
               DataColumn(label: Text('Action', style: TextStyle(fontWeight: FontWeight.bold))),
             ],
-            rows: _filteredMembers.map((m) {
+            rows: _pagedMembers.map((m) {
               return DataRow(
                 cells: [
                   DataCell(

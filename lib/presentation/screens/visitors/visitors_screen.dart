@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +11,8 @@ import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
+import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_shimmer_card.dart';
 import 'visitor_detail_screen.dart';
 import 'visitor_report_generator.dart';
 import '../../widgets/app_dropdown.dart';
@@ -31,6 +34,9 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
 
   final TextEditingController _searchCtrl = TextEditingController();
   bool _isLoading = true;
+
+  int _currentPage = 1;
+  int _pageSize = 20;
 
   List<VisitorModel> _allVisitors = [];
 
@@ -107,6 +113,19 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
       return true;
     }).toList()
       ..sort((a, b) => b.visitDate.compareTo(a.visitDate));
+  }
+
+  int get _totalPages {
+    final count = _filteredVisitors.length;
+    return (count / _pageSize).ceil() < 1 ? 1 : (count / _pageSize).ceil();
+  }
+
+  List<VisitorModel> get _pagedVisitors {
+    final all = _filteredVisitors;
+    final startIndex = (_currentPage - 1) * _pageSize;
+    if (startIndex >= all.length) return [];
+    final endIndex = min(startIndex + _pageSize, all.length);
+    return all.sublist(startIndex, endIndex);
   }
 
   Future<void> _makePhoneCall(String number) async {
@@ -704,7 +723,10 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                         count: todayCount,
                         isActive: _activeTab == 'today',
                         icon: Icons.today_rounded,
-                        onTap: () => setState(() => _activeTab = 'today'),
+                        onTap: () => setState(() {
+                          _activeTab = 'today';
+                          _currentPage = 1;
+                        }),
                       ),
                     ),
                     const SizedBox(width: 4),
@@ -715,7 +737,10 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                         count: allCount,
                         isActive: _activeTab == 'all',
                         icon: Icons.people_alt_rounded,
-                        onTap: () => setState(() => _activeTab = 'all'),
+                        onTap: () => setState(() {
+                          _activeTab = 'all';
+                          _currentPage = 1;
+                        }),
                       ),
                     ),
                     const SizedBox(width: 4),
@@ -726,7 +751,10 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                         count: complaintHelpCount,
                         isActive: _activeTab == 'complaints_help',
                         icon: Icons.volunteer_activism_rounded,
-                        onTap: () => setState(() => _activeTab = 'complaints_help'),
+                        onTap: () => setState(() {
+                          _activeTab = 'complaints_help';
+                          _currentPage = 1;
+                        }),
                       ),
                     ),
                   ],
@@ -743,7 +771,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                   Expanded(
                     child: TextField(
                       controller: _searchCtrl,
-                      onChanged: (_) => setState(() {}),
+                      onChanged: (_) => setState(() => _currentPage = 1),
                       decoration: InputDecoration(
                         hintText: isMr ? 'नाव किंवा मोबाईल नंबर शोधा...' : 'Search by name or mobile...',
                         hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
@@ -753,7 +781,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                                 icon: const Icon(Icons.clear, size: 16),
                                 onPressed: () {
                                   _searchCtrl.clear();
-                                  setState(() {});
+                                  setState(() => _currentPage = 1);
                                 },
                               )
                             : null,
@@ -790,7 +818,12 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                         ..._uniqueAreas.map((a) => DropdownMenuItem(value: a, child: Text(a))),
                       ],
                       onChanged: (val) {
-                        if (val != null) setState(() => _selectedArea = val);
+                        if (val != null) {
+                          setState(() {
+                            _selectedArea = val;
+                            _currentPage = 1;
+                          });
+                        }
                       },
                     ),
                   ],
@@ -813,7 +846,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
             // 3. Visitor List
             Expanded(
               child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const AppShimmerList(count: 6)
                   : filtered.isEmpty
                       ? Center(
                           child: Padding(
@@ -842,16 +875,32 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                       : RefreshIndicator(
                           onRefresh: _fetchVisitors,
                           child: ListView.builder(
-                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
-                            itemCount: filtered.length,
+                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+                            itemCount: _pagedVisitors.length,
                             itemBuilder: (ctx, index) {
-                              final visitor = filtered[index];
+                              final visitor = _pagedVisitors[index];
                               return _buildVisitorCard(visitor, isMr);
                             },
                           ),
                         ),
             ),
           ],
+        ),
+        bottomNavigationBar: AppPaginationBar(
+          currentPage: _currentPage,
+          totalPages: _totalPages,
+          totalItems: filtered.length,
+          pageSize: _pageSize,
+          isLoading: _isLoading,
+          onPageChanged: (newPage) {
+            setState(() => _currentPage = newPage);
+          },
+          onPageSizeChanged: (newSize) {
+            setState(() {
+              _pageSize = newSize;
+              _currentPage = 1;
+            });
+          },
         ),
       ),
     );

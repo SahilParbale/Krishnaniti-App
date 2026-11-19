@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/supabase_service.dart';
 import '../models/complaint_model.dart';
+import '../models/paginated_result.dart';
 import '../models/staff_model.dart';
 
 final complaintsRepoProvider = Provider((ref) => ComplaintsRepository());
@@ -52,6 +53,64 @@ class ComplaintsRepository {
     }
   }
 
+  Future<PaginatedResult<ComplaintModel>> getPaginatedComplaints({
+    int page = 1,
+    int pageSize = 20,
+    String? statusFilter,
+    String? searchQuery,
+    String? categoryFilter,
+    String? priorityFilter,
+  }) async {
+    try {
+      var query = _client.from('complaints').select('*');
+
+      if (_tenantId != null) {
+        query = query.eq('tenant_id', _tenantId!);
+      }
+
+      if (statusFilter != null && statusFilter != 'All' && statusFilter.isNotEmpty) {
+        query = query.eq('status', statusFilter);
+      }
+
+      if (categoryFilter != null && categoryFilter != 'All' && categoryFilter.isNotEmpty) {
+        query = query.eq('category', categoryFilter);
+      }
+
+      if (priorityFilter != null && priorityFilter != 'All' && priorityFilter.isNotEmpty) {
+        query = query.eq('priority', priorityFilter);
+      }
+
+      if (searchQuery != null && searchQuery.trim().isNotEmpty) {
+        final q = searchQuery.trim();
+        query = query.or('title.ilike.%$q%,citizen_name.ilike.%$q%,contact_phone.ilike.%$q%,id.ilike.%$q%');
+      }
+
+      final zeroBasedPage = page > 0 ? page - 1 : 0;
+      final start = zeroBasedPage * pageSize;
+      final end = start + pageSize - 1;
+
+      final response = await query
+          .order('created_at', ascending: false)
+          .range(start, end)
+          .count(CountOption.exact);
+
+      final items = (response.data as List<dynamic>)
+          .map((item) => ComplaintModel.fromJson(item as Map<String, dynamic>))
+          .toList();
+
+      final total = response.count;
+
+      return PaginatedResult<ComplaintModel>(
+        items: items,
+        totalCount: total,
+        currentPage: page,
+        pageSize: pageSize,
+      );
+    } catch (_) {
+      return PaginatedResult<ComplaintModel>.empty(pageSize: pageSize);
+    }
+  }
+
   Future<ComplaintModel?> getComplaintById(String id) async {
     try {
       final table = _getTableForId(id);
@@ -87,18 +146,24 @@ class ComplaintsRepository {
     }
   }
 
-  Future<List<StaffModel>> getStaffList() async {
+  List<StaffModel>? _cachedStaff;
+
+  Future<List<StaffModel>> getStaffList({bool forceRefresh = false}) async {
+    if (!forceRefresh && _cachedStaff != null && _cachedStaff!.isNotEmpty) {
+      return _cachedStaff!;
+    }
     try {
-      var query = _client.from('staff').select('*');
+      var query = _client.from('staff').select('id, name, mobile, role, department');
       if (_tenantId != null) {
         query = query.eq('tenant_id', _tenantId!);
       }
       final response = await query;
-      return (response as List<dynamic>)
+      _cachedStaff = (response as List<dynamic>)
           .map((item) => StaffModel.fromJson(item as Map<String, dynamic>))
           .toList();
+      return _cachedStaff!;
     } catch (_) {
-      return [];
+      return _cachedStaff ?? [];
     }
   }
 

@@ -8,6 +8,7 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_date_picker.dart';
 import '../../widgets/app_dropdown.dart';
+import '../../widgets/app_pagination_bar.dart';
 
 class OppositionDetailScreen extends ConsumerStatefulWidget {
   final OppositionMemberModel member;
@@ -20,6 +21,12 @@ class OppositionDetailScreen extends ConsumerStatefulWidget {
 
 class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen> {
   late OppositionMemberModel _member;
+  int _teamPage = 1;
+  static const int _teamPageSize = 5;
+  int _storyPage = 1;
+  static const int _storyPageSize = 4;
+  int _activityPage = 1;
+  static const int _activityPageSize = 5;
 
   @override
   void initState() {
@@ -972,10 +979,13 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
           ],
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      body: RefreshIndicator(
+        onRefresh: _refreshMember,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ==========================================
             // 1. MEMBER PROFILE CARD
@@ -1323,53 +1333,74 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                           style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
                         ),
                       )
-                    else
-                      ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: candidateTeam.length,
-                        separatorBuilder: (context, index) => const Divider(height: 12),
-                        itemBuilder: (ctx, idx) {
-                          final worker = candidateTeam[idx];
-                          return Row(
+                    else ...[
+                      Builder(
+                        builder: (context) {
+                          final pagedTeam = candidateTeam
+                              .skip((_teamPage - 1) * _teamPageSize)
+                              .take(_teamPageSize)
+                              .toList();
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                width: 34,
-                                height: 34,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFE0F2FE),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Icon(Icons.person, size: 18, color: Color(0xFF0284C7)),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      worker.name,
-                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                                    ),
-                                    Text(
-                                      '${worker.role ?? "Cadre"} • ${worker.area ?? ""}',
-                                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.close_rounded, size: 16, color: Color(0xFF94A3B8)),
-                                onPressed: () async {
-                                  await repo.unlinkWorker(worker.id);
-                                  _refreshMember();
+                              ListView.separated(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: pagedTeam.length,
+                                separatorBuilder: (context, index) => const Divider(height: 12),
+                                itemBuilder: (ctx, idx) {
+                                  final worker = pagedTeam[idx];
+                                  return Row(
+                                    children: [
+                                      Container(
+                                        width: 34,
+                                        height: 34,
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFE0F2FE),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: const Icon(Icons.person, size: 18, color: Color(0xFF0284C7)),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              worker.name,
+                                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                                            ),
+                                            Text(
+                                              '${worker.role ?? "Cadre"} • ${worker.area ?? ""}',
+                                              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.close_rounded, size: 16, color: Color(0xFF94A3B8)),
+                                        onPressed: () async {
+                                          await repo.unlinkWorker(worker.id);
+                                          _refreshMember();
+                                        },
+                                        tooltip: 'Remove from Team',
+                                      ),
+                                    ],
+                                  );
                                 },
-                                tooltip: 'Remove from Team',
+                              ),
+                              AppInlinePagination(
+                                currentPage: _teamPage,
+                                totalItems: candidateTeam.length,
+                                pageSize: _teamPageSize,
+                                onPageChanged: (p) => setState(() => _teamPage = p),
+                                label: 'members',
                               ),
                             ],
                           );
                         },
                       ),
+                    ],
                   ],
                 ),
               ),
@@ -1477,120 +1508,141 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                         style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
                       ),
                     )
-                  else
-                    ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: _member.negativeStories.length,
-                      separatorBuilder: (context, index) => const SizedBox(height: 10),
-                      itemBuilder: (ctx, idx) {
-                        final story = _member.negativeStories[idx];
-                        Color badgeColor = const Color(0xFF64748B);
-                        Color cardBg = const Color(0xFFF8FAFC);
-                        if (story.severity == 'High') {
-                          badgeColor = const Color(0xFFDC2626);
-                          cardBg = const Color(0xFFFEF2F2);
-                        } else if (story.severity == 'Medium') {
-                          badgeColor = const Color(0xFFD97706);
-                          cardBg = const Color(0xFFFFFBEB);
-                        } else {
-                          badgeColor = const Color(0xFF0284C7);
-                          cardBg = const Color(0xFFF0F9FF);
-                        }
+                  else ...[
+                    Builder(
+                      builder: (context) {
+                        final pagedStories = _member.negativeStories
+                            .skip((_storyPage - 1) * _storyPageSize)
+                            .take(_storyPageSize)
+                            .toList();
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: pagedStories.length,
+                              separatorBuilder: (context, index) => const SizedBox(height: 10),
+                              itemBuilder: (ctx, idx) {
+                                final story = pagedStories[idx];
+                                Color badgeColor = const Color(0xFF64748B);
+                                Color cardBg = const Color(0xFFF8FAFC);
+                                if (story.severity == 'High') {
+                                  badgeColor = const Color(0xFFDC2626);
+                                  cardBg = const Color(0xFFFEF2F2);
+                                } else if (story.severity == 'Medium') {
+                                  badgeColor = const Color(0xFFD97706);
+                                  cardBg = const Color(0xFFFFFBEB);
+                                } else {
+                                  badgeColor = const Color(0xFF0284C7);
+                                  cardBg = const Color(0xFFF0F9FF);
+                                }
 
-                        return Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: cardBg,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: badgeColor.withValues(alpha: 0.3)),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
+                                return Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: cardBg,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: badgeColor.withValues(alpha: 0.3)),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius: BorderRadius.circular(4),
-                                        ),
-                                        child: Text(
-                                          story.date,
-                                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
-                                        ),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white,
+                                                  borderRadius: BorderRadius.circular(4),
+                                                ),
+                                                child: Text(
+                                                  story.date,
+                                                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: badgeColor.withValues(alpha: 0.15),
+                                                  borderRadius: BorderRadius.circular(4),
+                                                ),
+                                                child: Text(
+                                                  story.severityLabelMarathi,
+                                                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: badgeColor),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          Row(
+                                            children: [
+                                              IconButton(
+                                                padding: EdgeInsets.zero,
+                                                constraints: const BoxConstraints(),
+                                                icon: const Icon(Icons.edit_outlined, size: 16, color: Color(0xFF64748B)),
+                                                onPressed: () => _showNegativeStoryModal(storyToEdit: story),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              IconButton(
+                                                padding: EdgeInsets.zero,
+                                                constraints: const BoxConstraints(),
+                                                icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFDC2626)),
+                                                onPressed: () async {
+                                                  await repo.deleteNegativeStory(_member.id, story.id);
+                                                  _refreshMember();
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                        ],
                                       ),
-                                      const SizedBox(width: 6),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: badgeColor.withValues(alpha: 0.15),
-                                          borderRadius: BorderRadius.circular(4),
-                                        ),
-                                        child: Text(
-                                          story.severityLabelMarathi,
-                                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: badgeColor),
-                                        ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        story.title,
+                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                                       ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        story.description,
+                                        style: const TextStyle(fontSize: 11.5, color: Color(0xFF475569), height: 1.3),
+                                      ),
+                                      if (story.source.isNotEmpty) ...[
+                                        const SizedBox(height: 6),
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.link_rounded, size: 13, color: Color(0xFF0284C7)),
+                                            const SizedBox(width: 4),
+                                            Expanded(
+                                              child: Text(
+                                                'Source: ${story.source}',
+                                                style: const TextStyle(fontSize: 10.5, color: Color(0xFF0284C7), fontWeight: FontWeight.w600),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
                                     ],
                                   ),
-                                  Row(
-                                    children: [
-                                      IconButton(
-                                        padding: EdgeInsets.zero,
-                                        constraints: const BoxConstraints(),
-                                        icon: const Icon(Icons.edit_outlined, size: 16, color: Color(0xFF64748B)),
-                                        onPressed: () => _showNegativeStoryModal(storyToEdit: story),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      IconButton(
-                                        padding: EdgeInsets.zero,
-                                        constraints: const BoxConstraints(),
-                                        icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFDC2626)),
-                                        onPressed: () async {
-                                          await repo.deleteNegativeStory(_member.id, story.id);
-                                          _refreshMember();
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                story.title,
-                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                story.description,
-                                style: const TextStyle(fontSize: 11.5, color: Color(0xFF475569), height: 1.3),
-                              ),
-                              if (story.source.isNotEmpty) ...[
-                                const SizedBox(height: 6),
-                                Row(
-                                  children: [
-                                    const Icon(Icons.link_rounded, size: 13, color: Color(0xFF0284C7)),
-                                    const SizedBox(width: 4),
-                                    Expanded(
-                                      child: Text(
-                                        'Source: ${story.source}',
-                                        style: const TextStyle(fontSize: 10.5, color: Color(0xFF0284C7), fontWeight: FontWeight.w600),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ],
-                          ),
+                                );
+                              },
+                            ),
+                            AppInlinePagination(
+                              currentPage: _storyPage,
+                              totalItems: _member.negativeStories.length,
+                              pageSize: _storyPageSize,
+                              onPageChanged: (p) => setState(() => _storyPage = p),
+                              label: 'stories',
+                            ),
+                          ],
                         );
                       },
                     ),
+                  ],
                 ],
               ),
             ),
@@ -1660,78 +1712,99 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                         style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
                       ),
                     )
-                  else
-                    ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: _member.activities.length,
-                      separatorBuilder: (context, index) => const Divider(height: 16),
-                      itemBuilder: (ctx, idx) {
-                        final act = _member.activities[idx];
-                        return Row(
+                  else ...[
+                    Builder(
+                      builder: (context) {
+                        final pagedActivities = _member.activities
+                            .skip((_activityPage - 1) * _activityPageSize)
+                            .take(_activityPageSize)
+                            .toList();
+                        return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Date Bullet
-                            Container(
-                              margin: const EdgeInsets.only(top: 4),
-                              width: 8,
-                              height: 8,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF0284C7),
-                                shape: BoxShape.circle,
-                              ),
+                            ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: pagedActivities.length,
+                              separatorBuilder: (context, index) => const Divider(height: 16),
+                              itemBuilder: (ctx, idx) {
+                                final act = pagedActivities[idx];
+                                return Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Date Bullet
+                                    Container(
+                                      margin: const EdgeInsets.only(top: 4),
+                                      width: 8,
+                                      height: 8,
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFF0284C7),
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                act.date,
+                                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+                                              ),
+                                              IconButton(
+                                                padding: EdgeInsets.zero,
+                                                constraints: const BoxConstraints(),
+                                                icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFF94A3B8)),
+                                                onPressed: () async {
+                                                  await repo.deleteActivity(_member.id, act.id);
+                                                  _refreshMember();
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                          Text(
+                                            act.title,
+                                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                                          ),
+                                          if (act.location.isNotEmpty) ...[
+                                            const SizedBox(height: 2),
+                                            Row(
+                                              children: [
+                                                const Icon(Icons.location_on_outlined, size: 12, color: Color(0xFF64748B)),
+                                                const SizedBox(width: 4),
+                                                Text(act.location, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                                              ],
+                                            ),
+                                          ],
+                                          if (act.description.isNotEmpty) ...[
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              act.description,
+                                              style: const TextStyle(fontSize: 11.5, color: Color(0xFF475569), height: 1.3),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
                             ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        act.date,
-                                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
-                                      ),
-                                      IconButton(
-                                        padding: EdgeInsets.zero,
-                                        constraints: const BoxConstraints(),
-                                        icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFF94A3B8)),
-                                        onPressed: () async {
-                                          await repo.deleteActivity(_member.id, act.id);
-                                          _refreshMember();
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                  Text(
-                                    act.title,
-                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                                  ),
-                                  if (act.location.isNotEmpty) ...[
-                                    const SizedBox(height: 2),
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.location_on_outlined, size: 12, color: Color(0xFF64748B)),
-                                        const SizedBox(width: 4),
-                                        Text(act.location, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-                                      ],
-                                    ),
-                                  ],
-                                  if (act.description.isNotEmpty) ...[
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      act.description,
-                                      style: const TextStyle(fontSize: 11.5, color: Color(0xFF475569), height: 1.3),
-                                    ),
-                                  ],
-                                ],
-                              ),
+                            AppInlinePagination(
+                              currentPage: _activityPage,
+                              totalItems: _member.activities.length,
+                              pageSize: _activityPageSize,
+                              onPageChanged: (p) => setState(() => _activityPage = p),
+                              label: 'activities',
                             ),
                           ],
                         );
                       },
                     ),
+                  ],
                 ],
               ),
             ),
@@ -1740,7 +1813,8 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 }
 

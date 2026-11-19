@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +10,8 @@ import 'whatsapp_history_report_generator.dart';
 import '../../navigation/app_drawer.dart';
 import '../../widgets/app_pdf_button.dart';
 import '../../widgets/app_dropdown.dart';
+import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/app_shimmer_card.dart';
 
 // WhatsApp brand colors
 const _kWaGreen = Color(0xFF25D366);
@@ -44,10 +47,28 @@ class _WhatsAppCommunicationScreenState
   List<VoterModel> _voters = [];
   final Set<String> _selectedVoterIds = {};
   bool _isAllVisibleSelected = false;
+  int _voterPage = 1;
+  int _voterPageSize = 20;
+
+  List<VoterModel> get _pagedVoters {
+    final startIndex = (_voterPage - 1) * _voterPageSize;
+    if (startIndex >= _voters.length) return [];
+    final endIndex = min(startIndex + _voterPageSize, _voters.length);
+    return _voters.sublist(startIndex, endIndex);
+  }
 
   // History state
   bool _isLoadingHistory = false;
   List<WhatsAppBroadcastModel> _broadcastHistory = [];
+  int _historyPage = 1;
+  int _historyPageSize = 10;
+
+  List<WhatsAppBroadcastModel> get _pagedHistory {
+    final startIndex = (_historyPage - 1) * _historyPageSize;
+    if (startIndex >= _broadcastHistory.length) return [];
+    final endIndex = min(startIndex + _historyPageSize, _broadcastHistory.length);
+    return _broadcastHistory.sublist(startIndex, endIndex);
+  }
 
   // Compose state
   bool _isSending = false;
@@ -112,6 +133,7 @@ class _WhatsAppCommunicationScreenState
         setState(() {
           _voters = list;
           _isLoadingVoters = false;
+          _voterPage = 1;
           _updateSelectAllStatus();
         });
       }
@@ -129,6 +151,7 @@ class _WhatsAppCommunicationScreenState
         setState(() {
           _broadcastHistory = logs;
           _isLoadingHistory = false;
+          _historyPage = 1;
         });
       }
     } catch (_) {
@@ -1158,22 +1181,17 @@ class _WhatsAppCommunicationScreenState
 
             // 5. Voter Cards
             if (_isLoadingVoters)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40),
-                  child: CircularProgressIndicator(color: _kWaGreen),
-                ),
-              )
+              const AppShimmerList(count: 6)
             else if (_voters.isEmpty)
               _buildEmptyVotersState()
-            else
+            else ...[
               ListView.separated(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: _voters.length,
+                itemCount: _pagedVoters.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 8),
                 itemBuilder: (ctx, idx) {
-                  final voter = _voters[idx];
+                  final voter = _pagedVoters[idx];
                   final isSelected = _selectedVoterIds.contains(voter.id);
 
                   return InkWell(
@@ -1294,6 +1312,19 @@ class _WhatsAppCommunicationScreenState
                   );
                 },
               ),
+              const SizedBox(height: 12),
+              AppPaginationBar(
+                currentPage: _voterPage,
+                totalPages: (_voters.length / _voterPageSize).ceil() < 1 ? 1 : (_voters.length / _voterPageSize).ceil(),
+                totalItems: _voters.length,
+                pageSize: _voterPageSize,
+                onPageChanged: (page) => setState(() => _voterPage = page),
+                onPageSizeChanged: (size) => setState(() {
+                  _voterPageSize = size;
+                  _voterPage = 1;
+                }),
+              ),
+            ],
           ],
         ),
       ),
@@ -1304,73 +1335,90 @@ class _WhatsAppCommunicationScreenState
   // Tab 2: History & Reports
   // ─────────────────────────────────────────────────────────────
   Widget _buildHistoryTab() {
-    return RefreshIndicator(
-      onRefresh: _loadHistory,
-      color: _kWaGreen,
-      child: _isLoadingHistory
-          ? const Center(child: CircularProgressIndicator(color: _kWaGreen))
-          : _broadcastHistory.isEmpty
-              ? _buildEmptyHistoryState()
-              : CustomScrollView(
-                  slivers: [
-                    // Stats summary header
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'History & Reports',
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF0F172A),
+    return Column(
+      children: [
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: _loadHistory,
+            color: _kWaGreen,
+            child: _isLoadingHistory
+                ? const AppShimmerList(count: 6)
+                : _broadcastHistory.isEmpty
+                    ? _buildEmptyHistoryState()
+                    : CustomScrollView(
+                        slivers: [
+                          // Stats summary header
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          const Text(
+                                            'History & Reports',
+                                            style: TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF0F172A),
+                                            ),
+                                          ),
+                                          Text(
+                                            '${_broadcastHistory.length} WhatsApp broadcasts',
+                                            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                          ),
+                                        ],
                                       ),
-                                    ),
-                                    Text(
-                                      '${_broadcastHistory.length} WhatsApp broadcasts',
-                                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                                    ),
-                                  ],
-                                ),
-                                AppPdfButton.outlined(
-                                  label: 'Reports',
-                                  tooltip: 'Reports',
-                                  onPressed: _generatePdfReport,
-                                ),
-                              ],
+                                      AppPdfButton.outlined(
+                                        label: 'Reports',
+                                        tooltip: 'Reports',
+                                        onPressed: _generatePdfReport,
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 10),
+
+                                  // KPI Summary Row
+                                  _buildKpiSummary(),
+                                ],
+                              ),
                             ),
-                            const SizedBox(height: 10),
-
-                            // KPI Summary Row
-                            _buildKpiSummary(),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    // Broadcast cards
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(14, 0, 14, 20),
-                      sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (ctx, idx) => Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
-                            child: _buildBroadcastHistoryCard(_broadcastHistory[idx]),
                           ),
-                          childCount: _broadcastHistory.length,
-                        ),
+
+                          // Broadcast cards
+                          SliverPadding(
+                            padding: const EdgeInsets.fromLTRB(14, 0, 14, 20),
+                            sliver: SliverList(
+                              delegate: SliverChildBuilderDelegate(
+                                (ctx, idx) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 10),
+                                  child: _buildBroadcastHistoryCard(_pagedHistory[idx]),
+                                ),
+                                childCount: _pagedHistory.length,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
+          ),
+        ),
+        AppPaginationBar(
+          currentPage: _historyPage,
+          totalPages: (_broadcastHistory.length / _historyPageSize).ceil() < 1 ? 1 : (_broadcastHistory.length / _historyPageSize).ceil(),
+          totalItems: _broadcastHistory.length,
+          pageSize: _historyPageSize,
+          onPageChanged: (page) => setState(() => _historyPage = page),
+          onPageSizeChanged: (size) => setState(() {
+            _historyPageSize = size;
+            _historyPage = 1;
+          }),
+        ),
+      ],
     );
   }
 
