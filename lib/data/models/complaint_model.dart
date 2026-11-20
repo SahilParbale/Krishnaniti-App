@@ -13,24 +13,49 @@ class ComplaintAttachment {
     this.size = 0,
   });
 
-  bool get isImage =>
-      type.startsWith('image/') ||
-      url.endsWith('.jpg') ||
-      url.endsWith('.jpeg') ||
-      url.endsWith('.png') ||
-      url.endsWith('.webp');
+  bool get isImage {
+    final lowerType = type.toLowerCase().trim();
+    if (lowerType.startsWith('image/') || lowerType == 'image' || lowerType == 'photo') {
+      return true;
+    }
+    final lowerUrl = url.toLowerCase().split('?').first.split('#').first.trim();
+    return lowerUrl.endsWith('.jpg') ||
+        lowerUrl.endsWith('.jpeg') ||
+        lowerUrl.endsWith('.png') ||
+        lowerUrl.endsWith('.webp') ||
+        lowerUrl.endsWith('.gif') ||
+        lowerUrl.endsWith('.bmp') ||
+        lowerUrl.endsWith('.svg');
+  }
 
-  bool get isVideo =>
-      type.startsWith('video/') ||
-      url.endsWith('.mp4') ||
-      url.endsWith('.mov') ||
-      url.endsWith('.webm');
+  bool get isVideo {
+    final lowerType = type.toLowerCase().trim();
+    if (lowerType.startsWith('video/') || lowerType == 'video') return true;
+    final lowerUrl = url.toLowerCase().split('?').first.split('#').first.trim();
+    return lowerUrl.endsWith('.mp4') ||
+        lowerUrl.endsWith('.mov') ||
+        lowerUrl.endsWith('.webm') ||
+        lowerUrl.endsWith('.mkv') ||
+        lowerUrl.endsWith('.avi');
+  }
 
-  bool get isAudio =>
-      type.startsWith('audio/') ||
-      url.endsWith('.mp3') ||
-      url.endsWith('.wav') ||
-      url.endsWith('.m4a');
+  bool get isAudio {
+    final lowerType = type.toLowerCase().trim();
+    if (lowerType.startsWith('audio/') || lowerType == 'audio') return true;
+    final lowerUrl = url.toLowerCase().split('?').first.split('#').first.trim();
+    return lowerUrl.endsWith('.mp3') ||
+        lowerUrl.endsWith('.wav') ||
+        lowerUrl.endsWith('.m4a') ||
+        lowerUrl.endsWith('.aac') ||
+        lowerUrl.endsWith('.ogg');
+  }
+
+  bool get isPdf {
+    final lowerType = type.toLowerCase().trim();
+    if (lowerType.contains('pdf')) return true;
+    final lowerUrl = url.toLowerCase().split('?').first.split('#').first.trim();
+    return lowerUrl.endsWith('.pdf');
+  }
 
   factory ComplaintAttachment.fromJson(Map<String, dynamic> json) {
     return ComplaintAttachment(
@@ -66,8 +91,14 @@ class ComplaintProgressUpdate {
 
   factory ComplaintProgressUpdate.fromJson(Map<String, dynamic> json) {
     final imgs = <ComplaintAttachment>[];
-    if (json['images'] is List) {
-      for (final item in json['images']) {
+    dynamic rawImages = json['images'] ?? json['photos'];
+    if (rawImages is String && rawImages.trim().startsWith('[')) {
+      try {
+        rawImages = jsonDecode(rawImages);
+      } catch (_) {}
+    }
+    if (rawImages is List) {
+      for (final item in rawImages) {
         if (item is Map<String, dynamic>) {
           imgs.add(ComplaintAttachment.fromJson(item));
         } else if (item is Map) {
@@ -255,27 +286,104 @@ class ComplaintModel {
 
     // Photos & Attachments
     final photosList = <String>[];
-    if (json['photos'] != null && json['photos'] is List) {
-      for (final p in json['photos']) {
-        if (p is String && p.isNotEmpty) photosList.add(p);
+    void addPhoto(dynamic p) {
+      if (p == null) return;
+      if (p is String && p.trim().isNotEmpty) {
+        final trimmed = p.trim();
+        if (!photosList.contains(trimmed)) photosList.add(trimmed);
       }
-    } else if (json['image_url'] != null && json['image_url'].toString().isNotEmpty) {
-      photosList.add(json['image_url'].toString());
+    }
+
+    if (json['photos'] != null) {
+      if (json['photos'] is List) {
+        for (final p in json['photos']) {
+          addPhoto(p);
+        }
+      } else if (json['photos'] is String) {
+        final pStr = json['photos'] as String;
+        try {
+          final decoded = jsonDecode(pStr);
+          if (decoded is List) {
+            for (final p in decoded) {
+              addPhoto(p);
+            }
+          } else {
+            addPhoto(pStr);
+          }
+        } catch (_) {
+          addPhoto(pStr);
+        }
+      }
+    }
+
+    if (json['images'] != null) {
+      if (json['images'] is List) {
+        for (final p in json['images']) {
+          addPhoto(p);
+        }
+      } else if (json['images'] is String) {
+        addPhoto(json['images']);
+      }
+    }
+
+    if (json['image_url'] != null && json['image_url'].toString().trim().isNotEmpty) {
+      addPhoto(json['image_url'].toString());
     }
 
     final attachmentsList = <ComplaintAttachment>[];
+    final seenAttUrls = <String>{};
+
+    void addAttachmentItem(dynamic item) {
+      if (item == null) return;
+      if (item is Map) {
+        final att = ComplaintAttachment.fromJson(Map<String, dynamic>.from(item));
+        if (att.url.isNotEmpty && !seenAttUrls.contains(att.url)) {
+          seenAttUrls.add(att.url);
+          attachmentsList.add(att);
+        }
+      } else if (item is String && item.trim().isNotEmpty) {
+        final trimmed = item.trim();
+        if (!seenAttUrls.contains(trimmed)) {
+          seenAttUrls.add(trimmed);
+          attachmentsList.add(ComplaintAttachment(
+            url: trimmed,
+            type: 'image/jpeg',
+            name: 'Attachment',
+          ));
+        }
+      }
+    }
+
     if (json['attachments'] != null) {
       List rawList = [];
       if (json['attachments'] is List) {
         rawList = json['attachments'] as List;
       } else if (json['attachments'] is String) {
         try {
-          rawList = jsonDecode(json['attachments'] as String) as List;
+          final decoded = jsonDecode(json['attachments'] as String);
+          if (decoded is List) rawList = decoded;
         } catch (_) {}
       }
       for (final att in rawList) {
-        if (att is Map) {
-          attachmentsList.add(ComplaintAttachment.fromJson(Map<String, dynamic>.from(att)));
+        addAttachmentItem(att);
+      }
+    }
+
+    // Also check meta attachments / photos if any
+    if (meta != null) {
+      if (meta['attachments'] is List) {
+        for (final att in meta['attachments']) {
+          addAttachmentItem(att);
+        }
+      }
+      if (meta['photos'] is List) {
+        for (final p in meta['photos']) {
+          addPhoto(p);
+        }
+      }
+      if (meta['images'] is List) {
+        for (final p in meta['images']) {
+          addPhoto(p);
         }
       }
     }
