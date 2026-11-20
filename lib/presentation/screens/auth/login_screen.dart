@@ -85,11 +85,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isSigningIn = false);
-        final errorMsg = e.toString().replaceFirst('Exception: ', '');
+        final rawMsg = e.toString().replaceFirst('Exception: ', '');
+        final isNetwork = rawMsg.toLowerCase().contains('network') ||
+            rawMsg.toLowerCase().contains('socket') ||
+            rawMsg.toLowerCase().contains('host lookup') ||
+            rawMsg.toLowerCase().contains('errno = 7') ||
+            rawMsg.toLowerCase().contains('authretryablefetchexception') ||
+            rawMsg.toLowerCase().contains('clientexception');
+        final displayMsg = isNetwork
+            ? (isMr
+                ? 'इंटरनेट कनेक्शन उपलब्ध नाही. कृपया इंटरनेट तपासा आणि पुन्हा प्रयत्न करा.'
+                : 'No internet connection. Please check your network connection and try again.')
+            : rawMsg;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              isMr ? 'लॉगिन अयशस्वी: $errorMsg' : 'Sign in failed: $errorMsg',
+              isMr ? 'लॉगिन अयशस्वी: $displayMsg' : 'Sign in failed: $displayMsg',
             ),
             backgroundColor: const Color(0xFFDC2626),
           ),

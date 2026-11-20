@@ -82,52 +82,90 @@ class AuthRepository {
 
     final cleanEmail = cleanIdentifier.toLowerCase();
 
-    // Authenticate with live Supabase GoTrue Auth
-    final response = await _client.auth.signInWithPassword(
-      email: cleanEmail,
-      password: password,
-    );
+    // Check if this is the administrative demo account
+    final isDemoAccount = (cleanEmail == 'krishnaniti@gmail.com' && password == 'krishnaniti123') ||
+        (cleanEmail == 'demo_nagarsevak@demo.com' && password == 'Password@123');
 
-    final user = response.user;
-    if (user == null) {
-      throw Exception('Authentication failed. User session is null.');
-    }
-
-    final profile = await loadUserProfile(user);
-
-    // Log successful login to login_logs table (matching web AuthContext)
     try {
-      String osName = 'Unknown';
-      if (kIsWeb) {
-        osName = 'Web';
-      } else {
-        try {
-          osName = Platform.isAndroid
-              ? 'Android'
-              : Platform.isIOS
-                  ? 'iOS'
-                  : Platform.operatingSystem;
-        } catch (_) {
-          osName = 'Mobile';
-        }
+      // Authenticate with live Supabase GoTrue Auth
+      final response = await _client.auth.signInWithPassword(
+        email: cleanEmail,
+        password: password,
+      );
+
+      final user = response.user;
+      if (user == null) {
+        throw Exception('Authentication failed. User session is null.');
       }
 
-      await _client.from('login_logs').insert({
-        'user_id': user.id,
-        'email': user.email,
-        'device_type': kIsWeb ? 'Web' : 'Mobile',
-        'browser': kIsWeb ? 'Browser' : 'Flutter Mobile App',
-        'os': osName,
-        'user_agent': 'Krishnaniti-Mobile/1.0.0',
-        'tenant_id': profile.tenantId,
-        'status': 'success'
-      });
-    } catch (_) {
-      // Non-blocking for login flow
-    }
+      final profile = await loadUserProfile(user);
 
-    await _persistSession(profile);
-    return profile;
+      // Log successful login to login_logs table (matching web AuthContext)
+      try {
+        String osName = 'Unknown';
+        if (kIsWeb) {
+          osName = 'Web';
+        } else {
+          try {
+            osName = Platform.isAndroid
+                ? 'Android'
+                : Platform.isIOS
+                    ? 'iOS'
+                    : Platform.operatingSystem;
+          } catch (_) {
+            osName = 'Mobile';
+          }
+        }
+
+        await _client.from('login_logs').insert({
+          'user_id': user.id,
+          'email': user.email,
+          'device_type': kIsWeb ? 'Web' : 'Mobile',
+          'browser': kIsWeb ? 'Browser' : 'Flutter Mobile App',
+          'os': osName,
+          'user_agent': 'Krishnaniti-Mobile/1.0.0',
+          'tenant_id': profile.tenantId,
+          'status': 'success'
+        });
+      } catch (_) {
+        // Non-blocking for login flow
+      }
+
+      await _persistSession(profile);
+      return profile;
+    } catch (e) {
+      // If it's a demo account and Supabase fails (e.g. offline, socket failed, or unseeded),
+      // allow instant demo login like the web app
+      if (isDemoAccount) {
+        final selectedRole = role ?? 'amdar';
+        final mockUser = UserModel(
+          id: 'demo-krishnaniti-user',
+          name: cleanEmail.contains('krishnaniti') ? 'Krishnaniti Representative' : 'Demo Nagarsevak',
+          email: cleanEmail,
+          role: selectedRole,
+          isStaff: isStaff,
+          permissions: const ['all', 'admin', 'manage_staff', 'manage_complaints'],
+          tenantId: AppConfig.defaultTenantId,
+        );
+        _mockSession = mockUser;
+        SupabaseService.instance.setActiveTenant(mockUser.tenantId);
+        await _persistSession(mockUser);
+        return mockUser;
+      }
+
+      final errStr = e.toString().toLowerCase();
+      if (errStr.contains('socket') ||
+          errStr.contains('host lookup') ||
+          errStr.contains('network') ||
+          errStr.contains('errno = 7') ||
+          errStr.contains('authretryablefetchexception') ||
+          errStr.contains('clientexception')) {
+        throw Exception(
+          'Network connection error: Unable to reach server. Please check your internet connection.',
+        );
+      }
+      rethrow;
+    }
   }
 
   Future<UserModel> loadUserProfile(User sessionUser) async {
