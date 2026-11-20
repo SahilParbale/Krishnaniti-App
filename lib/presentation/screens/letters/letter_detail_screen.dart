@@ -7,6 +7,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/localization/app_strings.dart';
+import '../../../core/services/supabase_service.dart';
 import '../../../data/models/letter_model.dart';
 import '../../providers/auth_provider.dart';
 import '../dashboard/dashboard_screen.dart';
@@ -157,7 +158,10 @@ class _LetterDetailScreenState extends ConsumerState<LetterDetailScreen> {
   }
 
   // Fullscreen Lightbox for scanned images
-  void _openLightbox(String url, String title) {
+  Future<void> _openLightbox(String rawUrl, String title) async {
+    final url = await SupabaseService.instance.getSignedStorageUrl(rawUrl, bucket: 'documents');
+    if (!mounted) return;
+
     showDialog(
       context: context,
       barrierColor: Colors.black.withOpacity(0.9),
@@ -1204,14 +1208,20 @@ class _LetterDetailScreenState extends ConsumerState<LetterDetailScreen> {
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
-                      Image.network(
-                        _letter.letterUrl!,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        errorBuilder: (_, __, ___) => const Padding(
-                          padding: EdgeInsets.all(32),
-                          child: Icon(Icons.broken_image_outlined, size: 48, color: Colors.grey),
-                        ),
+                      FutureBuilder<String>(
+                        future: SupabaseService.instance.getSignedStorageUrl(_letter.letterUrl!, bucket: 'documents'),
+                        builder: (context, snap) {
+                          final resolved = (snap.hasData && snap.data!.isNotEmpty) ? snap.data! : _letter.letterUrl!;
+                          return Image.network(
+                            resolved,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            errorBuilder: (_, __, ___) => const Padding(
+                              padding: EdgeInsets.all(32),
+                              child: Icon(Icons.broken_image_outlined, size: 48, color: Colors.grey),
+                            ),
+                          );
+                        },
                       ),
                       Positioned(
                         bottom: 12,

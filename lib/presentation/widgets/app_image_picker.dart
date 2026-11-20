@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../core/services/supabase_service.dart';
 import 'app_modal_sheet.dart';
 
 /// Standardized Image / Document Upload widget across all popups.
@@ -279,12 +280,18 @@ class _AppImagePickerFieldState extends State<AppImagePickerField> {
                             width: 68,
                             height: 68,
                             color: const Color(0xFFF1F5F9),
-                            child: Image.network(
-                              _existingUrl!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, _, _) => const Center(
-                                child: Icon(Icons.broken_image_rounded, size: 24, color: Color(0xFF94A3B8)),
-                              ),
+                            child: FutureBuilder<String>(
+                              future: SupabaseService.instance.getSignedStorageUrl(_existingUrl!, bucket: 'documents'),
+                              builder: (context, snap) {
+                                final loadUrl = (snap.hasData && snap.data!.isNotEmpty) ? snap.data! : _existingUrl!;
+                                return Image.network(
+                                  loadUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, _, _) => const Center(
+                                    child: Icon(Icons.broken_image_rounded, size: 24, color: Color(0xFF94A3B8)),
+                                  ),
+                                );
+                              },
                             ),
                           ),
                         ),
