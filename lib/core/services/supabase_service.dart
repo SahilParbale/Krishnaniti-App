@@ -24,6 +24,7 @@ class SupabaseService {
       return _fallbackClient ??= SupabaseClient(
         AppConfig.supabaseUrl,
         AppConfig.supabaseAnonKey,
+        authOptions: const AuthClientOptions(autoRefreshToken: false),
       );
     }
   }

@@ -46,98 +46,43 @@ class AuthRepository {
     return null;
   }
 
+  // Staff mobile number to registered email mapping for phone-based logins
+  static const Map<String, String> _staffMobileToEmail = {
+    '7977157629': 'abhijit1714@gmail.com',
+    '9833948379': 'mane.mahendra1@gmail.com',
+    '7977688328': 'mantrisachin12@gmail.com',
+    '9876543210': 'soham@gmail.com',
+    '8356017704': 'satishmore6810@gmail.com',
+    '9833873707': 'sushilkumarkadam78@gmail.com',
+    '8286272727': 'sherkhanesandy@gmail.com',
+    '9773600736': 'shubham.k2001@gmail.com',
+    '8839958350': 'raghvendra.mcu@gmail.com',
+    '9167219955': 'nehalbakhai93@gmail.com',
+    '8767152299': 'aghuge229@gmail.com',
+    '6577577754': 'pranjall@gmail.com',
+    '8446588526': 'sahilparbale777@gmail.com',
+  };
+
   Future<UserModel> signIn({
     required String email,
     required String password,
     String? role,
     bool isStaff = false,
   }) async {
-    String cleanEmail = email.trim().toLowerCase();
+    String cleanIdentifier = email.trim();
 
-    // Map common role keywords/usernames to their official demo accounts
-    if (cleanEmail == 'demo_nagarsevak' ||
-        cleanEmail == 'nagarsevak' ||
-        cleanEmail == 'admin' ||
-        cleanEmail == 'demo') {
-      cleanEmail = 'demo_nagarsevak@demo.com';
-    } else if (cleanEmail == 'staff_prabhag12' ||
-        cleanEmail == 'staff' ||
-        cleanEmail == 'karyakarta') {
-      cleanEmail = 'staff_prabhag12@demo.com';
-    } else if (cleanEmail == 'amdar_demo' || cleanEmail == 'amdar') {
-      cleanEmail = 'amdar_demo@krishnaniti.in';
-    } else if (cleanEmail == 'khasdar_demo' || cleanEmail == 'khasdar') {
-      cleanEmail = 'khasdar_demo@krishnaniti.in';
-    } else if (cleanEmail == 'minister_demo' || cleanEmail == 'minister') {
-      cleanEmail = 'minister_demo@krishnaniti.in';
+    // If user enters a 10-digit mobile number or formatted mobile number, resolve to their email
+    final digitsOnly = cleanIdentifier.replaceAll(RegExp(r'[^0-9]'), '');
+    final tenDigit = digitsOnly.length >= 10
+        ? digitsOnly.substring(digitsOnly.length - 10)
+        : digitsOnly;
+    if (_staffMobileToEmail.containsKey(tenDigit)) {
+      cleanIdentifier = _staffMobileToEmail[tenDigit]!;
     }
 
-    // 1. Built-in demo accounts matching Nagarsevak-Managment AuthContext.tsx
-    // Demo accounts allow testing without separate Supabase Auth signups
-    final isDemoAccount = cleanEmail == 'demo_nagarsevak@demo.com' ||
-        cleanEmail == 'staff_prabhag12@demo.com' ||
-        cleanEmail == 'amdar_demo@krishnaniti.in' ||
-        cleanEmail == 'khasdar_demo@krishnaniti.in' ||
-        cleanEmail == 'minister_demo@krishnaniti.in' ||
-        cleanEmail == 'admin@ns.com' ||
-        cleanEmail == 'staff@ns.com' ||
-        cleanEmail == 'voter@ns.com';
+    final cleanEmail = cleanIdentifier.toLowerCase();
 
-    if (isDemoAccount) {
-      final userRole = role ??
-          (cleanEmail.contains('staff') || isStaff
-              ? 'staff'
-              : cleanEmail.contains('amdar')
-                  ? 'amdar'
-                  : cleanEmail.contains('khasdar')
-                      ? 'khasdar'
-                      : cleanEmail.contains('minister')
-                          ? 'minister'
-                          : 'nagarsevak');
-
-      // The Krishnaniti demo tenant UUID in database
-      const demoTenantId = AppConfig.defaultTenantId;
-      SupabaseService.instance.setActiveTenant(demoTenantId);
-
-      // Attempt live Supabase Auth login for demo_nagarsevak in background for valid JWT
-      if (cleanEmail == 'demo_nagarsevak@demo.com') {
-        try {
-          await _client.auth.signInWithPassword(
-            email: 'demo_nagarsevak@demo.com',
-            password: 'Password@123',
-          );
-        } catch (_) {
-          // Offline or network error - offline mock session continues safely
-        }
-      }
-
-      final user = UserModel(
-        id: (cleanEmail == 'demo_nagarsevak@demo.com')
-            ? '3cf3d997-c0f7-4f69-8e70-a0f938f6e088'
-            : 'demo-user-id',
-        name: userRole == 'staff'
-            ? 'Prabhag 12 Staff'
-            : userRole == 'amdar'
-                ? 'Hon. Amdar (MLA)'
-                : userRole == 'khasdar'
-                    ? 'Hon. Khasdar (MP)'
-                    : userRole == 'minister'
-                        ? 'Hon. Minister'
-                        : 'Demo Nagarsevak',
-        email: cleanEmail,
-        role: userRole,
-        isStaff: userRole == 'staff',
-        permissions: const [],
-        tenantId: demoTenantId,
-      );
-
-      _mockSession = user;
-      await _persistSession(user);
-      return user;
-    }
-
-    // 2. Real Supabase Authentication
-    // Connects to live Supabase backend sharing exact credentials with web app
+    // Authenticate with live Supabase GoTrue Auth
     final response = await _client.auth.signInWithPassword(
       email: cleanEmail,
       password: password,
@@ -150,7 +95,7 @@ class AuthRepository {
 
     final profile = await loadUserProfile(user);
 
-    // 3. Log successful login to login_logs table (matching web AuthContext)
+    // Log successful login to login_logs table (matching web AuthContext)
     try {
       String osName = 'Unknown';
       if (kIsWeb) {
@@ -189,11 +134,11 @@ class AuthRepository {
     Map<String, dynamic>? staffRes;
     Map<String, dynamic>? mappingRes;
 
-    // 1. Fetch staff record if exists (safely catch any RLS/missing table error)
+    // 1. Fetch staff record if exists
     try {
       staffRes = await _client
           .from('staff')
-          .select('id, role, permissions, can_assign_work')
+          .select('id, role, permissions, can_assign_work, tenant_id')
           .eq('id', sessionUser.id)
           .maybeSingle();
     } catch (_) {}
@@ -208,7 +153,10 @@ class AuthRepository {
     } catch (_) {}
 
     final dbRole = mappingRes?['role'] ?? (staffRes != null ? 'staff' : 'nagarsevak');
-    final tenantId = mappingRes?['tenant_id'] ?? SupabaseService.instance.activeTenantId ?? AppConfig.defaultTenantId;
+    final tenantId = mappingRes?['tenant_id'] ??
+        staffRes?['tenant_id'] ??
+        SupabaseService.instance.activeTenantId ??
+        AppConfig.defaultTenantId;
 
     SupabaseService.instance.setActiveTenant(tenantId);
 
@@ -219,15 +167,17 @@ class AuthRepository {
       }
     }
 
+    final resolvedRole = dbRole == 'super_admin' ? 'admin' : dbRole;
+
     return UserModel(
       id: sessionUser.id,
       name: sessionUser.userMetadata?['name'] ??
           sessionUser.userMetadata?['full_name'] ??
           sessionUser.email?.split('@')[0] ??
-          'Elected Representative',
+          'User',
       email: sessionUser.email ?? '',
-      role: dbRole == 'super_admin' ? 'admin' : dbRole,
-      isStaff: staffRes != null || dbRole == 'staff',
+      role: resolvedRole,
+      isStaff: staffRes != null || resolvedRole == 'staff',
       permissions: perms,
       tenantId: tenantId,
     );

@@ -22,7 +22,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   String _subRole = 'nagarsevak'; // 'nagarsevak' or 'staff'
 
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController(text: 'Password@123');
+  final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isSigningIn = false;
 
@@ -32,7 +32,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (widget.initialRole != null) {
       _activeRole = widget.initialRole!;
     }
-    _updateDefaultCredentials();
   }
 
   @override
@@ -46,23 +45,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     HapticFeedback.selectionClick();
     setState(() {
       _activeRole = role;
-      _updateDefaultCredentials();
     });
-  }
-
-  void _updateDefaultCredentials() {
-    _passwordController.text = 'Password@123';
-    if (_activeRole == 'nagarsevak') {
-      _emailController.text = _subRole == 'nagarsevak'
-          ? 'demo_nagarsevak@demo.com'
-          : 'staff_prabhag12@demo.com';
-    } else if (_activeRole == 'amdar') {
-      _emailController.text = 'amdar_demo@krishnaniti.in';
-    } else if (_activeRole == 'khasdar') {
-      _emailController.text = 'khasdar_demo@krishnaniti.in';
-    } else if (_activeRole == 'minister') {
-      _emailController.text = 'minister_demo@krishnaniti.in';
-    }
   }
 
   Future<void> _handleLogin() async {
@@ -382,7 +365,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               HapticFeedback.selectionClick();
                               setState(() {
                                 _subRole = 'nagarsevak';
-                                _updateDefaultCredentials();
                               });
                             },
                             borderRadius: BorderRadius.circular(9),
@@ -424,7 +406,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               HapticFeedback.selectionClick();
                               setState(() {
                                 _subRole = 'staff';
-                                _updateDefaultCredentials();
                               });
                             },
                             borderRadius: BorderRadius.circular(9),
@@ -488,7 +469,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     textInputAction: TextInputAction.next,
                     style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A), fontWeight: FontWeight.w500),
                     decoration: InputDecoration(
-                      hintText: isMr ? 'उदा. demo_nagarsevak@demo.com' : 'e.g. demo_nagarsevak@demo.com',
+                      hintText: isMr ? 'उदा. नाव@krishnaniti.in किंवा १०-अंकी मोबाईल' : 'e.g. name@krishnaniti.in or 10-digit mobile',
                       hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
                       prefixIcon: const Icon(Icons.alternate_email_rounded, color: Color(0xFF64748B), size: 19),
                       border: InputBorder.none,
@@ -555,82 +536,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 18),
-
-                // Demo Credentials Highlight Card
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF0FDF4),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFBBF7D0)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.verified_user_rounded, color: Color(0xFF16A34A), size: 17),
-                          const SizedBox(width: 7),
-                          Text(
-                            isMr ? 'डेमो लॉगिन माहिती (Demo Credentials)' : 'Demo Credentials (१-क्लिक लॉगिन)',
-                            style: const TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF15803D),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          const Text('ID: ', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Color(0xFF334155))),
-                          Expanded(
-                            child: Text(
-                              _emailController.text,
-                              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Color(0xFF0F172A)),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      Row(
-                        children: const [
-                          Text('Password: ', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Color(0xFF334155))),
-                          Text('Password@123', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: Color(0xFF0284C7))),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 34,
-                        child: OutlinedButton.icon(
-                          onPressed: isLoading
-                              ? null
-                              : () {
-                                  _updateDefaultCredentials();
-                                  _handleLogin();
-                                },
-                          icon: const Icon(Icons.bolt_rounded, size: 16, color: Color(0xFF16A34A)),
-                          label: Text(
-                            isMr ? 'डेमोद्वारे थेट प्रवेश करा' : '1-Tap Demo Sign In',
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF15803D)),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Color(0xFF86EFAC)),
-                            backgroundColor: Colors.white,
-                            padding: EdgeInsets.zero,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 18),
+                const SizedBox(height: 24),
 
                 // 4. Primary Mobile Login Button (Height 52, thumb-reachable)
                 SizedBox(
