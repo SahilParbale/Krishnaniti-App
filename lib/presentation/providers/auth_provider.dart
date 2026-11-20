@@ -23,7 +23,8 @@ class AuthNotifier extends Notifier<AsyncValue<UserModel?>> {
       final repo = ref.read(authRepositoryProvider);
       final user = await repo.signIn(email: email, password: password, role: role, isStaff: isStaff);
       state = AsyncValue.data(user);
-    } catch (e) {
+
+    } catch (e, st) {
       state = AsyncValue.data(null);
       rethrow;
     }
