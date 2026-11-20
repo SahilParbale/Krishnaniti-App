@@ -16,11 +16,18 @@ class StaffModel {
   });
 
   factory StaffModel.fromJson(Map<String, dynamic> json) {
+    String resolvedName = json['name']?.toString() ?? '';
+    if (resolvedName.trim().isEmpty) {
+      resolvedName = json['name_marathi']?.toString() ??
+          json['name_english']?.toString() ??
+          json['full_name']?.toString() ??
+          'Staff Member';
+    }
     return StaffModel(
       id: json['id']?.toString() ?? '',
-      name: json['name']?.toString() ?? '',
-      role: json['role']?.toString() ?? 'Staff',
-      mobile: json['mobile']?.toString(),
+      name: resolvedName,
+      role: json['role']?.toString() ?? json['category']?.toString() ?? 'Staff',
+      mobile: json['mobile']?.toString() ?? json['phone']?.toString(),
       email: json['email']?.toString(),
       tenantId: json['tenant_id']?.toString(),
     );

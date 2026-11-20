@@ -86,16 +86,18 @@ class NewspaperClippingsRepository {
   }
 
   Future<NewspaperClippingModel> addClipping(NewspaperClippingModel clipping) async {
+    final effectiveTitle = clipping.title.isNotEmpty ? clipping.title : clipping.titleMarathi;
+    final effectiveDesc = clipping.newspaper.isNotEmpty
+        ? '[${clipping.newspaper}] ${clipping.description.isNotEmpty ? clipping.description : clipping.descriptionMarathi}'
+        : (clipping.description.isNotEmpty ? clipping.description : clipping.descriptionMarathi);
+
     final payload = {
-      'title': clipping.title,
-      'title_mr': clipping.titleMarathi,
+      'title': effectiveTitle,
       'category': 'Newspaper',
-      'newspaper': clipping.newspaper,
       'date': clipping.date,
       'sentiment': clipping.sentiment,
       'image_url': clipping.imageUrl,
-      'description': clipping.description,
-      'description_mr': clipping.descriptionMarathi,
+      'description': effectiveDesc,
       'tenant_id': _tenantId,
       'created_at': DateTime.now().toIso8601String(),
     };
@@ -105,15 +107,17 @@ class NewspaperClippingsRepository {
   }
 
   Future<NewspaperClippingModel> updateClipping(NewspaperClippingModel clipping) async {
+    final effectiveTitle = clipping.title.isNotEmpty ? clipping.title : clipping.titleMarathi;
+    final effectiveDesc = clipping.newspaper.isNotEmpty
+        ? '[${clipping.newspaper}] ${clipping.description.isNotEmpty ? clipping.description : clipping.descriptionMarathi}'
+        : (clipping.description.isNotEmpty ? clipping.description : clipping.descriptionMarathi);
+
     final payload = {
-      'title': clipping.title,
-      'title_mr': clipping.titleMarathi,
-      'newspaper': clipping.newspaper,
+      'title': effectiveTitle,
       'date': clipping.date,
       'sentiment': clipping.sentiment,
       'image_url': clipping.imageUrl,
-      'description': clipping.description,
-      'description_mr': clipping.descriptionMarathi,
+      'description': effectiveDesc,
       'updated_at': DateTime.now().toIso8601String(),
     };
 

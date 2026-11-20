@@ -13,6 +13,7 @@ import '../../../core/services/supabase_service.dart';
 import '../../../data/models/complaint_model.dart';
 import '../../../data/models/staff_model.dart';
 import '../../../data/repositories/complaints_repository.dart';
+import '../../../data/repositories/team_repository.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_image_picker.dart';
@@ -37,6 +38,7 @@ class ComplaintDetailScreen extends ConsumerStatefulWidget {
 class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
   late ComplaintModel _complaint;
   List<StaffModel> _staffList = [];
+  bool _isLoadingStaff = true;
   String? _assignedStaffId;
   int _updatePage = 1;
   static const int _updatePageSize = 5;
@@ -121,23 +123,51 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
   }
 
   Future<void> _loadInitialData() async {
+    // 1. Fetch Staff list first & independently (matching Staff screen / TeamRepository)
     try {
       final repo = ref.read(complaintsRepoProvider);
-      final staffFuture = repo.getStaffList();
-      final freshFuture = repo.getComplaintById(_complaint.id);
+      var staff = await repo.getStaffList(forceRefresh: true);
 
-      final results = await Future.wait([staffFuture, freshFuture]);
-      final staff = results[0] as List<StaffModel>;
-      final fresh = results[1] as ComplaintModel?;
+      if (staff.isEmpty) {
+        // Fallback to TeamRepository (powers the My Team / Staff screen)
+        final teamMembers = await ref.read(teamRepoProvider).getTeamMembers();
+        if (teamMembers.isNotEmpty) {
+          staff = teamMembers
+              .map((m) => StaffModel(
+                    id: m.id,
+                    name: m.displayName,
+                    role: m.role,
+                    mobile: m.mobile,
+                    email: m.email,
+                    tenantId: m.tenantId,
+                  ))
+              .toList();
+        }
+      }
 
+      if (mounted) {
+        setState(() {
+          _staffList = staff;
+          _isLoadingStaff = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isLoadingStaff = false);
+      }
+    }
+
+    // 2. Fetch fresh complaint details & attachments
+    try {
+      final repo = ref.read(complaintsRepoProvider);
+      final fresh = await repo.getComplaintById(_complaint.id);
       if (mounted) {
         final complaintToUse = fresh ?? _complaint;
         final resolvedComplaint = await _resolveComplaintAttachments(complaintToUse);
 
         setState(() {
-          _staffList = staff;
           _complaint = resolvedComplaint;
-          _assignedStaffId = resolvedComplaint.assignedTo;
+          _assignedStaffId = resolvedComplaint.assignedTo ?? _assignedStaffId;
         });
       }
     } catch (_) {}
@@ -146,10 +176,17 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
   Future<void> _refreshComplaint() async {
     try {
       final repo = ref.read(complaintsRepoProvider);
-      final fresh = await repo.getComplaintById(_complaint.id);
-      if (fresh != null && mounted) {
-        final resolvedComplaint = await _resolveComplaintAttachments(fresh);
+      final freshFuture = repo.getComplaintById(_complaint.id);
+      final staffFuture = repo.getStaffList(forceRefresh: true);
+
+      final results = await Future.wait([freshFuture, staffFuture]);
+      final fresh = results[0] as ComplaintModel?;
+      final staff = results[1] as List<StaffModel>;
+
+      if (mounted) {
+        final resolvedComplaint = fresh != null ? await _resolveComplaintAttachments(fresh) : _complaint;
         setState(() {
+          if (staff.isNotEmpty) _staffList = staff;
           _complaint = resolvedComplaint;
           _assignedStaffId = resolvedComplaint.assignedTo ?? _assignedStaffId;
         });
@@ -1595,25 +1632,47 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
           const SizedBox(height: 14),
 
           // ASSIGN STAFF section
-          Text(
-            isMr ? AppStrings.assignStaffMr : AppStrings.assignStaff,
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF64748B), letterSpacing: 0.5),
+          // ASSIGN STAFF section
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                isMr ? AppStrings.assignStaffMr : AppStrings.assignStaff,
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF64748B), letterSpacing: 0.5),
+              ),
+              if (_isLoadingStaff)
+                const SizedBox(
+                  width: 12,
+                  height: 12,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0284C7)),
+                ),
+            ],
           ),
           const SizedBox(height: 8),
 
           AppDropdown<String>(
             title: isMr ? AppStrings.selectStaffMr : AppStrings.selectStaff,
             value: _staffList.any((s) => s.id == _assignedStaffId) ? _assignedStaffId : null,
-            hint: isMr ? AppStrings.selectStaffMr : AppStrings.selectStaff,
+            hint: _isLoadingStaff
+                ? (isMr ? 'कर्मचारी यादी लोड होत आहे...' : 'Loading staff...')
+                : (_staffList.isEmpty
+                    ? (isMr ? 'कोणतेही कर्मचारी उपलब्ध नाहीत' : 'No staff available')
+                    : (isMr ? AppStrings.selectStaffMr : AppStrings.selectStaff)),
             items: _staffList.map((s) {
               return DropdownMenuItem<String>(
                 value: s.id,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(s.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0F172A))),
-                    if (s.role != null)
-                      Text('(${s.role})', style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B))),
+                    Expanded(
+                      child: Text(
+                        s.name,
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (s.role != null && s.role!.isNotEmpty)
+                      Text(' (${s.role})', style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B))),
                   ],
                 ),
               );

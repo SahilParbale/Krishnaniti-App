@@ -74,6 +74,8 @@ class AiContentRepository {
 
   List<AiPromptTemplate> getTemplates() => List.unmodifiable(_templates);
 
+  final Set<String> _localFavorites = {};
+
   Future<List<AiContentHistoryItem>> getHistory() async {
     try {
       var query = _client.from('ai_history').select('*');
@@ -81,9 +83,15 @@ class AiContentRepository {
         query = query.eq('tenant_id', _tenantId!);
       }
       final response = await query.order('created_at', ascending: false);
-      return (response as List<dynamic>)
-          .map((item) => AiContentHistoryItem.fromJson(item as Map<String, dynamic>))
-          .toList();
+      return (response as List<dynamic>).map((item) {
+        final map = Map<String, dynamic>.from(item as Map);
+        final itemId = map['id']?.toString() ?? '';
+        final model = AiContentHistoryItem.fromJson(map);
+        if (_localFavorites.contains(itemId)) {
+          return model.copyWith(isFavorite: true);
+        }
+        return model;
+      }).toList();
     } catch (_) {
       return [];
     }
@@ -141,12 +149,13 @@ class AiContentRepository {
 
   Future<bool> toggleFavorite(String id) async {
     try {
-      var query = _client.from('ai_history').select('is_favorite').eq('id', id).maybeSingle();
-      final res = await query;
-      final current = res != null && res['is_favorite'] == true;
-      final newFav = !current;
-      await _client.from('ai_history').update({'is_favorite': newFav}).eq('id', id);
-      return newFav;
+      if (_localFavorites.contains(id)) {
+        _localFavorites.remove(id);
+        return false;
+      } else {
+        _localFavorites.add(id);
+        return true;
+      }
     } catch (_) {
       return false;
     }

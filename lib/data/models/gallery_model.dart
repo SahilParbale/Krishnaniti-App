@@ -189,10 +189,6 @@ class GalleryItemModel {
       'image_url': imageUrl,
       'description': description,
       'date': date.toIso8601String().split('T').first,
-      'location': location,
-      'tags': tags,
-      'is_favorite': isFavorite,
-      'views_count': viewsCount,
       if (tenantId != null) 'tenant_id': tenantId,
     };
   }

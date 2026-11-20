@@ -8,6 +8,9 @@ class GalleryRepository {
   final SupabaseClient _client = SupabaseService.instance.client;
   String? get _tenantId => SupabaseService.instance.activeTenantId;
 
+  final Set<String> _localFavorites = {};
+  final Map<String, int> _localViews = {};
+
   Future<List<GalleryItemModel>> getGalleryItems({GalleryCategory? category}) async {
     try {
       var query = _client.from('gallery').select('*');
@@ -30,7 +33,12 @@ class GalleryRepository {
         if (rawImg.isNotEmpty) {
           map['image_url'] = SupabaseService.instance.resolveStorageUrl(rawImg);
         }
-        items.add(GalleryItemModel.fromJson(map));
+        final id = map['id']?.toString() ?? '';
+        final model = GalleryItemModel.fromJson(map);
+        items.add(model.copyWith(
+          isFavorite: _localFavorites.contains(id) ? true : model.isFavorite,
+          viewsCount: model.viewsCount + (_localViews[id] ?? 0),
+        ));
       }
 
       return items;
@@ -86,32 +94,17 @@ class GalleryRepository {
   }
 
   Future<bool> toggleFavorite(String id) async {
-    try {
-      final item = await getGalleryItemById(id);
-      if (item != null) {
-        final newFav = !item.isFavorite;
-        var query = _client.from('gallery').update({'is_favorite': newFav}).eq('id', id);
-        if (_tenantId != null && _tenantId!.isNotEmpty) {
-          query = query.eq('tenant_id', _tenantId!);
-        }
-        await query;
-        return newFav;
-      }
-    } catch (_) {}
-    return false;
+    if (_localFavorites.contains(id)) {
+      _localFavorites.remove(id);
+      return false;
+    } else {
+      _localFavorites.add(id);
+      return true;
+    }
   }
 
-  void incrementViews(String id) async {
-    try {
-      final item = await getGalleryItemById(id);
-      if (item != null) {
-        var query = _client.from('gallery').update({'views_count': item.viewsCount + 1}).eq('id', id);
-        if (_tenantId != null && _tenantId!.isNotEmpty) {
-          query = query.eq('tenant_id', _tenantId!);
-        }
-        await query;
-      }
-    } catch (_) {}
+  void incrementViews(String id) {
+    _localViews[id] = (_localViews[id] ?? 0) + 1;
   }
 }
 

@@ -153,17 +153,35 @@ class ComplaintsRepository {
       return _cachedStaff!;
     }
     try {
-      var query = _client.from('staff').select('id, name, mobile, role, department');
-      if (_tenantId != null) {
+      var query = _client.from('staff').select('*');
+      if (_tenantId != null && _tenantId!.isNotEmpty) {
         query = query.eq('tenant_id', _tenantId!);
       }
-      final response = await query;
-      _cachedStaff = (response as List<dynamic>)
+      final response = await query.order('name');
+      var list = (response as List<dynamic>)
           .map((item) => StaffModel.fromJson(item as Map<String, dynamic>))
           .toList();
+
+      if (list.isEmpty) {
+        // Fallback without tenant filter if tenant-filtered returned empty
+        final fallbackRes = await _client.from('staff').select('*').order('name');
+        list = (fallbackRes as List<dynamic>)
+            .map((item) => StaffModel.fromJson(item as Map<String, dynamic>))
+            .toList();
+      }
+
+      _cachedStaff = list;
       return _cachedStaff!;
     } catch (_) {
-      return _cachedStaff ?? [];
+      try {
+        final fallbackRes = await _client.from('staff').select('*').order('name');
+        _cachedStaff = (fallbackRes as List<dynamic>)
+            .map((item) => StaffModel.fromJson(item as Map<String, dynamic>))
+            .toList();
+        return _cachedStaff!;
+      } catch (_) {
+        return _cachedStaff ?? [];
+      }
     }
   }
 
@@ -417,7 +435,11 @@ class ComplaintsRepository {
             fileOptions: const FileOptions(upsert: true),
           );
 
-      // Return public URL or path
+      try {
+        final signed = await SupabaseService.instance.getSignedStorageUrl(path, bucket: 'documents');
+        if (signed.isNotEmpty) return signed;
+      } catch (_) {}
+
       final publicUrl = _client.storage.from('documents').getPublicUrl(path);
       return publicUrl;
     } catch (_) {

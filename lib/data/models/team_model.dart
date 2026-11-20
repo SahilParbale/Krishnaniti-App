@@ -167,23 +167,20 @@ class TeamMemberModel {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'name': name,
-      'name_marathi': nameMarathi,
+      'name': (name.isNotEmpty) ? name : (nameMarathi ?? ''),
       'mobile': mobile,
-      'email': email,
       'role': role,
-      'area': area,
+      if (area != null && area!.isNotEmpty) 'area': area,
       'category': category,
       'keywords': keywords,
-      'permissions': permissions,
-      'tenant_id': tenantId,
-      'party_wing': partyWing,
-      'paksh': paksh,
-      'pad': pad,
-      'society_name': societyName,
+      if (permissions != null) 'permissions': permissions,
+      if (tenantId != null && tenantId!.isNotEmpty) 'tenant_id': tenantId,
+      if (partyWing != null && partyWing!.isNotEmpty) 'party_wing': partyWing,
+      if (paksh != null && paksh!.isNotEmpty) 'paksh': paksh,
+      if (pad != null && pad!.isNotEmpty) 'pad': pad,
+      if (societyName != null && societyName!.isNotEmpty) 'society_name': societyName,
       'can_assign_work': canAssignWork,
-      'avatar_url': avatarUrl,
-      'created_at': joinedDate?.toIso8601String(),
+      if (joinedDate != null) 'created_at': joinedDate!.toIso8601String(),
     };
   }
 }

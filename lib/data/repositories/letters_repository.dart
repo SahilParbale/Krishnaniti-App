@@ -259,6 +259,11 @@ class LettersRepository {
             fileOptions: const FileOptions(upsert: true),
           );
 
+      try {
+        final signed = await SupabaseService.instance.getSignedStorageUrl(path, bucket: 'documents');
+        if (signed.isNotEmpty) return signed;
+      } catch (_) {}
+
       final publicUrl = _client.storage.from('documents').getPublicUrl(path);
       return publicUrl;
     } catch (_) {

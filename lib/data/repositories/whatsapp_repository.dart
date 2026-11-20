@@ -98,7 +98,7 @@ class WhatsAppRepository {
         query = query.ilike('caste', '%${caste.trim()}%');
       }
       if (booth != null && booth.isNotEmpty && booth != 'All') {
-        query = query.eq('booth', booth);
+        query = query.or('part_no.eq.$booth,part_no.ilike.%$booth%');
       }
 
       if (ageRange != null && ageRange.isNotEmpty && ageRange != 'All') {

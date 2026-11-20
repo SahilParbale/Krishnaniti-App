@@ -29,7 +29,7 @@ class VotersRepository {
       }
 
       if (boothFilter != null && boothFilter.isNotEmpty && boothFilter != 'All') {
-        dbQuery = dbQuery.eq('booth', boothFilter);
+        dbQuery = dbQuery.or('part_no.eq.$boothFilter,part_no.ilike.%$boothFilter%');
       }
 
       if (favourFilter != null && favourFilter.isNotEmpty && favourFilter != 'All') {
@@ -96,7 +96,7 @@ class VotersRepository {
       }
 
       if (boothFilter != null && boothFilter.isNotEmpty && boothFilter != 'All') {
-        dbQuery = dbQuery.eq('booth', boothFilter);
+        dbQuery = dbQuery.or('part_no.eq.$boothFilter,part_no.ilike.%$boothFilter%');
       }
 
       if (favourFilter != null && favourFilter.isNotEmpty && favourFilter != 'All') {
@@ -180,12 +180,12 @@ class VotersRepository {
 
   Future<List<VoterModel>> getFamilyMembers(String houseNo, String booth) async {
     try {
-      var query = _client.from('voters').select('id, name_en, name_mr, epic_no, house_no, booth, age, gender, mobile, relation_type, address, serial_no').eq('house_no', houseNo);
+      var query = _client.from('voters').select('*').eq('house_no', houseNo);
       if (_tenantId != null && _tenantId!.isNotEmpty) {
         query = query.eq('tenant_id', _tenantId!);
       }
       if (booth.isNotEmpty) {
-        query = query.eq('booth', booth);
+        query = query.or('part_no.eq.$booth,part_no.ilike.%$booth%');
       }
 
       final List<dynamic> response = await query.order('age', ascending: false).limit(30);
@@ -222,7 +222,7 @@ class VotersRepository {
 
   Future<Map<String, int>> getVotersStats() async {
     try {
-      var baseQuery = _client.from('voters').select('favour, is_friend_relative, booth');
+      var baseQuery = _client.from('voters').select('favour, is_friend_relative, part_no');
       if (_tenantId != null && _tenantId!.isNotEmpty) {
         baseQuery = baseQuery.eq('tenant_id', _tenantId!);
       }
@@ -243,7 +243,7 @@ class VotersRepository {
         if (f == 'neutral') neutral++;
         if (f == 'swing') swing++;
         if (item['is_friend_relative'] == true) friends++;
-        final b = item['booth']?.toString();
+        final b = (item['part_no'] ?? item['booth'])?.toString();
         if (b != null && b.isNotEmpty) booths.add(b);
       }
 
@@ -345,14 +345,14 @@ class VotersRepository {
 
   Future<List<String>> getBoothsList() async {
     try {
-      var query = _client.from('voters').select('booth');
+      var query = _client.from('voters').select('part_no');
       if (_tenantId != null && _tenantId!.isNotEmpty) {
         query = query.eq('tenant_id', _tenantId!);
       }
       final response = await query;
       final Set<String> booths = {};
       for (final item in (response as List<dynamic>)) {
-        final b = item['booth']?.toString();
+        final b = (item['part_no'] ?? item['booth'])?.toString();
         if (b != null && b.isNotEmpty) booths.add(b);
       }
       return booths.toList()..sort();

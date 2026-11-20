@@ -78,7 +78,7 @@ class WardMapRepository {
 
     // 2. Fetch live problem spots from complaints
     try {
-      var query = client.from('complaints').select('id, title, area, category, status').eq('status', 'Pending');
+      var query = client.from('complaints').select('id, problem, area, category, status').eq('status', 'Pending');
       if (tenantId != null && tenantId.isNotEmpty) {
         query = query.eq('tenant_id', tenantId);
       }
@@ -87,7 +87,7 @@ class WardMapRepository {
         final map = Map<String, dynamic>.from(item as Map);
         points.add(WardMapPointModel(
           id: 'prob-${map['id']}',
-          title: map['title']?.toString() ?? 'Complaint',
+          title: map['problem']?.toString() ?? map['title']?.toString() ?? 'Complaint',
           category: 'ProblemSpot',
           address: map['area']?.toString() ?? '',
           latitude: 18.5000,

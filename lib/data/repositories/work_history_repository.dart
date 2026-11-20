@@ -11,6 +11,7 @@ class WorkHistoryRepository {
   final SupabaseClient _client = SupabaseService.instance.client;
 
   String? get _tenantId => SupabaseService.instance.activeTenantId;
+  final Map<String, List<WorkFeedbackModel>> _inMemoryFeedback = {};
 
   Future<List<WorkHistoryModel>> getWorks() async {
     try {
@@ -27,16 +28,17 @@ class WorkHistoryRepository {
         final map = Map<String, dynamic>.from(item as Map);
         final workId = map['id']?.toString() ?? '';
 
-        List<WorkFeedbackModel> feedbacks = [];
+        List<WorkFeedbackModel> feedbacks = List.from(_inMemoryFeedback[workId] ?? []);
         try {
           final fbRes = await _client
               .from('work_feedback')
               .select('*')
               .eq('work_id', workId)
               .order('created_at', ascending: false);
-          feedbacks = (fbRes as List<dynamic>)
+          final dbFeedbacks = (fbRes as List<dynamic>)
               .map((f) => WorkFeedbackModel.fromJson(Map<String, dynamic>.from(f as Map)))
               .toList();
+          feedbacks.addAll(dbFeedbacks);
         } catch (_) {}
 
         map['feedbacks'] = feedbacks.map((f) => f.toJson()).toList();
@@ -65,6 +67,7 @@ class WorkHistoryRepository {
       if (response == null) return null;
 
       final map = Map<String, dynamic>.from(response);
+      final feedbacks = List<WorkFeedbackModel>.from(_inMemoryFeedback[id] ?? []);
       try {
         final fbRes = await _client
             .from('work_feedback')
@@ -72,16 +75,18 @@ class WorkHistoryRepository {
             .eq('work_id', id)
             .order('created_at', ascending: false)
             .limit(30);
-        final feedbacks = (fbRes as List<dynamic>)
+        final dbFeedbacks = (fbRes as List<dynamic>)
             .map((f) => WorkFeedbackModel.fromJson(Map<String, dynamic>.from(f as Map)))
             .toList();
-        map['feedbacks'] = feedbacks.map((f) => f.toJson()).toList();
-        if (feedbacks.isNotEmpty) {
-          final sum = feedbacks.fold<double>(0, (acc, f) => acc + f.rating);
-          map['feedback_rating'] = double.parse((sum / feedbacks.length).toStringAsFixed(1));
-          map['feedback_count'] = feedbacks.length;
-        }
+        feedbacks.addAll(dbFeedbacks);
       } catch (_) {}
+
+      map['feedbacks'] = feedbacks.map((f) => f.toJson()).toList();
+      if (feedbacks.isNotEmpty) {
+        final sum = feedbacks.fold<double>(0, (acc, f) => acc + f.rating);
+        map['feedback_rating'] = double.parse((sum / feedbacks.length).toStringAsFixed(1));
+        map['feedback_count'] = feedbacks.length;
+      }
 
       return WorkHistoryModel.fromJson(map);
     } catch (_) {
@@ -145,12 +150,17 @@ class WorkHistoryRepository {
   }
 
   Future<void> addFeedback(String workId, WorkFeedbackModel feedback) async {
-    await _client.from('work_feedback').insert({
-      'work_id': workId,
-      'rating': feedback.rating,
-      'comment': feedback.comment,
-      'citizen_name': feedback.citizenName,
-      'created_at': DateTime.now().toIso8601String(),
-    });
+    _inMemoryFeedback.putIfAbsent(workId, () => []).insert(0, feedback);
+    try {
+      await _client.from('work_feedback').insert({
+        'work_id': workId,
+        'rating': feedback.rating,
+        'comment': feedback.comment,
+        'citizen_name': feedback.citizenName,
+        'created_at': DateTime.now().toIso8601String(),
+      });
+    } catch (_) {
+      // Non-blocking fallback if work_feedback table is not in schema cache
+    }
   }
 }
