@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/localization/app_strings.dart';
+import '../../../core/services/supabase_service.dart';
 import '../../../data/models/complaint_model.dart';
 import '../../../data/models/staff_model.dart';
 import '../../../data/repositories/complaints_repository.dart';
@@ -16,6 +19,7 @@ import '../../widgets/app_image_picker.dart';
 import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_pdf_button.dart';
 import '../../widgets/app_pagination_bar.dart';
+import '../../widgets/complaint_video_player.dart';
 import 'complaint_report_generator.dart';
 
 class ComplaintDetailScreen extends ConsumerStatefulWidget {
@@ -55,16 +59,85 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
     super.initState();
     _complaint = widget.complaint;
     _assignedStaffId = _complaint.assignedTo;
+    _resolveInitialAttachments();
     _loadInitialData();
+  }
+
+  Future<void> _resolveInitialAttachments() async {
+    try {
+      final resolved = await _resolveComplaintAttachments(_complaint);
+      if (mounted) {
+        setState(() {
+          _complaint = resolved;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<ComplaintModel> _resolveComplaintAttachments(ComplaintModel complaint) async {
+    final service = SupabaseService.instance;
+    final resolvedAttachments = <ComplaintAttachment>[];
+
+    for (final att in complaint.attachments) {
+      if (att.url.trim().isEmpty) continue;
+      String url = att.url.trim();
+      if (!url.startsWith('http://') &&
+          !url.startsWith('https://') &&
+          !url.startsWith('data:') &&
+          !url.startsWith('blob:')) {
+        url = await service.getSignedStorageUrl(url, bucket: 'documents');
+      }
+      resolvedAttachments.add(ComplaintAttachment(
+        url: url,
+        type: att.type,
+        name: att.name,
+        size: att.size,
+      ));
+    }
+
+    String? resolvedImageUrl = complaint.imageUrl;
+    if (resolvedImageUrl != null &&
+        resolvedImageUrl.trim().isNotEmpty &&
+        !resolvedImageUrl.startsWith('http://') &&
+        !resolvedImageUrl.startsWith('https://')) {
+      resolvedImageUrl = await service.getSignedStorageUrl(resolvedImageUrl.trim(), bucket: 'documents');
+    }
+
+    final resolvedPhotos = <String>[];
+    for (final p in complaint.photos) {
+      if (p.trim().isEmpty) continue;
+      String url = p.trim();
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = await service.getSignedStorageUrl(url, bucket: 'documents');
+      }
+      resolvedPhotos.add(url);
+    }
+
+    return complaint.copyWith(
+      attachments: resolvedAttachments,
+      imageUrl: resolvedImageUrl,
+      photos: resolvedPhotos,
+    );
   }
 
   Future<void> _loadInitialData() async {
     try {
       final repo = ref.read(complaintsRepoProvider);
-      final staff = await repo.getStaffList();
+      final staffFuture = repo.getStaffList();
+      final freshFuture = repo.getComplaintById(_complaint.id);
+
+      final results = await Future.wait([staffFuture, freshFuture]);
+      final staff = results[0] as List<StaffModel>;
+      final fresh = results[1] as ComplaintModel?;
+
       if (mounted) {
+        final complaintToUse = fresh ?? _complaint;
+        final resolvedComplaint = await _resolveComplaintAttachments(complaintToUse);
+
         setState(() {
           _staffList = staff;
+          _complaint = resolvedComplaint;
+          _assignedStaffId = resolvedComplaint.assignedTo;
         });
       }
     } catch (_) {}
@@ -75,9 +148,10 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
       final repo = ref.read(complaintsRepoProvider);
       final fresh = await repo.getComplaintById(_complaint.id);
       if (fresh != null && mounted) {
+        final resolvedComplaint = await _resolveComplaintAttachments(fresh);
         setState(() {
-          _complaint = fresh;
-          _assignedStaffId = fresh.assignedTo ?? _assignedStaffId;
+          _complaint = resolvedComplaint;
+          _assignedStaffId = resolvedComplaint.assignedTo ?? _assignedStaffId;
         });
       }
     } catch (_) {}
@@ -466,53 +540,91 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
   }
 
   // 7. Fullscreen Lightbox Image Viewer
-  void _openLightbox(String url, String title) {
+  Future<void> _openLightbox(String rawUrl, String title) async {
+    if (rawUrl.trim().isEmpty) return;
+    String resolvedUrl = rawUrl.trim();
+    if (!resolvedUrl.startsWith('data:') && !resolvedUrl.startsWith('blob:')) {
+      resolvedUrl = await SupabaseService.instance.getSignedStorageUrl(resolvedUrl, bucket: 'documents');
+    }
+
+    if (!mounted) return;
+
     showDialog(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.9),
-      builder: (ctx) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.all(12),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            InteractiveViewer(
-              minScale: 0.8,
-              maxScale: 4.0,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: _buildNetworkOrFileImage(url, fit: BoxFit.contain),
+      barrierColor: Colors.black.withOpacity(0.92),
+      builder: (ctx) {
+        final size = MediaQuery.of(ctx).size;
+
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Zoomable / Pannable Image
+              SizedBox(
+                width: size.width,
+                height: size.height * 0.82,
+                child: InteractiveViewer(
+                  minScale: 0.8,
+                  maxScale: 5.0,
+                  clipBehavior: Clip.none,
+                  child: Center(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: _buildNetworkOrFileImage(
+                        resolvedUrl,
+                        fit: BoxFit.contain,
+                        isLightbox: true,
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            ),
-            Positioned(
-              top: 10,
-              right: 10,
-              child: IconButton(
-                onPressed: () => Navigator.pop(ctx),
-                icon: const Icon(Icons.close_rounded, color: Colors.white, size: 28),
-                style: IconButton.styleFrom(
-                  backgroundColor: Colors.black54,
+
+              // Close Button (top-right)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Material(
+                  color: Colors.black54,
                   shape: const CircleBorder(),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(24),
+                    onTap: () => Navigator.pop(ctx),
+                    child: const Padding(
+                      padding: EdgeInsets.all(8),
+                      child: Icon(Icons.close_rounded, color: Colors.white, size: 26),
+                    ),
+                  ),
                 ),
               ),
-            ),
-            Positioned(
-              bottom: 20,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.75),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  title,
-                  style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+
+              // Caption Badge (bottom)
+              Positioned(
+                bottom: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.75),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white24),
+                  ),
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -552,7 +664,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
         body: SafeArea(
           child: Column(
             children: [
-              // Enhanced Header Bar with Back, Edit, and Delete (matching ComplaintDetail.tsx)
+              // Enhanced Header Bar with Back, Edit, and Delete (Responsive, no overflow)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: const BoxDecoration(
@@ -562,7 +674,6 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                   ),
                 ),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     // Back Button with circular icon
                     InkWell(
@@ -593,7 +704,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                             Text(
                               isMr ? AppStrings.backToComplaintsMr : AppStrings.backToComplaints,
                               style: const TextStyle(
-                                fontSize: 13.5,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w700,
                                 color: Color(0xFF475569),
                               ),
@@ -602,6 +713,8 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                         ),
                       ),
                     ),
+
+                    const Spacer(),
 
                     // Edit, PDF Docket & Delete Actions
                     if (isAdminOrStaff)
@@ -614,37 +727,31 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                             onPressed: () => ComplaintReportGenerator.generateAndPrintSingleComplaintDocket(_complaint),
                           ),
                           const SizedBox(width: 6),
-                          OutlinedButton.icon(
+                          IconButton(
                             onPressed: _openEditTicketModal,
-                            icon: const Icon(Icons.edit_outlined, size: 14, color: Color(0xFF475569)),
-                            label: Text(
-                              isMr ? AppStrings.editComplaintMr : AppStrings.editComplaint,
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
-                            ),
-                            style: OutlinedButton.styleFrom(
+                            icon: const Icon(Icons.edit_outlined, size: 16, color: Color(0xFF475569)),
+                            tooltip: isMr ? AppStrings.editComplaintMr : AppStrings.editComplaint,
+                            style: IconButton.styleFrom(
                               backgroundColor: Colors.white,
                               side: const BorderSide(color: Color(0xFFCBD5E1)),
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              padding: const EdgeInsets.all(7),
+                              minimumSize: const Size(32, 32),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          OutlinedButton.icon(
+                          const SizedBox(width: 6),
+                          IconButton(
                             onPressed: _openDeleteTicketDialog,
-                            icon: const Icon(Icons.delete_outline_rounded, size: 14, color: Color(0xFFDC2626)),
-                            label: Text(
-                              isMr ? AppStrings.deleteComplaintMr : AppStrings.deleteComplaint,
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFFDC2626)),
-                            ),
-                            style: OutlinedButton.styleFrom(
+                            icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFDC2626)),
+                            tooltip: isMr ? AppStrings.deleteComplaintMr : AppStrings.deleteComplaint,
+                            style: IconButton.styleFrom(
                               backgroundColor: const Color(0xFFFEF2F2),
                               side: const BorderSide(color: Color(0xFFFECACA)),
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              padding: const EdgeInsets.all(7),
+                              minimumSize: const Size(32, 32),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
                           ),
                         ],
@@ -749,13 +856,13 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
             ],
           ),
 
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
 
           // Title
           Text(
             _complaint.title,
             style: const TextStyle(
-              fontSize: 19,
+              fontSize: 20,
               fontWeight: FontWeight.w800,
               color: Color(0xFF0F172A),
               height: 1.3,
@@ -767,11 +874,11 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
           // Description Box
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.85),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white.withOpacity(0.7)),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
               boxShadow: const [
                 BoxShadow(
                   color: Color(0x05000000),
@@ -792,125 +899,293 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
           ),
 
           // Attachments Section
-          if (_complaint.attachments.isNotEmpty || _complaint.photos.isNotEmpty || _complaint.imageUrl != null) ...[
+          if (_complaint.attachments.isNotEmpty ||
+              _complaint.photos.isNotEmpty ||
+              _complaint.imageUrl != null ||
+              _complaint.videoUrl != null) ...[
             const SizedBox(height: 16),
             _buildAttachmentsSection(isMr),
           ],
 
           const SizedBox(height: 16),
-          const Divider(height: 1, thickness: 1, color: Color(0x1A000000)),
-          const SizedBox(height: 12),
 
-          // Location & Date Footer
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Row(
+          // Location & Date Footer (matching ComplaintDetail.tsx)
+          Container(
+            padding: const EdgeInsets.only(top: 14),
+            decoration: const BoxDecoration(
+              border: Border(
+                top: BorderSide(color: Color(0x18000000), width: 1),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      const Icon(Icons.location_on_outlined, size: 16, color: Color(0xFF64748B)),
+                      const SizedBox(width: 5),
+                      Expanded(
+                        child: Text(
+                          _complaint.location ?? _complaint.area ?? _complaint.ward ?? 'Prabhag Area',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF475569),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Row(
                   children: [
-                    const Icon(Icons.location_on_outlined, size: 15, color: Color(0xFF64748B)),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        _complaint.location ?? _complaint.area ?? _complaint.ward ?? 'Prabhag Area',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
-                        overflow: TextOverflow.ellipsis,
+                    const Icon(Icons.calendar_today_outlined, size: 14, color: Color(0xFF64748B)),
+                    const SizedBox(width: 5),
+                    Text(
+                      DateFormat('MMM d, yyyy h:mm a').format(_complaint.createdAt),
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        color: Color(0xFF64748B),
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(width: 8),
-              Row(
-                children: [
-                  const Icon(Icons.calendar_today_outlined, size: 14, color: Color(0xFF64748B)),
-                  const SizedBox(width: 4),
-                  Text(
-                    DateFormat('MMM d, yyyy, h:mm a').format(_complaint.createdAt),
-                    style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
-                  ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  // Attachments UI (Images, Videos, Docs)
+  // Attachments UI (Horizontal preview strip matching web preview layout)
   Widget _buildAttachmentsSection(bool isMr) {
-    final allImages = <String>[];
-    if (_complaint.attachments.isNotEmpty) {
-      for (final att in _complaint.attachments) {
-        if (att.isImage && att.url.isNotEmpty) allImages.add(att.url);
+    final allAttachments = <ComplaintAttachment>[];
+    final seenUrls = <String>{};
+
+    void addAttachment(ComplaintAttachment att) {
+      final trimmed = att.url.trim();
+      if (trimmed.isNotEmpty && !seenUrls.contains(trimmed)) {
+        seenUrls.add(trimmed);
+        allAttachments.add(att);
       }
     }
-    if (allImages.isEmpty) {
-      for (final p in _complaint.photos) {
-        if (p.isNotEmpty) allImages.add(p);
-      }
-      if (_complaint.imageUrl != null && _complaint.imageUrl!.isNotEmpty) {
-        allImages.add(_complaint.imageUrl!);
-      }
+
+    // 1. Complaint attachments list
+    for (final att in _complaint.attachments) {
+      addAttachment(att);
     }
+
+    // 2. Video URL if specified
+    if (_complaint.videoUrl != null && _complaint.videoUrl!.trim().isNotEmpty) {
+      addAttachment(ComplaintAttachment(
+        url: _complaint.videoUrl!.trim(),
+        type: 'video/mp4',
+        name: 'Video',
+      ));
+    }
+
+    // 3. Photos list
+    for (final p in _complaint.photos) {
+      addAttachment(ComplaintAttachment(
+        url: p.trim(),
+        type: 'image/jpeg',
+        name: 'Photo',
+      ));
+    }
+
+    // 4. Single imageUrl fallback
+    if (_complaint.imageUrl != null && _complaint.imageUrl!.trim().isNotEmpty) {
+      addAttachment(ComplaintAttachment(
+        url: _complaint.imageUrl!.trim(),
+        type: 'image/jpeg',
+        name: 'Evidence Photo',
+      ));
+    }
+
+    if (allAttachments.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Attachments Header (matching ComplaintDetail.tsx)
         Row(
           children: [
             const Icon(Icons.description_outlined, size: 16, color: Color(0xFF475569)),
             const SizedBox(width: 6),
             Text(
-              '${isMr ? AppStrings.attachmentsMr : AppStrings.attachments} (${allImages.length})',
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+              '${isMr ? AppStrings.attachmentsMr : AppStrings.attachments} (${allAttachments.length})',
+              style: const TextStyle(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF0F172A),
+              ),
             ),
           ],
         ),
         const SizedBox(height: 10),
+
+        // Horizontal Preview Strip (compact, side-by-side previews matching web)
         SizedBox(
-          height: 90,
+          height: 110,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            itemCount: allImages.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            itemCount: allAttachments.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 10),
             itemBuilder: (ctx, idx) {
-              final imgUrl = allImages[idx];
-              return InkWell(
-                onTap: () => _openLightbox(imgUrl, 'Attachment #${idx + 1}'),
-                borderRadius: BorderRadius.circular(10),
-                child: Stack(
-                  children: [
-                    Container(
-                      width: 90,
-                      height: 90,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFFCBD5E1)),
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: _buildNetworkOrFileImage(imgUrl, fit: BoxFit.cover),
-                    ),
-                    Positioned.fill(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Center(
-                          child: Icon(Icons.remove_red_eye_outlined, color: Colors.white, size: 20),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
+              return _buildAttachmentPreviewTile(allAttachments[idx], isMr, idx + 1);
             },
           ),
         ),
       ],
+    );
+  }
+
+  // Individual Attachment Preview Tile (Video, Image, Audio, Document)
+  Widget _buildAttachmentPreviewTile(ComplaintAttachment att, bool isMr, int index) {
+    // 1. VIDEO ATTACHMENT (Embedded video player with HTML5 controls & thumbnail preview)
+    if (att.isVideo) {
+      return Container(
+        width: 165,
+        height: 110,
+        decoration: BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0xFFCBD5E1)),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x06000000),
+              blurRadius: 4,
+              offset: Offset(0, 1),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: buildComplaintVideoPlayer(
+          url: att.url,
+          type: att.type,
+          height: 110,
+        ),
+      );
+    }
+
+    // 2. IMAGE ATTACHMENT (Aspect ratio thumbnail with tap to open zoomable lightbox)
+    if (att.isImage) {
+      final caption = att.name.isNotEmpty ? att.name : 'Photo #$index';
+      return InkWell(
+        onTap: () => _openLightbox(att.url, caption),
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          width: 115,
+          height: 110,
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: const Color(0xFFCBD5E1)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x06000000),
+                blurRadius: 4,
+                offset: Offset(0, 1),
+              ),
+            ],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              _buildNetworkOrFileImage(att.url, fit: BoxFit.cover),
+              Positioned(
+                right: 6,
+                bottom: 6,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.6),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.fullscreen_rounded,
+                    color: Colors.white,
+                    size: 15,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // 3. AUDIO ATTACHMENT
+    if (att.isAudio) {
+      return Container(
+        width: 150,
+        height: 110,
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0xFFCBD5E1)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.audiotrack_rounded, color: Color(0xFF0284C7), size: 30),
+            const SizedBox(height: 6),
+            Text(
+              att.name.isNotEmpty ? att.name : 'Audio #$index',
+              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 4. DOCUMENT / PDF / OTHER ATTACHMENT
+    return InkWell(
+      onTap: () async {
+        final signed = await SupabaseService.instance.getSignedStorageUrl(att.url, bucket: 'documents');
+        final uri = Uri.tryParse(signed);
+        if (uri != null) {
+          launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      },
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        width: 125,
+        height: 110,
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0xFFCBD5E1)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              att.isPdf ? Icons.picture_as_pdf_rounded : Icons.insert_drive_file_outlined,
+              color: att.isPdf ? const Color(0xFFDC2626) : const Color(0xFF64748B),
+              size: 30,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              att.name.isNotEmpty ? att.name : 'Document #$index',
+              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -1562,26 +1837,145 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
     );
   }
 
-  // Safe image builder for Network vs Local File URLs
-  Widget _buildNetworkOrFileImage(String pathOrUrl, {BoxFit fit = BoxFit.cover}) {
-    if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://')) {
-      return Image.network(
-        pathOrUrl,
-        fit: fit,
-        errorBuilder: (_, __, ___) => _imagePlaceholder(),
-      );
-    } else if (pathOrUrl.startsWith('/')) {
-      return Image.file(
-        File(pathOrUrl),
-        fit: fit,
-        errorBuilder: (_, __, ___) => _imagePlaceholder(),
-      );
-    } else {
-      return _imagePlaceholder();
+  // Safe image builder for Network vs Local File vs Base64 URLs
+  Widget _buildNetworkOrFileImage(
+    String pathOrUrl, {
+    BoxFit fit = BoxFit.cover,
+    bool isLightbox = false,
+  }) {
+    final clean = pathOrUrl.trim();
+    if (clean.isEmpty) {
+      return _imagePlaceholder(isLightbox: isLightbox);
     }
+
+    // 1. Base64 Data URI
+    if (clean.startsWith('data:image/') && clean.contains(',')) {
+      try {
+        final base64Str = clean.split(',').last;
+        final bytes = base64Decode(base64Str);
+        return Image.memory(
+          bytes,
+          fit: fit,
+          errorBuilder: (context, error, stackTrace) => _imagePlaceholder(
+            isLightbox: isLightbox,
+            message: 'Invalid image data',
+          ),
+        );
+      } catch (_) {
+        return _imagePlaceholder(
+          isLightbox: isLightbox,
+          message: 'Could not render image',
+        );
+      }
+    }
+
+    // 2. Blob URL
+    if (clean.startsWith('blob:')) {
+      return _rawNetworkImage(clean, fit: fit, isLightbox: isLightbox);
+    }
+
+    // 3. Already valid signed URL with token
+    if (clean.contains('/object/sign/') && clean.contains('token=')) {
+      return _rawNetworkImage(clean, fit: fit, isLightbox: isLightbox);
+    }
+
+    // 4. Non-Supabase external URL
+    if (clean.startsWith('http') && !clean.contains('.supabase.co/storage/v1/object/')) {
+      return _rawNetworkImage(clean, fit: fit, isLightbox: isLightbox);
+    }
+
+    // 5. Local file (Mobile/Desktop only)
+    if (!kIsWeb && clean.startsWith('/')) {
+      return Image.file(
+        File(clean),
+        fit: fit,
+        errorBuilder: (context, error, stackTrace) => _imagePlaceholder(isLightbox: isLightbox),
+      );
+    }
+
+    // 6. Asynchronously resolve signed URL for relative path or Supabase public URL
+    return FutureBuilder<String>(
+      future: SupabaseService.instance.getSignedStorageUrl(clean, bucket: 'documents'),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Container(
+            color: isLightbox ? Colors.black26 : const Color(0xFFF1F5F9),
+            child: Center(
+              child: SizedBox(
+                width: isLightbox ? 32 : 18,
+                height: isLightbox ? 32 : 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: isLightbox ? Colors.white70 : const Color(0xFF0284C7),
+                ),
+              ),
+            ),
+          );
+        }
+        final signed = (snapshot.hasData && snapshot.data!.isNotEmpty) ? snapshot.data! : clean;
+        return _rawNetworkImage(signed, fit: fit, isLightbox: isLightbox);
+      },
+    );
   }
 
-  Widget _imagePlaceholder() {
+  Widget _rawNetworkImage(String url, {required BoxFit fit, required bool isLightbox}) {
+    if (!url.startsWith('http') && !url.startsWith('blob:')) {
+      return _imagePlaceholder(isLightbox: isLightbox);
+    }
+
+    return Image.network(
+      url,
+      fit: fit,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return Container(
+          color: isLightbox ? Colors.black26 : const Color(0xFFF1F5F9),
+          child: Center(
+            child: SizedBox(
+              width: isLightbox ? 32 : 18,
+              height: isLightbox ? 32 : 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                value: loadingProgress.expectedTotalBytes != null && loadingProgress.expectedTotalBytes! > 0
+                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                    : null,
+                color: isLightbox ? Colors.white70 : const Color(0xFF0284C7),
+              ),
+            ),
+          ),
+        );
+      },
+      errorBuilder: (context, error, stackTrace) => _imagePlaceholder(
+        isLightbox: isLightbox,
+        message: 'Image unavailable',
+      ),
+    );
+  }
+
+  Widget _imagePlaceholder({bool isLightbox = false, String message = ''}) {
+    if (isLightbox) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E293B),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.broken_image_outlined, color: Colors.white54, size: 48),
+            const SizedBox(height: 12),
+            Text(
+              message.isNotEmpty ? message : 'Image could not be loaded',
+              style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
       color: const Color(0xFFF1F5F9),
       child: const Center(
