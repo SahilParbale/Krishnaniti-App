@@ -834,47 +834,6 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-
-                      // Executive Stat Strip
-                      Container(
-                        color: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        child: Row(
-                          children: [
-                            if (_activeTab == 'Offices') ...[
-                              _statBox(
-                                title: isMr ? 'एकूण कार्यालये' : 'Total Offices',
-                                count: '${displayedOffices.length}',
-                                color: const Color(0xFF0284C7),
-                                bgColor: const Color(0xFFEFF6FF),
-                              ),
-                              const SizedBox(width: 8),
-                              _statBox(
-                                title: isMr ? 'कार्यरत विभाग' : 'Active Areas',
-                                count: '${_allOffices.map((o) => o.area).toSet().length}',
-                                color: const Color(0xFF16A34A),
-                                bgColor: const Color(0xFFF0FDF4),
-                              ),
-                            ] else ...[
-                              _statBox(
-                                title: isMr ? 'सहकारी कर्मचारी' : 'Total Workers',
-                                count: '${displayedStaff.length}',
-                                color: const Color(0xFF0284C7),
-                                bgColor: const Color(0xFFEFF6FF),
-                              ),
-                              const SizedBox(width: 8),
-                              _statBox(
-                                title: isMr ? 'भूमिका प्रकार' : 'Job Roles',
-                                count: '${_allStaff.map((s) => s.role).toSet().length}',
-                                color: const Color(0xFF16A34A),
-                                bgColor: const Color(0xFFF0FDF4),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                      const Divider(height: 1),
-
                       // Search Bar & Action Buttons
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -1093,40 +1052,6 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _statBox({
-    required String title,
-    required String count,
-    required Color color,
-    required Color bgColor,
-  }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: color.withValues(alpha: 0.2)),
-        ),
-        child: Column(
-          children: [
-            Text(
-              count,
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              title,
-              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color.withValues(alpha: 0.85)),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
       ),
     );
   }

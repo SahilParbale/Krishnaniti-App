@@ -419,11 +419,6 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Quick Stats Row
-          _buildQuickStatsStrip(),
-
-          const SizedBox(height: 16),
-
           // Quick Prompt Templates Carousel
           _buildTemplatesCarousel(),
 
@@ -440,81 +435,6 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
 
           const SizedBox(height: 32),
         ],
-      ),
-    );
-  }
-
-  Widget _buildQuickStatsStrip() {
-    final speeches = _allHistory.where((i) => i.contentType == AiContentType.speech).length;
-    final posts = _allHistory.where((i) => i.contentType == AiContentType.socialMediaCaption).length;
-    final notices = _allHistory.where((i) => i.contentType == AiContentType.letterNotice).length;
-    final press = _allHistory.where((i) => i.contentType == AiContentType.pressRelease).length;
-
-    return Row(
-      children: [
-        _buildStatPill('Speeches', '$speeches', const Color(0xFF8B5CF6), Icons.record_voice_over_rounded),
-        const SizedBox(width: 8),
-        _buildStatPill('Social Posts', '$posts', const Color(0xFF0284C7), Icons.tag_rounded),
-        const SizedBox(width: 8),
-        _buildStatPill('Notices/Letters', '$notices', const Color(0xFFD97706), Icons.description_rounded),
-        const SizedBox(width: 8),
-        _buildStatPill('Press Releases', '$press', const Color(0xFF059669), Icons.newspaper_rounded),
-      ],
-    );
-  }
-
-  Widget _buildStatPill(String label, String count, Color color, IconData icon) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.02),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, size: 12, color: color),
-                const SizedBox(width: 4),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    count,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: color,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 2),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 10,
-                  color: Color(0xFF64748B),
-                  fontWeight: FontWeight.w500,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
