@@ -394,11 +394,6 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
   Widget build(BuildContext context) {
     final isMarathi = ref.watch(isMarathiProvider);
     final filtered = _filteredItems;
-    final totalCount = _allGalleryItems.length;
-    final eventsCount = _allGalleryItems.where((i) => i.category == GalleryCategory.event).length;
-    final worksCount = _allGalleryItems.where((i) => i.category == GalleryCategory.work).length;
-    final awardsCount = _allGalleryItems.where((i) => i.category == GalleryCategory.award).length;
-    final campaignsCount = _allGalleryItems.where((i) => i.category == GalleryCategory.campaign).length;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -463,11 +458,6 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // 4 Executive KPI Stat Cards
-                      _buildKpiSummaryRow(totalCount, eventsCount, worksCount, awardsCount, campaignsCount),
-
-                      const SizedBox(height: 16),
-
                       // Search & Filter Card
                       _buildSearchAndFiltersCard(filtered),
 
@@ -502,70 +492,6 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
             'Add Photo',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildKpiSummaryRow(int total, int events, int works, int awards, int campaigns) {
-    return Row(
-      children: [
-        _buildKpiCard('Total Photos', '$total', const Color(0xFF0284C7), Icons.photo_library_rounded),
-        const SizedBox(width: 8),
-        _buildKpiCard('Events', '$events', const Color(0xFF8B5CF6), Icons.celebration_rounded),
-        const SizedBox(width: 8),
-        _buildKpiCard('Development Works', '$works', const Color(0xFF0284C7), Icons.engineering_rounded),
-        const SizedBox(width: 8),
-        _buildKpiCard('Awards', '$awards', const Color(0xFFD97706), Icons.emoji_events_rounded),
-      ],
-    );
-  }
-
-  Widget _buildKpiCard(String title, String value, Color color, IconData icon) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.02),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, size: 13, color: color),
-                const SizedBox(width: 4),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 2),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 10,
-                color: Color(0xFF64748B),
-                fontWeight: FontWeight.w600,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
         ),
       ),
     );
