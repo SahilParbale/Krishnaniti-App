@@ -60,11 +60,13 @@ class _CurvedBottomBarState extends State<CurvedBottomBar> {
   @override
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
-    const double kTopOverhang = 26.0;
-    const double kBarHeight = 66.0;
-    const double kFabOuterSize = 58.0;
+    const double kTopOverhang = 22.0;
+    const double kBarHeight = 64.0;
+    const double kFabOuterSize = 56.0;
     const double kFabInnerSize = 44.0;
-    final totalHeight = kTopOverhang + kBarHeight + bottomPadding;
+    const double kHorizontalMargin = 16.0;
+    final double bottomMargin = bottomPadding > 0 ? bottomPadding : 12.0;
+    final totalHeight = kTopOverhang + kBarHeight + bottomMargin;
 
     return SizedBox(
       height: totalHeight,
@@ -72,27 +74,29 @@ class _CurvedBottomBarState extends State<CurvedBottomBar> {
         clipBehavior: Clip.none,
         alignment: Alignment.bottomCenter,
         children: [
-          // 1) Curved White Background Bar with Soft Shadow & Top Border
-          Positioned.fill(
+          // 1) Floating Curved White Background Bar with Soft Shadow & Border on All Edges
+          Positioned(
+            left: kHorizontalMargin,
+            right: kHorizontalMargin,
+            bottom: bottomMargin,
+            height: kBarHeight,
             child: CustomPaint(
-              size: Size(double.infinity, totalHeight),
+              size: const Size(double.infinity, kBarHeight),
               painter: _CurvedNotchPainter(
-                topOverhang: kTopOverhang,
-                barHeight: kBarHeight + bottomPadding,
                 barColor: Colors.white,
                 borderColor: const Color(0xFFE2E8F0),
-                notchRadius: 42.0,
-                notchDepth: 26.0,
+                notchRadius: 38.0,
+                notchDepth: 22.0,
                 cornerRadius: 24.0,
               ),
             ),
           ),
 
-          // 2) Navigation Tab Items
+          // 2) Navigation Tab Items inside Floating Bar
           Positioned(
-            left: 0,
-            right: 0,
-            bottom: bottomPadding,
+            left: kHorizontalMargin,
+            right: kHorizontalMargin,
+            bottom: bottomMargin,
             height: kBarHeight,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -117,7 +121,7 @@ class _CurvedBottomBarState extends State<CurvedBottomBar> {
                 ),
 
                 // Center gap for the FAB
-                const SizedBox(width: 76),
+                const SizedBox(width: 72),
 
                 // Tab 2
                 Expanded(
@@ -142,7 +146,7 @@ class _CurvedBottomBarState extends State<CurvedBottomBar> {
 
           // 3) Elevated Center Action Button (+)
           Positioned(
-            top: 0,
+            top: 2.0,
             child: Listener(
               behavior: HitTestBehavior.opaque,
               onPointerDown: (e) {
@@ -165,54 +169,53 @@ class _CurvedBottomBarState extends State<CurvedBottomBar> {
                 scale: _isFabPressed ? 0.90 : 1.0,
                 duration: const Duration(milliseconds: 140),
                 curve: Curves.easeOutBack,
-                  child: Container(
-                    width: kFabOuterSize,
-                    height: kFabOuterSize,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.10),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                        BoxShadow(
-                          color: const Color(0xFF0284C7).withValues(alpha: _isFabPressed ? 0.35 : 0.22),
-                          blurRadius: _isFabPressed ? 18 : 14,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                      border: Border.all(
-                        color: const Color(0xFFE2E8F0),
-                        width: 1.5,
+                child: Container(
+                  width: kFabOuterSize,
+                  height: kFabOuterSize,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.12),
+                        blurRadius: 14,
+                        offset: const Offset(0, 4),
                       ),
+                      BoxShadow(
+                        color: const Color(0xFF0284C7).withValues(alpha: _isFabPressed ? 0.40 : 0.25),
+                        blurRadius: _isFabPressed ? 18 : 14,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                    border: Border.all(
+                      color: const Color(0xFFE2E8F0),
+                      width: 1.5,
                     ),
-                    child: Center(
-                      child: Container(
-                        width: kFabInnerSize,
-                        height: kFabInnerSize,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF0284C7), Color(0xFF0369A1)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF0284C7).withValues(alpha: 0.35),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
+                  ),
+                  child: Center(
+                    child: Container(
+                      width: kFabInnerSize,
+                      height: kFabInnerSize,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF0284C7), Color(0xFF0369A1)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.bolt_rounded,
-                            color: Colors.white,
-                            size: 26,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF0284C7).withValues(alpha: 0.35),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
                           ),
+                        ],
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.bolt_rounded,
+                          color: Colors.white,
+                          size: 26,
                         ),
                       ),
                     ),
@@ -220,6 +223,7 @@ class _CurvedBottomBarState extends State<CurvedBottomBar> {
                 ),
               ),
             ),
+          ),
         ],
       ),
     );
@@ -252,29 +256,30 @@ class _CurvedBottomBarState extends State<CurvedBottomBar> {
             children: [
               AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOut,
+                curve: Curves.easeOutCubic,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? activeColor.withValues(alpha: 0.12)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 child: Icon(
                   icon,
-                  size: 24,
+                  size: 21,
                   color: isSelected ? activeColor : inactiveColor,
                 ),
               ),
-              const SizedBox(height: 3),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 2),
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                      color: isSelected ? activeColor : inactiveColor,
-                      letterSpacing: -0.1,
-                    ),
-                  ),
+              const SizedBox(height: 1.5),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected ? activeColor : inactiveColor,
+                  letterSpacing: -0.1,
                 ),
               ),
             ],
@@ -286,8 +291,6 @@ class _CurvedBottomBarState extends State<CurvedBottomBar> {
 }
 
 class _CurvedNotchPainter extends CustomPainter {
-  final double topOverhang;
-  final double barHeight;
   final Color barColor;
   final Color borderColor;
   final double notchRadius;
@@ -295,8 +298,6 @@ class _CurvedNotchPainter extends CustomPainter {
   final double cornerRadius;
 
   _CurvedNotchPainter({
-    required this.topOverhang,
-    required this.barHeight,
     required this.barColor,
     required this.borderColor,
     required this.notchRadius,
@@ -308,7 +309,6 @@ class _CurvedNotchPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final w = size.width;
     final h = size.height;
-    final y0 = topOverhang;
     final cx = w / 2;
     final r = cornerRadius;
     final R = notchRadius;
@@ -316,60 +316,73 @@ class _CurvedNotchPainter extends CustomPainter {
     final c = R * 0.45;
 
     final path = Path();
-    // 1. Start on left edge at corner start
-    path.moveTo(0, y0 + r);
-
-    // 2. Top-left rounded corner
+    // 1. Top-left corner: start at (0, r) and arc to (r, 0)
+    path.moveTo(0, r);
     path.arcToPoint(
-      Offset(r, y0),
+      Offset(r, 0),
       radius: Radius.circular(r),
       clockwise: true,
     );
 
-    // 3. Flat top line to notch start
-    path.lineTo(cx - R, y0);
+    // 2. Flat top line to notch start
+    path.lineTo(cx - R, 0);
 
-    // 4. Smooth cubic bezier dip to center bottom of notch
+    // 3. Smooth cubic bezier dip to center bottom of notch (cx, D)
     path.cubicTo(
-      cx - R + c,
-      y0,
-      cx - c,
-      y0 + D,
-      cx,
-      y0 + D,
+      cx - R + c, 0,
+      cx - c, D,
+      cx, D,
     );
 
-    // 5. Smooth cubic bezier rise to notch end
+    // 4. Smooth cubic bezier rise to notch end (cx + R, 0)
     path.cubicTo(
-      cx + c,
-      y0 + D,
-      cx + R - c,
-      y0,
-      cx + R,
-      y0,
+      cx + c, D,
+      cx + R - c, 0,
+      cx + R, 0,
     );
 
-    // 6. Flat top line to top-right corner
-    path.lineTo(w - r, y0);
+    // 5. Flat top line to top-right corner start (w - r, 0)
+    path.lineTo(w - r, 0);
 
-    // 7. Top-right rounded corner
+    // 6. Top-right rounded corner: arc to (w, r)
     path.arcToPoint(
-      Offset(w, y0 + r),
+      Offset(w, r),
       radius: Radius.circular(r),
       clockwise: true,
     );
 
-    // 8. Right vertical edge down
-    path.lineTo(w, h);
+    // 7. Right vertical edge down to bottom-right corner start (w, h - r)
+    path.lineTo(w, h - r);
 
-    // 9. Bottom edge
-    path.lineTo(0, h);
+    // 8. Bottom-right rounded corner: arc to (w - r, h)
+    path.arcToPoint(
+      Offset(w - r, h),
+      radius: Radius.circular(r),
+      clockwise: true,
+    );
 
-    // 10. Left vertical edge up
+    // 9. Flat bottom edge to bottom-left corner start (r, h)
+    path.lineTo(r, h);
+
+    // 10. Bottom-left rounded corner: arc to (0, h - r)
+    path.arcToPoint(
+      Offset(0, h - r),
+      radius: Radius.circular(r),
+      clockwise: true,
+    );
+
+    // 11. Left vertical edge up to start (0, r)
+    path.lineTo(0, r);
+
     path.close();
 
-    // 1) Soft ambient shadow underneath the white bar
-    canvas.drawShadow(path, Colors.black.withValues(alpha: 0.08), 10, false);
+    // 1) Soft ambient shadow underneath the floating white bar
+    canvas.drawShadow(
+      path,
+      Colors.black.withValues(alpha: 0.12),
+      14,
+      false,
+    );
 
     // 2) Fill bar with pure white
     final paint = Paint()
@@ -377,50 +390,20 @@ class _CurvedNotchPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
     canvas.drawPath(path, paint);
 
-    // 3) Crisp top boundary border line
-    final topBorderPath = Path();
-    topBorderPath.moveTo(0, y0 + r);
-    topBorderPath.arcToPoint(
-      Offset(r, y0),
-      radius: Radius.circular(r),
-      clockwise: true,
-    );
-    topBorderPath.lineTo(cx - R, y0);
-    topBorderPath.cubicTo(
-      cx - R + c,
-      y0,
-      cx - c,
-      y0 + D,
-      cx,
-      y0 + D,
-    );
-    topBorderPath.cubicTo(
-      cx + c,
-      y0 + D,
-      cx + R - c,
-      y0,
-      cx + R,
-      y0,
-    );
-    topBorderPath.lineTo(w - r, y0);
-    topBorderPath.arcToPoint(
-      Offset(w, y0 + r),
-      radius: Radius.circular(r),
-      clockwise: true,
-    );
-
+    // 3) Complete border around the ENTIRE perimeter of the floating bar
     final borderPaint = Paint()
       ..color = borderColor
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
-    canvas.drawPath(topBorderPath, borderPaint);
+      ..strokeWidth = 1.2;
+    canvas.drawPath(path, borderPaint);
   }
 
   @override
   bool shouldRepaint(covariant _CurvedNotchPainter oldDelegate) {
     return oldDelegate.barColor != barColor ||
         oldDelegate.borderColor != borderColor ||
-        oldDelegate.topOverhang != topOverhang ||
-        oldDelegate.barHeight != barHeight;
+        oldDelegate.notchRadius != notchRadius ||
+        oldDelegate.notchDepth != notchDepth ||
+        oldDelegate.cornerRadius != cornerRadius;
   }
 }

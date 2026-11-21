@@ -198,7 +198,8 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
     _fabHoldTimer?.cancel();
     final media = MediaQuery.of(context);
     final cx = media.size.width / 2;
-    final cy = media.size.height - media.padding.bottom - 63.0;
+    final bottomMargin = media.padding.bottom > 0 ? media.padding.bottom : 12.0;
+    final cy = media.size.height - bottomMargin - 42.0;
     _fabCenterOffset = Offset(cx, cy);
     _fabDownPosition = event.position;
 
@@ -306,7 +307,8 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
     HapticFeedback.heavyImpact();
     final media = MediaQuery.of(context);
     final cx = media.size.width / 2;
-    final cy = media.size.height - media.padding.bottom - 63.0;
+    final bottomMargin = media.padding.bottom > 0 ? media.padding.bottom : 12.0;
+    final cy = media.size.height - bottomMargin - 42.0;
     setState(() {
       _fabCenterOffset = Offset(cx, cy);
       _currentDragPosition = null;
@@ -429,6 +431,7 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
           Scaffold(
             key: _mainScaffoldKey,
             backgroundColor: const Color(0xFFF8FAFC),
+            extendBody: true,
             drawer: NagarsevakAppDrawer(
               onTabChange: _onTabChange,
             ),
