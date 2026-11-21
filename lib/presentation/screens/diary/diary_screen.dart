@@ -432,19 +432,11 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                           ),
                         ),
 
-                        const SizedBox(height: 8),
-                      ],
-                    ),
-                  ),
-                ),
+                        const SizedBox(height: 20),
 
-                // 3. DOCKED BOTTOM ACTION BUTTON
-                SafeArea(
-                  top: false,
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(18, 8, 18, 12 + MediaQuery.of(context).viewInsets.bottom),
-                    child: SizedBox(
-                      width: double.infinity,
+                        // Save Button (Scrolls together with form)
+                        SizedBox(
+                          width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () async {
                           final title = titleCtrl.text.trim();
@@ -498,6 +490,9 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                         ),
                         child: const Text('Save & Schedule', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                       ),
+                    ),
+                        const SizedBox(height: 10),
+                      ],
                     ),
                   ),
                 ),

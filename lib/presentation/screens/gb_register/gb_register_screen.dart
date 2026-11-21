@@ -226,10 +226,15 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                     onClose: () => Navigator.pop(sheetCtx),
                   ),
 
-                  // 2. SCROLLABLE FORM BODY
+                  // 2. SCROLLABLE FORM BODY & BUTTONS
                   Flexible(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(18, 14, 18, 8),
+                      padding: EdgeInsets.fromLTRB(
+                        18,
+                        14,
+                        18,
+                        16 + MediaQuery.of(sheetCtx).viewInsets.bottom,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -447,77 +452,73 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                           ),
                           const SizedBox(height: 24),
 
+                          const SizedBox(height: 20),
+
+                          // Submit Button (Scrolls together with form)
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0284C7),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              icon: const Icon(Icons.assignment_turned_in_rounded, size: 18),
+                              onPressed: () async {
+                                if (subjectCtrl.text.trim().isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(isMr ? 'कृपया विषय प्रविष्ट करा' : 'Please enter a subject'),
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                final newEntry = GbRegisterEntryModel(
+                                  id: 'gb-${DateTime.now().millisecondsSinceEpoch}',
+                                  meetingType: meetingType,
+                                  meetingDate: dateCtrl.text.trim().isNotEmpty
+                                      ? dateCtrl.text.trim()
+                                      : DateFormat('yyyy-MM-dd').format(DateTime.now()),
+                                  subject: subjectCtrl.text.trim(),
+                                  description: descCtrl.text.trim(),
+                                  department: deptCtrl.text.trim().isNotEmpty ? deptCtrl.text.trim() : 'General Administration',
+                                  area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : 'Ward 12',
+                                  status: status,
+                                  beneficiaries: benCtrl.text.trim().isNotEmpty ? benCtrl.text.trim() : null,
+                                  response: respCtrl.text.trim().isNotEmpty ? respCtrl.text.trim() : null,
+                                  resolutionNo: null,
+                                  tags: const [],
+                                  createdAt: DateTime.now().toIso8601String(),
+                                );
+
+                                final repo = ref.read(gbRegisterRepoProvider);
+                                await repo.addEntry(newEntry);
+                                await _loadData();
+
+                                if (sheetCtx.mounted) Navigator.pop(sheetCtx);
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        isMr ? 'नोंद यशस्वीरित्या जतन केली!' : 'Entry registered successfully!',
+                                      ),
+                                      backgroundColor: const Color(0xFF16A34A),
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                }
+                              },
+                              label: Text(
+                                isMr ? 'नोंद जतन करा' : 'Save Entry',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
                         ],
-                      ),
-                    ),
-                  ),
-
-                  // 3. DOCKED BOTTOM ACTION BUTTON
-                  SafeArea(
-                    top: false,
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(18, 8, 18, 12 + MediaQuery.of(sheetCtx).viewInsets.bottom),
-                      child: SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0284C7),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                          icon: const Icon(Icons.assignment_turned_in_rounded, size: 18),
-                          onPressed: () async {
-                            if (subjectCtrl.text.trim().isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(isMr ? 'कृपया विषय प्रविष्ट करा' : 'Please enter a subject'),
-                                  behavior: SnackBarBehavior.floating,
-                                ),
-                              );
-                              return;
-                            }
-
-                            final newEntry = GbRegisterEntryModel(
-                              id: 'gb-${DateTime.now().millisecondsSinceEpoch}',
-                              meetingType: meetingType,
-                              meetingDate: dateCtrl.text.trim().isNotEmpty
-                                  ? dateCtrl.text.trim()
-                                  : DateFormat('yyyy-MM-dd').format(DateTime.now()),
-                              subject: subjectCtrl.text.trim(),
-                              description: descCtrl.text.trim(),
-                              department: deptCtrl.text.trim().isNotEmpty ? deptCtrl.text.trim() : 'General Administration',
-                              area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : 'Ward 12',
-                              status: status,
-                              beneficiaries: benCtrl.text.trim().isNotEmpty ? benCtrl.text.trim() : null,
-                              response: respCtrl.text.trim().isNotEmpty ? respCtrl.text.trim() : null,
-                              resolutionNo: null,
-                              tags: const [],
-                              createdAt: DateTime.now().toIso8601String(),
-                            );
-
-                            final repo = ref.read(gbRegisterRepoProvider);
-                            await repo.addEntry(newEntry);
-                            await _loadData();
-
-                            if (sheetCtx.mounted) Navigator.pop(sheetCtx);
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    isMr ? 'नोंद यशस्वीरित्या जतन केली!' : 'Entry registered successfully!',
-                                  ),
-                                  backgroundColor: const Color(0xFF16A34A),
-                                  behavior: SnackBarBehavior.floating,
-                                ),
-                              );
-                            }
-                          },
-                          label: Text(
-                            isMr ? 'नोंद जतन करा' : 'Save Entry',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                          ),
-                        ),
                       ),
                     ),
                   ),

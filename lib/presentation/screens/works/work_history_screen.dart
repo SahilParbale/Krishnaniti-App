@@ -425,17 +425,10 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                           isMarathi: isMr,
                           onFilesChanged: (_) {},
                         ),
-                        const SizedBox(height: 8),
-                      ],
-                    ),
-                  ),
+                        const SizedBox(height: 20),
 
-                  // 3. DOCKED BOTTOM ACTION BUTTONS (Cancel & Submit)
-                  SafeArea(
-                    top: false,
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(20, 8, 20, 12 + MediaQuery.of(sheetCtx).viewInsets.bottom),
-                      child: Row(
+                        // Action Buttons (Scrolls together with form)
+                        Row(
                         children: [
                           Expanded(
                             child: OutlinedButton(
@@ -509,7 +502,9 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                             ),
                           ),
                         ],
-                      ),
+                        ),
+                        const SizedBox(height: 10),
+                      ],
                     ),
                   ),
                 ],

@@ -171,7 +171,7 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                   Flexible(
                     child: ListView(
                       shrinkWrap: true,
-                      padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
+                      padding: EdgeInsets.fromLTRB(18, 14, 18, 16 + MediaQuery.of(sheetCtx).viewInsets.bottom),
                       children: [
                         // Project Title
                         AppFieldLabel(label: isMr ? 'कामाचे नाव / प्रकल्प शीर्षक' : 'Project Title', isRequired: true),
@@ -297,17 +297,10 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                  ],
-                ),
-              ),
+                    const SizedBox(height: 20),
 
-              // DOCKED BOTTOM ACTION BUTTON
-              SafeArea(
-                top: false,
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(18, 8, 18, 12 + MediaQuery.of(sheetCtx).viewInsets.bottom),
-                  child: SizedBox(
+                    // Save Button (Scrolls together with form)
+                    SizedBox(
                     width: double.infinity,
                     height: 48,
                     child: ElevatedButton(
@@ -351,7 +344,9 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                         ],
                       ),
                     ),
-                  ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
                 ),
               ),
             ],
@@ -423,7 +418,7 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                   ),
                   Flexible(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                      padding: EdgeInsets.fromLTRB(20, 14, 20, 16 + MediaQuery.of(sheetCtx).viewInsets.bottom),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -458,17 +453,10 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                               hint: isMr ? 'कामाच्या गुणवत्तेबाबत आणि उपयुक्ततेबाबत शेरा...' : 'Share remarks on the quality and durability of this work...',
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                  ),
+                          const SizedBox(height: 20),
 
-                  // DOCKED BOTTOM ACTION BUTTON
-                  SafeArea(
-                    top: false,
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(20, 8, 20, 12 + MediaQuery.of(sheetCtx).viewInsets.bottom),
-                      child: SizedBox(
+                          // Submit Button (Scrolls together with form)
+                          SizedBox(
                         width: double.infinity,
                         height: 48,
                         child: ElevatedButton(
@@ -512,6 +500,9 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                           ),
                         ),
+                        ),
+                          const SizedBox(height: 10),
+                        ],
                       ),
                     ),
                   ),

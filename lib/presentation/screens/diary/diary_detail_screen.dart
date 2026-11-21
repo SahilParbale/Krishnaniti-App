@@ -449,18 +449,11 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                           hint: isMr ? 'अजेंडा, पार्श्वभूमी किंवा आवश्यक कृती...' : 'Agenda points, background, or action required...',
                         ),
                       ),
-                      const SizedBox(height: 8),
-                    ],
-                  ),
-                ),
+                      const SizedBox(height: 20),
 
-                // 3. DOCKED BOTTOM ACTION BUTTON
-                SafeArea(
-                  top: false,
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(20, 8, 20, 12 + MediaQuery.of(context).viewInsets.bottom),
-                    child: SizedBox(
-                      width: double.infinity,
+                      // Save Changes Button (Scrolls together with form)
+                      SizedBox(
+                        width: double.infinity,
                       child: ElevatedButton(
                           onPressed: () async {
                             final t = titleCtrl.text.trim();
@@ -538,11 +531,13 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                           ),
                         ),
                       ),
-                    ),
+                      const SizedBox(height: 10),
+                    ],
                   ),
-                ],
-              ),
-            );
+                ),
+              ],
+            ),
+          );
         },
       ),
     );

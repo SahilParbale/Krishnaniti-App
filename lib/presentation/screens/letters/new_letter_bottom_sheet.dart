@@ -695,30 +695,24 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
                 ),
               ),
 
-            // 2. SCROLLABLE FORM BODY
+            // 2. SCROLLABLE FORM BODY & SUBMIT BUTTON
             Flexible(
               child: ListView(
                 shrinkWrap: true,
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                padding: EdgeInsets.fromLTRB(16, 12, 16, 16 + bottomInset),
                 keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                 children: [
                   if (_activeTab == 'outgoing')
                     _buildOutgoingForm(isMr)
                   else
                     _buildIncomingForm(isMr),
-                ],
-              ),
-            ),
 
-            // 3. FIXED BOTTOM SUBMIT BUTTON - Always below with zero dead whitespace
-            SafeArea(
-              top: false,
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(16, 8, 16, 12 + bottomInset),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: _buildSubmitButton(isMr),
-                ),
+                  const SizedBox(height: 20),
+
+                  // Submit Action Button (Scrolls together with form)
+                  _buildSubmitButton(isMr),
+                  const SizedBox(height: 8),
+                ],
               ),
             ),
           ],

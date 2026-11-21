@@ -205,6 +205,7 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                 ],
               ),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   // 1. FIXED HEADER
                   AppModalHeader(
@@ -225,7 +226,7 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                         top: 14,
                         left: 18,
                         right: 18,
-                        bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 24,
+                        bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 16,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

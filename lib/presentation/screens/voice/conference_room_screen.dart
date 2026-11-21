@@ -262,7 +262,7 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
           final bottomInset = MediaQuery.of(modalCtx).viewInsets.bottom;
 
           return Container(
-            height: MediaQuery.of(modalCtx).size.height * 0.76 + (bottomInset > 0 ? 40 : 0),
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(modalCtx).size.height * 0.85),
             padding: EdgeInsets.only(bottom: bottomInset),
             decoration: const BoxDecoration(
               color: Colors.white,
@@ -276,6 +276,7 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
               ],
             ),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 AppModalHeader(
                   icon: Icons.video_call_rounded,
@@ -792,7 +793,7 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
               filteredVoters.every((v) => selectedIds.contains(v.id));
 
           return Container(
-            height: MediaQuery.of(modalCtx).size.height * 0.85 + (bottomInset > 0 ? 30 : 0),
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(modalCtx).size.height * 0.85),
             padding: EdgeInsets.only(bottom: bottomInset),
             decoration: const BoxDecoration(
               color: Colors.white,

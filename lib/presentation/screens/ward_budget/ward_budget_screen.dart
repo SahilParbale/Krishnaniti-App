@@ -143,6 +143,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                 ],
               ),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   // 1. FIXED HEADER
                   AppModalHeader(
@@ -155,13 +156,14 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                   ),
 
                   // 2. SCROLLABLE FORM BODY & SUBMIT BUTTON
-                  Expanded(
+                  Flexible(
                     child: ListView(
+                      shrinkWrap: true,
                       padding: EdgeInsets.fromLTRB(
                         18,
                         14,
                         18,
-                        MediaQuery.of(sheetCtx).viewInsets.bottom + 24,
+                        MediaQuery.of(sheetCtx).viewInsets.bottom + 16,
                       ),
                       children: [
                         // Side-by-side: Financial Year & Category Head
