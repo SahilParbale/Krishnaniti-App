@@ -1177,8 +1177,9 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
               ),
 
               // 2. SCROLLABLE FORM BODY & SUBMIT BUTTON
-              Expanded(
-                child: ListView(
+              Flexible(
+              child: ListView(
+                shrinkWrap: true,
                   padding: EdgeInsets.fromLTRB(
                     18,
                     14,
@@ -1507,7 +1508,9 @@ class _AddSadasyaModalState extends ConsumerState<_AddSadasyaModal> with SingleT
     final isMr = ref.watch(isMarathiProvider);
 
     return Container(
-      height: MediaQuery.of(context).size.height * 0.88,
+      constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.88,
+        ),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),

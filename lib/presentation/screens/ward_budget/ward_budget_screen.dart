@@ -128,7 +128,9 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
         return StatefulBuilder(
           builder: (stCtx, setModalState) {
             return Container(
-              height: MediaQuery.of(context).size.height * 0.88,
+              constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.88,
+        ),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),

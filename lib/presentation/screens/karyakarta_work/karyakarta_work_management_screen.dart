@@ -1843,7 +1843,9 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
-        height: MediaQuery.of(context).size.height * 0.85,
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -1865,7 +1867,7 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
             ),
 
             // Form Body
-            Expanded(
+            Flexible(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 child: Form(

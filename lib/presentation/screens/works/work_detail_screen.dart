@@ -145,7 +145,9 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
         return StatefulBuilder(
           builder: (stCtx, setModalState) {
             return Container(
-              height: MediaQuery.of(context).size.height * 0.90,
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.90,
+              ),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -158,6 +160,7 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                 ],
               ),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   AppModalHeader(
                     icon: Icons.edit_note_rounded,
@@ -165,9 +168,10 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                     subtitle: isMr ? 'प्रकल्प माहिती व स्थिती अद्यतन' : 'Project Information & Status Update',
                     onClose: () => Navigator.pop(sheetCtx),
                   ),
-                  Expanded(
+                  Flexible(
                     child: ListView(
-                      padding: const EdgeInsets.all(18),
+                      shrinkWrap: true,
+                      padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
                       children: [
                         // Project Title
                         AppFieldLabel(label: isMr ? 'कामाचे नाव / प्रकल्प शीर्षक' : 'Project Title', isRequired: true),
@@ -293,54 +297,61 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 8),
+                  ],
+                ),
+              ),
 
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0284C7),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                        onPressed: () async {
-                          final updated = _currentWork.copyWith(
-                            title: titleCtrl.text.trim(),
-                            description: descCtrl.text.trim(),
-                            location: locCtrl.text.trim(),
-                            area: areaCtrl.text.trim(),
-                            status: status,
-                            date: dateCtrl.text.trim(),
-                            peopleBenefited: int.tryParse(benCtrl.text.trim()),
-                            amount: double.tryParse(amtCtrl.text.trim()),
+              // DOCKED BOTTOM ACTION BUTTON
+              SafeArea(
+                top: false,
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(18, 8, 18, 12 + MediaQuery.of(sheetCtx).viewInsets.bottom),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0284C7),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: () async {
+                        final updated = _currentWork.copyWith(
+                          title: titleCtrl.text.trim(),
+                          description: descCtrl.text.trim(),
+                          location: locCtrl.text.trim(),
+                          area: areaCtrl.text.trim(),
+                          status: status,
+                          date: dateCtrl.text.trim(),
+                          peopleBenefited: int.tryParse(benCtrl.text.trim()),
+                          amount: double.tryParse(amtCtrl.text.trim()),
+                        );
+
+                        final repo = ref.read(workHistoryRepoProvider);
+                        await repo.updateWork(updated);
+                        if (sheetCtx.mounted) Navigator.pop(sheetCtx);
+                        if (mounted) {
+                          setState(() => _currentWork = updated);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(isMr ? 'प्रकल्प यशस्वीरित्या अद्यतनित केला!' : 'Project updated successfully'),
+                              backgroundColor: const Color(0xFF16A34A),
+                            ),
                           );
-
-                          final repo = ref.read(workHistoryRepoProvider);
-                          await repo.updateWork(updated);
-                          if (sheetCtx.mounted) Navigator.pop(sheetCtx);
-                          if (mounted) {
-                            setState(() => _currentWork = updated);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(isMr ? 'प्रकल्प यशस्वीरित्या अद्यतनित केला!' : 'Project updated successfully'),
-                                backgroundColor: const Color(0xFF16A34A),
-                              ),
-                            );
-                          }
-                        },
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.save_rounded, size: 18),
-                            const SizedBox(width: 8),
-                            Text(isMr ? 'बदल जतन करा' : 'Save Changes', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                          ],
-                        ),
+                        }
+                      },
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.save_rounded, size: 18),
+                          const SizedBox(width: 8),
+                          Text(isMr ? 'बदल जतन करा' : 'Save Changes', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                        ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
               ),
             ],
@@ -386,8 +397,8 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
         return StatefulBuilder(
           builder: (stCtx, setModalState) {
             return Container(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.85,
               ),
               decoration: const BoxDecoration(
                 color: Colors.white,
@@ -410,95 +421,103 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                     subtitle: isMr ? 'प्रकल्पाबाबत नागरिकांचा अभिप्राय' : 'Citizen remarks on project quality',
                     onClose: () => Navigator.pop(sheetCtx),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        AppFieldLabel(label: isMr ? 'नागरिकाचे नाव' : 'Citizen Name', isRequired: true),
-                        TextField(
-                          controller: nameCtrl,
-                          decoration: inputDec(hint: isMr ? 'उदा. सुरेश शिंदे' : 'e.g. Suresh Shinde'),
-                        ),
-                        const SizedBox(height: 12),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          AppFieldLabel(label: isMr ? 'नागरिकाचे नाव' : 'Citizen Name', isRequired: true),
+                          TextField(
+                            controller: nameCtrl,
+                            decoration: inputDec(hint: isMr ? 'उदा. सुरेश शिंदे' : 'e.g. Suresh Shinde'),
+                          ),
+                          const SizedBox(height: 12),
 
-                        AppFieldLabel(label: isMr ? 'रेटिंग (गुणवत्ता दर्जा)' : 'Rating', isRequired: true),
-                        Row(
-                          children: List.generate(5, (index) {
-                            final starIndex = index + 1;
-                            return IconButton(
-                              icon: Icon(
-                                starIndex <= rating ? Icons.star_rounded : Icons.star_outline_rounded,
-                                color: Colors.amber,
-                                size: 32,
-                              ),
-                              onPressed: () => setModalState(() => rating = starIndex),
-                            );
-                          }),
-                        ),
-                        const SizedBox(height: 12),
+                          AppFieldLabel(label: isMr ? 'रेटिंग (गुणवत्ता दर्जा)' : 'Rating', isRequired: true),
+                          Row(
+                            children: List.generate(5, (index) {
+                              final starIndex = index + 1;
+                              return IconButton(
+                                icon: Icon(
+                                  starIndex <= rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                                  color: Colors.amber,
+                                  size: 32,
+                                ),
+                                onPressed: () => setModalState(() => rating = starIndex),
+                              );
+                            }),
+                          ),
+                          const SizedBox(height: 12),
 
-                        AppFieldLabel(label: isMr ? 'अभिप्राय / शेरा' : 'Review / Comment', isRequired: true),
-                        TextField(
-                          controller: commentCtrl,
-                    maxLines: 3,
-                    decoration: inputDec(
-                      hint: isMr ? 'कामाच्या गुणवत्तेबाबत आणि उपयुक्ततेबाबत शेरा...' : 'Share remarks on the quality and durability of this work...',
+                          AppFieldLabel(label: isMr ? 'अभिप्राय / शेरा' : 'Review / Comment', isRequired: true),
+                          TextField(
+                            controller: commentCtrl,
+                            maxLines: 3,
+                            decoration: inputDec(
+                              hint: isMr ? 'कामाच्या गुणवत्तेबाबत आणि उपयुक्ततेबाबत शेरा...' : 'Share remarks on the quality and durability of this work...',
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 20),
 
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0284C7),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                      onPressed: () async {
-                        if (nameCtrl.text.trim().isEmpty || commentCtrl.text.trim().isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(isMr ? 'कृपया नागरिकाचे नाव आणि शेरा प्रविष्ट करा' : 'Please enter citizen name and comment')),
-                          );
-                          return;
-                        }
+                  // DOCKED BOTTOM ACTION BUTTON
+                  SafeArea(
+                    top: false,
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(20, 8, 20, 12 + MediaQuery.of(sheetCtx).viewInsets.bottom),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0284C7),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          onPressed: () async {
+                            if (nameCtrl.text.trim().isEmpty || commentCtrl.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(isMr ? 'कृपया नागरिकाचे नाव आणि शेरा प्रविष्ट करा' : 'Please enter citizen name and comment')),
+                              );
+                              return;
+                            }
 
-                        final fb = WorkFeedbackModel(
-                          id: 'fb-${DateTime.now().millisecondsSinceEpoch}',
-                          citizenName: nameCtrl.text.trim(),
-                          rating: rating,
-                          comment: commentCtrl.text.trim(),
-                          createdAt: DateFormat('yyyy-MM-dd hh:mm a').format(DateTime.now()),
-                        );
+                            final fb = WorkFeedbackModel(
+                              id: 'fb-${DateTime.now().millisecondsSinceEpoch}',
+                              citizenName: nameCtrl.text.trim(),
+                              rating: rating,
+                              comment: commentCtrl.text.trim(),
+                              createdAt: DateFormat('yyyy-MM-dd hh:mm a').format(DateTime.now()),
+                            );
 
-                        final repo = ref.read(workHistoryRepoProvider);
-                        await repo.addFeedback(_currentWork.id, fb);
-                        await _refreshWorkDetails();
-                        if (sheetCtx.mounted) Navigator.pop(sheetCtx);
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(isMr ? 'प्रतिक्रिया यशस्वीरित्या जोडली गेली!' : 'Feedback added successfully!'),
-                              backgroundColor: const Color(0xFF16A34A),
-                            ),
-                          );
-                        }
-                      },
-                      child: Text(
-                        isMr ? 'प्रतिक्रिया जतन करा' : 'Submit Feedback',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                            final repo = ref.read(workHistoryRepoProvider);
+                            await repo.addFeedback(_currentWork.id, fb);
+                            await _refreshWorkDetails();
+                            if (sheetCtx.mounted) Navigator.pop(sheetCtx);
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(isMr ? 'प्रतिक्रिया यशस्वीरित्या जोडली गेली!' : 'Feedback added successfully!'),
+                                  backgroundColor: const Color(0xFF16A34A),
+                                ),
+                              );
+                            }
+                          },
+                          child: Text(
+                            isMr ? 'प्रतिक्रिया जतन करा' : 'Submit Feedback',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ],
               ),
-            ),
-          ],
-        ),
-      );
+            );
     },
         );
       },

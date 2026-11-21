@@ -273,7 +273,9 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
         return StatefulBuilder(
           builder: (stCtx, setModalState) {
             return Container(
-              height: MediaQuery.of(context).size.height * 0.75,
+              constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.75,
+        ),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -298,8 +300,9 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                   ),
 
                   // 2. SCROLLABLE FORM BODY & BUTTONS
-                  Expanded(
-                    child: ListView(
+                  Flexible(
+              child: ListView(
+                shrinkWrap: true,
                       padding: EdgeInsets.fromLTRB(
                         18,
                         14,
@@ -495,7 +498,9 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
         return StatefulBuilder(
           builder: (stCtx, setModalState) {
             return Container(
-              height: MediaQuery.of(context).size.height * 0.88,
+              constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.88,
+        ),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -520,8 +525,9 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                   ),
 
                   // 2. SCROLLABLE FORM BODY & BUTTONS
-                  Expanded(
-                    child: ListView(
+                  Flexible(
+              child: ListView(
+                shrinkWrap: true,
                       padding: EdgeInsets.fromLTRB(
                         18,
                         14,
@@ -723,7 +729,9 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
         return StatefulBuilder(
           builder: (stCtx, setModalState) {
             return Container(
-              height: MediaQuery.of(context).size.height * 0.75,
+              constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.75,
+        ),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -746,8 +754,9 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                   ),
 
                   // 2. SCROLLABLE FORM BODY & BUTTONS
-                  Expanded(
-                    child: ListView(
+                  Flexible(
+              child: ListView(
+                shrinkWrap: true,
                       padding: EdgeInsets.fromLTRB(
                         18,
                         14,

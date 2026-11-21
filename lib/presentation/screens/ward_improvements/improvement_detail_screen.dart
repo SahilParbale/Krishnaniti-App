@@ -133,7 +133,9 @@ class _ImprovementDetailScreenState extends ConsumerState<ImprovementDetailScree
         return StatefulBuilder(
           builder: (stCtx, setModalState) {
             return Container(
-              height: MediaQuery.of(context).size.height * 0.88,
+              constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.88,
+        ),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -153,8 +155,9 @@ class _ImprovementDetailScreenState extends ConsumerState<ImprovementDetailScree
                     subtitle: isMr ? 'प्रस्तावाचे तपशील अद्यतनित करा' : 'Update civic improvement proposal details',
                     onClose: () => Navigator.pop(sheetCtx),
                   ),
-                  Expanded(
-                    child: ListView(
+                  Flexible(
+              child: ListView(
+                shrinkWrap: true,
                       padding: EdgeInsets.only(
                         left: 20,
                         right: 20,
@@ -438,9 +441,9 @@ class _ImprovementDetailScreenState extends ConsumerState<ImprovementDetailScree
                             style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
                           ),
                           const SizedBox(width: 8),
-                          Expanded(
-                            child: SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
+                          Flexible(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
                               child: Row(
                                 children: statusTabs.map((tab) {
                                   final isCurrent = imp.status == tab['key'];

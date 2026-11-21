@@ -138,7 +138,9 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
             }
 
             return Container(
-              height: MediaQuery.of(context).size.height * 0.90,
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.90,
+              ),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -147,6 +149,7 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
                 ],
               ),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   AppModalHeader(
                     icon: Icons.edit_note_rounded,
@@ -154,14 +157,10 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
                     subtitle: isMr ? 'नोंद तपशील व सद्यस्थिती अद्यतनित करा' : 'Update entry details and status',
                     onClose: () => Navigator.pop(sheetCtx),
                   ),
-                  Expanded(
+                  Flexible(
                     child: ListView(
-                      padding: EdgeInsets.only(
-                        top: 16,
-                        left: 18,
-                        right: 18,
-                        bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 24,
-                      ),
+                      shrinkWrap: true,
+                      padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
                       children: [
                         // 1. Meeting Date & Meeting Type (Side-by-Side)
                         Row(
@@ -314,61 +313,66 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
                             hint: isMr ? 'प्रशासनाकडून मिळालेले उत्तर...' : 'Response received from administration...',
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 8),
+                      ],
+                    ),
+                  ),
 
-                        // Submit Button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 48,
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF0284C7),
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            ),
-                            icon: const Icon(Icons.assignment_turned_in_rounded, size: 18),
-                            onPressed: () async {
-                              if (subjectCtrl.text.trim().isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(isMr ? 'कृपया विषय प्रविष्ट करा' : 'Subject is required')),
-                                );
-                                return;
-                              }
-
-                              final updated = _currentEntry.copyWith(
-                                meetingType: selectedMeetingType,
-                                meetingDate: dateCtrl.text.trim().isNotEmpty ? dateCtrl.text.trim() : _currentEntry.meetingDate,
-                                subject: subjectCtrl.text.trim(),
-                                description: descCtrl.text.trim(),
-                                department: deptCtrl.text.trim().isNotEmpty ? deptCtrl.text.trim() : _currentEntry.department,
-                                area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : _currentEntry.area,
-                                status: selectedStatus,
-                                beneficiaries: benCtrl.text.trim().isNotEmpty ? benCtrl.text.trim() : null,
-                                response: respCtrl.text.trim().isNotEmpty ? respCtrl.text.trim() : null,
+                  // DOCKED BOTTOM ACTION BUTTON
+                  SafeArea(
+                    top: false,
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(18, 8, 18, 12 + MediaQuery.of(sheetCtx).viewInsets.bottom),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0284C7),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          icon: const Icon(Icons.assignment_turned_in_rounded, size: 18),
+                          onPressed: () async {
+                            if (subjectCtrl.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(isMr ? 'कृपया विषय प्रविष्ट करा' : 'Subject is required')),
                               );
+                              return;
+                            }
 
-                              final repo = ref.read(gbRegisterRepoProvider);
-                              await repo.updateEntry(updated);
-                              if (sheetCtx.mounted) Navigator.pop(sheetCtx);
-                              if (mounted) {
-                                setState(() => _currentEntry = updated);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(isMr ? 'नोंद यशस्वीरित्या अद्यतनित केली!' : 'GB Register entry updated successfully'),
-                                    backgroundColor: const Color(0xFF16A34A),
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
-                              }
-                            },
-                            label: Text(
-                              isMr ? 'बदल जतन करा' : 'Save Changes',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                            ),
+                            final updated = _currentEntry.copyWith(
+                              meetingType: selectedMeetingType,
+                              meetingDate: dateCtrl.text.trim().isNotEmpty ? dateCtrl.text.trim() : _currentEntry.meetingDate,
+                              subject: subjectCtrl.text.trim(),
+                              description: descCtrl.text.trim(),
+                              department: deptCtrl.text.trim().isNotEmpty ? deptCtrl.text.trim() : _currentEntry.department,
+                              area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : _currentEntry.area,
+                              status: selectedStatus,
+                              beneficiaries: benCtrl.text.trim().isNotEmpty ? benCtrl.text.trim() : null,
+                              response: respCtrl.text.trim().isNotEmpty ? respCtrl.text.trim() : null,
+                            );
+
+                            final repo = ref.read(gbRegisterRepoProvider);
+                            await repo.updateEntry(updated);
+                            if (sheetCtx.mounted) Navigator.pop(sheetCtx);
+                            if (mounted) {
+                              setState(() => _currentEntry = updated);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(isMr ? 'नोंद यशस्वीरित्या अद्यतनित केली!' : 'GB Register entry updated successfully'),
+                                  backgroundColor: const Color(0xFF16A34A),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            }
+                          },
+                          label: Text(
+                            isMr ? 'बदल जतन करा' : 'Save Changes',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                           ),
                         ),
-                        const SizedBox(height: 10),
-                      ],
+                      ),
                     ),
                   ),
                 ],

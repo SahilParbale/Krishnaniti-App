@@ -236,7 +236,9 @@ class _NewspaperClippingsScreenState
                 "${selectedDate.year}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}";
 
             return Container(
-              height: MediaQuery.of(context).size.height * 0.88,
+              constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.88,
+        ),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -261,8 +263,9 @@ class _NewspaperClippingsScreenState
                   ),
 
                   // 2. SCROLLABLE FORM BODY & BUTTONS
-                  Expanded(
-                    child: ListView(
+                  Flexible(
+              child: ListView(
+                shrinkWrap: true,
                       padding: EdgeInsets.fromLTRB(
                         18,
                         14,

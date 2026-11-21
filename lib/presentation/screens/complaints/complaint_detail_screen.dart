@@ -2088,7 +2088,9 @@ class _StatusUpdateBottomSheetState extends State<_StatusUpdateBottomSheet> {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
-      height: MediaQuery.of(context).size.height * 0.82 + (bottomInset > 0 ? 30 : 0),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
       padding: EdgeInsets.only(bottom: bottomInset),
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -2102,6 +2104,7 @@ class _StatusUpdateBottomSheetState extends State<_StatusUpdateBottomSheet> {
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           AppModalHeader(
             icon: Icons.published_with_changes_rounded,
@@ -2109,8 +2112,9 @@ class _StatusUpdateBottomSheetState extends State<_StatusUpdateBottomSheet> {
             subtitle: widget.complaintTitle,
             onClose: () => Navigator.pop(context),
           ),
-          Expanded(
+          Flexible(
             child: ListView(
+              shrinkWrap: true,
               padding: const EdgeInsets.all(18),
               children: [
                 if (widget.showStatusSelector) ...[
@@ -2322,7 +2326,9 @@ class _EditLogBottomSheetState extends State<_EditLogBottomSheet> {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
-      height: MediaQuery.of(context).size.height * 0.82 + (bottomInset > 0 ? 30 : 0),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
       padding: EdgeInsets.only(bottom: bottomInset),
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -2336,6 +2342,7 @@ class _EditLogBottomSheetState extends State<_EditLogBottomSheet> {
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           AppModalHeader(
             icon: Icons.edit_note_rounded,
@@ -2343,8 +2350,9 @@ class _EditLogBottomSheetState extends State<_EditLogBottomSheet> {
             subtitle: isInProgress ? 'Status: In Progress' : 'Status: Resolved',
             onClose: () => Navigator.pop(context),
           ),
-          Expanded(
+          Flexible(
             child: ListView(
+              shrinkWrap: true,
               padding: const EdgeInsets.all(18),
               children: [
                 // Status Selector Tabs

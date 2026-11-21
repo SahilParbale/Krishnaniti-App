@@ -180,7 +180,9 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
           final isDonation = selectedPurpose == 'Donation' || selectedPurpose == 'Help';
 
           return Container(
-            height: MediaQuery.of(context).size.height * 0.90,
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.90,
+            ),
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -196,6 +198,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
               bottom: MediaQuery.of(context).viewInsets.bottom,
             ),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 // 1. FIXED HEADER
                 AppModalHeader(
@@ -208,7 +211,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                 ),
 
                 // Form
-                Expanded(
+                Flexible(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(20),
                     child: Column(
@@ -505,7 +508,9 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
         return StatefulBuilder(
           builder: (sheetCtx, setSheetState) {
             return Container(
-              height: MediaQuery.of(context).size.height * 0.85,
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.85,
+              ),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -518,6 +523,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                 ],
               ),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   AppModalHeader(
                     icon: Icons.how_to_reg_outlined,

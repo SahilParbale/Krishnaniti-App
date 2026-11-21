@@ -285,8 +285,9 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                 ),
 
                 // Modal Body
-                Expanded(
-                  child: ListView(
+                Flexible(
+              child: ListView(
+                shrinkWrap: true,
                     padding: const EdgeInsets.all(18),
                     children: [
                       if (currentStep == 'form') ...[

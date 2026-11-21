@@ -176,7 +176,9 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) => Container(
-          height: MediaQuery.of(context).size.height * 0.90,
+          constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.90,
+        ),
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),

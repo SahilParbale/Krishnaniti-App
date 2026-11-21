@@ -221,12 +221,15 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
     final isMr = ref.watch(isMarathiProvider);
 
     return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           // Drag handle
           Center(

@@ -135,7 +135,9 @@ class _BarCustomizationViewState extends ConsumerState<BarCustomizationView> {
             }).toList();
 
             return Container(
-              height: MediaQuery.of(context).size.height * 0.75,
+              constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.75,
+        ),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),

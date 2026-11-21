@@ -87,7 +87,9 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
       builder: (ctx) => StatefulBuilder(
         builder: (context, setModalState) {
           return Container(
-            height: MediaQuery.of(context).size.height * 0.90,
+            constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.90,
+        ),
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -107,8 +109,9 @@ class _HousingSocietyDetailScreenState extends ConsumerState<HousingSocietyDetai
                   subtitle: isMr ? 'सोसायटीचे तपशील अद्यतनित करा' : 'Update housing society details',
                   onClose: () => Navigator.pop(ctx),
                 ),
-                Expanded(
-                  child: ListView(
+                Flexible(
+              child: ListView(
+                shrinkWrap: true,
                     padding: EdgeInsets.only(
                       left: 20,
                       right: 20,

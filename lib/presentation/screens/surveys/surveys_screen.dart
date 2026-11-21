@@ -648,9 +648,9 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
 
     return Row(
       children: [
-        Expanded(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
+        Flexible(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
             child: Row(
               children: tabs.map((t) {
                 final isSel = _statusFilter.toLowerCase() == t['key']!.toLowerCase();
@@ -1405,7 +1405,9 @@ class _WhatsAppShareModalState extends State<_WhatsAppShareModal> {
     final allSelected = filtered.isNotEmpty && _selectedVoterIds.length == filtered.length;
 
     return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
+      constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),

@@ -74,7 +74,9 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
         return StatefulBuilder(
           builder: (stCtx, setModalState) {
             return Container(
-              height: MediaQuery.of(context).size.height * 0.88,
+              constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.88,
+        ),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -94,8 +96,9 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
                     subtitle: isMr ? 'शासकीय योजनेचे निकष व तपशील अद्यतनित करा' : 'Update government scheme criteria and details',
                     onClose: () => Navigator.pop(sheetCtx),
                   ),
-                  Expanded(
-                    child: ListView(
+                  Flexible(
+              child: ListView(
+                shrinkWrap: true,
                       padding: EdgeInsets.only(
                         left: 20,
                         right: 20,
@@ -710,7 +713,9 @@ class _SchemeApplicationSheetState extends ConsumerState<_SchemeApplicationSheet
         return StatefulBuilder(
           builder: (stCtx, setModalState) {
             return Container(
-              height: MediaQuery.of(context).size.height * 0.85,
+              constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -806,7 +811,9 @@ class _SchemeApplicationSheetState extends ConsumerState<_SchemeApplicationSheet
     final isMr = ref.watch(isMarathiProvider);
 
     return Container(
-      height: MediaQuery.of(context).size.height * 0.88,
+      constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.88,
+        ),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -826,8 +833,9 @@ class _SchemeApplicationSheetState extends ConsumerState<_SchemeApplicationSheet
             subtitle: widget.scheme.name,
             onClose: () => Navigator.pop(context),
           ),
-          Expanded(
-            child: ListView(
+          Flexible(
+              child: ListView(
+                shrinkWrap: true,
               padding: EdgeInsets.only(
                 left: 20,
                 right: 20,

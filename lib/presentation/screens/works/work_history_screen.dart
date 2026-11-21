@@ -266,7 +266,9 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
         return StatefulBuilder(
           builder: (stCtx, setModalState) {
             return Container(
-              height: MediaQuery.of(context).size.height * 0.90,
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.90,
+              ),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -279,6 +281,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                 ],
               ),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   // 1. FIXED HEADER
                   AppModalHeader(
@@ -290,15 +293,11 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                     onClose: () => Navigator.pop(sheetCtx),
                   ),
 
-                  // 2. SCROLLABLE FORM BODY & BUTTONS
-                  Expanded(
+                  // 2. SCROLLABLE FORM BODY
+                  Flexible(
                     child: ListView(
-                      padding: EdgeInsets.fromLTRB(
-                        20,
-                        16,
-                        20,
-                        MediaQuery.of(sheetCtx).viewInsets.bottom + 24,
-                      ),
+                      shrinkWrap: true,
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
                       children: [
                         // Project Title
                         AppFieldLabel(
@@ -426,86 +425,91 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                           isMarathi: isMr,
                           onFilesChanged: (_) {},
                         ),
-                        const SizedBox(height: 24),
-
-                        // SCROLLABLE ACTION BUTTONS (Cancel & Submit)
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton(
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 13),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  side: const BorderSide(color: Color(0xFFCBD5E1)),
-                                ),
-                                onPressed: () => Navigator.pop(sheetCtx),
-                                child: Text(
-                                  isMr ? 'रद्द करा' : 'Cancel',
-                                  style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              flex: 2,
-                              child: ElevatedButton.icon(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF0284C7),
-                                  foregroundColor: Colors.white,
-                                  elevation: 0,
-                                  padding: const EdgeInsets.symmetric(vertical: 13),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
-                                icon: const Icon(Icons.save_rounded, size: 18),
-                                label: Text(
-                                  isMr ? 'काम जतन करा' : 'Save Project',
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                ),
-                                onPressed: () async {
-                                  if (titleCtrl.text.trim().isEmpty) {
-                                    ScaffoldMessenger.of(sheetCtx).showSnackBar(
-                                      SnackBar(content: Text(isMr ? 'कृपया कामाचे नाव प्रविष्ट करा' : 'Please enter project title')),
-                                    );
-                                    return;
-                                  }
-
-                                  final newWork = WorkHistoryModel(
-                                    id: 'work-${DateTime.now().millisecondsSinceEpoch}',
-                                    source: 'Manual',
-                                    title: titleCtrl.text.trim(),
-                                    description: descCtrl.text.trim().isNotEmpty
-                                        ? descCtrl.text.trim()
-                                        : 'Development work initiated for Prabhag residents.',
-                                    location: locCtrl.text.trim().isNotEmpty ? locCtrl.text.trim() : 'Ward 12',
-                                    area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : 'Ward 12',
-                                    status: status,
-                                    date: dateCtrl.text.trim(),
-                                    peopleBenefited: int.tryParse(benCtrl.text.trim()),
-                                    amount: double.tryParse(amtCtrl.text.trim()),
-                                    feedbackRating: 5.0,
-                                    feedbackCount: 0,
-                                  );
-
-                                  final repo = ref.read(workHistoryRepoProvider);
-                                  await repo.addWork(newWork);
-                                  await _fetchData();
-
-                                  if (sheetCtx.mounted) Navigator.pop(sheetCtx);
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(isMr ? 'नवीन विकास काम यशस्वीरित्या जोडले गेले!' : 'New work project added successfully!'),
-                                        backgroundColor: const Color(0xFF16A34A),
-                                      ),
-                                    );
-                                  }
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 8),
                       ],
+                    ),
+                  ),
+
+                  // 3. DOCKED BOTTOM ACTION BUTTONS (Cancel & Submit)
+                  SafeArea(
+                    top: false,
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(20, 8, 20, 12 + MediaQuery.of(sheetCtx).viewInsets.bottom),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 13),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                side: const BorderSide(color: Color(0xFFCBD5E1)),
+                              ),
+                              onPressed: () => Navigator.pop(sheetCtx),
+                              child: Text(
+                                isMr ? 'रद्द करा' : 'Cancel',
+                                style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            flex: 2,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0284C7),
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(vertical: 13),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              icon: const Icon(Icons.save_rounded, size: 18),
+                              label: Text(
+                                isMr ? 'काम जतन करा' : 'Save Project',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                              onPressed: () async {
+                                if (titleCtrl.text.trim().isEmpty) {
+                                  ScaffoldMessenger.of(sheetCtx).showSnackBar(
+                                    SnackBar(content: Text(isMr ? 'कृपया कामाचे नाव प्रविष्ट करा' : 'Please enter project title')),
+                                  );
+                                  return;
+                                }
+
+                                final newWork = WorkHistoryModel(
+                                  id: 'work-${DateTime.now().millisecondsSinceEpoch}',
+                                  source: 'Manual',
+                                  title: titleCtrl.text.trim(),
+                                  description: descCtrl.text.trim().isNotEmpty
+                                      ? descCtrl.text.trim()
+                                      : 'Development work initiated for Prabhag residents.',
+                                  location: locCtrl.text.trim().isNotEmpty ? locCtrl.text.trim() : 'Ward 12',
+                                  area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : 'Ward 12',
+                                  status: status,
+                                  date: dateCtrl.text.trim(),
+                                  peopleBenefited: int.tryParse(benCtrl.text.trim()),
+                                  amount: double.tryParse(amtCtrl.text.trim()),
+                                  feedbackRating: 5.0,
+                                  feedbackCount: 0,
+                                );
+
+                                final repo = ref.read(workHistoryRepoProvider);
+                                await repo.addWork(newWork);
+                                await _fetchData();
+
+                                if (sheetCtx.mounted) Navigator.pop(sheetCtx);
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(isMr ? 'नवीन विकास काम यशस्वीरित्या जोडले गेले!' : 'New work project added successfully!'),
+                                      backgroundColor: const Color(0xFF16A34A),
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],

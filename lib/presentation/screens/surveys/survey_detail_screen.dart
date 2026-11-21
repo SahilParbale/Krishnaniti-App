@@ -596,7 +596,9 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) => Container(
-          height: MediaQuery.of(context).size.height * 0.85,
+          constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -619,8 +621,9 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
               ),
 
               // 2. SCROLLABLE FORM & SUBMIT BUTTON
-              Expanded(
-                child: ListView(
+              Flexible(
+              child: ListView(
+                shrinkWrap: true,
                   padding: EdgeInsets.only(
                     left: 16,
                     right: 16,

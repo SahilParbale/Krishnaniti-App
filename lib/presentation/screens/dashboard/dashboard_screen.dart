@@ -146,7 +146,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
-        height: MediaQuery.of(context).size.height * 0.70,
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.70,
+        ),
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -169,8 +171,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
             ),
 
             // 2. SCROLLABLE CONTENT & BUTTON
-            Expanded(
+            Flexible(
               child: ListView(
+                shrinkWrap: true,
                 padding: const EdgeInsets.all(20),
                 children: [
                   _buildHelpStep(
@@ -289,7 +292,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
-        height: MediaQuery.of(context).size.height * 0.65,
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.65,
+        ),
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -312,8 +317,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
             ),
 
             // 2. SCROLLABLE DETAILS & ACTIONS
-            Expanded(
+            Flexible(
               child: ListView(
+                shrinkWrap: true,
                 padding: const EdgeInsets.all(20),
                 children: [
                   Row(

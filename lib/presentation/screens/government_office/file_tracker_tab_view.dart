@@ -122,7 +122,9 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
         return StatefulBuilder(
           builder: (bottomCtx, setModalState) {
             return Container(
-              height: MediaQuery.of(context).size.height * 0.9,
+              constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.9,
+        ),
               padding: EdgeInsets.only(
                 left: 20,
                 right: 20,
@@ -344,7 +346,9 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
       builder: (ctx) => StatefulBuilder(
         builder: (sheetCtx, setSheetState) {
           return Container(
-            height: MediaQuery.of(context).size.height * 0.9,
+            constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.9,
+        ),
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),

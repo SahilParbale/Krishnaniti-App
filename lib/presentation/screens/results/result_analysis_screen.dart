@@ -1139,7 +1139,9 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
-        height: MediaQuery.of(context).size.height * 0.75,
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.75,
+        ),
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -1162,8 +1164,9 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
             ),
 
             // 2. SCROLLABLE BREAKDOWN & CLOSE BUTTON
-            Expanded(
+            Flexible(
               child: ListView(
+                shrinkWrap: true,
                 padding: const EdgeInsets.all(20),
                 children: [
                   // Statistics Summary

@@ -110,7 +110,9 @@ class _TeamMemberProfileScreenState extends ConsumerState<TeamMemberProfileScree
       builder: (ctx) => StatefulBuilder(
         builder: (context, setModalState) {
           return Container(
-            height: MediaQuery.of(context).size.height * 0.85,
+            constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),

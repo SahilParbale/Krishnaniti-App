@@ -194,7 +194,9 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
         return StatefulBuilder(
           builder: (stCtx, setModalState) {
             return Container(
-              height: MediaQuery.of(context).size.height * 0.90,
+              constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.90,
+        ),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -217,9 +219,9 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                   ),
 
                   // 2. SCROLLABLE BODY & BUTTONS
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: EdgeInsets.only(
+                  Flexible(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.only(
                         top: 14,
                         left: 18,
                         right: 18,

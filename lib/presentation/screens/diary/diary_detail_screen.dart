@@ -174,7 +174,9 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) {
           return Container(
-            height: MediaQuery.of(context).size.height * 0.90,
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.90,
+            ),
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -187,6 +189,7 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
               ],
             ),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 // 1. FIXED HEADER
                 AppModalHeader(
@@ -198,15 +201,11 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                   onClose: () => Navigator.pop(ctx),
                 ),
 
-                // 2. SCROLLABLE FORM & SUBMIT BUTTON
-                Expanded(
+                // 2. SCROLLABLE FORM
+                Flexible(
                   child: ListView(
-                    padding: EdgeInsets.only(
-                      left: 20,
-                      right: 20,
-                      top: 16,
-                      bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-                    ),
+                    shrinkWrap: true,
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
                     children: [
                       // Title
                       AppFieldLabel(
@@ -450,12 +449,19 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                           hint: isMr ? 'अजेंडा, पार्श्वभूमी किंवा आवश्यक कृती...' : 'Agenda points, background, or action required...',
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 8),
+                    ],
+                  ),
+                ),
 
-                      // Save Changes Button (Inside scrollable ListView so it scrolls together)
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
+                // 3. DOCKED BOTTOM ACTION BUTTON
+                SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(20, 8, 20, 12 + MediaQuery.of(context).viewInsets.bottom),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
                           onPressed: () async {
                             final t = titleCtrl.text.trim();
                             if (t.isEmpty) {
@@ -532,12 +538,11 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                           ),
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-          );
+                ],
+              ),
+            );
         },
       ),
     );

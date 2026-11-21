@@ -414,7 +414,9 @@ class _NewComplaintBottomSheetState
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Container(
-        height: MediaQuery.of(context).size.height * 0.92,
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.90,
+        ),
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -427,6 +429,7 @@ class _NewComplaintBottomSheetState
           ],
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             // 1. FIXED STANDARDIZED HEADER
             AppModalHeader(
@@ -490,10 +493,11 @@ class _NewComplaintBottomSheetState
                 ),
               ),
 
-            // 2. SCROLLABLE FORM BODY & SUBMIT BUTTON
-            Expanded(
+            // 2. SCROLLABLE FORM BODY
+            Flexible(
               child: ListView(
-                padding: EdgeInsets.fromLTRB(16, 12, 16, 24 + bottomInset),
+                shrinkWrap: true,
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                 keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                 children: [
                   // Section 1: Voter Details
@@ -509,11 +513,19 @@ class _NewComplaintBottomSheetState
 
                   // Section 3: Attachments
                   _buildAttachmentsSection(isMr),
-                  const SizedBox(height: 24),
-
-                  // Submit Action Button (Submit Complaint / Save)
-                  _buildSubmitButton(isMr),
                 ],
+              ),
+            ),
+
+            // 3. FIXED BOTTOM SUBMIT BUTTON - Always below with zero dead whitespace
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(16, 8, 16, 12 + bottomInset),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: _buildSubmitButton(isMr),
+                ),
               ),
             ),
           ],
@@ -1228,12 +1240,15 @@ class _VoterSearchModalSheetState
     final isMr = ref.watch(isMarathiProvider);
 
     return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           // 1. FIXED STANDARDIZED HEADER
           AppModalHeader(

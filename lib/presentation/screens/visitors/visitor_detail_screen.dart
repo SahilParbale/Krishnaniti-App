@@ -130,7 +130,7 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
           final isDonation = selectedPurpose == 'Donation' || selectedPurpose == 'Help';
 
           return Container(
-            height: MediaQuery.of(context).size.height * 0.90,
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.90),
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -150,8 +150,9 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
                   subtitle: isMr ? 'अभ्यागताचे तपशील अद्यतनित करा' : 'Update visitor details',
                   onClose: () => Navigator.pop(ctx),
                 ),
-                Expanded(
-                  child: ListView(
+                Flexible(
+              child: ListView(
+                shrinkWrap: true,
                     padding: EdgeInsets.only(
                       left: 20,
                       right: 20,

@@ -132,7 +132,9 @@ class _GovernmentOfficeDetailScreenState extends ConsumerState<GovernmentOfficeD
         return StatefulBuilder(
           builder: (stCtx, setModalState) {
             return Container(
-              height: MediaQuery.of(context).size.height * 0.90,
+              constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.90,
+        ),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -148,8 +150,9 @@ class _GovernmentOfficeDetailScreenState extends ConsumerState<GovernmentOfficeD
                     subtitle: isMr ? 'शासकीय कार्यालयाचे तपशील अद्यतनित करा' : 'Update government office details',
                     onClose: () => Navigator.pop(sheetCtx),
                   ),
-                  Expanded(
-                    child: ListView(
+                  Flexible(
+              child: ListView(
+                shrinkWrap: true,
                       padding: EdgeInsets.only(
                         top: 16,
                         left: 18,

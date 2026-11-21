@@ -116,7 +116,9 @@ class _NewspaperClippingDetailScreenState
           builder: (modalCtx, setModalState) {
             final dateFormatted = DateFormat('yyyy-MM-dd').format(selectedDate);
             return Container(
-              height: MediaQuery.of(context).size.height * 0.88,
+              constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.88,
+        ),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -136,8 +138,9 @@ class _NewspaperClippingDetailScreenState
                     subtitle: 'कात्रण माहिती व तपशील अद्यतनित करा',
                     onClose: () => Navigator.pop(ctx),
                   ),
-                  Expanded(
-                    child: ListView(
+                  Flexible(
+              child: ListView(
+                shrinkWrap: true,
                       padding: EdgeInsets.only(
                         left: 20,
                         right: 20,

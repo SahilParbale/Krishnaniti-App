@@ -194,7 +194,9 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) {
           return Container(
-            height: MediaQuery.of(context).size.height * 0.90,
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.90,
+            ),
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -203,6 +205,7 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
               ],
             ),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 // 1. FIXED HEADER
                 AppModalHeader(
@@ -214,10 +217,10 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                   onClose: () => Navigator.pop(ctx),
                 ),
 
-                // 2. SCROLLABLE FORM BODY & BUTTONS
-                Expanded(
+                // 2. SCROLLABLE FORM BODY
+                Flexible(
                   child: SingleChildScrollView(
-                    padding: EdgeInsets.fromLTRB(18, 14, 18, MediaQuery.of(context).viewInsets.bottom + 24),
+                    padding: const EdgeInsets.fromLTRB(18, 14, 18, 8),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -429,66 +432,72 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                           ),
                         ),
 
-                        const SizedBox(height: 24),
-
-                        // Save Button
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () async {
-                              final title = titleCtrl.text.trim();
-                              if (title.isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Please enter task title')),
-                                );
-                                return;
-                              }
-
-                              Navigator.pop(ctx);
-                              final timeStr = '${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}';
-
-                              final newTask = DiaryTaskModel(
-                                id: 'TASK-${DateTime.now().millisecondsSinceEpoch % 10000}',
-                                title: title,
-                                description: descCtrl.text.trim(),
-                                priority: selectedPriority,
-                                status: 'Pending',
-                                dueDate: selectedDate,
-                                dueTime: timeStr,
-                                address: addrCtrl.text.trim(),
-                                officeName: officeCtrl.text.trim(),
-                                meetPersonName: personCtrl.text.trim(),
-                                assignedStaffName: staffCtrl.text.trim(),
-                                createdAt: DateTime.now(),
-                              );
-
-                              setState(() {
-                                _allTasks.insert(0, newTask);
-                              });
-
-                              try {
-                                final repo = ref.read(diaryTasksRepoProvider);
-                                await repo.addTask(newTask);
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Diary task added successfully!'),
-                                      backgroundColor: Color(0xFF0F766E),
-                                    ),
-                                  );
-                                }
-                              } catch (_) {}
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF0284C7),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            ),
-                            child: const Text('Save & Schedule', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-                          ),
-                        ),
+                        const SizedBox(height: 8),
                       ],
+                    ),
+                  ),
+                ),
+
+                // 3. DOCKED BOTTOM ACTION BUTTON
+                SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(18, 8, 18, 12 + MediaQuery.of(context).viewInsets.bottom),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          final title = titleCtrl.text.trim();
+                          if (title.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Please enter task title')),
+                            );
+                            return;
+                          }
+
+                          Navigator.pop(ctx);
+                          final timeStr = '${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}';
+
+                          final newTask = DiaryTaskModel(
+                            id: 'TASK-${DateTime.now().millisecondsSinceEpoch % 10000}',
+                            title: title,
+                            description: descCtrl.text.trim(),
+                            priority: selectedPriority,
+                            status: 'Pending',
+                            dueDate: selectedDate,
+                            dueTime: timeStr,
+                            address: addrCtrl.text.trim(),
+                            officeName: officeCtrl.text.trim(),
+                            meetPersonName: personCtrl.text.trim(),
+                            assignedStaffName: staffCtrl.text.trim(),
+                            createdAt: DateTime.now(),
+                          );
+
+                          setState(() {
+                            _allTasks.insert(0, newTask);
+                          });
+
+                          try {
+                            final repo = ref.read(diaryTasksRepoProvider);
+                            await repo.addTask(newTask);
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Diary task added successfully!'),
+                                  backgroundColor: Color(0xFF0F766E),
+                                ),
+                              );
+                            }
+                          } catch (_) {}
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0284C7),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: const Text('Save & Schedule', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                      ),
                     ),
                   ),
                 ),
