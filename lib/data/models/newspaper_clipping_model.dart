@@ -40,10 +40,10 @@ class NewspaperClippingModel {
       isPositive ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2);
 
   String get sentimentLabelMarathi =>
-      isPositive ? 'सकारात्मक बातमी' : 'दखलपात्र समस्या';
+      isPositive ? 'सकारात्मक बातमी' : 'नकारात्मक बातमी';
 
   String get sentimentLabelEnglish =>
-      isPositive ? 'Positive News' : 'Negative / Civic Issue';
+      isPositive ? 'Positive News' : 'Negative News';
 
   Color get newspaperBrandColor {
     switch (newspaper.toLowerCase()) {

@@ -201,7 +201,7 @@ class _NewspaperClippingDetailScreenState
                                             ),
                                             alignment: Alignment.center,
                                             child: Text(
-                                              'समस्या / Issue',
+                                              'नकारात्मक / Negative',
                                               style: TextStyle(
                                                 color: sentiment == 'negative' ? Colors.white : const Color(0xFF334155),
                                                 fontWeight: FontWeight.bold,

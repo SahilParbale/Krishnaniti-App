@@ -118,9 +118,6 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
   Widget build(BuildContext context) {
     final isDesktop = MediaQuery.of(context).size.width >= 900;
     final totalCount = _allMembers.length;
-    final voterCount = _allMembers.where((m) => m.isVoter).length;
-    final nonVoterCount = totalCount - voterCount;
-    final activeAreasCount = _areaCounts.keys.length;
 
     return Scaffold(
       key: _scaffoldKey,
@@ -140,9 +137,6 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
               _buildHeaderBanner(totalCount),
 
               const SizedBox(height: 14),
-
-              // 4 KPI Summary Cards
-              _buildKpiStatsGrid(totalCount, voterCount, nonVoterCount, activeAreasCount),
 
               const SizedBox(height: 16),
 
@@ -239,204 +233,119 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
   }
 
   Widget _buildHeaderBanner(int totalCount) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: const Color(0xFFE0F2FE),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.groups_rounded, color: Color(0xFF0284C7), size: 26),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Ward 12 Party Organization & Cadre',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                ),
-                const SizedBox(height: 2),
-                const Text(
-                  'Booth in-charges, ward coordinators & registered members',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF0FDF4),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFBBF7D0)),
-            ),
-            child: Text(
-              'Total: $totalCount',
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
-            ),
-          ),
-          const SizedBox(width: 4),
-          IconButton(
-            icon: const Icon(Icons.help_outline_rounded, color: Color(0xFF64748B), size: 20),
-            tooltip: 'Help Guide',
-            visualDensity: VisualDensity.compact,
-            onPressed: _showHelpGuide,
-          ),
-          AppPdfButton.icon(
-            tooltip: 'Download PDF Report',
-            onPressed: _exportPdfReport,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildKpiStatsGrid(int total, int voters, int nonVoters, int areas) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isWide = constraints.maxWidth >= 600;
+        final isNarrow = constraints.maxWidth < 550;
 
-        final cardTotal = _buildKpiCard(
-          'Total Cadre',
-          '$total',
-          'Registered Cadre',
-          Icons.group_rounded,
-          const Color(0xFF0284C7),
-          const Color(0xFFEFF6FF),
-          const Color(0xFFBFDBFE),
-        );
-
-        final cardVoters = _buildKpiCard(
-          'Voter Members',
-          '$voters',
-          'Registered Voters',
-          Icons.how_to_vote_rounded,
-          const Color(0xFF16A34A),
-          const Color(0xFFF0FDF4),
-          const Color(0xFFBBF7D0),
-        );
-
-        final cardNonVoters = _buildKpiCard(
-          'Other Members',
-          '$nonVoters',
-          'Direct Cadre',
-          Icons.person_outline_rounded,
-          const Color(0xFFA855F7),
-          const Color(0xFFFAF5FF),
-          const Color(0xFFE9D5FF),
-        );
-
-        final cardAreas = _buildKpiCard(
-          'Active Areas',
-          '$areas',
-          'Shaniwar, Kasba, etc.',
-          Icons.location_city_rounded,
-          const Color(0xFFD97706),
-          const Color(0xFFFFFBEB),
-          const Color(0xFFFDE68A),
-        );
-
-        if (isWide) {
-          return Row(
-            children: [
-              Expanded(child: cardTotal),
-              const SizedBox(width: 10),
-              Expanded(child: cardVoters),
-              const SizedBox(width: 10),
-              Expanded(child: cardNonVoters),
-              const SizedBox(width: 10),
-              Expanded(child: cardAreas),
-            ],
-          );
-        }
-
-        return Column(
+        final titleSection = Row(
           children: [
-            Row(
-              children: [
-                Expanded(child: cardTotal),
-                const SizedBox(width: 10),
-                Expanded(child: cardVoters),
-              ],
+            Container(
+              padding: const EdgeInsets.all(9),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE0F2FE),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.groups_rounded, color: Color(0xFF0284C7), size: 24),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Text(
+                    'Ward 12 Party Organization & Cadre',
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'Booth in-charges, ward coordinators & registered members',
+                    style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+
+        final actionsSection = Row(
+          mainAxisSize: isNarrow ? MainAxisSize.max : MainAxisSize.min,
+          mainAxisAlignment: isNarrow ? MainAxisAlignment.spaceBetween : MainAxisAlignment.end,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFBBF7D0)),
+              ),
+              child: Text(
+                'Total: $totalCount',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF15803D),
+                ),
+              ),
+            ),
             Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(child: cardNonVoters),
-                const SizedBox(width: 10),
-                Expanded(child: cardAreas),
+                IconButton(
+                  icon: const Icon(Icons.help_outline_rounded, color: Color(0xFF64748B), size: 20),
+                  tooltip: 'Help Guide',
+                  visualDensity: VisualDensity.compact,
+                  onPressed: _showHelpGuide,
+                ),
+                AppPdfButton.icon(
+                  tooltip: 'Download PDF Report',
+                  onPressed: _exportPdfReport,
+                ),
               ],
             ),
           ],
         );
+
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(14),
+          child: isNarrow
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    titleSection,
+                    const SizedBox(height: 10),
+                    const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                    const SizedBox(height: 8),
+                    actionsSection,
+                  ],
+                )
+              : Row(
+                  children: [
+                    Expanded(child: titleSection),
+                    const SizedBox(width: 12),
+                    actionsSection,
+                  ],
+                ),
+        );
       },
     );
   }
-
-  Widget _buildKpiCard(
-      String title, String value, String subtitle, IconData icon, Color iconColor, Color bg, Color border) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              Icon(icon, color: iconColor, size: 18),
-            ],
-          ),
-          const SizedBox(height: 6),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              value,
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: iconColor),
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            subtitle,
-            style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildSearchAndFilters() {
     return Column(
       children: [

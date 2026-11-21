@@ -657,55 +657,6 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ==========================================
-              // 1. KPI STAT CARDS
-              // ==========================================
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildKpiCard(
-                      title: 'Total Records',
-                      value: _stats['total']?.toString() ?? '0',
-                      icon: Icons.groups_rounded,
-                      color: const Color(0xFF0284C7),
-                      bg: const Color(0xFFF0F9FF),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _buildKpiCard(
-                      title: 'Candidates',
-                      value: _stats['candidates']?.toString() ?? '0',
-                      icon: Icons.how_to_vote_rounded,
-                      color: const Color(0xFF4338CA),
-                      bg: const Color(0xFFEEF2FF),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _buildKpiCard(
-                      title: 'Cadre',
-                      value: _stats['workers']?.toString() ?? '0',
-                      icon: Icons.person_search_rounded,
-                      color: const Color(0xFFD97706),
-                      bg: const Color(0xFFFFFBEB),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _buildKpiCard(
-                      title: 'Controversies',
-                      value: _stats['controversies']?.toString() ?? '0',
-                      icon: Icons.warning_amber_rounded,
-                      color: const Color(0xFFDC2626),
-                      bg: const Color(0xFFFEF2F2),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              // ==========================================
               // 2. SEARCH & VIEW TOGGLE
               // ==========================================
               Row(
@@ -903,53 +854,6 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
   // ===========================================================================
   // WIDGET HELPERS
   // ===========================================================================
-  Widget _buildKpiCard({
-    required String title,
-    required String value,
-    required IconData icon,
-    required Color color,
-    required Color bg,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(5),
-            decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8)),
-            child: Icon(icon, size: 16, color: color),
-          ),
-          const SizedBox(height: 8),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              value,
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: color),
-            ),
-          ),
-          const SizedBox(height: 2),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildFilterChip(String label, String value, String current, ValueChanged<String> onSelect) {
     final isSelected = current == value;
     return InkWell(
@@ -1396,4 +1300,3 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
     );
   }
 }
-

@@ -581,11 +581,6 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
     final isMr = ref.watch(isMarathiProvider);
     final displayed = _filteredEntries;
 
-    final totalCount = displayed.length;
-    final actionTakenCount = displayed.where((e) => e.status.toLowerCase() == 'action taken' || e.status.toLowerCase() == 'sanctioned').length;
-    final inDiscussionCount = displayed.where((e) => e.status.toLowerCase() == 'in discussion').length;
-    final raisedCount = displayed.where((e) => e.status.toLowerCase() == 'raised').length;
-
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
         statusBarColor: Color(0xFF0284C7),
@@ -665,44 +660,6 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Executive Stat Strip
-                      Container(
-                        color: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        child: Row(
-                          children: [
-                            _statBox(
-                              title: isMr ? 'एकूण ठराव' : 'Total Motions',
-                              count: '$totalCount',
-                              color: const Color(0xFF0284C7),
-                              bgColor: const Color(0xFFEFF6FF),
-                            ),
-                            const SizedBox(width: 8),
-                            _statBox(
-                              title: isMr ? 'कार्यवाही झाली' : 'Action Taken',
-                              count: '$actionTakenCount',
-                              color: const Color(0xFF16A34A),
-                              bgColor: const Color(0xFFF0FDF4),
-                            ),
-                            const SizedBox(width: 8),
-                            _statBox(
-                              title: isMr ? 'चर्चेत' : 'In Discussion',
-                              count: '$inDiscussionCount',
-                              color: const Color(0xFF6366F1),
-                              bgColor: const Color(0xFFEEF2FF),
-                            ),
-                            const SizedBox(width: 8),
-                            _statBox(
-                              title: isMr ? 'मांडलेले' : 'Raised',
-                              count: '$raisedCount',
-                              color: const Color(0xFFCA8A04),
-                              bgColor: const Color(0xFFFEFCE8),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Divider(height: 1),
-
                       // Search bar & Filters
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -926,40 +883,6 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                   ),
                 ),
               ),
-      ),
-    );
-  }
-
-  Widget _statBox({
-    required String title,
-    required String count,
-    required Color color,
-    required Color bgColor,
-  }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: color.withValues(alpha: 0.2)),
-        ),
-        child: Column(
-          children: [
-            Text(
-              count,
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              title,
-              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color.withValues(alpha: 0.85)),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
       ),
     );
   }

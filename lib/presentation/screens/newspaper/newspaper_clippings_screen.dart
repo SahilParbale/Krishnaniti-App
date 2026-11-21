@@ -327,7 +327,7 @@ class _NewspaperClippingsScreenState
                                             ),
                                             alignment: Alignment.center,
                                             child: Text(
-                                              isMr ? 'समस्या' : 'Negative',
+                                              isMr ? 'नकारात्मक' : 'Negative',
                                               style: TextStyle(
                                                 color: sentiment == 'negative' ? Colors.white : const Color(0xFF334155),
                                                 fontWeight: FontWeight.bold,
@@ -559,8 +559,6 @@ class _NewspaperClippingsScreenState
     final totalCount = _allClippings.length;
     final positiveCount = _allClippings.where((c) => c.isPositive).length;
     final negativeCount = _allClippings.where((c) => !c.isPositive).length;
-    final papersCount =
-        _allClippings.map((c) => c.newspaper).toSet().length;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -632,14 +630,6 @@ class _NewspaperClippingsScreenState
                     ),
                     const SizedBox(height: 14),
 
-                    // 2) 4 EXECUTIVE SUMMARY KPI CARDS
-                    _buildKpiGrid(
-                      total: totalCount,
-                      positive: positiveCount,
-                      negative: negativeCount,
-                      papers: papersCount,
-                    ),
-                    const SizedBox(height: 14),
 
                     // 3) SEARCH & FILTER BAR
                     _buildFiltersBar(),
@@ -797,8 +787,8 @@ class _NewspaperClippingsScreenState
           Expanded(
             child: _buildTabButton(
               id: 'negative',
-              label: 'Civic Issues',
-              marathi: 'Civic Issues',
+              label: 'Negative',
+              marathi: 'Negative',
               count: negativeCount,
               activeColor: const Color(0xFFDC2626),
             ),
@@ -874,139 +864,6 @@ class _NewspaperClippingsScreenState
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  // 2) 4 Executive KPI Cards
-  Widget _buildKpiGrid({
-    required int total,
-    required int positive,
-    required int negative,
-    required int papers,
-  }) {
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: _buildKpiItem(
-                title: 'Total Clippings',
-                marathi: 'Total',
-                value: '$total',
-                icon: Icons.newspaper_rounded,
-                color: const Color(0xFF0284C7),
-                bgColor: const Color(0xFFF0F9FF),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _buildKpiItem(
-                title: 'Positive News',
-                marathi: 'Positive',
-                value: '$positive',
-                icon: Icons.thumb_up_alt_outlined,
-                color: const Color(0xFF16A34A),
-                bgColor: const Color(0xFFF0FDF4),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: _buildKpiItem(
-                title: 'Civic Issues',
-                marathi: 'Civic Issues',
-                value: '$negative',
-                icon: Icons.report_problem_outlined,
-                color: const Color(0xFFDC2626),
-                bgColor: const Color(0xFFFEF2F2),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _buildKpiItem(
-                title: 'Dailies Covered',
-                marathi: 'Dailies',
-                value: '$papers',
-                icon: Icons.menu_book_rounded,
-                color: const Color(0xFF9333EA),
-                bgColor: const Color(0xFFFAF5FF),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildKpiItem({
-    required String title,
-    required String marathi,
-    required String value,
-    required IconData icon,
-    required Color color,
-    required Color bgColor,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 5,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF64748B),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: bgColor,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, size: 16, color: color),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF0F172A),
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            marathi,
-            style: const TextStyle(
-              fontSize: 9.5,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF94A3B8),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -1553,4 +1410,3 @@ class _GuideStep extends StatelessWidget {
     );
   }
 }
-
