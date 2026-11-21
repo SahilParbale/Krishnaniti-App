@@ -482,10 +482,6 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
   Widget build(BuildContext context) {
     final isMr = ref.watch(isMarathiProvider);
     final filtered = _filteredEvents;
-    final totalEvents = _allEvents.length;
-    final upcomingEvents = _allEvents.where((e) => e.isUpcoming).length;
-    final totalRsvps = _allEvents.fold<int>(0, (sum, e) => sum + e.totalRsvps);
-    final totalGoing = _allEvents.fold<int>(0, (sum, e) => sum + e.goingCount);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -553,11 +549,6 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // 4 Executive KPI Cards
-                      _buildKpiSummaryRow(totalEvents, upcomingEvents, totalRsvps, totalGoing),
-
-                      const SizedBox(height: 16),
-
                       // Search and Filters Card
                       _buildSearchAndFiltersCard(filtered),
 
@@ -595,70 +586,6 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
             'New Event',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildKpiSummaryRow(int total, int upcoming, int rsvps, int going) {
-    return Row(
-      children: [
-        _buildKpiCard('Total Events', '$total', 'All Events', const Color(0xFF0284C7), Icons.calendar_month_rounded),
-        const SizedBox(width: 8),
-        _buildKpiCard('Upcoming', '$upcoming', 'Upcoming Events', const Color(0xFF8B5CF6), Icons.access_time_rounded),
-        const SizedBox(width: 8),
-        _buildKpiCard('Total RSVPs', '$rsvps', 'Citizen Responses', const Color(0xFFD97706), Icons.people_alt_rounded),
-        const SizedBox(width: 8),
-        _buildKpiCard('Confirmed', '$going', 'Going Attendees', const Color(0xFF16A34A), Icons.check_circle_rounded),
-      ],
-    );
-  }
-
-  Widget _buildKpiCard(String title, String value, String sub, Color color, IconData icon) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.02),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, size: 12, color: color),
-                const SizedBox(width: 4),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 2),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 10,
-                color: Color(0xFF64748B),
-                fontWeight: FontWeight.w600,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
         ),
       ),
     );
