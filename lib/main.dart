@@ -4,7 +4,7 @@ import 'core/services/supabase_service.dart';
 import 'core/theme/app_theme.dart';
 import 'presentation/providers/auth_provider.dart';
 import 'presentation/screens/landing/landing_screen.dart';
-import 'presentation/navigation/main_scaffold.dart';
+import 'presentation/navigation/adaptive_scaffold.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,16 +33,16 @@ class NagarsevakApp extends ConsumerWidget {
       home: authState.when(
         data: (user) {
           if (user != null) {
-            return const MainScaffold();
+            return const AdaptiveScaffold();
           }
-          return const LandingScreen();
+          return const AdaptiveLandingScreen();
         },
         loading: () => const Scaffold(
           body: Center(
             child: CircularProgressIndicator(strokeWidth: 2),
           ),
         ),
-        error: (e, st) => const LandingScreen(),
+        error: (e, st) => const AdaptiveLandingScreen(),
       ),
     );
   }

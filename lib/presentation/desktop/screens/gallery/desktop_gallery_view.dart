@@ -1,0 +1,664 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import '../../../../data/models/gallery_model.dart';
+import '../../../../data/repositories/gallery_repository.dart';
+import '../../../screens/gallery/gallery_report_generator.dart';
+
+class DesktopGalleryView extends ConsumerStatefulWidget {
+  const DesktopGalleryView({super.key});
+
+  @override
+  ConsumerState<DesktopGalleryView> createState() => _DesktopGalleryViewState();
+}
+
+class _DesktopGalleryViewState extends ConsumerState<DesktopGalleryView> {
+  bool _loading = true;
+  List<GalleryItemModel> _items = [];
+  String _searchTerm = '';
+  GalleryCategory? _selectedCategory;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchGallery();
+  }
+
+  Future<void> _fetchGallery() async {
+    setState(() => _loading = true);
+    try {
+      final repo = ref.read(galleryRepoProvider);
+      final list = await repo.getGalleryItems(category: _selectedCategory);
+      if (mounted) {
+        setState(() {
+          _items = list;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _items = [];
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  List<GalleryItemModel> get _filteredItems {
+    return _items.where((i) {
+      final matchesSearch = _searchTerm.isEmpty ||
+          i.title.toLowerCase().contains(_searchTerm.toLowerCase()) ||
+          i.titleMr.toLowerCase().contains(_searchTerm.toLowerCase()) ||
+          i.description.toLowerCase().contains(_searchTerm.toLowerCase()) ||
+          i.descriptionMr.toLowerCase().contains(_searchTerm.toLowerCase());
+
+      return matchesSearch;
+    }).toList();
+  }
+
+  void _showAddModal({GalleryItemModel? item}) {
+    final titleController = TextEditingController(text: item?.titleMr ?? item?.title ?? '');
+    final descController = TextEditingController(text: item?.descriptionMr ?? item?.description ?? '');
+    final imageController = TextEditingController(text: item?.imageUrl ?? 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&q=80&w=800');
+    GalleryCategory selectedCat = item?.category ?? GalleryCategory.event;
+    String dateStr = item != null ? DateFormat('yyyy-MM-dd').format(item.date) : DateTime.now().toIso8601String().split('T')[0];
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.45),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) {
+          return Dialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            child: Container(
+              width: 580,
+              padding: const EdgeInsets.all(28),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          item == null ? 'Add Photo' : 'Edit Photo Details',
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                        ),
+                        IconButton(icon: const Icon(Icons.close, size: 20, color: Color(0xFF64748B)), onPressed: () => Navigator.pop(ctx)),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Title
+                    const Text('Title *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: titleController,
+                      decoration: InputDecoration(
+                        hintText: 'e.g. Ward 12 Community Center Inauguration...',
+                        hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Category & Date
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Category *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                              const SizedBox(height: 6),
+                              DropdownButtonFormField<GalleryCategory>(
+                                value: selectedCat,
+                                items: GalleryCategory.values.map((c) {
+                                  return DropdownMenuItem(value: c, child: Text(c.titleMr));
+                                }).toList(),
+                                onChanged: (val) {
+                                  if (val != null) setModalState(() => selectedCat = val);
+                                },
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Date', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                              const SizedBox(height: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(dateStr, style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A))),
+                                    const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFF64748B)),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Description
+                    const Text('Description', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: descController,
+                      maxLines: 2,
+                      decoration: InputDecoration(
+                        hintText: 'Brief description of the photo...',
+                        hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Image URL
+                    const Text('Image URL *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: imageController,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Buttons
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        OutlinedButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFFCBD5E1)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                          ),
+                          child: const Text('Cancel', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w600)),
+                        ),
+                        const SizedBox(width: 12),
+                        ElevatedButton(
+                          onPressed: () async {
+                            if (titleController.text.trim().isEmpty) return;
+                            final newPhoto = GalleryItemModel(
+                              id: item?.id ?? 'gal-${DateTime.now().millisecondsSinceEpoch}',
+                              title: titleController.text.trim(),
+                              titleMr: titleController.text.trim(),
+                              description: descController.text.trim(),
+                              descriptionMr: descController.text.trim(),
+                              category: selectedCat,
+                              imageUrl: imageController.text.trim(),
+                              date: DateTime.tryParse(dateStr) ?? DateTime.now(),
+                              location: 'Ward 12',
+                              createdAt: item?.createdAt ?? DateTime.now(),
+                            );
+
+                            final repo = ref.read(galleryRepoProvider);
+                            if (item == null) {
+                              await repo.addGalleryItem(newPhoto);
+                            } else {
+                              await repo.updateGalleryItem(newPhoto);
+                            }
+                            if (ctx.mounted) Navigator.pop(ctx);
+                            _fetchGallery();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0284C7),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                          ),
+                          child: Text(item == null ? 'Add Photo' : 'Save Changes', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showDeleteConfirm(GalleryItemModel item) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.45),
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Delete Photo'),
+        content: Text('Are you sure you want to delete this photo?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () async {
+              final repo = ref.read(galleryRepoProvider);
+              await repo.deleteGalleryItem(item.id);
+              if (ctx.mounted) Navigator.pop(ctx);
+              _fetchGallery();
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
+            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showZoomDialog(GalleryItemModel item) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.45),
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 800, maxHeight: 600),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(item.titleMr, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: Image.network(
+                  item.imageUrl,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.broken_image_outlined, size: 64)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filtered = _filteredItems;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          _buildHeader(filtered.length),
+          const SizedBox(height: 20),
+
+          // Category Chips & Search Row
+          _buildFilterRow(),
+          const SizedBox(height: 24),
+
+          // Photos Grid
+          if (_loading)
+            _buildLoadingGrid()
+          else
+            _buildGalleryGrid(filtered),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(int count) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Text(
+                  'Gallery & Media',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0F172A), letterSpacing: -0.5),
+                ),
+                const SizedBox(width: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0F9FF),
+                    borderRadius: BorderRadius.circular(100),
+                    border: Border.all(color: const Color(0xFFBAE6FD)),
+                  ),
+                  child: Text('Total Photos: $count', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0369A1))),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Visual archives of civil works, events and community initiatives',
+              style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+            ),
+          ],
+        ),
+
+        // Actions
+        Row(
+          children: [
+            // Download Report
+            OutlinedButton.icon(
+              onPressed: () {
+                GalleryReportGenerator.generateAndPrintReport(items: _filteredItems);
+              },
+              icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
+              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 13)),
+              style: OutlinedButton.styleFrom(
+                backgroundColor: const Color(0xFFF0F9FF),
+                side: const BorderSide(color: Color(0xFFBAE6FD)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+            const SizedBox(width: 12),
+
+            // Add Photo
+            ElevatedButton.icon(
+              onPressed: () => _showAddModal(),
+              icon: const Icon(Icons.add_a_photo_outlined, size: 18, color: Colors.white),
+              label: const Text('+ Add Photo', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0284C7),
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                elevation: 0,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFilterRow() {
+    return Row(
+      children: [
+        // Category Pills
+        Wrap(
+          spacing: 8,
+          children: [
+            _categoryPill(null, 'All'),
+            _categoryPill(GalleryCategory.event, 'Events'),
+            _categoryPill(GalleryCategory.work, 'Works'),
+            _categoryPill(GalleryCategory.award, 'Awards'),
+            _categoryPill(GalleryCategory.campaign, 'Campaigns'),
+          ],
+        ),
+        const Spacer(),
+
+        // Search Input
+        Container(
+          width: 280,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: TextField(
+            onChanged: (val) => setState(() => _searchTerm = val),
+            decoration: const InputDecoration(
+              hintText: 'Search photo or event...',
+              hintStyle: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+              prefixIcon: Icon(Icons.search, size: 18, color: Color(0xFF94A3B8)),
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _categoryPill(GalleryCategory? category, String label) {
+    final isSelected = _selectedCategory == category;
+
+    return InkWell(
+      onTap: () {
+        setState(() => _selectedCategory = category);
+        _fetchGallery();
+      },
+      borderRadius: BorderRadius.circular(100),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF0284C7) : Colors.white,
+          borderRadius: BorderRadius.circular(100),
+          border: Border.all(color: isSelected ? const Color(0xFF0284C7) : const Color(0xFFE2E8F0)),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: isSelected ? Colors.white : const Color(0xFF475569),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGalleryGrid(List<GalleryItemModel> items) {
+    if (items.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(48),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: Column(
+          children: const [
+            Icon(Icons.photo_library_outlined, size: 48, color: Color(0xFFCBD5E1)),
+            SizedBox(height: 12),
+            const Text('No photos found', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500)),
+          ],
+        ),
+      );
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: items.length,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: 20,
+            mainAxisSpacing: 20,
+            mainAxisExtent: 330,
+          ),
+          itemBuilder: (context, index) {
+            final item = items[index];
+
+            return Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+                boxShadow: const [BoxShadow(color: Color(0x04000000), blurRadius: 4, offset: Offset(0, 1))],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Photo Thumbnail with zoom click
+                    InkWell(
+                      onTap: () => _showZoomDialog(item),
+                      child: Stack(
+                        alignment: Alignment.bottomRight,
+                        children: [
+                          Image.network(
+                            item.imageUrl,
+                            height: 170,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              height: 170,
+                              color: const Color(0xFFF1F5F9),
+                              alignment: Alignment.center,
+                              child: const Icon(Icons.image_not_supported_outlined, size: 40, color: Color(0xFF94A3B8)),
+                            ),
+                          ),
+                          Container(
+                            margin: const EdgeInsets.all(8),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(4)),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: const [
+                                Icon(Icons.zoom_in, size: 12, color: Colors.white),
+                                SizedBox(width: 4),
+                                const Text('View', style: TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Details
+                    Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF0F9FF),
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(color: const Color(0xFFBAE6FD)),
+                                ),
+                                child: Text(item.category.titleMr, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0369A1))),
+                              ),
+                              Text(item.formattedDate, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+
+                          // Title
+                          Text(
+                            item.titleMr,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                          ),
+                          const SizedBox(height: 4),
+
+                          // Description
+                          Text(
+                            item.descriptionMr,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.3),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Spacer(),
+
+                    // Bottom Edit/Delete Actions
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF8FAFC),
+                        border: Border(top: BorderSide(color: Color(0xFFF1F5F9))),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.remove_red_eye_outlined, size: 13, color: Color(0xFF94A3B8)),
+                              const SizedBox(width: 4),
+                              Text('${item.viewsCount} views', style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit_outlined, size: 16, color: Color(0xFF64748B)),
+                                onPressed: () => _showAddModal(item: item),
+                                tooltip: 'Edit',
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete_outline, size: 16, color: Color(0xFFDC2626)),
+                                onPressed: () => _showDeleteConfirm(item),
+                                tooltip: 'Delete',
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildLoadingGrid() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: 6,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: 20,
+            mainAxisSpacing: 20,
+            mainAxisExtent: 300,
+          ),
+          itemBuilder: (_, __) => Container(
+            decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(20)),
+          ),
+        );
+      },
+    );
+  }
+}

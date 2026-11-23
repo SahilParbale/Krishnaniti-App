@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/krishnaniti_logo.dart';
-import '../../navigation/main_scaffold.dart';
+import '../../navigation/adaptive_scaffold.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   final String? initialRole;
@@ -78,7 +78,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const MainScaffold()),
+          MaterialPageRoute(builder: (_) => const AdaptiveScaffold()),
           (route) => false,
         );
       }

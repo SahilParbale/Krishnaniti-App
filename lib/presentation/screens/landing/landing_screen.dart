@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/krishnaniti_logo.dart';
 import '../auth/login_screen.dart';
-import '../../navigation/main_scaffold.dart';
+import '../../navigation/adaptive_scaffold.dart';
 
 class LandingScreen extends ConsumerStatefulWidget {
   const LandingScreen({super.key});
@@ -99,7 +99,7 @@ class _LandingScreenState extends ConsumerState<LandingScreen> {
     if (user != null) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const MainScaffold()),
+        MaterialPageRoute(builder: (_) => const AdaptiveScaffold()),
       );
     } else {
       Navigator.push(
@@ -121,7 +121,7 @@ class _LandingScreenState extends ConsumerState<LandingScreen> {
       );
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const MainScaffold()),
+          MaterialPageRoute(builder: (_) => const AdaptiveScaffold()),
           (route) => false,
         );
       }
