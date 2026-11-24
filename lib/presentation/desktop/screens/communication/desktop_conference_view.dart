@@ -1,3 +1,4 @@
+import '../../common/desktop_modal_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -92,87 +93,17 @@ class _DesktopConferenceViewState extends ConsumerState<DesktopConferenceView> {
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.45),
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDlgState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Row(
-            children: [
-              const Icon(Icons.video_call_rounded, color: AppColors.brandPrimary),
-              const SizedBox(width: 10),
-              Text(
-                'Schedule New Video Meeting',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-              ),
-            ],
-          ),
-          content: SizedBox(
-            width: 480,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Meeting Subject / Title:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.slate700)),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: titleCtrl,
-                  decoration: InputDecoration(
-                    hintText: 'e.g. Ward Citizen Interaction',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text('Date & Time:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.slate700)),
-                const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: AppColors.slate50,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.slate200),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(DateFormat('dd MMM yyyy, hh:mm a').format(selectedDate), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                      TextButton.icon(
-                        onPressed: () async {
-                          final d = await showDatePicker(
-                            context: ctx,
-                            initialDate: selectedDate,
-                            firstDate: DateTime.now(),
-                            lastDate: DateTime.now().add(const Duration(days: 90)),
-                          );
-                          if (d != null) {
-                            final t = await showTimePicker(
-                              context: ctx,
-                              initialTime: TimeOfDay.fromDateTime(selectedDate),
-                            );
-                            if (t != null) {
-                              setDlgState(() {
-                                selectedDate = DateTime(d.year, d.month, d.day, t.hour, t.minute);
-                              });
-                            }
-                          }
-                        },
-                        icon: const Icon(Icons.edit_calendar_rounded, size: 16),
-                        label: const Text('Change'),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+        builder: (ctx, setDlgState) => DesktopModalDialog(
+          title: 'Schedule New Video Meeting',
+          subtitle: 'Create virtual conference rooms and invite citizens or karyakartas',
+          icon: Icons.video_call_rounded,
+          width: 520,
+          onClose: () => Navigator.pop(ctx),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brandPrimary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
+            DesktopModalDialog.cancelButton(ctx),
+            const SizedBox(width: 12),
+            DesktopModalDialog.primaryButton(
+              text: 'Create Meeting',
               onPressed: () {
                 if (titleCtrl.text.trim().isEmpty) return;
                 final slug = titleCtrl.text.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '-');
@@ -187,9 +118,60 @@ class _DesktopConferenceViewState extends ConsumerState<DesktopConferenceView> {
                 setState(() => _meetings.insert(0, newM));
                 Navigator.pop(ctx);
               },
-              child: const Text('Create Meeting'),
             ),
           ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Meeting Subject / Title:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.slate700)),
+              const SizedBox(height: 6),
+              TextField(
+                controller: titleCtrl,
+                decoration: desktopInputDecoration(hintText: 'e.g. Ward Citizen Interaction'),
+              ),
+              const SizedBox(height: 16),
+              const Text('Date & Time:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.slate700)),
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.slate200),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(DateFormat('dd MMM yyyy, hh:mm a').format(selectedDate), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    TextButton.icon(
+                      onPressed: () async {
+                        final d = await showDatePicker(
+                          context: ctx,
+                          initialDate: selectedDate,
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime.now().add(const Duration(days: 90)),
+                        );
+                        if (d != null) {
+                          final t = await showTimePicker(
+                            context: ctx,
+                            initialTime: TimeOfDay.fromDateTime(selectedDate),
+                          );
+                          if (t != null) {
+                            setDlgState(() {
+                              selectedDate = DateTime(d.year, d.month, d.day, t.hour, t.minute);
+                            });
+                          }
+                        }
+                      },
+                      icon: const Icon(Icons.edit_calendar_rounded, size: 16),
+                      label: const Text('Change'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

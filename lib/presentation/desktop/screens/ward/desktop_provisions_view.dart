@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../data/models/ward_provision_model.dart';
 import '../../../../data/repositories/ward_provisions_repository.dart';
+import '../../common/desktop_modal_dialog.dart';
 import '../../../screens/ward_provisions/ward_provision_report_generator.dart';
 
 class DesktopProvisionsView extends ConsumerStatefulWidget {
@@ -76,192 +78,144 @@ class _DesktopProvisionsViewState extends ConsumerState<DesktopProvisionsView> {
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.45),
-      builder: (ctx) => Dialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Container(
-          width: 540,
-          padding: const EdgeInsets.all(28),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+      builder: (ctx) => DesktopModalDialog(
+        title: 'Add Provision Request',
+        subtitle: 'Municipal provisions, ward works and sanctioned projects',
+        icon: Icons.handshake_outlined,
+        width: 560,
+        onClose: () => Navigator.pop(ctx),
+        actions: [
+          DesktopModalDialog.cancelButton(ctx),
+          const SizedBox(width: 12),
+          DesktopModalDialog.primaryButton(
+            text: 'Save Provision',
+            onPressed: () async {
+              if (titleController.text.trim().isEmpty) return;
+              final newProvision = WardProvisionModel(
+                id: 'prov-${DateTime.now().millisecondsSinceEpoch}',
+                title: titleController.text.trim(),
+                requestedAmount: double.tryParse(reqAmountController.text.trim()) ?? 0,
+                requestedDate: dateStr,
+                category: catController.text.trim().isEmpty ? 'General' : catController.text.trim(),
+                area: areaController.text.trim().isEmpty ? 'Ward 12' : areaController.text.trim(),
+                letterReference: refController.text.trim(),
+                financialYear: _year,
+              );
+
+              final repo = ref.read(wardProvisionsRepoProvider);
+              await repo.addProvision(newProvision);
+              if (ctx.mounted) Navigator.pop(ctx);
+              _loadProvisions();
+            },
+          ),
+        ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Title
+            const Text('Project Title *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+            const SizedBox(height: 6),
+            TextField(
+              controller: titleController,
+              decoration: desktopInputDecoration(hintText: 'e.g. Ward road concretization...'),
+            ),
+            const SizedBox(height: 16),
+
+            // Requested Amount & Date
+            Row(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Add Provision Request', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                    IconButton(icon: const Icon(Icons.close, size: 20, color: Color(0xFF64748B)), onPressed: () => Navigator.pop(ctx)),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                // Title
-                const Text('Project Title *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: titleController,
-                  decoration: InputDecoration(
-                    hintText: 'e.g. Ward road concretization...',
-                    hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Requested Amount (₹) *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: reqAmountController,
+                        keyboardType: TextInputType.number,
+                        decoration: desktopInputDecoration(
+                          hintText: '500000',
+                          prefixIcon: const Padding(
+                            padding: EdgeInsets.only(left: 14, right: 6),
+                            child: Text('₹ ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 16),
-
-                // Requested Amount & Date
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Requested Amount (₹) *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                          const SizedBox(height: 6),
-                          TextField(
-                            controller: reqAmountController,
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              prefixText: '₹ ',
-                              hintText: '500000',
-                              hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                            ),
-                          ),
-                        ],
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Date', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          border: Border.all(color: AppColors.slate200),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(dateStr, style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A))),
+                            const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFF64748B)),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Date', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                          const SizedBox(height: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: const Color(0xFFCBD5E1)),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(dateStr, style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A))),
-                                const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFF64748B)),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Category & Area
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Category *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                          const SizedBox(height: 6),
-                          TextField(
-                            controller: catController,
-                            decoration: InputDecoration(
-                              hintText: 'e.g. Roads, Water Supply, Drainage',
-                              hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Ward / Area', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                          const SizedBox(height: 6),
-                          TextField(
-                            controller: areaController,
-                            decoration: InputDecoration(
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Letter Reference
-                const Text('Letter Reference', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: refController,
-                  decoration: InputDecoration(
-                    hintText: 'e.g. Letter Ref PMC/2024/782',
-                    hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 24),
-
-                // Buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    OutlinedButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFFCBD5E1)),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                      ),
-                      child: const Text('Cancel', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w600)),
-                    ),
-                    const SizedBox(width: 12),
-                    ElevatedButton(
-                      onPressed: () async {
-                        if (titleController.text.trim().isEmpty) return;
-                        final newProvision = WardProvisionModel(
-                          id: 'prov-${DateTime.now().millisecondsSinceEpoch}',
-                          title: titleController.text.trim(),
-                          requestedAmount: double.tryParse(reqAmountController.text.trim()) ?? 0,
-                          requestedDate: dateStr,
-                          category: catController.text.trim().isEmpty ? 'General' : catController.text.trim(),
-                          area: areaController.text.trim().isEmpty ? 'Ward 12' : areaController.text.trim(),
-                          letterReference: refController.text.trim(),
-                          financialYear: _year,
-                        );
-
-                        final repo = ref.read(wardProvisionsRepoProvider);
-                        await repo.addProvision(newProvision);
-                        if (ctx.mounted) Navigator.pop(ctx);
-                        _loadProvisions();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0284C7),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-                      ),
-                      child: const Text('Add Request', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    ),
-                  ],
                 ),
               ],
             ),
-          ),
+            const SizedBox(height: 16),
+
+            // Category & Area
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Category *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: catController,
+                        decoration: desktopInputDecoration(hintText: 'e.g. Roads, Water Supply, Drainage'),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Ward / Area', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: areaController,
+                        decoration: desktopInputDecoration(hintText: 'Ward 12'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Letter Reference
+            const Text('Letter Reference', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+            const SizedBox(height: 6),
+            TextField(
+              controller: refController,
+              decoration: desktopInputDecoration(hintText: 'e.g. Letter Ref PMC/2024/782'),
+            ),
+          ],
         ),
       ),
     );
@@ -279,100 +233,68 @@ class _DesktopProvisionsViewState extends ConsumerState<DesktopProvisionsView> {
       barrierColor: Colors.black.withValues(alpha: 0.45),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) {
-          return Dialog(
-            backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            child: Container(
-              width: 500,
-              padding: const EdgeInsets.all(28),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Update Sanction Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                      IconButton(icon: const Icon(Icons.close, size: 20, color: Color(0xFF64748B)), onPressed: () => Navigator.pop(ctx)),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(item.title, style: const TextStyle(fontSize: 13, color: Color(0xFF64748B))),
-                  const SizedBox(height: 20),
+          return DesktopModalDialog(
+            title: 'Update Sanction Details',
+            subtitle: item.title,
+            icon: Icons.edit_note_rounded,
+            width: 500,
+            onClose: () => Navigator.pop(ctx),
+            actions: [
+              DesktopModalDialog.cancelButton(ctx),
+              const SizedBox(width: 12),
+              DesktopModalDialog.primaryButton(
+                text: 'Update',
+                onPressed: () async {
+                  final updated = item.copyWith(
+                    sanctionedAmount: double.tryParse(sancAmountController.text.trim()) ?? item.requestedAmount,
+                    sanctionedDate: sancDate,
+                    status: selectedStatus,
+                  );
 
-                  // Sanctioned Amount
-                  const Text('Sanctioned Amount (₹) *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                  const SizedBox(height: 6),
-                  TextField(
-                    controller: sancAmountController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      prefixText: '₹ ',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Status
-                  const Text('Status', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                  const SizedBox(height: 6),
-                  DropdownButtonFormField<String>(
-                    value: selectedStatus,
-                    items: const [
-                      DropdownMenuItem(value: 'Approved', child: Text('Approved')),
-                      DropdownMenuItem(value: 'Partially Approved', child: Text('Partially Approved')),
-                      DropdownMenuItem(value: 'Rejected', child: Text('Rejected')),
-                      DropdownMenuItem(value: 'Pending', child: Text('Pending')),
-                    ],
-                    onChanged: (val) {
-                      if (val != null) setModalState(() => selectedStatus = val);
-                    },
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Buttons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      OutlinedButton(
-                        onPressed: () => Navigator.pop(ctx),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0xFFCBD5E1)),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                        ),
-                        child: const Text('Cancel', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w600)),
-                      ),
-                      const SizedBox(width: 12),
-                      ElevatedButton(
-                        onPressed: () async {
-                          final updated = item.copyWith(
-                            sanctionedAmount: double.tryParse(sancAmountController.text.trim()) ?? item.requestedAmount,
-                            sanctionedDate: sancDate,
-                            status: selectedStatus,
-                          );
-
-                          final repo = ref.read(wardProvisionsRepoProvider);
-                          await repo.updateProvision(updated);
-                          if (ctx.mounted) Navigator.pop(ctx);
-                          _loadProvisions();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0284C7),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-                        ),
-                        child: const Text('Update', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                      ),
-                    ],
-                  ),
-                ],
+                  final repo = ref.read(wardProvisionsRepoProvider);
+                  await repo.updateProvision(updated);
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  _loadProvisions();
+                },
               ),
+            ],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Sanctioned Amount
+                const Text('Sanctioned Amount (₹) *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: sancAmountController,
+                  keyboardType: TextInputType.number,
+                  decoration: desktopInputDecoration(
+                    hintText: 'Enter amount',
+                    prefixIcon: const Padding(
+                      padding: EdgeInsets.only(left: 14, right: 6),
+                      child: Text('₹ ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Status
+                const Text('Status', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                const SizedBox(height: 6),
+                DropdownButtonFormField<String>(
+                  value: selectedStatus,
+                  items: const [
+                    DropdownMenuItem(value: 'Approved', child: Text('Approved')),
+                    DropdownMenuItem(value: 'Partially Approved', child: Text('Partially Approved')),
+                    DropdownMenuItem(value: 'Rejected', child: Text('Rejected')),
+                    DropdownMenuItem(value: 'Pending', child: Text('Pending')),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) setModalState(() => selectedStatus = val);
+                  },
+                  decoration: desktopInputDecoration(hintText: 'Status'),
+                ),
+              ],
             ),
           );
         },

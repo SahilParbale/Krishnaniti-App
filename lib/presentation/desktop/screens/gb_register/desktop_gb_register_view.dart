@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../data/models/diary_entry_model.dart';
 import '../../../../data/models/gb_register_entry_model.dart';
 import '../../../../data/repositories/diary_repository.dart';
+import '../../common/desktop_modal_dialog.dart';
 import '../../../screens/gb_register/gb_register_report_generator.dart';
 
 class DesktopGbRegisterView extends ConsumerStatefulWidget {
@@ -85,30 +87,48 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
       barrierColor: Colors.black.withValues(alpha: 0.45),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) {
-          return Dialog(
-            backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            child: Container(
-              width: 620,
-              padding: const EdgeInsets.all(28),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          entry == null ? 'Add GB Register Entry' : 'Edit GB Register Entry',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                        ),
-                        IconButton(icon: const Icon(Icons.close, size: 20, color: Color(0xFF64748B)), onPressed: () => Navigator.pop(ctx)),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
+          return DesktopModalDialog(
+            title: entry == null ? 'Add GB Register Entry' : 'Edit GB Register Entry',
+            subtitle: 'Log and track resolutions, questions, and discussions from official meetings',
+            icon: Icons.menu_book_rounded,
+            width: 620,
+            onClose: () => Navigator.pop(ctx),
+            actions: [
+              DesktopModalDialog.cancelButton(ctx),
+              const SizedBox(width: 12),
+              DesktopModalDialog.primaryButton(
+                text: entry == null ? 'Add Entry' : 'Save Changes',
+                onPressed: () async {
+                  if (subjectController.text.trim().isEmpty) return;
+                  final newEntry = DiaryEntryModel(
+                    id: entry?.id ?? 'diary-',
+                    meetingDate: selectedDate,
+                    meetingType: selectedType,
+                    subject: subjectController.text.trim(),
+                    description: descController.text.trim(),
+                    department: deptController.text.trim(),
+                    area: areaController.text.trim(),
+                    status: selectedStatus,
+                    beneficiaries: beneficiariesController.text.trim(),
+                    response: responseController.text.trim(),
+                  );
 
-                    // Meeting Type & Date
+                  final repo = ref.read(diaryRepositoryProvider);
+                  if (entry == null) {
+                    await repo.addEntry(newEntry);
+                  } else {
+                    await repo.updateEntry(entry.id, newEntry.toJson());
+                  }
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  _fetchEntries();
+                },
+              ),
+            ],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Meeting Type & Date
                     Row(
                       children: [
                         Expanded(
@@ -130,7 +150,11 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
                                   if (val != null) setModalState(() => selectedType = val);
                                 },
                                 decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  filled: true,
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                                 ),
                               ),
@@ -184,7 +208,11 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
                       decoration: InputDecoration(
                         hintText: 'e.g. Sanction increased water supply quota for the ward...',
                         hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  filled: true,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       ),
                     ),
@@ -222,7 +250,11 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
                       decoration: InputDecoration(
                         hintText: 'Enter details of the motion raised in the meeting...',
                         hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  filled: true,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       ),
                     ),
@@ -242,7 +274,11 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
                                 decoration: InputDecoration(
                                   hintText: 'e.g. Water Supply Department',
                                   hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  filled: true,
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                                 ),
                               ),
@@ -259,7 +295,11 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
                               TextField(
                                 controller: areaController,
                                 decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  filled: true,
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                                 ),
                               ),
@@ -291,7 +331,11 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
                                   if (val != null) setModalState(() => selectedStatus = val);
                                 },
                                 decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  filled: true,
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                                 ),
                               ),
@@ -310,7 +354,11 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
                                 decoration: InputDecoration(
                                   hintText: 'e.g. Ordered immediate survey',
                                   hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  filled: true,
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                                 ),
                               ),
@@ -319,65 +367,12 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
-
-                    // Buttons
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        OutlinedButton(
-                          onPressed: () => Navigator.pop(ctx),
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Color(0xFFCBD5E1)),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                          ),
-                          child: const Text('Cancel', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w600)),
-                        ),
-                        const SizedBox(width: 12),
-                        ElevatedButton(
-                          onPressed: () async {
-                            if (subjectController.text.trim().isEmpty) return;
-                            final newEntry = DiaryEntryModel(
-                              id: entry?.id ?? 'diary-${DateTime.now().millisecondsSinceEpoch}',
-                              meetingDate: selectedDate,
-                              meetingType: selectedType,
-                              subject: subjectController.text.trim(),
-                              description: descController.text.trim(),
-                              department: deptController.text.trim(),
-                              area: areaController.text.trim(),
-                              status: selectedStatus,
-                              beneficiaries: beneficiariesController.text.trim(),
-                              response: responseController.text.trim(),
-                            );
-
-                            final repo = ref.read(diaryRepositoryProvider);
-                            if (entry == null) {
-                              await repo.addEntry(newEntry);
-                            } else {
-                              await repo.updateEntry(entry.id, newEntry.toJson());
-                            }
-                            if (ctx.mounted) Navigator.pop(ctx);
-                            _fetchEntries();
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0284C7),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-                          ),
-                          child: Text(entry == null ? 'Add Entry' : 'Save Changes', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+                                      ],
             ),
           );
         },
       ),
-    );
-  }
+    );  }
 
   void _showDeleteDialog(DiaryEntryModel entry) {
     showDialog(

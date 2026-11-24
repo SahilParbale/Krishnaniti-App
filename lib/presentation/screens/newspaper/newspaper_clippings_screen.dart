@@ -704,12 +704,7 @@ class _NewspaperClippingsScreenState
                                 );
                               },
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.help_outline_rounded,
-                                  color: Color(0xFF64748B), size: 20),
-                              tooltip: 'Help Guide',
-                              onPressed: _showHelpTutorial,
-                            ),
+
                           ],
                         ),
                       ],

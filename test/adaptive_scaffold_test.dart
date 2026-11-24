@@ -95,7 +95,6 @@ void main() {
     expect(find.text('Complaints & Requests'), findsOneWidget);
     expect(find.text('Area Complaints'), findsOneWidget);
     expect(find.text('Personal Requests'), findsOneWidget);
-    expect(find.text('Help'), findsOneWidget);
     expect(find.text('New Complaint'), findsOneWidget);
     expect(find.text('All'), findsWidgets);
     expect(find.text('Pending'), findsWidgets);
@@ -120,7 +119,6 @@ void main() {
 
     expect(find.byType(DesktopLettersView), findsOneWidget);
     expect(find.text('Letters Dashboard'), findsOneWidget);
-    expect(find.text('Help'), findsOneWidget);
     expect(find.text('Manage Types'), findsOneWidget);
     expect(find.text('New Request'), findsOneWidget);
     expect(find.text('Grid'), findsOneWidget);

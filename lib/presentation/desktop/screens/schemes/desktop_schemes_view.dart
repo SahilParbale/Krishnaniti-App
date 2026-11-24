@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:nagarsevak_mobile/core/theme/app_colors.dart';
 import 'package:nagarsevak_mobile/data/models/scheme_model.dart';
 import 'package:nagarsevak_mobile/data/repositories/schemes_repository.dart';
+import 'package:nagarsevak_mobile/presentation/desktop/common/desktop_modal_dialog.dart';
 import 'package:nagarsevak_mobile/presentation/desktop/shell/desktop_sidebar.dart';
 
 /// Desktop Government Schemes View matching SchemeList.tsx verbatim:
@@ -90,91 +92,89 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.45),
-      builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Container(
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlgState) => DesktopModalDialog(
+          title: 'Add Government Scheme',
+          subtitle: 'Create a welfare scheme with eligibility criteria and benefits',
+          icon: Icons.account_balance_rounded,
           width: 580,
-          padding: const EdgeInsets.all(24),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Add Government Scheme', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
-                    IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: nameCtrl,
-                  decoration: InputDecoration(labelText: 'Scheme Name *', border: OutlineInputBorder(borderRadius: BorderRadius.circular(10))),
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  value: category,
-                  decoration: InputDecoration(labelText: 'Category', border: OutlineInputBorder(borderRadius: BorderRadius.circular(10))),
-                  items: _categories.map((c) => DropdownMenuItem(value: c['id']!, child: Text(c['en']!))).toList(),
-                  onChanged: (val) {
-                    if (val != null) category = val;
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: descCtrl,
-                  maxLines: 2,
-                  decoration: InputDecoration(labelText: 'Description', border: OutlineInputBorder(borderRadius: BorderRadius.circular(10))),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: eligCtrl,
-                  maxLines: 2,
-                  decoration: InputDecoration(labelText: 'Eligibility Criteria', border: OutlineInputBorder(borderRadius: BorderRadius.circular(10))),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: benCtrl,
-                  maxLines: 2,
-                  decoration: InputDecoration(labelText: 'Benefits', border: OutlineInputBorder(borderRadius: BorderRadius.circular(10))),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: docCtrl,
-                  maxLines: 2,
-                  decoration: InputDecoration(labelText: 'Required Documents', border: OutlineInputBorder(borderRadius: BorderRadius.circular(10))),
-                ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  height: 44,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      if (nameCtrl.text.trim().isEmpty) return;
-                      final newScheme = SchemeModel(
-                        id: 0,
-                        name: nameCtrl.text.trim(),
-                        description: descCtrl.text.trim(),
-                        eligibility: eligCtrl.text.trim(),
-                        benefits: benCtrl.text.trim(),
-                        documents: docCtrl.text.trim(),
-                        category: category,
-                      );
-                      await ref.read(schemesRepoProvider).createScheme(newScheme);
-                      if (ctx.mounted) Navigator.pop(ctx);
-                      _loadSchemes();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0284C7),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                    child: const Text('Save Scheme', style: TextStyle(fontWeight: FontWeight.w700)),
-                  ),
-                ),
-              ],
+          onClose: () => Navigator.pop(ctx),
+          actions: [
+            DesktopModalDialog.cancelButton(ctx),
+            const SizedBox(width: 12),
+            DesktopModalDialog.primaryButton(
+              text: 'Save Scheme',
+              onPressed: () async {
+                if (nameCtrl.text.trim().isEmpty) return;
+                final newScheme = SchemeModel(
+                  id: 0,
+                  name: nameCtrl.text.trim(),
+                  description: descCtrl.text.trim(),
+                  eligibility: eligCtrl.text.trim(),
+                  benefits: benCtrl.text.trim(),
+                  documents: docCtrl.text.trim(),
+                  category: category,
+                );
+                await ref.read(schemesRepoProvider).createScheme(newScheme);
+                if (ctx.mounted) Navigator.pop(ctx);
+                _loadSchemes();
+              },
             ),
+          ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Scheme Name *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+              const SizedBox(height: 6),
+              TextField(
+                controller: nameCtrl,
+                decoration: desktopInputDecoration(hintText: 'e.g. Pradhan Mantri Awas Yojana...'),
+              ),
+              const SizedBox(height: 14),
+              const Text('Category *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+              const SizedBox(height: 6),
+              DropdownButtonFormField<String>(
+                value: category,
+                decoration: desktopInputDecoration(hintText: 'Select Category'),
+                items: _categories.map((c) => DropdownMenuItem(value: c['id']!, child: Text(c['en']!))).toList(),
+                onChanged: (val) {
+                  if (val != null) setDlgState(() => category = val);
+                },
+              ),
+              const SizedBox(height: 14),
+              const Text('Description', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+              const SizedBox(height: 6),
+              TextField(
+                controller: descCtrl,
+                maxLines: 2,
+                decoration: desktopInputDecoration(hintText: 'Summary of the scheme...'),
+              ),
+              const SizedBox(height: 14),
+              const Text('Eligibility Criteria', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+              const SizedBox(height: 6),
+              TextField(
+                controller: eligCtrl,
+                maxLines: 2,
+                decoration: desktopInputDecoration(hintText: 'Who qualifies for this benefit...'),
+              ),
+              const SizedBox(height: 14),
+              const Text('Benefits', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+              const SizedBox(height: 6),
+              TextField(
+                controller: benCtrl,
+                maxLines: 2,
+                decoration: desktopInputDecoration(hintText: 'Financial subsidy, training, or kit...'),
+              ),
+              const SizedBox(height: 14),
+              const Text('Required Documents', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+              const SizedBox(height: 6),
+              TextField(
+                controller: docCtrl,
+                maxLines: 2,
+                decoration: desktopInputDecoration(hintText: 'Aadhaar, income certificate, ration card...'),
+              ),
+            ],
           ),
         ),
       ),
@@ -273,21 +273,7 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
         // Actions: Help + AI Matcher + Add Scheme
         Row(
           children: [
-            OutlinedButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.help_outline_rounded, size: 18, color: Color(0xFF0284C7)),
-              label: Text(
-                'Help',
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0369A1)),
-              ),
-              style: OutlinedButton.styleFrom(
-                backgroundColor: Colors.white,
-                side: const BorderSide(color: Color(0xFFBAE6FD)),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              ),
-            ),
-            const SizedBox(width: 10),
+
             OutlinedButton.icon(
               onPressed: () {},
               icon: const Icon(Icons.auto_awesome_rounded, size: 18, color: Color(0xFF0284C7)),

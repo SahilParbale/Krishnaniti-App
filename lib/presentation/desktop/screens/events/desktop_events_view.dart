@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../data/models/event_model.dart';
 import '../../../../data/repositories/events_repository.dart';
+import '../../common/desktop_modal_dialog.dart';
 import '../../../screens/events/event_invite_modal.dart';
 import '../../../screens/events/event_report_generator.dart';
 
@@ -76,213 +78,187 @@ class _DesktopEventsViewState extends ConsumerState<DesktopEventsView> {
       barrierColor: Colors.black.withValues(alpha: 0.45),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) {
-          return Dialog(
-            backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            child: Container(
-              width: 580,
-              padding: const EdgeInsets.all(28),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          return DesktopModalDialog(
+            title: item == null ? 'Schedule New Event' : 'Edit Event',
+            subtitle: 'Plan meetings, rallies, camps and ward public gatherings',
+            icon: Icons.event_rounded,
+            width: 580,
+            onClose: () => Navigator.pop(ctx),
+            actions: [
+              DesktopModalDialog.cancelButton(ctx),
+              const SizedBox(width: 12),
+              DesktopModalDialog.primaryButton(
+                text: item == null ? 'Schedule Event' : 'Save Changes',
+                onPressed: () async {
+                  if (titleController.text.trim().isEmpty) return;
+                  final newEvt = EventModel(
+                    id: item?.id ?? 'evt-${DateTime.now().millisecondsSinceEpoch}',
+                    title: titleController.text.trim(),
+                    titleMr: titleController.text.trim(),
+                    description: descController.text.trim(),
+                    location: locationController.text.trim().isEmpty ? 'Ward 12' : locationController.text.trim(),
+                    locationMr: locationController.text.trim().isEmpty ? 'Ward 12' : locationController.text.trim(),
+                    area: areaController.text.trim().isEmpty ? 'Ward 12' : areaController.text.trim(),
+                    eventDate: DateTime.tryParse(dateStr) ?? DateTime.now(),
+                    eventTime: timeStr,
+                    type: selectedType,
+                    status: item?.status ?? 'Planned',
+                    createdAt: item?.createdAt ?? DateTime.now(),
+                  );
+
+                  final repo = ref.read(eventsRepoProvider);
+                  if (item == null) {
+                    await repo.createEvent(newEvt);
+                  } else {
+                    await repo.updateEvent(newEvt);
+                  }
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  _fetchEvents();
+                },
+              ),
+            ],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Title
+                const Text('Event Title *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: titleController,
+                  decoration: desktopInputDecoration(hintText: 'e.g. Ward 12 Community Health Camp...'),
+                ),
+                const SizedBox(height: 16),
+
+                // Type & Date
+                Row(
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          item == null ? 'Schedule New Event' : 'Edit Event',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                        ),
-                        IconButton(icon: const Icon(Icons.close, size: 20, color: Color(0xFF64748B)), onPressed: () => Navigator.pop(ctx)),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Title
-                    const Text('Event Title *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: titleController,
-                      decoration: InputDecoration(
-                        hintText: 'e.g. Ward 12 Community Health Camp...',
-                        hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Event Type *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                          const SizedBox(height: 6),
+                          DropdownButtonFormField<EventType>(
+                            value: selectedType,
+                            items: EventType.values.map((t) {
+                              return DropdownMenuItem(value: t, child: Text(t.titleMr));
+                            }).toList(),
+                            onChanged: (val) {
+                              if (val != null) setModalState(() => selectedType = val);
+                            },
+                            decoration: desktopInputDecoration(hintText: 'Select Type'),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 16),
-
-                    // Type & Date
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Event Type *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                              const SizedBox(height: 6),
-                              DropdownButtonFormField<EventType>(
-                                value: selectedType,
-                                items: EventType.values.map((t) {
-                                  return DropdownMenuItem(value: t, child: Text(t.titleMr));
-                                }).toList(),
-                                onChanged: (val) {
-                                  if (val != null) setModalState(() => selectedType = val);
-                                },
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Date *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                          const SizedBox(height: 6),
+                          InkWell(
+                            onTap: () async {
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: DateTime.tryParse(dateStr) ?? DateTime.now(),
+                                firstDate: DateTime(2020),
+                                lastDate: DateTime(2030),
+                              );
+                              if (picked != null) {
+                                setModalState(() => dateStr = DateFormat('yyyy-MM-dd').format(picked));
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF8FAFC),
+                                border: Border.all(color: AppColors.slate200),
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Date *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                              const SizedBox(height: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: const Color(0xFFCBD5E1)),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(dateStr, style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A))),
-                                    const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFF64748B)),
-                                  ],
-                                ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(dateStr, style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A))),
+                                  const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFF64748B)),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Time & Location
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Time', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                              const SizedBox(height: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: const Color(0xFFCBD5E1)),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(timeStr, style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A))),
-                                    const Icon(Icons.access_time, size: 16, color: Color(0xFF64748B)),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Location *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: locationController,
-                                decoration: InputDecoration(
-                                  hintText: 'e.g. Community Center Hall',
-                                  hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Description
-                    const Text('Description *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: descController,
-                      maxLines: 3,
-                      decoration: InputDecoration(
-                        hintText: 'Event agenda and details...',
-                        hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Buttons
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        OutlinedButton(
-                          onPressed: () => Navigator.pop(ctx),
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Color(0xFFCBD5E1)),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                          ),
-                          child: const Text('Cancel', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w600)),
-                        ),
-                        const SizedBox(width: 12),
-                        ElevatedButton(
-                          onPressed: () async {
-                            if (titleController.text.trim().isEmpty) return;
-                            final newEvt = EventModel(
-                              id: item?.id ?? 'evt-${DateTime.now().millisecondsSinceEpoch}',
-                              title: titleController.text.trim(),
-                              titleMr: titleController.text.trim(),
-                              description: descController.text.trim(),
-                              location: locationController.text.trim().isEmpty ? 'Ward 12' : locationController.text.trim(),
-                              locationMr: locationController.text.trim().isEmpty ? 'Ward 12' : locationController.text.trim(),
-                              area: areaController.text.trim().isEmpty ? 'Ward 12' : areaController.text.trim(),
-                              eventDate: DateTime.tryParse(dateStr) ?? DateTime.now(),
-                              eventTime: timeStr,
-                              type: selectedType,
-                              status: item?.status ?? 'Planned',
-                              createdAt: item?.createdAt ?? DateTime.now(),
-                            );
-
-                            final repo = ref.read(eventsRepoProvider);
-                            if (item == null) {
-                              await repo.createEvent(newEvt);
-                            } else {
-                              await repo.updateEvent(newEvt);
-                            }
-                            if (ctx.mounted) Navigator.pop(ctx);
-                            _fetchEvents();
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0284C7),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-                          ),
-                          child: Text(item == null ? 'Schedule Event' : 'Save Changes', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                        ),
-                      ],
                     ),
                   ],
                 ),
-              ),
+                const SizedBox(height: 16),
+
+                // Time & Location
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Time', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                          const SizedBox(height: 6),
+                          InkWell(
+                            onTap: () async {
+                              final picked = await showTimePicker(
+                                context: context,
+                                initialTime: const TimeOfDay(hour: 10, minute: 0),
+                              );
+                              if (picked != null) {
+                                setModalState(() => timeStr = picked.format(context));
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF8FAFC),
+                                border: Border.all(color: AppColors.slate200),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(timeStr, style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A))),
+                                  const Icon(Icons.access_time, size: 16, color: Color(0xFF64748B)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Location *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: locationController,
+                            decoration: desktopInputDecoration(hintText: 'e.g. Community Center Hall'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Description
+                const Text('Description *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: descController,
+                  maxLines: 3,
+                  decoration: desktopInputDecoration(hintText: 'Event agenda and details...'),
+                ),
+              ],
             ),
           );
         },

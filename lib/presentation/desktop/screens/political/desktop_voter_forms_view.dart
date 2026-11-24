@@ -1,3 +1,5 @@
+import '../../../../core/theme/app_colors.dart';
+import '../../common/desktop_modal_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -61,30 +63,45 @@ class _DesktopVoterFormsViewState extends ConsumerState<DesktopVoterFormsView> {
       barrierColor: Colors.black.withValues(alpha: 0.45),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) {
-          return Dialog(
-            backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            child: Container(
-              width: 540,
-              padding: const EdgeInsets.all(28),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          item == null ? 'Log New Application' : 'Edit Application',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                        ),
-                        IconButton(icon: const Icon(Icons.close, size: 20, color: Color(0xFF64748B)), onPressed: () => Navigator.pop(ctx)),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
+          return DesktopModalDialog(
+            title: item == null ? 'New Voter Registration Form' : 'Edit Form Details',
+            subtitle: 'Election Commission Forms 6, 7, 8 tracking and submission',
+            icon: Icons.description_rounded,
+            width: 600,
+            onClose: () => Navigator.pop(ctx),
+            actions: [
+              DesktopModalDialog.cancelButton(ctx),
+              const SizedBox(width: 12),
+              DesktopModalDialog.primaryButton(
+                text: item == null ? 'Save Form' : 'Save Changes',
+                onPressed: () async {
+                            if (nameController.text.trim().isEmpty) return;
+                            final newApp = VoterApplicationModel(
+                              id: item?.id ?? 'app-${DateTime.now().millisecondsSinceEpoch}',
+                              applicantName: nameController.text.trim(),
+                              applicantMobile: mobileController.text.trim().isNotEmpty ? mobileController.text.trim() : null,
+                              formType: formType,
+                              status: status,
+                              notes: notesController.text.trim(),
+                              createdAt: item?.createdAt ?? DateTime.now(),
+                            );
 
-                    // Applicant Name
+                            final repo = ref.read(voterApplicationsRepoProvider);
+                            if (item == null) {
+                              await repo.addApplication(newApp);
+                            } else {
+                              await repo.updateApplication(newApp);
+                            }
+                            if (ctx.mounted) Navigator.pop(ctx);
+                            _fetchApplications();
+                          },
+              ),
+            ],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Applicant Name
                     const Text('Applicant Name *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
                     const SizedBox(height: 6),
                     TextField(
@@ -92,7 +109,11 @@ class _DesktopVoterFormsViewState extends ConsumerState<DesktopVoterFormsView> {
                       decoration: InputDecoration(
                         hintText: 'e.g. Sagar R. Shinde...',
                         hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  filled: true,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       ),
                     ),
@@ -113,7 +134,11 @@ class _DesktopVoterFormsViewState extends ConsumerState<DesktopVoterFormsView> {
                                 decoration: InputDecoration(
                                   hintText: '98XXXXXXXX',
                                   hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  filled: true,
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                                 ),
                               ),
@@ -139,7 +164,11 @@ class _DesktopVoterFormsViewState extends ConsumerState<DesktopVoterFormsView> {
                                   if (val != null) setModalState(() => formType = val);
                                 },
                                 decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  filled: true,
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                                 ),
                               ),
@@ -165,7 +194,11 @@ class _DesktopVoterFormsViewState extends ConsumerState<DesktopVoterFormsView> {
                         if (val != null) setModalState(() => status = val);
                       },
                       decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  filled: true,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       ),
                     ),
@@ -180,66 +213,20 @@ class _DesktopVoterFormsViewState extends ConsumerState<DesktopVoterFormsView> {
                       decoration: InputDecoration(
                         hintText: 'ECI application reference no. or notes...',
                         hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  filled: true,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       ),
                     ),
-                    const SizedBox(height: 24),
-
-                    // Buttons
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        OutlinedButton(
-                          onPressed: () => Navigator.pop(ctx),
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Color(0xFFCBD5E1)),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                          ),
-                          child: const Text('Cancel', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w600)),
-                        ),
-                        const SizedBox(width: 12),
-                        ElevatedButton(
-                          onPressed: () async {
-                            if (nameController.text.trim().isEmpty) return;
-                            final newApp = VoterApplicationModel(
-                              id: item?.id ?? 'app-${DateTime.now().millisecondsSinceEpoch}',
-                              applicantName: nameController.text.trim(),
-                              applicantMobile: mobileController.text.trim().isNotEmpty ? mobileController.text.trim() : null,
-                              formType: formType,
-                              status: status,
-                              notes: notesController.text.trim(),
-                              createdAt: item?.createdAt ?? DateTime.now(),
-                            );
-
-                            final repo = ref.read(voterApplicationsRepoProvider);
-                            if (item == null) {
-                              await repo.addApplication(newApp);
-                            } else {
-                              await repo.updateApplication(newApp);
-                            }
-                            if (ctx.mounted) Navigator.pop(ctx);
-                            _fetchApplications();
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0284C7),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-                          ),
-                          child: Text(item == null ? 'Submit Application' : 'Save Changes', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+                                      ],
             ),
           );
         },
       ),
-    );
-  }
+    );  }
 
   void _showDeleteConfirm(VoterApplicationModel item) {
     showDialog(

@@ -295,12 +295,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                IconButton(
-                  icon: const Icon(Icons.help_outline_rounded, color: Color(0xFF64748B), size: 20),
-                  tooltip: 'Help Guide',
-                  visualDensity: VisualDensity.compact,
-                  onPressed: _showHelpGuide,
-                ),
+
                 AppPdfButton.icon(
                   tooltip: 'Download PDF Report',
                   onPressed: _exportPdfReport,

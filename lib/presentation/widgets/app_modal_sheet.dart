@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// Standardized fixed header for all modal bottom sheets and popups across the app.
@@ -23,23 +25,25 @@ class AppModalHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bgColor = iconBgColor ?? iconColor.withValues(alpha: 0.1);
+    final isDesktop = kIsWeb || (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) || (MediaQuery.maybeOf(context)?.size.width ?? 0) >= 768;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Centered Drag Handle
-        Center(
-          child: Container(
-            width: 44,
-            height: 5,
-            margin: const EdgeInsets.only(top: 10, bottom: 8),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(3),
+        // Centered Drag Handle (Mobile only)
+        if (!isDesktop)
+          Center(
+            child: Container(
+              width: 44,
+              height: 5,
+              margin: const EdgeInsets.only(top: 10, bottom: 8),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(3),
+              ),
             ),
           ),
-        ),
 
         // Header Row (Icon, Title, Subtitle, Close Button)
         Padding(

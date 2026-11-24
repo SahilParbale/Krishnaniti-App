@@ -1,3 +1,5 @@
+import '../../../../core/theme/app_colors.dart';
+import '../../common/desktop_modal_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -69,30 +71,48 @@ class _DesktopGalleryViewState extends ConsumerState<DesktopGalleryView> {
       barrierColor: Colors.black.withValues(alpha: 0.45),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) {
-          return Dialog(
-            backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            child: Container(
-              width: 580,
-              padding: const EdgeInsets.all(28),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          item == null ? 'Add Photo' : 'Edit Photo Details',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                        ),
-                        IconButton(icon: const Icon(Icons.close, size: 20, color: Color(0xFF64748B)), onPressed: () => Navigator.pop(ctx)),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
+          return DesktopModalDialog(
+            title: item == null ? 'Add Photo' : 'Edit Photo Details',
+            subtitle: 'Upload work photos and public event imagery',
+            icon: Icons.photo_library_rounded,
+            width: 600,
+            onClose: () => Navigator.pop(ctx),
+            actions: [
+              DesktopModalDialog.cancelButton(ctx),
+              const SizedBox(width: 12),
+              DesktopModalDialog.primaryButton(
+                text: item == null ? 'Add Photo' : 'Save Changes',
+                onPressed: () async {
+                            if (titleController.text.trim().isEmpty) return;
+                            final newPhoto = GalleryItemModel(
+                              id: item?.id ?? 'gal-${DateTime.now().millisecondsSinceEpoch}',
+                              title: titleController.text.trim(),
+                              titleMr: titleController.text.trim(),
+                              description: descController.text.trim(),
+                              descriptionMr: descController.text.trim(),
+                              category: selectedCat,
+                              imageUrl: imageController.text.trim(),
+                              date: DateTime.tryParse(dateStr) ?? DateTime.now(),
+                              location: 'Ward 12',
+                              createdAt: item?.createdAt ?? DateTime.now(),
+                            );
 
-                    // Title
+                            final repo = ref.read(galleryRepoProvider);
+                            if (item == null) {
+                              await repo.addGalleryItem(newPhoto);
+                            } else {
+                              await repo.updateGalleryItem(newPhoto);
+                            }
+                            if (ctx.mounted) Navigator.pop(ctx);
+                            _fetchGallery();
+                          },
+              ),
+            ],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Title
                     const Text('Title *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
                     const SizedBox(height: 6),
                     TextField(
@@ -100,7 +120,11 @@ class _DesktopGalleryViewState extends ConsumerState<DesktopGalleryView> {
                       decoration: InputDecoration(
                         hintText: 'e.g. Ward 12 Community Center Inauguration...',
                         hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  filled: true,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       ),
                     ),
@@ -124,7 +148,11 @@ class _DesktopGalleryViewState extends ConsumerState<DesktopGalleryView> {
                                   if (val != null) setModalState(() => selectedCat = val);
                                 },
                                 decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  filled: true,
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                                 ),
                               ),
@@ -168,7 +196,11 @@ class _DesktopGalleryViewState extends ConsumerState<DesktopGalleryView> {
                       decoration: InputDecoration(
                         hintText: 'Brief description of the photo...',
                         hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  filled: true,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       ),
                     ),
@@ -180,69 +212,20 @@ class _DesktopGalleryViewState extends ConsumerState<DesktopGalleryView> {
                     TextField(
                       controller: imageController,
                       decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  filled: true,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       ),
                     ),
-                    const SizedBox(height: 24),
-
-                    // Buttons
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        OutlinedButton(
-                          onPressed: () => Navigator.pop(ctx),
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Color(0xFFCBD5E1)),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                          ),
-                          child: const Text('Cancel', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w600)),
-                        ),
-                        const SizedBox(width: 12),
-                        ElevatedButton(
-                          onPressed: () async {
-                            if (titleController.text.trim().isEmpty) return;
-                            final newPhoto = GalleryItemModel(
-                              id: item?.id ?? 'gal-${DateTime.now().millisecondsSinceEpoch}',
-                              title: titleController.text.trim(),
-                              titleMr: titleController.text.trim(),
-                              description: descController.text.trim(),
-                              descriptionMr: descController.text.trim(),
-                              category: selectedCat,
-                              imageUrl: imageController.text.trim(),
-                              date: DateTime.tryParse(dateStr) ?? DateTime.now(),
-                              location: 'Ward 12',
-                              createdAt: item?.createdAt ?? DateTime.now(),
-                            );
-
-                            final repo = ref.read(galleryRepoProvider);
-                            if (item == null) {
-                              await repo.addGalleryItem(newPhoto);
-                            } else {
-                              await repo.updateGalleryItem(newPhoto);
-                            }
-                            if (ctx.mounted) Navigator.pop(ctx);
-                            _fetchGallery();
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0284C7),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-                          ),
-                          child: Text(item == null ? 'Add Photo' : 'Save Changes', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+                                      ],
             ),
           );
         },
       ),
-    );
-  }
+    );  }
 
   void _showDeleteConfirm(GalleryItemModel item) {
     showDialog(

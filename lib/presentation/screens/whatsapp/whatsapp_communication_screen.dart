@@ -709,12 +709,7 @@ class _WhatsAppCommunicationScreenState
                   },
                 ),
                 const SizedBox(width: 6),
-                IconButton(
-                  tooltip: 'Help Guide',
-                  icon: const Icon(Icons.help_outline_rounded, color: Color(0xFF64748B), size: 20),
-                  visualDensity: VisualDensity.compact,
-                  onPressed: _showHelpTutorialDialog,
-                ),
+
                 const SizedBox(width: 4),
                 AppPdfButton.outlined(
                   label: 'Reports',

@@ -464,12 +464,7 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
                   ),
                 ),
                 const SizedBox(width: 4),
-                IconButton(
-                  onPressed: _showTutorialDialog,
-                  icon: const Icon(Icons.help_outline_rounded, color: Color(0xFF64748B), size: 20),
-                  tooltip: 'Help Guide',
-                  visualDensity: VisualDensity.compact,
-                ),
+
               ],
             ),
           ),
@@ -692,11 +687,7 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
                     onPressed: _exportPdfReport,
                   ),
                   const SizedBox(width: 8),
-                  IconButton(
-                    onPressed: _loadHistory,
-                    icon: const Icon(Icons.refresh, size: 20),
-                    tooltip: 'Refresh',
-                  ),
+
                 ],
               ),
             ],
@@ -717,11 +708,7 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
                         style: TextStyle(color: Colors.grey[600], fontSize: 13),
                       ),
                       const SizedBox(height: 12),
-                      OutlinedButton.icon(
-                        onPressed: _loadHistory,
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Refresh'),
-                      ),
+
                     ],
                   ),
                 )

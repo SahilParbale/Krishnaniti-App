@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../common/desktop_modal_dialog.dart';
 import '../../../../data/models/voter_model.dart';
 import '../../../../data/models/sms_campaign_model.dart';
 import '../../../../data/repositories/sms_repository.dart';
@@ -121,57 +122,18 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.45),
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            const Icon(Icons.sms_rounded, color: AppColors.brandPrimary),
-            const SizedBox(width: 10),
-            const Text('Confirm SMS Campaign', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-          ],
-        ),
-        content: SizedBox(
-          width: 480,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Are you sure you want to dispatch this SMS campaign to ${_selectedVoterIds.length} voters?',
-                style: const TextStyle(fontSize: 14, color: AppColors.slate700),
-              ),
-              const SizedBox(height: 14),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.slate50,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.slate200),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Message Preview:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.slate500)),
-                    const SizedBox(height: 6),
-                    Text(_messageController.text, style: const TextStyle(fontSize: 13, color: AppColors.slate800)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+      builder: (ctx) => DesktopModalDialog(
+        title: 'Confirm SMS Campaign',
+        subtitle: 'Review and confirm campaign details before dispatching',
+        icon: Icons.sms_rounded,
+        width: 520,
+        onClose: () => Navigator.pop(ctx),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: AppColors.slate600)),
-          ),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.brandPrimary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
+          DesktopModalDialog.cancelButton(ctx),
+          const SizedBox(width: 12),
+          DesktopModalDialog.primaryButton(
+            text: 'Send Campaign',
+            icon: Icons.send_rounded,
             onPressed: () async {
               Navigator.pop(ctx);
               setState(() => _isSending = true);
@@ -201,10 +163,36 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
                 if (mounted) setState(() => _isSending = false);
               }
             },
-            icon: const Icon(Icons.send_rounded, size: 16),
-            label: const Text('Confirm & Send'),
           ),
         ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Are you sure you want to dispatch this SMS campaign to ${_selectedVoterIds.length} voters?',
+              style: const TextStyle(fontSize: 14, color: AppColors.slate700),
+            ),
+            const SizedBox(height: 14),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.slate200),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Message Preview:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.slate500)),
+                  const SizedBox(height: 6),
+                  Text(_messageController.text, style: const TextStyle(fontSize: 13, color: AppColors.slate800)),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -252,21 +240,7 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
                     ),
                   ],
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.slate200),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.help_outline_rounded, size: 16, color: AppColors.slate600),
-                      const SizedBox(width: 6),
-                      const Text('Help', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.slate700)),
-                    ],
-                  ),
-                ),
+
               ],
             ),
             const SizedBox(height: 24),
@@ -610,10 +584,7 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
                           'SMS Campaign History',
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.slate800),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.refresh_rounded, color: AppColors.brandPrimary),
-                          onPressed: _loadHistory,
-                        ),
+
                       ],
                     ),
                     const SizedBox(height: 16),

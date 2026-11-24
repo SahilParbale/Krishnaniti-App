@@ -1,3 +1,5 @@
+import '../../../../core/theme/app_colors.dart';
+import '../../common/desktop_modal_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../data/models/social_organization_model.dart';
@@ -70,30 +72,48 @@ class _DesktopNgoMandalsViewState extends ConsumerState<DesktopNgoMandalsView> {
       barrierColor: Colors.black.withValues(alpha: 0.45),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) {
-          return Dialog(
-            backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            child: Container(
-              width: 580,
-              padding: const EdgeInsets.all(28),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          item == null ? 'Add Organization' : 'Edit Organization',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                        ),
-                        IconButton(icon: const Icon(Icons.close, size: 20, color: Color(0xFF64748B)), onPressed: () => Navigator.pop(ctx)),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
+          return DesktopModalDialog(
+            title: item == null ? 'Add Organization / Mandal' : 'Edit Organization',
+            subtitle: 'Community groups, Ganeshotsav mandals, and social trusts',
+            icon: Icons.diversity_3_rounded,
+            width: 600,
+            onClose: () => Navigator.pop(ctx),
+            actions: [
+              DesktopModalDialog.cancelButton(ctx),
+              const SizedBox(width: 12),
+              DesktopModalDialog.primaryButton(
+                text: item == null ? 'Add Organization' : 'Save Changes',
+                onPressed: () async {
+                            if (nameController.text.trim().isEmpty) return;
+                            final newOrg = SocialOrganizationModel(
+                              id: item?.id ?? 'soc-${DateTime.now().millisecondsSinceEpoch}',
+                              name: nameController.text.trim(),
+                              type: type,
+                              area: areaController.text.trim(),
+                              presidentName: presNameController.text.trim(),
+                              presidentMobile: presMobileController.text.trim(),
+                              membersCount: int.tryParse(membersCountController.text.trim()) ?? 25,
+                              establishedYear: establishedController.text.trim(),
+                              supportReceived: supportController.text.trim(),
+                              createdAt: item?.createdAt ?? DateTime.now(),
+                            );
 
-                    // Organization Name
+                            final repo = ref.read(socialOrgRepoProvider);
+                            if (item == null) {
+                              await repo.addOrganization(newOrg);
+                            } else {
+                              await repo.updateOrganization(newOrg);
+                            }
+                            if (ctx.mounted) Navigator.pop(ctx);
+                            _fetchOrganizations();
+                          },
+              ),
+            ],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Organization Name
                     const Text('Organization Name *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
                     const SizedBox(height: 6),
                     TextField(
@@ -101,7 +121,11 @@ class _DesktopNgoMandalsViewState extends ConsumerState<DesktopNgoMandalsView> {
                       decoration: InputDecoration(
                         hintText: 'e.g. Navtarun Youth Club...',
                         hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  filled: true,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       ),
                     ),
@@ -129,7 +153,11 @@ class _DesktopNgoMandalsViewState extends ConsumerState<DesktopNgoMandalsView> {
                                   if (val != null) setModalState(() => type = val);
                                 },
                                 decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  filled: true,
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                                 ),
                               ),
@@ -148,7 +176,11 @@ class _DesktopNgoMandalsViewState extends ConsumerState<DesktopNgoMandalsView> {
                                 decoration: InputDecoration(
                                   hintText: 'e.g. Main Street',
                                   hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  filled: true,
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                                 ),
                               ),
@@ -173,7 +205,11 @@ class _DesktopNgoMandalsViewState extends ConsumerState<DesktopNgoMandalsView> {
                                 decoration: InputDecoration(
                                   hintText: 'Name of President...',
                                   hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  filled: true,
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                                 ),
                               ),
@@ -193,7 +229,11 @@ class _DesktopNgoMandalsViewState extends ConsumerState<DesktopNgoMandalsView> {
                                 decoration: InputDecoration(
                                   hintText: '98XXXXXXXX',
                                   hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  filled: true,
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                                 ),
                               ),
@@ -213,69 +253,20 @@ class _DesktopNgoMandalsViewState extends ConsumerState<DesktopNgoMandalsView> {
                       decoration: InputDecoration(
                         hintText: 'Assistance provided, equipment, stage setup, civic support...',
                         hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  filled: true,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       ),
                     ),
-                    const SizedBox(height: 24),
-
-                    // Buttons
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        OutlinedButton(
-                          onPressed: () => Navigator.pop(ctx),
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Color(0xFFCBD5E1)),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                          ),
-                          child: const Text('Cancel', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w600)),
-                        ),
-                        const SizedBox(width: 12),
-                        ElevatedButton(
-                          onPressed: () async {
-                            if (nameController.text.trim().isEmpty) return;
-                            final newOrg = SocialOrganizationModel(
-                              id: item?.id ?? 'soc-${DateTime.now().millisecondsSinceEpoch}',
-                              name: nameController.text.trim(),
-                              type: type,
-                              area: areaController.text.trim(),
-                              presidentName: presNameController.text.trim(),
-                              presidentMobile: presMobileController.text.trim(),
-                              membersCount: int.tryParse(membersCountController.text.trim()) ?? 25,
-                              establishedYear: establishedController.text.trim(),
-                              supportReceived: supportController.text.trim(),
-                              createdAt: item?.createdAt ?? DateTime.now(),
-                            );
-
-                            final repo = ref.read(socialOrgRepoProvider);
-                            if (item == null) {
-                              await repo.addOrganization(newOrg);
-                            } else {
-                              await repo.updateOrganization(newOrg);
-                            }
-                            if (ctx.mounted) Navigator.pop(ctx);
-                            _fetchOrganizations();
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0284C7),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-                          ),
-                          child: Text(item == null ? 'Register Organization' : 'Save Changes', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+                                      ],
             ),
           );
         },
       ),
-    );
-  }
+    );  }
 
   void _showDeleteConfirm(SocialOrganizationModel item) {
     showDialog(

@@ -1,3 +1,5 @@
+import '../../../../core/theme/app_colors.dart';
+import '../../common/desktop_modal_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../data/models/opposition_model.dart';
@@ -74,30 +76,50 @@ class _DesktopOppositionViewState extends ConsumerState<DesktopOppositionView> {
       barrierColor: Colors.black.withValues(alpha: 0.45),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) {
-          return Dialog(
-            backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            child: Container(
-              width: 580,
-              padding: const EdgeInsets.all(28),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          item == null ? 'Add Opposition Profile' : 'Edit Profile',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                        ),
-                        IconButton(icon: const Icon(Icons.close, size: 20, color: Color(0xFF64748B)), onPressed: () => Navigator.pop(ctx)),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
+          return DesktopModalDialog(
+            title: item == null ? 'Add Opposition Leader' : 'Edit Leader Details',
+            subtitle: 'Track opposition profiles, political party, and local influence',
+            icon: Icons.shield_outlined,
+            width: 600,
+            onClose: () => Navigator.pop(ctx),
+            actions: [
+              DesktopModalDialog.cancelButton(ctx),
+              const SizedBox(width: 12),
+              DesktopModalDialog.primaryButton(
+                text: item == null ? 'Add Leader' : 'Save Changes',
+                onPressed: () async {
+                            if (nameController.text.trim().isEmpty) return;
+                            final strongholds = strongholdsController.text.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
 
-                    // Name
+                            final newMember = OppositionMemberModel(
+                              id: item?.id ?? 'opp-${DateTime.now().millisecondsSinceEpoch}',
+                              name: nameController.text.trim(),
+                              party: partyController.text.trim(),
+                              mobile: mobileController.text.trim().isNotEmpty ? mobileController.text.trim() : null,
+                              role: roleController.text.trim(),
+                              area: areaController.text.trim(),
+                              strongholds: strongholds,
+                              notes: notesController.text.trim(),
+                              isCandidate: isCandidate,
+                              createdAt: item?.createdAt ?? DateTime.now(),
+                            );
+
+                            final repo = ref.read(oppositionRepoProvider);
+                            if (item == null) {
+                              await repo.addMember(newMember);
+                            } else {
+                              await repo.updateMember(newMember);
+                            }
+                            if (ctx.mounted) Navigator.pop(ctx);
+                            _fetchMembers();
+                          },
+              ),
+            ],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Name
                     const Text('Leader Name *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
                     const SizedBox(height: 6),
                     TextField(
@@ -105,7 +127,11 @@ class _DesktopOppositionViewState extends ConsumerState<DesktopOppositionView> {
                       decoration: InputDecoration(
                         hintText: 'e.g. Sunil Y. Thorat...',
                         hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  filled: true,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       ),
                     ),
@@ -125,7 +151,11 @@ class _DesktopOppositionViewState extends ConsumerState<DesktopOppositionView> {
                                 decoration: InputDecoration(
                                   hintText: 'e.g. Opposition Party Name',
                                   hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  filled: true,
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                                 ),
                               ),
@@ -144,7 +174,11 @@ class _DesktopOppositionViewState extends ConsumerState<DesktopOppositionView> {
                                 decoration: InputDecoration(
                                   hintText: '98XXXXXXXX',
                                   hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  filled: true,
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                                 ),
                               ),
@@ -182,7 +216,11 @@ class _DesktopOppositionViewState extends ConsumerState<DesktopOppositionView> {
                                 decoration: InputDecoration(
                                   hintText: 'e.g. Main Street',
                                   hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  filled: true,
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                                 ),
                               ),
@@ -201,7 +239,11 @@ class _DesktopOppositionViewState extends ConsumerState<DesktopOppositionView> {
                                 decoration: InputDecoration(
                                   hintText: 'e.g. Booth No. 24, 25',
                                   hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  filled: true,
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                                 ),
                               ),
@@ -221,71 +263,20 @@ class _DesktopOppositionViewState extends ConsumerState<DesktopOppositionView> {
                       decoration: InputDecoration(
                         hintText: 'Political background, local strengths and weaknesses...',
                         hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  filled: true,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       ),
                     ),
-                    const SizedBox(height: 24),
-
-                    // Buttons
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        OutlinedButton(
-                          onPressed: () => Navigator.pop(ctx),
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Color(0xFFCBD5E1)),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                          ),
-                          child: const Text('Cancel', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w600)),
-                        ),
-                        const SizedBox(width: 12),
-                        ElevatedButton(
-                          onPressed: () async {
-                            if (nameController.text.trim().isEmpty) return;
-                            final strongholds = strongholdsController.text.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
-
-                            final newMember = OppositionMemberModel(
-                              id: item?.id ?? 'opp-${DateTime.now().millisecondsSinceEpoch}',
-                              name: nameController.text.trim(),
-                              party: partyController.text.trim(),
-                              mobile: mobileController.text.trim().isNotEmpty ? mobileController.text.trim() : null,
-                              role: roleController.text.trim(),
-                              area: areaController.text.trim(),
-                              strongholds: strongholds,
-                              notes: notesController.text.trim(),
-                              isCandidate: isCandidate,
-                              createdAt: item?.createdAt ?? DateTime.now(),
-                            );
-
-                            final repo = ref.read(oppositionRepoProvider);
-                            if (item == null) {
-                              await repo.addMember(newMember);
-                            } else {
-                              await repo.updateMember(newMember);
-                            }
-                            if (ctx.mounted) Navigator.pop(ctx);
-                            _fetchMembers();
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFDC2626),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-                          ),
-                          child: Text(item == null ? 'Add Profile' : 'Save Changes', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+                                      ],
             ),
           );
         },
       ),
-    );
-  }
+    );  }
 
   void _showDeleteConfirm(OppositionMemberModel item) {
     showDialog(

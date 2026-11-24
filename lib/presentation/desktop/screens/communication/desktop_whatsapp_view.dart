@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../common/desktop_modal_dialog.dart';
 import '../../../../data/models/voter_model.dart';
 import '../../../../data/models/whatsapp_broadcast_model.dart';
 import '../../../../data/repositories/whatsapp_repository.dart';
@@ -118,57 +119,18 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.45),
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            const Icon(Icons.chat_rounded, color: AppColors.brand600),
-            const SizedBox(width: 10),
-            const Text('Confirm WhatsApp Broadcast', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-          ],
-        ),
-        content: SizedBox(
-          width: 480,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Are you sure you want to broadcast this WhatsApp message to ${_selectedVoterIds.length} recipients?',
-                style: const TextStyle(fontSize: 14, color: AppColors.slate700),
-              ),
-              const SizedBox(height: 14),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.brand50,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.brand200),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Message Preview:', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.brand700)),
-                    const SizedBox(height: 6),
-                    Text(_messageController.text, style: const TextStyle(fontSize: 13, color: AppColors.slate800)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+      builder: (ctx) => DesktopModalDialog(
+        title: 'Confirm WhatsApp Broadcast',
+        subtitle: 'Review and confirm broadcast details before dispatching',
+        icon: Icons.chat_rounded,
+        width: 520,
+        onClose: () => Navigator.pop(ctx),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: AppColors.slate600)),
-          ),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.brand600,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
+          DesktopModalDialog.cancelButton(ctx),
+          const SizedBox(width: 12),
+          DesktopModalDialog.primaryButton(
+            text: 'Send Broadcast',
+            icon: Icons.send_rounded,
             onPressed: () async {
               Navigator.pop(ctx);
               setState(() => _isSending = true);
@@ -198,10 +160,36 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
                 if (mounted) setState(() => _isSending = false);
               }
             },
-            icon: const Icon(Icons.send_rounded, size: 16),
-            label: const Text('Confirm & Broadcast'),
           ),
         ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Are you sure you want to broadcast this WhatsApp message to ${_selectedVoterIds.length} recipients?',
+              style: const TextStyle(fontSize: 14, color: AppColors.slate700),
+            ),
+            const SizedBox(height: 14),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.brand50,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.brand200),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Message Preview:', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.brand700)),
+                  const SizedBox(height: 6),
+                  Text(_messageController.text, style: const TextStyle(fontSize: 13, color: AppColors.slate800)),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

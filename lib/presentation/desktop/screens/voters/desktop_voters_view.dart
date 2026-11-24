@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../data/models/voter_model.dart';
 import '../../../../data/repositories/voters_repository.dart';
+import '../../common/desktop_modal_dialog.dart';
 
 class DesktopVotersView extends ConsumerStatefulWidget {
   const DesktopVotersView({super.key});
@@ -94,277 +96,205 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
       barrierColor: Colors.black.withValues(alpha: 0.45),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) {
-          return Dialog(
-            backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            child: Container(
-              width: 600,
-              padding: const EdgeInsets.all(28),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          return DesktopModalDialog(
+            title: 'Add Voter',
+            subtitle: 'Register a new citizen in the ward voter registry',
+            icon: Icons.how_to_reg_rounded,
+            width: 600,
+            onClose: () => Navigator.pop(ctx),
+            actions: [
+              DesktopModalDialog.cancelButton(ctx),
+              const SizedBox(width: 12),
+              DesktopModalDialog.primaryButton(
+                text: 'Save Voter',
+                onPressed: () async {
+                  if (epicController.text.trim().isEmpty) return;
+                  final newVoter = VoterModel(
+                    id: 'vot-${DateTime.now().millisecondsSinceEpoch}',
+                    nameMarathi: nameMrController.text.trim().isNotEmpty ? nameMrController.text.trim() : nameEnController.text.trim(),
+                    nameEnglish: nameEnController.text.trim().isNotEmpty ? nameEnController.text.trim() : nameMrController.text.trim(),
+                    epicNo: epicController.text.trim(),
+                    booth: boothController.text.trim(),
+                    age: int.tryParse(ageController.text.trim()) ?? 0,
+                    gender: gender,
+                    mobile: mobileController.text.trim().isNotEmpty ? mobileController.text.trim() : null,
+                    houseNo: houseNoController.text.trim().isNotEmpty ? houseNoController.text.trim() : null,
+                    address: addressController.text.trim(),
+                    favour: favour,
+                  );
+
+                  final repo = ref.read(votersRepoProvider);
+                  await repo.addVoter(newVoter);
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  _fetchVoters();
+                },
+              ),
+            ],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Names
+                Row(
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Add Voter', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                        IconButton(icon: const Icon(Icons.close, size: 20, color: Color(0xFF64748B)), onPressed: () => Navigator.pop(ctx)),
-                      ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Voter Name *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: nameMrController,
+                            decoration: desktopInputDecoration(hintText: 'e.g. Ramesh P. Kadam'),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 20),
-
-                    // Marathi Name & English Name
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Voter Name *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: nameMrController,
-                                decoration: InputDecoration(
-                                  hintText: 'e.g. Ramesh P. Kadam',
-                                  hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                ),
-                              ),
-                            ],
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Name (English)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: nameEnController,
+                            decoration: desktopInputDecoration(hintText: 'e.g. Ramesh Pandurang Kadam'),
                           ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Name (English)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: nameEnController,
-                                decoration: InputDecoration(
-                                  hintText: 'e.g. Ramesh Pandurang Kadam',
-                                  hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // EPIC & Booth
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('EPIC No. *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: epicController,
-                                decoration: InputDecoration(
-                                  hintText: 'ABC1234567',
-                                  hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Booth No', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: boothController,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Age, Gender, Mobile
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Age', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: ageController,
-                                keyboardType: TextInputType.number,
-                                decoration: InputDecoration(
-                                  hintText: '35',
-                                  hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Gender', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                              const SizedBox(height: 6),
-                              DropdownButtonFormField<String>(
-                                value: gender,
-                                items: const [
-                                  DropdownMenuItem(value: 'M', child: Text('Male')),
-                                  DropdownMenuItem(value: 'F', child: Text('Female')),
-                                  DropdownMenuItem(value: 'O', child: Text('Other')),
-                                ],
-                                onChanged: (val) {
-                                  if (val != null) setModalState(() => gender = val);
-                                },
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Mobile', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: mobileController,
-                                keyboardType: TextInputType.phone,
-                                decoration: InputDecoration(
-                                  hintText: '98XXXXXXXX',
-                                  hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // House No & Address
-                    Row(
-                      children: [
-                        Expanded(
-                          flex: 1,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('House No', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: houseNoController,
-                                decoration: InputDecoration(
-                                  hintText: 'A-102',
-                                  hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          flex: 2,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Address', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: addressController,
-                                decoration: InputDecoration(
-                                  hintText: 'Lane No. 3, Shaniwar Peth, Pune',
-                                  hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Buttons
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        OutlinedButton(
-                          onPressed: () => Navigator.pop(ctx),
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Color(0xFFCBD5E1)),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                          ),
-                          child: const Text('Cancel', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w600)),
-                        ),
-                        const SizedBox(width: 12),
-                        ElevatedButton(
-                          onPressed: () async {
-                            if (epicController.text.trim().isEmpty) return;
-                            final newVoter = VoterModel(
-                              id: 'vot-${DateTime.now().millisecondsSinceEpoch}',
-                              nameMarathi: nameMrController.text.trim().isNotEmpty ? nameMrController.text.trim() : nameEnController.text.trim(),
-                              nameEnglish: nameEnController.text.trim().isNotEmpty ? nameEnController.text.trim() : nameMrController.text.trim(),
-                              epicNo: epicController.text.trim(),
-                              booth: boothController.text.trim(),
-                              age: int.tryParse(ageController.text.trim()) ?? 0,
-                              gender: gender,
-                              mobile: mobileController.text.trim().isNotEmpty ? mobileController.text.trim() : null,
-                              houseNo: houseNoController.text.trim().isNotEmpty ? houseNoController.text.trim() : null,
-                              address: addressController.text.trim(),
-                              favour: favour,
-                            );
-
-                            final repo = ref.read(votersRepoProvider);
-                            await repo.addVoter(newVoter);
-                            if (ctx.mounted) Navigator.pop(ctx);
-                            _fetchVoters();
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0284C7),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-                          ),
-                          child: const Text('Add Voter', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 ),
-              ),
+                const SizedBox(height: 16),
+
+                // EPIC & Booth
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('EPIC No. *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: epicController,
+                            decoration: desktopInputDecoration(hintText: 'ABC1234567'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Booth No', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: boothController,
+                            decoration: desktopInputDecoration(hintText: 'e.g. 104'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Age, Gender, Mobile
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Age', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: ageController,
+                            keyboardType: TextInputType.number,
+                            decoration: desktopInputDecoration(hintText: '35'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Gender', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                          const SizedBox(height: 6),
+                          DropdownButtonFormField<String>(
+                            value: gender,
+                            items: const [
+                              DropdownMenuItem(value: 'M', child: Text('Male')),
+                              DropdownMenuItem(value: 'F', child: Text('Female')),
+                              DropdownMenuItem(value: 'O', child: Text('Other')),
+                            ],
+                            onChanged: (val) {
+                              if (val != null) setModalState(() => gender = val);
+                            },
+                            decoration: desktopInputDecoration(hintText: 'Gender'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Mobile', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: mobileController,
+                            keyboardType: TextInputType.phone,
+                            decoration: desktopInputDecoration(hintText: '98XXXXXXXX'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // House No & Address
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 1,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('House No', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: houseNoController,
+                            decoration: desktopInputDecoration(hintText: 'A-102'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      flex: 2,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Address', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: addressController,
+                            decoration: desktopInputDecoration(hintText: 'Lane No. 3, Shaniwar Peth, Pune'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           );
         },

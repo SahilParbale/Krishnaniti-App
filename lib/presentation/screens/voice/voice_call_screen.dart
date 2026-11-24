@@ -524,11 +524,7 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
             const SizedBox(height: 12),
             Text('No voice call history found', style: TextStyle(color: Colors.grey[600])),
             const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: _loadHistory,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Refresh'),
-            ),
+
           ],
         ),
       );

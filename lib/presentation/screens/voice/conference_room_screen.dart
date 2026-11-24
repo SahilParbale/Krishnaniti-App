@@ -1279,11 +1279,7 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-            tooltip: 'Refresh',
-            onPressed: _loadMeetings,
-          ),
+
         ],
       ),
       body: Column(

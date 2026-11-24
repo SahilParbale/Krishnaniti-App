@@ -591,14 +591,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                             ],
                           ),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.help_outline_rounded, color: Color(0xFF64748B), size: 20),
-                          tooltip: 'Help / Tour',
-                          visualDensity: VisualDensity.compact,
-                          padding: const EdgeInsets.all(4),
-                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                          onPressed: _showDashboardHelp,
-                        ),
+
                         const SizedBox(width: 4),
                         FittedBox(
                           fit: BoxFit.scaleDown,

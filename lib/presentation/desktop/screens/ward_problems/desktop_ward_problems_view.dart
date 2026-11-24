@@ -228,21 +228,7 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
             ),
             const SizedBox(width: 12),
 
-            OutlinedButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.help_outline_rounded, size: 18, color: Color(0xFF0284C7)),
-              label: Text(
-                'Help',
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0369A1)),
-              ),
-              style: OutlinedButton.styleFrom(
-                backgroundColor: Colors.white,
-                side: const BorderSide(color: Color(0xFFBAE6FD)),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              ),
-            ),
-            const SizedBox(width: 10),
+
 
             ElevatedButton.icon(
               onPressed: _openNewProblemModal,

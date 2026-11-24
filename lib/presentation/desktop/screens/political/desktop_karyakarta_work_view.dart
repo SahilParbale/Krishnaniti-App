@@ -1,3 +1,5 @@
+import '../../../../core/theme/app_colors.dart';
+import '../../common/desktop_modal_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../data/models/karyakarta_work_model.dart';
@@ -58,36 +60,48 @@ class _DesktopKaryakartaWorkViewState extends ConsumerState<DesktopKaryakartaWor
       barrierColor: Colors.black.withValues(alpha: 0.45),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) {
-          return Dialog(
-            backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            child: Container(
-              width: 520,
-              padding: const EdgeInsets.all(26),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Assign Task: ${staff.displayName}',
-                        style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                      ),
-                      IconButton(icon: const Icon(Icons.close, size: 20, color: Color(0xFF64748B)), onPressed: () => Navigator.pop(ctx)),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-
-                  const Text('Task Title *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+          return DesktopModalDialog(
+            title: 'Assign Task: ${staff.displayName}',
+            subtitle: 'Assign field responsibilities and deadlines to karyakartas',
+            icon: Icons.assignment_ind_rounded,
+            width: 540,
+            onClose: () => Navigator.pop(ctx),
+            actions: [
+              DesktopModalDialog.cancelButton(ctx),
+              const SizedBox(width: 12),
+              DesktopModalDialog.primaryButton(
+                text: 'Assign Task',
+                onPressed: () async {
+                  if (titleController.text.trim().isEmpty) return;
+                  final repo = ref.read(karyakartaWorkRepoProvider);
+                  await repo.assignTask(
+                    staffId: staff.id,
+                    title: titleController.text.trim(),
+                    description: descController.text.trim(),
+                    priority: priority,
+                    address: addressController.text.trim(),
+                  );
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  _fetchWorkloads();
+                },
+              ),
+            ],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Task Title *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
                   const SizedBox(height: 6),
                   TextField(
                     controller: titleController,
                     decoration: InputDecoration(
                       hintText: 'e.g. Distribute ward scheme pamphlets...',
                       hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  filled: true,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     ),
                   ),
@@ -112,7 +126,11 @@ class _DesktopKaryakartaWorkViewState extends ConsumerState<DesktopKaryakartaWor
                                 if (val != null) setModalState(() => priority = val);
                               },
                               decoration: InputDecoration(
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  filled: true,
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                               ),
                             ),
@@ -129,7 +147,11 @@ class _DesktopKaryakartaWorkViewState extends ConsumerState<DesktopKaryakartaWor
                             TextField(
                               controller: addressController,
                               decoration: InputDecoration(
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  filled: true,
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                               ),
                             ),
@@ -148,39 +170,16 @@ class _DesktopKaryakartaWorkViewState extends ConsumerState<DesktopKaryakartaWor
                     decoration: InputDecoration(
                       hintText: 'Detailed task description and instructions...',
                       hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  filled: true,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     ),
                   ),
-                  const SizedBox(height: 22),
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      OutlinedButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-                      const SizedBox(width: 12),
-                      ElevatedButton(
-                        onPressed: () async {
-                          if (titleController.text.trim().isEmpty) return;
-                          final repo = ref.read(karyakartaWorkRepoProvider);
-                          await repo.assignTask(
-                            staffId: staff.id,
-                            title: titleController.text.trim(),
-                            description: descController.text.trim(),
-                            priority: priority,
-                            address: addressController.text.trim(),
-                          );
-                          if (ctx.mounted) Navigator.pop(ctx);
-                          _fetchWorkloads();
-                        },
-                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0284C7)),
-                        child: const Text('Assign Task', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                      ),
-                    ],
-                  ),
                 ],
               ),
-            ),
           );
         },
       ),

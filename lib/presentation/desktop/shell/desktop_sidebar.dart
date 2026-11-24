@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
+import '../common/desktop_modal_dialog.dart';
 import '../../providers/navigation_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../../core/services/supabase_service.dart';
@@ -662,27 +663,36 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.45),
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: const Text('Are you sure you want to sign out from the administrative desktop portal?'),
+      builder: (ctx) => DesktopModalDialog(
+        title: 'Sign Out',
+        subtitle: 'Are you sure you want to sign out from the administrative desktop portal?',
+        icon: Icons.logout_rounded,
+        iconColor: const Color(0xFFDC2626),
+        iconBgColor: const Color(0xFFFEE2E2),
+        width: 480,
+        onClose: () => Navigator.of(ctx).pop(),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
+          DesktopModalDialog.cancelButton(ctx),
+          const SizedBox(width: 12),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red.shade600,
+              backgroundColor: const Color(0xFFDC2626),
               foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              elevation: 0,
             ),
             onPressed: () async {
               Navigator.of(ctx).pop();
               await SupabaseService.instance.client.auth.signOut();
             },
-            child: const Text('Sign Out'),
+            child: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
+        child: const Text(
+          'Your active session will be closed and you will be returned to the sign-in screen.',
+          style: TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.5),
+        ),
       ),
     );
   }

@@ -98,33 +98,6 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
     ).then((_) => _fetchDashboardData());
   }
 
-  void _showHelpDialog(bool isMr) {
-    showDialog(
-      context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.45),
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            const Icon(Icons.help_outline_rounded, color: AppColors.brand600),
-            const SizedBox(width: 10),
-            Text('Dashboard Guide & Overview'),
-          ],
-        ),
-        content: const Text(
-          'This is your central administrative command portal. Track civic complaints, registered voters, ward works, and incoming letters in real-time.',
-        ),
-        actions: [
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.brand600, foregroundColor: Colors.white),
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final lang = ref.watch(desktopLanguageProvider);
@@ -297,37 +270,7 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Refresh Button (ns-btn-ghost)
-            OutlinedButton.icon(
-              onPressed: _fetchDashboardData,
-              icon: const Icon(Icons.refresh_rounded, size: 16),
-              label: const Text('Refresh'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.slate700,
-                side: const BorderSide(color: AppColors.slate200),
-                backgroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-              ),
-            ),
-            const SizedBox(width: 10),
 
-            // Help Button (ns-btn-ghost border-brand-200)
-            OutlinedButton.icon(
-              onPressed: () => _showHelpDialog(isMr),
-              icon: const Icon(Icons.help_outline_rounded, size: 18, color: AppColors.brand600),
-              label: const Text('Help'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.brand700,
-                side: const BorderSide(color: AppColors.brand200),
-                backgroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-              ),
-            ),
-            const SizedBox(width: 10),
 
             // + New Request Button (ns-btn-primary)
             ElevatedButton.icon(

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../data/models/ward_budget_model.dart';
 import '../../../../data/repositories/ward_budget_repository.dart';
+import '../../common/desktop_modal_dialog.dart';
 import '../../../screens/ward_budget/ward_budget_report_generator.dart';
 
 class DesktopWardBudgetView extends ConsumerStatefulWidget {
@@ -78,140 +80,101 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.45),
-      builder: (ctx) => Dialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Container(
-          width: 520,
-          padding: const EdgeInsets.all(28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Add New Budget Provision', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                  IconButton(icon: const Icon(Icons.close, size: 20, color: Color(0xFF64748B)), onPressed: () => Navigator.pop(ctx)),
-                ],
-              ),
-              const SizedBox(height: 20),
+      builder: (ctx) => DesktopModalDialog(
+        title: 'Add New Budget Provision',
+        subtitle: 'Sanction and track municipal budget allocations across ward sectors',
+        icon: Icons.account_balance_wallet_rounded,
+        width: 540,
+        onClose: () => Navigator.pop(ctx),
+        actions: [
+          DesktopModalDialog.cancelButton(ctx),
+          const SizedBox(width: 12),
+          DesktopModalDialog.primaryButton(
+            text: 'Save Provision',
+            onPressed: () async {
+              if (catController.text.trim().isEmpty) return;
+              final newBudget = WardBudgetModel(
+                id: 'budget-${DateTime.now().millisecondsSinceEpoch}',
+                financialYear: _year,
+                category: catController.text.trim(),
+                totalAllocation: double.tryParse(totalController.text.trim()) ?? 0,
+                utilizedAmount: double.tryParse(utilizedController.text.trim()) ?? 0,
+                area: areaController.text.trim().isEmpty ? 'Ward 12' : areaController.text.trim(),
+                createdAt: DateTime.now().toIso8601String(),
+                updatedAt: DateTime.now().toIso8601String(),
+              );
 
-              // Category
-              const Text('Category / Work Title *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-              const SizedBox(height: 6),
-              TextField(
-                controller: catController,
-                decoration: InputDecoration(
-                  hintText: 'e.g. Road maintenance, Park development',
-                  hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Total Allocation & Area
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Sanctioned Allocation (₹) *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                        const SizedBox(height: 6),
-                        TextField(
-                          controller: totalController,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            prefixText: '₹ ',
-                            hintText: '1000000',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Ward / Area', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                        const SizedBox(height: 6),
-                        TextField(
-                          controller: areaController,
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // Initial Utilized
-              const Text('Initial Utilized Amount (₹)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-              const SizedBox(height: 6),
-              TextField(
-                controller: utilizedController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  prefixText: '₹ ',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Buttons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  OutlinedButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFFCBD5E1)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                    ),
-                    child: const Text('Cancel', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w600)),
-                  ),
-                  const SizedBox(width: 12),
-                  ElevatedButton(
-                    onPressed: () async {
-                      if (catController.text.trim().isEmpty) return;
-                      final newBudget = WardBudgetModel(
-                        id: 'budget-${DateTime.now().millisecondsSinceEpoch}',
-                        financialYear: _year,
-                        category: catController.text.trim(),
-                        totalAllocation: double.tryParse(totalController.text.trim()) ?? 0,
-                        utilizedAmount: double.tryParse(utilizedController.text.trim()) ?? 0,
-                        area: areaController.text.trim().isEmpty ? 'Ward 12' : areaController.text.trim(),
-                        createdAt: DateTime.now().toIso8601String(),
-                        updatedAt: DateTime.now().toIso8601String(),
-                      );
-
-                      final repo = ref.read(wardBudgetRepoProvider);
-                      await repo.addBudget(newBudget);
-                      if (ctx.mounted) Navigator.pop(ctx);
-                      _loadBudgets();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0284C7),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-                    ),
-                    child: const Text('Add Provision', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  ),
-                ],
-              ),
-            ],
+              final repo = ref.read(wardBudgetRepoProvider);
+              await repo.addBudget(newBudget);
+              if (ctx.mounted) Navigator.pop(ctx);
+              _loadBudgets();
+            },
           ),
+        ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Category / Work Title *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+            const SizedBox(height: 6),
+            TextField(
+              controller: catController,
+              decoration: desktopInputDecoration(hintText: 'e.g. Road maintenance, Park development'),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Sanctioned Allocation (₹) *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: totalController,
+                        keyboardType: TextInputType.number,
+                        decoration: desktopInputDecoration(
+                          hintText: '1000000',
+                          prefixIcon: const Padding(
+                            padding: EdgeInsets.only(left: 14, right: 6),
+                            child: Text('₹ ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Ward / Area', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: areaController,
+                        decoration: desktopInputDecoration(hintText: 'Ward 12'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Text('Initial Utilized Amount (₹)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+            const SizedBox(height: 6),
+            TextField(
+              controller: utilizedController,
+              keyboardType: TextInputType.number,
+              decoration: desktopInputDecoration(
+                hintText: '0',
+                prefixIcon: const Padding(
+                  padding: EdgeInsets.only(left: 14, right: 6),
+                  child: Text('₹ ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -223,75 +186,59 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.45),
-      builder: (ctx) => Dialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Container(
-          width: 480,
-          padding: const EdgeInsets.all(28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+      builder: (ctx) => DesktopModalDialog(
+        title: 'Update Utilized Expenditure',
+        subtitle: item.category,
+        icon: Icons.edit_note_rounded,
+        width: 480,
+        onClose: () => Navigator.pop(ctx),
+        actions: [
+          DesktopModalDialog.cancelButton(ctx),
+          const SizedBox(width: 12),
+          DesktopModalDialog.primaryButton(
+            text: 'Save Update',
+            onPressed: () async {
+              final val = double.tryParse(controller.text.trim()) ?? item.utilizedAmount;
+              final repo = ref.read(wardBudgetRepoProvider);
+              await repo.updateUtilization(item.id, val);
+              if (ctx.mounted) Navigator.pop(ctx);
+              _loadBudgets();
+            },
+          ),
+        ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Update Utilized Expenditure', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                  IconButton(icon: const Icon(Icons.close, size: 20, color: Color(0xFF64748B)), onPressed: () => Navigator.pop(ctx)),
+                  const Text('Total Sanctioned:', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                  Text(_formatCurrency(item.totalAllocation), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
                 ],
               ),
-              const SizedBox(height: 6),
-              Text(item.category, style: const TextStyle(fontSize: 13, color: Color(0xFF64748B))),
-              const SizedBox(height: 20),
-
-              Text('Total Sanctioned: ${_formatCurrency(item.totalAllocation)}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
-              const SizedBox(height: 16),
-
-              const Text('New Utilized Amount (₹) *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-              const SizedBox(height: 6),
-              TextField(
-                controller: controller,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  prefixText: '₹ ',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            ),
+            const SizedBox(height: 16),
+            const Text('New Utilized Amount (₹) *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+            const SizedBox(height: 6),
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              decoration: desktopInputDecoration(
+                hintText: 'Enter new amount',
+                prefixIcon: const Padding(
+                  padding: EdgeInsets.only(left: 14, right: 6),
+                  child: Text('₹ ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
                 ),
               ),
-              const SizedBox(height: 24),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  OutlinedButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFFCBD5E1)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                    ),
-                    child: const Text('Cancel', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w600)),
-                  ),
-                  const SizedBox(width: 12),
-                  ElevatedButton(
-                    onPressed: () async {
-                      final val = double.tryParse(controller.text.trim()) ?? item.utilizedAmount;
-                      final repo = ref.read(wardBudgetRepoProvider);
-                      await repo.updateUtilization(item.id, val);
-                      if (ctx.mounted) Navigator.pop(ctx);
-                      _loadBudgets();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0284C7),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-                    ),
-                    child: const Text('Save', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  ),
-                ],
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

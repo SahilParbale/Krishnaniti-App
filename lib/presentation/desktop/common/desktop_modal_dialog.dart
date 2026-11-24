@@ -6,6 +6,8 @@ class DesktopModalDialog extends StatelessWidget {
   final String title;
   final String? subtitle;
   final IconData? icon;
+  final Color? iconColor;
+  final Color? iconBgColor;
   final Widget child;
   final List<Widget>? actions;
   final double width;
@@ -17,12 +19,58 @@ class DesktopModalDialog extends StatelessWidget {
     required this.title,
     this.subtitle,
     this.icon,
+    this.iconColor,
+    this.iconBgColor,
     required this.child,
     this.actions,
     this.width = 620,
     this.maxHeight = 760,
     this.onClose,
   });
+
+  static Widget cancelButton(BuildContext context, {String text = 'Cancel', VoidCallback? onPressed}) {
+    return OutlinedButton(
+      onPressed: onPressed ?? () => Navigator.of(context).pop(),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: AppColors.slate600,
+        side: const BorderSide(color: AppColors.slate300),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+      ),
+      child: Text(text, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+    );
+  }
+
+  static Widget primaryButton({
+    required String text,
+    required VoidCallback onPressed,
+    bool isLoading = false,
+    IconData? icon,
+    Color? backgroundColor,
+  }) {
+    return ElevatedButton(
+      onPressed: isLoading ? null : onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: backgroundColor ?? AppColors.brand600,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+      ),
+      child: isLoading
+          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (icon != null) ...[
+                  Icon(icon, size: 16, color: Colors.white),
+                  const SizedBox(width: 6),
+                ],
+                Text(text, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
+              ],
+            ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -71,11 +119,14 @@ class DesktopModalDialog extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(9),
                         decoration: BoxDecoration(
-                          color: AppColors.brand50,
+                          color: iconBgColor ?? AppColors.brand50,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.brand200, width: 1),
+                          border: Border.all(
+                            color: iconColor != null ? iconColor!.withValues(alpha: 0.25) : AppColors.brand200,
+                            width: 1,
+                          ),
                         ),
-                        child: Icon(icon, color: AppColors.brand600, size: 20),
+                        child: Icon(icon, color: iconColor ?? AppColors.brand600, size: 20),
                       ),
                       const SizedBox(width: 14),
                     ],

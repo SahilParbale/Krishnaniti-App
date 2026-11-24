@@ -1296,13 +1296,7 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.help_outline_rounded, color: Color(0xFF64748B), size: 17),
-                    tooltip: 'Help Guide',
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                    padding: EdgeInsets.zero,
-                    onPressed: _showHelpGuide,
-                  ),
+
                   AppPdfButton.icon(
                     tooltip: 'Download Electoral Roll Report',
                     onPressed: () => VoterSlipGenerator.downloadVotersListReport(

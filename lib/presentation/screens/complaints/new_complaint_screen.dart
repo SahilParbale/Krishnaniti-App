@@ -16,7 +16,7 @@ class NewComplaintScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         child: NewComplaintBottomSheet(
           initialTab: initialTab,

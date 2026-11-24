@@ -220,6 +220,11 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
   }
 
   void _showImagePickerOptions(bool isProfile) {
+    final isDesktopPlatform = kIsWeb || (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux));
+    if (isDesktopPlatform) {
+      _pickImageSource(isProfile, ImageSource.gallery);
+      return;
+    }
     HapticFeedback.lightImpact();
     final isMr = ref.read(isMarathiProvider);
     showModalBottomSheet(
@@ -2457,11 +2462,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.refresh_rounded, size: 18, color: Color(0xFF0284C7)),
-                tooltip: 'Refresh Tickets',
-                onPressed: _loadSupportTickets,
-              ),
+
             ],
           ),
           const SizedBox(height: 8),

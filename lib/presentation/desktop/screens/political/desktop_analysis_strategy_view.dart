@@ -102,21 +102,7 @@ class _DesktopAnalysisStrategyViewState extends ConsumerState<DesktopAnalysisStr
                     ),
                   ],
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.slate200),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.help_outline_rounded, size: 16, color: AppColors.slate600),
-                      SizedBox(width: 6),
-                      Text('Help', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.slate700)),
-                    ],
-                  ),
-                ),
+
               ],
             ),
             const SizedBox(height: 24),

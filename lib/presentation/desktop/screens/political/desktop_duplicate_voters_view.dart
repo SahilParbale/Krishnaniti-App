@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../common/desktop_modal_dialog.dart';
 import '../../../../data/models/duplicate_voter_group_model.dart';
 import '../../../../data/repositories/duplicate_voters_repository.dart';
 
@@ -73,17 +74,34 @@ class _DesktopDuplicateVotersViewState extends ConsumerState<DesktopDuplicateVot
   Future<void> _deleteVoter(String voterId) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Duplicate Record'),
-        content: const Text('Are you sure you want to delete this duplicate voter record from the roll?'),
+      barrierColor: Colors.black.withValues(alpha: 0.45),
+      builder: (ctx) => DesktopModalDialog(
+        title: 'Delete Duplicate Record',
+        subtitle: 'Are you sure you want to delete this duplicate voter record?',
+        icon: Icons.delete_outline_rounded,
+        iconColor: const Color(0xFFDC2626),
+        iconBgColor: const Color(0xFFFEE2E2),
+        width: 480,
+        onClose: () => Navigator.pop(ctx, false),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          DesktopModalDialog.cancelButton(ctx, onPressed: () => Navigator.pop(ctx, false)),
+          const SizedBox(width: 12),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
-            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              elevation: 0,
+            ),
+            child: const Text('Delete Record', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
+        child: const Text(
+          'This action cannot be undone. The duplicate voter entry will be permanently removed from the database.',
+          style: TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.5),
+        ),
       ),
     );
 
@@ -153,18 +171,7 @@ class _DesktopDuplicateVotersViewState extends ConsumerState<DesktopDuplicateVot
           ],
         ),
 
-        // Refresh
-        OutlinedButton.icon(
-          onPressed: _fetchDuplicates,
-          icon: const Icon(Icons.refresh_rounded, size: 16, color: Color(0xFF0284C7)),
-          label: const Text('Refresh', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.bold, fontSize: 13)),
-          style: OutlinedButton.styleFrom(
-            backgroundColor: const Color(0xFFF0F9FF),
-            side: const BorderSide(color: Color(0xFFBAE6FD)),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-        ),
+
       ],
     );
   }

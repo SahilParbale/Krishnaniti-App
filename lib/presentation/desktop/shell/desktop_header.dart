@@ -225,23 +225,7 @@ class DesktopHeader extends ConsumerWidget {
             ),
           ),
 
-          const SizedBox(width: 12),
 
-          // Refresh Button
-          Tooltip(
-            message: 'Refresh Live Data',
-            child: IconButton(
-              onPressed: () {
-                // Refresh trigger by re-setting current screen
-                ref.read(activeScreenProvider.notifier).setScreen(activeKey);
-              },
-              icon: const Icon(Icons.refresh_rounded, size: 20, color: AppColors.slate600),
-              style: IconButton.styleFrom(
-                hoverColor: AppColors.slate100,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-            ),
-          ),
         ],
       ),
     );

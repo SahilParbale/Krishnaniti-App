@@ -152,21 +152,7 @@ class _DesktopAiVoiceViewState extends ConsumerState<DesktopAiVoiceView> {
                     ),
                   ],
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.slate200),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.help_outline_rounded, size: 16, color: AppColors.slate600),
-                      const SizedBox(width: 6),
-                      const Text('Help', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.slate700)),
-                    ],
-                  ),
-                ),
+
               ],
             ),
             const SizedBox(height: 24),

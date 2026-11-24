@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:nagarsevak_mobile/core/theme/app_colors.dart';
 import 'package:nagarsevak_mobile/data/models/diary_task_model.dart';
 import 'package:nagarsevak_mobile/data/repositories/diary_tasks_repository.dart';
+import 'package:nagarsevak_mobile/presentation/desktop/common/desktop_modal_dialog.dart';
 import 'package:nagarsevak_mobile/presentation/desktop/shell/desktop_sidebar.dart';
 
 /// Desktop Tasks View matching Tasks.tsx verbatim:
@@ -113,99 +115,77 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.45),
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDlgState) => Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          child: Container(
-            width: 520,
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'New Task',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close_rounded, size: 20),
-                      onPressed: () => Navigator.pop(ctx),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: titleCtrl,
-                  decoration: InputDecoration(
-                    labelText: 'Task Title *',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: descCtrl,
-                  maxLines: 2,
-                  decoration: InputDecoration(
-                    labelText: 'Description',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: addressCtrl,
-                  decoration: InputDecoration(
-                    labelText: 'Location / Office Name',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    const Text('Priority: ', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                    const SizedBox(width: 8),
-                    ...['Low', 'Medium', 'High'].map((p) => Padding(
-                          padding: const EdgeInsets.only(right: 6),
-                          child: ChoiceChip(
-                            label: Text(p, style: const TextStyle(fontSize: 12)),
-                            selected: priority == p,
-                            onSelected: (_) => setDlgState(() => priority = p),
-                          ),
-                        )),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  height: 44,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      if (titleCtrl.text.trim().isEmpty) return;
-                      final newTask = DiaryTaskModel(
-                        id: '',
-                        title: titleCtrl.text.trim(),
-                        description: descCtrl.text.trim(),
-                        priority: priority,
-                        status: 'Pending',
-                        dueDate: dueDate,
-                        dueTime: '${dueTime.hour.toString().padLeft(2, '0')}:${dueTime.minute.toString().padLeft(2, '0')}',
-                        address: addressCtrl.text.trim(),
-                      );
-                      await ref.read(diaryTasksRepoProvider).addTask(newTask);
-                      if (ctx.mounted) Navigator.pop(ctx);
-                      _loadTasks();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0284C7),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                    child: const Text('Save Task', style: TextStyle(fontWeight: FontWeight.w700)),
-                  ),
-                ),
-              ],
+        builder: (ctx, setDlgState) => DesktopModalDialog(
+          title: 'New Task',
+          subtitle: 'Create and assign follow-up tasks, reminders and deadlines',
+          icon: Icons.assignment_rounded,
+          width: 540,
+          onClose: () => Navigator.pop(ctx),
+          actions: [
+            DesktopModalDialog.cancelButton(ctx),
+            const SizedBox(width: 12),
+            DesktopModalDialog.primaryButton(
+              text: 'Save Task',
+              onPressed: () async {
+                if (titleCtrl.text.trim().isEmpty) return;
+                final newTask = DiaryTaskModel(
+                  id: '',
+                  title: titleCtrl.text.trim(),
+                  description: descCtrl.text.trim(),
+                  priority: priority,
+                  status: 'Pending',
+                  dueDate: dueDate,
+                  dueTime: '${dueTime.hour.toString().padLeft(2, '0')}:${dueTime.minute.toString().padLeft(2, '0')}',
+                  address: addressCtrl.text.trim(),
+                );
+                await ref.read(diaryTasksRepoProvider).addTask(newTask);
+                if (ctx.mounted) Navigator.pop(ctx);
+                _loadTasks();
+              },
             ),
+          ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Task Title *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+              const SizedBox(height: 6),
+              TextField(
+                controller: titleCtrl,
+                decoration: desktopInputDecoration(hintText: 'Enter task title...'),
+              ),
+              const SizedBox(height: 14),
+              const Text('Description', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+              const SizedBox(height: 6),
+              TextField(
+                controller: descCtrl,
+                maxLines: 2,
+                decoration: desktopInputDecoration(hintText: 'Optional details or instructions...'),
+              ),
+              const SizedBox(height: 14),
+              const Text('Location / Office Name', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+              const SizedBox(height: 6),
+              TextField(
+                controller: addressCtrl,
+                decoration: desktopInputDecoration(hintText: 'e.g. Ward Office, Civic Center...'),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  const Text('Priority: ', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                  const SizedBox(width: 10),
+                  ...['Low', 'Medium', 'High'].map((p) => Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          label: Text(p, style: TextStyle(fontSize: 12, fontWeight: priority == p ? FontWeight.bold : FontWeight.normal)),
+                          selected: priority == p,
+                          selectedColor: AppColors.brand100,
+                          onSelected: (_) => setDlgState(() => priority = p),
+                        ),
+                      )),
+                ],
+              ),
+            ],
           ),
         ),
       ),
@@ -304,21 +284,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
         // Actions: Help + Scan Doc + New Task
         Row(
           children: [
-            OutlinedButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.help_outline_rounded, size: 18, color: Color(0xFF0284C7)),
-              label: Text(
-                'Help',
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0369A1)),
-              ),
-              style: OutlinedButton.styleFrom(
-                backgroundColor: Colors.white,
-                side: const BorderSide(color: Color(0xFFBAE6FD)),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              ),
-            ),
-            const SizedBox(width: 10),
+
             OutlinedButton.icon(
               onPressed: () {},
               icon: const Icon(Icons.document_scanner_outlined, size: 18, color: Color(0xFF475569)),

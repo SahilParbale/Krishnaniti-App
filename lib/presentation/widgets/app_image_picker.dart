@@ -16,6 +16,7 @@ class AppImagePickerField extends StatefulWidget {
   final bool allowMultiple;
   final List<XFile> initialFiles;
   final String? initialUrl;
+  final bool? enableCamera;
   final ValueChanged<List<XFile>> onFilesChanged;
   final VoidCallback? onInitialUrlRemoved;
 
@@ -27,6 +28,7 @@ class AppImagePickerField extends StatefulWidget {
     this.allowMultiple = false,
     this.initialFiles = const [],
     this.initialUrl,
+    this.enableCamera,
     required this.onFilesChanged,
     this.onInitialUrlRemoved,
   });
@@ -115,6 +117,8 @@ class _AppImagePickerFieldState extends State<AppImagePickerField> {
   Widget build(BuildContext context) {
     final isMr = widget.isMarathi;
     final hasImages = _files.isNotEmpty || (_existingUrl != null && _existingUrl!.isNotEmpty);
+    final isDesktopPlatform = kIsWeb || (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux));
+    final allowCamera = (widget.enableCamera ?? !isDesktopPlatform) && !isDesktopPlatform;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,139 +130,203 @@ class _AppImagePickerFieldState extends State<AppImagePickerField> {
             optionalHint: isMr ? 'ऐच्छिक' : 'Optional',
           ),
 
-        // Two side-by-side action buttons: Camera & Phone Storage
-        Row(
-          children: [
-            // 1. Camera Button
-            Expanded(
-              child: Material(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(12),
-                child: InkWell(
-                  onTap: () => _pick(ImageSource.camera),
+        // Attachment Selector: Desktop Dropzone (No Camera on PC) vs Mobile Buttons
+        if (!allowCamera)
+          Material(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
+              onTap: () => _pick(ImageSource.gallery),
+              borderRadius: BorderRadius.circular(12),
+              hoverColor: const Color(0xFFEFF6FF),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFCBD5E1)),
+                  border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.cloud_upload_outlined,
+                        size: 24,
+                        color: Color(0xFF0284C7),
+                      ),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(7),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFEFF6FF),
-                            shape: BoxShape.circle,
+                    const SizedBox(height: 8),
+                    Text(
+                      isMr ? 'अपलोड करण्यासाठी क्लिक करा किंवा निवडा' : 'Click to upload or browse photos / files',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF334155),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      widget.allowMultiple
+                          ? (isMr ? 'एकापेक्षा जास्त फोटो/कागदपत्रे निवडा (कमाल ५०MB)' : 'Select one or more photos or documents (Max 50MB)')
+                          : (isMr ? 'फोटो किंवा कागदपत्र निवडा (कमाल ५०MB)' : 'Select photo or document (Max 50MB)'),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          )
+        else
+          // Mobile: Two side-by-side action buttons: Camera & Phone Storage
+          Row(
+            children: [
+              // 1. Camera Button
+              Expanded(
+                child: Material(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(12),
+                  child: InkWell(
+                    onTap: () => _pick(ImageSource.camera),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFCBD5E1)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(7),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFEFF6FF),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.camera_alt_outlined,
+                              size: 18,
+                              color: Color(0xFF0284C7),
+                            ),
                           ),
-                          child: const Icon(
-                            Icons.camera_alt_outlined,
-                            size: 18,
-                            color: Color(0xFF0284C7),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                isMr ? 'कॅमेरा' : 'Camera',
-                                style: const TextStyle(
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF1E293B),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  isMr ? 'कॅमेरा' : 'Camera',
+                                  style: const TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1E293B),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Text(
-                                isMr ? 'फोटो काढा' : 'Take photo',
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  color: Color(0xFF64748B),
+                                Text(
+                                  isMr ? 'फोटो काढा' : 'Take photo',
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: Color(0xFF64748B),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(width: 10),
+              const SizedBox(width: 10),
 
-            // 2. Phone Storage / Gallery Button
-            Expanded(
-              child: Material(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(12),
-                child: InkWell(
-                  onTap: () => _pick(ImageSource.gallery),
+              // 2. Phone Storage / Gallery Button
+              Expanded(
+                child: Material(
+                  color: const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFCBD5E1)),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(7),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFECFDF5),
-                            shape: BoxShape.circle,
+                  child: InkWell(
+                    onTap: () => _pick(ImageSource.gallery),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFCBD5E1)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(7),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFECFDF5),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.photo_library_outlined,
+                              size: 18,
+                              color: Color(0xFF059669),
+                            ),
                           ),
-                          child: const Icon(
-                            Icons.photo_library_outlined,
-                            size: 18,
-                            color: Color(0xFF059669),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                isMr ? 'फोन स्टोरेज' : 'Phone Storage',
-                                style: const TextStyle(
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF1E293B),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  isMr ? 'फोन स्टोरेज' : 'Phone Storage',
+                                  style: const TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1E293B),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Text(
-                                isMr ? 'गॅलरी निवडा' : 'From gallery',
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  color: Color(0xFF64748B),
+                                Text(
+                                  isMr ? 'गॅलरी निवडा' : 'From gallery',
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: Color(0xFF64748B),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
 
         // Previews of selected images
         if (hasImages) ...[

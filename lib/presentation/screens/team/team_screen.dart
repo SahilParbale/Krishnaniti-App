@@ -1163,18 +1163,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
               ),
             ),
           ),
-          Container(
-            height: 28,
-            width: 1,
-            color: Colors.grey.shade200,
-            margin: const EdgeInsets.symmetric(horizontal: 4),
-          ),
-          IconButton(
-            icon: const Icon(Icons.help_outline_rounded, color: Color(0xFF64748B), size: 20),
-            tooltip: 'Help Guide',
-            visualDensity: VisualDensity.compact,
-            onPressed: _showHelpGuide,
-          ),
+
           AppPdfButton.icon(
             tooltip: 'Download Team Report',
             onPressed: () => TeamReportGenerator.generateAndPrintReport(
