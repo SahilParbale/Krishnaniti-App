@@ -6,6 +6,7 @@ import 'package:nagarsevak_mobile/data/repositories/complaints_repository.dart';
 import 'package:nagarsevak_mobile/presentation/desktop/shell/desktop_sidebar.dart';
 import 'package:nagarsevak_mobile/presentation/screens/complaints/new_complaint_screen.dart';
 import 'package:nagarsevak_mobile/presentation/screens/complaints/complaint_detail_screen.dart';
+import 'package:nagarsevak_mobile/presentation/screens/ward_problems/ward_problems_report_generator.dart';
 
 /// Desktop Ward Problems View matching WardWiseProblem.tsx verbatim:
 /// - Sticky Header: Title + Subtitle + Found Badge + Help + New Problem
@@ -35,8 +36,8 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
     _loadWardProblems();
   }
 
-  Future<void> _loadWardProblems() async {
-    setState(() => _loading = true);
+  Future<void> _loadWardProblems({bool showLoading = true}) async {
+    if (showLoading) setState(() => _loading = true);
     try {
       final repo = ref.read(complaintsRepoProvider);
       final all = await repo.getComplaints(limit: 100);
@@ -91,7 +92,7 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
   }
 
   void _openNewProblemModal() {
-    showDialog(
+    showDialog<bool>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.45),
       builder: (ctx) => Dialog(
@@ -108,15 +109,19 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
           child: const NewComplaintScreen(),
         ),
       ),
-    ).then((_) => _loadWardProblems());
+    ).then((res) {
+      if (res == true) _loadWardProblems(showLoading: false);
+    });
   }
 
   void _openDetail(ComplaintModel problem) {
-    Navigator.of(context).push(
+    Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => ComplaintDetailScreen(complaint: problem),
       ),
-    ).then((_) => _loadWardProblems());
+    ).then((res) {
+      if (res == true) _loadWardProblems(showLoading: false);
+    });
   }
 
   @override
@@ -198,51 +203,48 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
           ],
         ),
 
-        // Actions: Grid/Report toggles + Help + + New Problem
+        // Actions: Download Report + New Request
         Row(
           children: [
-            // View Mode Toggles
-            Container(
-              padding: const EdgeInsets.all(3),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: Row(
-                children: [
-                  _buildViewToggleButton(
-                    icon: Icons.grid_view_rounded,
-                    label: 'Grid',
-                    isActive: _viewMode == 'grid',
-                    onTap: () => setState(() => _viewMode = 'grid'),
-                  ),
-                  _buildViewToggleButton(
-                    icon: Icons.table_chart_outlined,
-                    label: 'Report',
-                    isActive: _viewMode == 'report',
-                    onTap: () => setState(() => _viewMode = 'report'),
-                  ),
-                ],
+            OutlinedButton.icon(
+              onPressed: () {
+                WardProblemsReportGenerator.generateAndPrintReport(problems: _filteredProblems);
+              },
+              icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
+              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+              style: OutlinedButton.styleFrom(
+                backgroundColor: const Color(0xFFF0F9FF),
+                side: const BorderSide(color: Color(0xFFBAE6FD)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
 
-
-
-            ElevatedButton.icon(
+            ElevatedButton(
               onPressed: _openNewProblemModal,
-              icon: const Icon(Icons.add_rounded, size: 18),
-              label: Text(
-                'New Problem',
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-              ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0284C7),
+                backgroundColor: const Color(0xFF0284C7), // bg-brand-600
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                elevation: 1,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), // rounded-xl
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.add, size: 16, color: Colors.white), // Plus w-4 h-4
+                  SizedBox(width: 8), // gap-2
+                  Text(
+                    'New Request',
+                    style: TextStyle(
+                      fontSize: 14, // text-sm
+                      fontWeight: FontWeight.w600, // font-semibold
+                      color: Colors.white,
+                      letterSpacing: -0.1,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

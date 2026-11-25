@@ -48,8 +48,8 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     super.dispose();
   }
 
-  Future<void> _loadTeam() async {
-    setState(() => _isLoading = true);
+  Future<void> _loadTeam({bool showLoading = true}) async {
+    if (showLoading) setState(() => _isLoading = true);
     final repo = ref.read(teamRepoProvider);
 
     final members = await repo.getTeamMembers(
@@ -1284,7 +1284,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => TeamMemberProfileScreen(member: member)),
-          ).then((_) => _loadTeam());
+          ).then((res) { if (res == true) _loadTeam(showLoading: false); });
         },
         child: Padding(
           padding: const EdgeInsets.all(14),
@@ -1449,7 +1449,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (_) => TeamMemberProfileScreen(member: member)),
-                      ).then((_) => _loadTeam());
+                      ).then((res) { if (res == true) _loadTeam(showLoading: false); });
                     },
                   ),
                   const SizedBox(width: 6),
@@ -1522,7 +1522,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(builder: (_) => TeamMemberProfileScreen(member: m)),
-                        ).then((_) => _loadTeam());
+                        ).then((res) { if (res == true) _loadTeam(showLoading: false); });
                       },
                       child: Text(
                         m.displayName,

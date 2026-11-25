@@ -6,6 +6,7 @@ import 'package:nagarsevak_mobile/data/repositories/letters_repository.dart';
 import 'package:nagarsevak_mobile/presentation/desktop/shell/desktop_sidebar.dart';
 import 'package:nagarsevak_mobile/presentation/screens/letters/new_letter_bottom_sheet.dart';
 import 'package:nagarsevak_mobile/presentation/screens/letters/letter_type_manager_sheet.dart';
+import 'package:nagarsevak_mobile/presentation/screens/letters/letter_report_generator.dart';
 
 /// Desktop Letters Dashboard View matching LetterDashboard.tsx verbatim:
 /// - Sticky Header: Icon + Title + Found counter + Help + Manage Types + New Request / Upload
@@ -37,8 +38,8 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
     _loadLetters();
   }
 
-  Future<void> _loadLetters() async {
-    setState(() => _loading = true);
+  Future<void> _loadLetters({bool showLoading = true}) async {
+    if (showLoading) setState(() => _loading = true);
     try {
       final repo = ref.read(lettersRepoProvider);
       final outgoing = await repo.getLetters(isIncoming: false, limit: 100);
@@ -118,7 +119,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
         ),
       ),
     ).then((res) {
-      if (res == true) _loadLetters();
+      if (res == true) _loadLetters(showLoading: false);
     });
   }
 
@@ -229,56 +230,90 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
           ],
         ),
 
-        // Action Buttons: Help + Manage Types + New Request / Upload
+        // Action Buttons: Download Report + Manage Types + New Request / Upload
         Row(
           children: [
-
+            OutlinedButton.icon(
+              onPressed: () {
+                LetterReportGenerator.generateAndPrintLetterReport(
+                  letters: _activeTab == 'outgoing' ? _outgoingLetters : _incomingLetters,
+                  title: _activeTab == 'outgoing' ? 'Outgoing Letters Report' : 'Incoming Letters Report',
+                );
+              },
+              icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
+              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+              style: OutlinedButton.styleFrom(
+                backgroundColor: const Color(0xFFF0F9FF),
+                side: const BorderSide(color: Color(0xFFBAE6FD)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(width: 10),
 
             if (_activeTab == 'outgoing') ...[
-              OutlinedButton.icon(
+              OutlinedButton(
                 onPressed: _openManageTypesModal,
-                icon: const Icon(Icons.settings_outlined, size: 18, color: Color(0xFF475569)),
-                label: Text(
-                  'Manage Types',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-                ),
                 style: OutlinedButton.styleFrom(
                   backgroundColor: Colors.white,
                   side: const BorderSide(color: Color(0xFFE2E8F0)),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.settings_outlined, size: 16, color: Color(0xFF475569)),
+                    SizedBox(width: 8),
+                    Text(
+                      'Manage Types',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(width: 10),
-              ElevatedButton.icon(
+              ElevatedButton(
                 onPressed: () => _openNewLetterModal('outgoing'),
-                icon: const Icon(Icons.add_rounded, size: 18),
-                label: Text(
-                  'New Request',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0284C7),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  elevation: 1,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.add, size: 16, color: Colors.white),
+                    SizedBox(width: 8),
+                    Text(
+                      'New Request',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white, letterSpacing: -0.1),
+                    ),
+                  ],
                 ),
               ),
             ] else ...[
-              ElevatedButton.icon(
+              ElevatedButton(
                 onPressed: () => _openNewLetterModal('incoming'),
-                icon: const Icon(Icons.upload_file_rounded, size: 18),
-                label: Text(
-                  'Upload Incoming',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0284C7),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  elevation: 1,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.upload_file_rounded, size: 16, color: Colors.white),
+                    SizedBox(width: 8),
+                    Text(
+                      'Upload Incoming',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white, letterSpacing: -0.1),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -321,32 +356,6 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                 },
               ),
             ],
-          ),
-
-          // View Toggle
-          Container(
-            padding: const EdgeInsets.all(3),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
-            child: Row(
-              children: [
-                _buildViewToggleButton(
-                  icon: Icons.grid_view_rounded,
-                  label: 'Grid',
-                  isActive: _viewMode == 'grid',
-                  onTap: () => setState(() => _viewMode = 'grid'),
-                ),
-                _buildViewToggleButton(
-                  icon: Icons.table_chart_outlined,
-                  label: 'Report',
-                  isActive: _viewMode == 'report',
-                  onTap: () => setState(() => _viewMode = 'report'),
-                ),
-              ],
-            ),
           ),
         ],
       ),
@@ -897,14 +906,16 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                     ),
                     const SizedBox(width: 8),
                     OutlinedButton.icon(
-                      onPressed: () {},
-                      icon: const Icon(Icons.download_rounded, size: 16),
-                      label: const Text('Download PDF'),
+                      onPressed: () {
+                        LetterReportGenerator.generateAndPrintSingleLetter(letter: letter);
+                      },
+                      icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
+                      label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 13)),
                       style: OutlinedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        side: const BorderSide(color: Color(0xFFCBD5E1)),
+                        backgroundColor: const Color(0xFFF0F9FF),
+                        side: const BorderSide(color: Color(0xFFBAE6FD)),
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                     ),
                   ],

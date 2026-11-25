@@ -297,7 +297,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
               children: [
 
                 AppPdfButton.icon(
-                  tooltip: 'Download PDF Report',
+                  tooltip: 'Download Report',
                   onPressed: _exportPdfReport,
                 ),
               ],
@@ -963,7 +963,7 @@ class _SadasyaScreenState extends ConsumerState<SadasyaScreen> {
               ),
               SizedBox(height: 4),
               Text(
-                'Click the "PDF Report" icon above to generate and export the official ward report.',
+                'Click the "Download Report" icon above to generate and export the official ward report.',
                 style: TextStyle(fontSize: 12, color: Color(0xFF475569)),
               ),
             ],

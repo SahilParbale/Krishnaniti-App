@@ -337,7 +337,7 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
               child: Padding(
                 padding: const EdgeInsets.only(right: 4),
                 child: AppPdfButton.icon(
-                  tooltip: isMr ? 'माहिती पत्रक डाउनलोड करा' : 'Download PDF Flyer',
+                  tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Report',
                   onPressed: () {
                     SchemeReportGenerator.generateAndPrintSingleSchemeFlyer(
                       scheme: _scheme,
@@ -556,7 +556,7 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
                   },
                   icon: const Icon(Icons.download_rounded, size: 20),
                   label: Text(
-                    isMr ? 'माहिती पत्रक' : 'PDF Flyer',
+                    isMr ? 'अहवाल' : 'Download Report',
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../data/models/karyakarta_work_model.dart';
 import '../../../../data/repositories/karyakarta_work_repository.dart';
+import '../../../screens/karyakarta_work/karyakarta_work_report_generator.dart';
 
 class DesktopKaryakartaWorkView extends ConsumerStatefulWidget {
   const DesktopKaryakartaWorkView({super.key});
@@ -232,6 +233,30 @@ class _DesktopKaryakartaWorkViewState extends ConsumerState<DesktopKaryakartaWor
               style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
             ),
           ],
+        ),
+
+        // Download Report matching KaryakartaWorkManagement.tsx
+        OutlinedButton.icon(
+          onPressed: () {
+            final allStaff = _workloads.map((w) => w.staff).toList();
+            final allTasks = _workloads.expand((w) => w.tasks).toList();
+            final allComplaints = _workloads.expand((w) => w.complaints).toList();
+            KaryakartaWorkReportGenerator.generateAndPrintReport(
+              staffList: allStaff,
+              tasks: allTasks,
+              complaints: allComplaints,
+              activeTabLabel: _activeTab == 'all' ? 'All Teams' : (_activeTab == 'office' ? 'Office Staff' : 'Field Workers'),
+              categoryFilter: _activeTab,
+            );
+          },
+          icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
+          label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+          style: OutlinedButton.styleFrom(
+            backgroundColor: const Color(0xFFF0F9FF),
+            side: const BorderSide(color: Color(0xFFBAE6FD)),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
         ),
       ],
     );
@@ -489,11 +514,12 @@ class _DesktopKaryakartaWorkViewState extends ConsumerState<DesktopKaryakartaWor
                       ElevatedButton.icon(
                         onPressed: () => _showQuickTaskModal(staff),
                         icon: const Icon(Icons.add_task_rounded, size: 14, color: Colors.white),
-                        label: const Text('Assign Task', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
+                        label: const Text('Assign Task', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF0284C7),
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           elevation: 0,
                         ),
                       ),

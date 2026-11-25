@@ -733,7 +733,7 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                     ),
                     const SizedBox(width: 8),
                     AppPdfButton.icon(
-                      tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download PDF Report',
+                      tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Report',
                       onPressed: () {
                         DiaryReportGenerator.generateAndPrintTasksReport(
                           tasks: filtered,
@@ -815,7 +815,7 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                     ],
                     const SizedBox(width: 8),
                     AppPdfButton.icon(
-                      tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download PDF Report',
+                      tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Report',
                       onPressed: () {
                         DiaryReportGenerator.generateAndPrintTasksReport(
                           tasks: filtered,

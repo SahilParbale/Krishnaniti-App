@@ -948,7 +948,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                   ),
                   const SizedBox(width: 6),
                   AppPdfButton.icon(
-                    tooltip: 'Download PDF Report',
+                    tooltip: 'Download Report',
                     onPressed: () {
                       SocialOrgReportGenerator.generateAndPrintReport(
                         organizations: _organizations,

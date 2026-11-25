@@ -57,8 +57,8 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
     super.dispose();
   }
 
-  Future<void> _fetchData() async {
-    setState(() => _loading = true);
+  Future<void> _fetchData({bool showLoading = true}) async {
+    if (showLoading) setState(() => _loading = true);
     final repo = ref.read(workHistoryRepoProvider);
     final works = await repo.getWorks();
     if (mounted) {
@@ -152,12 +152,14 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
       return;
     }
 
-    Navigator.push(
+    Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (_) => WorkDetailScreen(work: item),
       ),
-    ).then((_) => _fetchData());
+    ).then((res) {
+      if (res == true) _fetchData(showLoading: false);
+    });
   }
 
   // Status Badge matching lines 268-277
@@ -593,7 +595,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                               children: [
                                 Expanded(
                                   child: AppPdfButton(
-                                    label: isMr ? 'PDF अहवाल' : 'Download Report',
+                                    label: isMr ? 'अहवाल' : 'Download Report',
                                     style: AppPdfButtonStyle.tonal,
                                     onPressed: () {
                                       WorkReportGenerator.generateAndPrintWorkReport(
@@ -1247,7 +1249,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
                 ),
                 AppPdfButton.outlined(
-                  label: isMr ? 'PDF अहवाल' : 'Download PDF',
+                  label: isMr ? 'अहवाल' : 'Download Report',
                   onPressed: () {
                     WorkReportGenerator.generateAndPrintWorkReport(
                       works: items,

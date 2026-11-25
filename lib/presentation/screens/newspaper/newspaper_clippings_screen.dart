@@ -165,7 +165,7 @@ class _NewspaperClippingsScreenState
                 ),
                 _GuideStep(
                   number: '3',
-                  title: 'Official PDF Report',
+                  title: 'Download Report',
                   desc:
                       'Generate landscape A4 print-ready reports with clippings ledger for ward party meetings and review.',
                 ),
@@ -691,7 +691,7 @@ class _NewspaperClippingsScreenState
                               },
                             ),
                             AppPdfButton.icon(
-                              tooltip: 'Download PDF Report',
+                              tooltip: 'Download Report',
                               onPressed: () {
                                 NewspaperReportGenerator.generateAndPrintReport(
                                   clippings: filtered,

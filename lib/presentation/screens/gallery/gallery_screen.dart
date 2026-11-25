@@ -559,7 +559,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                       },
                     ),
                     AppPdfButton.icon(
-                      tooltip: 'Official PDF Catalog',
+                      tooltip: 'Download Report',
                       onPressed: () => GalleryReportGenerator.generateAndPrintReport(items: filtered),
                     ),
                   ],

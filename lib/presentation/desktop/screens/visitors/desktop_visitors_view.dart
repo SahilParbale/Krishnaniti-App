@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:nagarsevak_mobile/data/models/visitor_model.dart';
 import 'package:nagarsevak_mobile/data/repositories/visitors_repository.dart';
+import 'package:nagarsevak_mobile/presentation/desktop/common/desktop_modal_dialog.dart';
 import 'package:nagarsevak_mobile/presentation/desktop/shell/desktop_sidebar.dart';
+import 'package:nagarsevak_mobile/presentation/screens/visitors/visitor_report_generator.dart';
 
-/// Desktop Visitor Log View matching VisitorLog.tsx verbatim:
-/// - Sticky Header: Title + Subtitle + Help button
-/// - 3-Column Layout:
-///   - Left 1/3: Sticky Check-in / Registration Form (Name, Mobile, Area, Purpose, Reference, Remarks)
-///   - Right 2/3: Search Toolbar + Grid/Report view toggles + Visitor Cards Grid / Data Table
+/// Desktop Visitor Log View
+/// - Full-width layout matching other desktop views
+/// - Sticky Header: Title + Subtitle + [Download Report] + [Log Visitor] buttons
+/// - Modal Dialog for Check-in / Registration & Edit
+/// - Filters: Search bar, Area dropdown, Purpose pills
+/// - Switchable Grid / Table views with card actions
 class DesktopVisitorsView extends ConsumerStatefulWidget {
   const DesktopVisitorsView({super.key});
 
@@ -18,19 +20,10 @@ class DesktopVisitorsView extends ConsumerStatefulWidget {
 }
 
 class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
-  String _viewMode = 'grid'; // 'grid' | 'report'
+  String _viewMode = 'grid'; // 'grid' | 'table'
   String _searchQuery = '';
   String _selectedArea = 'All';
   String _purposeFilter = 'All';
-
-  // Form State
-  final _nameCtrl = TextEditingController();
-  final _mobileCtrl = TextEditingController();
-  final _areaCtrl = TextEditingController();
-  final _referenceCtrl = TextEditingController();
-  final _remarksCtrl = TextEditingController();
-  String _selectedPurpose = 'Complaint';
-  String? _editingId;
 
   bool _loading = true;
   List<VisitorModel> _visitors = [];
@@ -39,16 +32,6 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
   void initState() {
     super.initState();
     _loadVisitors();
-  }
-
-  @override
-  void dispose() {
-    _nameCtrl.dispose();
-    _mobileCtrl.dispose();
-    _areaCtrl.dispose();
-    _referenceCtrl.dispose();
-    _remarksCtrl.dispose();
-    super.dispose();
   }
 
   Future<void> _loadVisitors() async {
@@ -97,59 +80,262 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
     }).toList();
   }
 
-  Future<void> _handleSaveVisitor() async {
-    if (_nameCtrl.text.trim().isEmpty) return;
-    final repo = ref.read(visitorsRepoProvider);
+  void _showVisitorModal({VisitorModel? item}) {
+    final nameCtrl = TextEditingController(text: item?.name ?? '');
+    final mobileCtrl = TextEditingController(text: item?.mobile ?? '');
+    final areaCtrl = TextEditingController(text: item?.area ?? '');
+    final referenceCtrl = TextEditingController(text: item?.reference ?? '');
+    final remarksCtrl = TextEditingController(text: item?.remarks ?? '');
+    String selectedPurpose = item?.purpose ?? 'Complaint';
+    bool saving = false;
 
-    if (_editingId != null) {
-      await repo.updateVisitor(_editingId!, {
-        'name': _nameCtrl.text.trim(),
-        'mobile': _mobileCtrl.text.trim(),
-        'area': _areaCtrl.text.trim(),
-        'purpose': _selectedPurpose,
-        'reference': _referenceCtrl.text.trim(),
-        'remarks': _remarksCtrl.text.trim(),
-      });
-      _resetForm();
-    } else {
-      final newVisitor = VisitorModel(
-        id: '',
-        name: _nameCtrl.text.trim(),
-        mobile: _mobileCtrl.text.trim(),
-        purpose: _selectedPurpose,
-        area: _areaCtrl.text.trim(),
-        reference: _referenceCtrl.text.trim(),
-        remarks: _remarksCtrl.text.trim(),
-        visitDate: DateTime.now(),
-      );
-      await repo.addVisitor(newVisitor);
-      _resetForm();
-    }
-    _loadVisitors();
-  }
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.45),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) {
+          return DesktopModalDialog(
+            title: item == null ? 'Log Visitor' : 'Edit Visitor Details',
+            subtitle: item == null
+                ? 'Register a new visitor at the ward office'
+                : 'Update visitor visit information and notes',
+            icon: Icons.people_alt_rounded,
+            width: 580,
+            onClose: () => Navigator.pop(ctx),
+            actions: [
+              DesktopModalDialog.cancelButton(ctx),
+              const SizedBox(width: 12),
+              DesktopModalDialog.primaryButton(
+                text: item == null ? 'Log Visitor' : 'Save Changes',
+                icon: Icons.check_rounded,
+                isLoading: saving,
+                onPressed: () async {
+                  if (nameCtrl.text.trim().isEmpty) return;
+                  setModalState(() => saving = true);
+                  final repo = ref.read(visitorsRepoProvider);
 
-  void _resetForm() {
-    _nameCtrl.clear();
-    _mobileCtrl.clear();
-    _areaCtrl.clear();
-    _referenceCtrl.clear();
-    _remarksCtrl.clear();
-    setState(() {
-      _selectedPurpose = 'Complaint';
-      _editingId = null;
-    });
+                  if (item != null) {
+                    await repo.updateVisitor(item.id, {
+                      'name': nameCtrl.text.trim(),
+                      'mobile': mobileCtrl.text.trim(),
+                      'area': areaCtrl.text.trim(),
+                      'purpose': selectedPurpose,
+                      'reference': referenceCtrl.text.trim(),
+                      'remarks': remarksCtrl.text.trim(),
+                    });
+                  } else {
+                    final newVisitor = VisitorModel(
+                      id: '',
+                      name: nameCtrl.text.trim(),
+                      mobile: mobileCtrl.text.trim(),
+                      purpose: selectedPurpose,
+                      area: areaCtrl.text.trim(),
+                      reference: referenceCtrl.text.trim(),
+                      remarks: remarksCtrl.text.trim(),
+                      visitDate: DateTime.now(),
+                    );
+                    await repo.addVisitor(newVisitor);
+                  }
+
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  _loadVisitors();
+                },
+              ),
+            ],
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 1. Full Name
+                  const Text(
+                    'Full Name *',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                  ),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: nameCtrl,
+                    decoration: InputDecoration(
+                      hintText: 'Citizen full name',
+                      hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                      focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: Color(0xFF0284C7), width: 1.5)),
+                      fillColor: const Color(0xFFF8FAFC),
+                      filled: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // 2. Mobile & Purpose in a Row
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Mobile
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Mobile Number',
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                            ),
+                            const SizedBox(height: 6),
+                            TextField(
+                              controller: mobileCtrl,
+                              keyboardType: TextInputType.phone,
+                              decoration: InputDecoration(
+                                prefixText: '+91 ',
+                                hintText: '10 digits mobile',
+                                hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                                focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: Color(0xFF0284C7), width: 1.5)),
+                                fillColor: const Color(0xFFF8FAFC),
+                                filled: true,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      // Purpose Dropdown
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Purpose',
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                            ),
+                            const SizedBox(height: 6),
+                            DropdownButtonFormField<String>(
+                              initialValue: selectedPurpose,
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                                focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: Color(0xFF0284C7), width: 1.5)),
+                                fillColor: const Color(0xFFF8FAFC),
+                                filled: true,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              ),
+                              items: [
+                                'Complaint',
+                                'Meeting',
+                                'Greeting',
+                                'Donation',
+                                'Help',
+                                'Other',
+                              ].map((p) => DropdownMenuItem(value: p, child: Text(p, style: const TextStyle(fontSize: 13)))).toList(),
+                              onChanged: (val) {
+                                if (val != null) {
+                                  setModalState(() => selectedPurpose = val);
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // 3. Area & Reference in a Row
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Area
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Area / Address',
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                            ),
+                            const SizedBox(height: 6),
+                            TextField(
+                              controller: areaCtrl,
+                              decoration: InputDecoration(
+                                hintText: 'Area or venue',
+                                hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                                focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: Color(0xFF0284C7), width: 1.5)),
+                                fillColor: const Color(0xFFF8FAFC),
+                                filled: true,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      // Reference
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Reference (Optional)',
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                            ),
+                            const SizedBox(height: 6),
+                            TextField(
+                              controller: referenceCtrl,
+                              decoration: InputDecoration(
+                                hintText: 'Referred by',
+                                hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                                focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: Color(0xFF0284C7), width: 1.5)),
+                                fillColor: const Color(0xFFF8FAFC),
+                                filled: true,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // 4. Remarks
+                  const Text(
+                    'Notes / Remarks',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: remarksCtrl,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      hintText: 'Enter visit details or notes...',
+                      hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                      focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: Color(0xFF0284C7), width: 1.5)),
+                      fillColor: const Color(0xFFF8FAFC),
+                      filled: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   void _startEdit(VisitorModel visitor) {
-    setState(() {
-      _editingId = visitor.id;
-      _nameCtrl.text = visitor.name;
-      _mobileCtrl.text = visitor.mobile;
-      _areaCtrl.text = visitor.area ?? '';
-      _referenceCtrl.text = visitor.reference ?? '';
-      _remarksCtrl.text = visitor.remarks ?? '';
-      _selectedPurpose = visitor.purpose;
-    });
+    _showVisitorModal(item: visitor);
   }
 
   @override
@@ -165,30 +351,13 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Header (matching VisitorLog.tsx lines 380-405)
+            // 1. Sticky Header
             _buildHeader(isMr),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
-            // 2. 3-Column Layout: Left 1/3 Form + Right 2/3 List (matching lines 407-1000)
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Left 1/3: Check-in Form Card
-                Expanded(
-                  flex: 1,
-                  child: _buildCheckInForm(isMr),
-                ),
-
-                const SizedBox(width: 24),
-
-                // Right 2/3: Search Bar + View Toggle + Grid / Report
-                Expanded(
-                  flex: 2,
-                  child: _buildLogContainer(items, isMr),
-                ),
-              ],
-            ),
+            // 2. Full-Width Visitors Log Container
+            _buildLogContainer(items, isMr),
           ],
         ),
       ),
@@ -228,177 +397,69 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
           ],
         ),
 
+        // Actions: Download Report + Log Visitor
+        Row(
+          children: [
+            // Download Report
+            OutlinedButton.icon(
+              onPressed: () {
+                VisitorReportGenerator.generateAndPrintListReport(visitors: _filteredVisitors);
+              },
+              icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
+              label: const Text(
+                'Download Report',
+                style: TextStyle(
+                  color: Color(0xFF0284C7),
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                backgroundColor: const Color(0xFFF0F9FF),
+                side: const BorderSide(color: Color(0xFFBAE6FD)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(width: 8),
+
+            // Log Visitor Button
+            ElevatedButton(
+              onPressed: () => _showVisitorModal(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0284C7),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.add, size: 16, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text(
+                    'Log Visitor',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      letterSpacing: -0.1,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
 
-  // --- Left 1/3: Check-in Form Card (matching VisitorLog.tsx lines 409-555) ---
-  Widget _buildCheckInForm(bool isMr) {
-    return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.access_time_rounded, size: 18, color: Color(0xFF64748B)),
-              const SizedBox(width: 8),
-              Text(
-                _editingId != null ? 'Edit Visitor' : 'New Visitor / Check-in',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // 1. Full Name
-          const Text('Full Name *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-          const SizedBox(height: 6),
-          TextField(
-            controller: _nameCtrl,
-            decoration: InputDecoration(
-              hintText: 'Citizen full name',
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          // 2. Mobile
-          const Text('Mobile Number', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-          const SizedBox(height: 6),
-          TextField(
-            controller: _mobileCtrl,
-            keyboardType: TextInputType.phone,
-            decoration: InputDecoration(
-              prefixText: '+91 ',
-              hintText: '10 digits mobile',
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          // 3. Area / Venue
-          const Text('Area / Address', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-          const SizedBox(height: 6),
-          TextField(
-            controller: _areaCtrl,
-            decoration: InputDecoration(
-              hintText: 'Area or venue',
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          // 4. Purpose Dropdown
-          const Text('Purpose', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-          const SizedBox(height: 6),
-          DropdownButtonFormField<String>(
-            value: _selectedPurpose,
-            decoration: InputDecoration(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            items: [
-              'Complaint',
-              'Meeting',
-              'Greeting',
-              'Donation',
-              'Help',
-              'Other',
-            ].map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
-            onChanged: (val) {
-              if (val != null) setState(() => _selectedPurpose = val);
-            },
-          ),
-
-          const SizedBox(height: 12),
-
-          // 5. Reference
-          const Text('Reference (Optional)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-          const SizedBox(height: 6),
-          TextField(
-            controller: _referenceCtrl,
-            decoration: InputDecoration(
-              hintText: 'Referred by',
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          // 6. Remarks
-          const Text('Notes / Remarks', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-          const SizedBox(height: 6),
-          TextField(
-            controller: _remarksCtrl,
-            maxLines: 2,
-            decoration: InputDecoration(
-              hintText: 'Enter visit details or notes...',
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-          ),
-
-          const SizedBox(height: 18),
-
-          // Submit Button
-          SizedBox(
-            width: double.infinity,
-            height: 44,
-            child: ElevatedButton.icon(
-              onPressed: _handleSaveVisitor,
-              icon: const Icon(Icons.save_outlined, size: 18),
-              label: Text(
-                _editingId != null ? 'Update Visitor' : 'Log Visit',
-                style: const TextStyle(fontWeight: FontWeight.w700),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0284C7),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                elevation: 1,
-              ),
-            ),
-          ),
-
-          if (_editingId != null) ...[
-            const SizedBox(height: 8),
-            Center(
-              child: TextButton(
-                onPressed: _resetForm,
-                child: const Text('Cancel Edit', style: TextStyle(color: Color(0xFF64748B))),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  // --- Right 2/3: Search Bar + View Toggle + Grid / Report (matching lines 558-750) ---
+  // --- Full-Width Log Container ---
   Widget _buildLogContainer(List<VisitorModel> items, bool isMr) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -421,7 +482,7 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
               Row(
                 children: [
                   Text(
-                    'Visitor Log',
+                    'Visitors Overview',
                     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
                   ),
                   const SizedBox(width: 8),
@@ -439,10 +500,9 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
                   ),
                 ],
               ),
-
-              // View Toggle
+              // View mode toggles
               Container(
-                padding: const EdgeInsets.all(3),
+                padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(8),
@@ -455,11 +515,12 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
                       isActive: _viewMode == 'grid',
                       onTap: () => setState(() => _viewMode = 'grid'),
                     ),
+                    const SizedBox(width: 4),
                     _buildViewToggleButton(
-                      icon: Icons.table_chart_outlined,
-                      label: 'Report',
-                      isActive: _viewMode == 'report',
-                      onTap: () => setState(() => _viewMode = 'report'),
+                      icon: Icons.table_rows_rounded,
+                      label: 'Table',
+                      isActive: _viewMode == 'table',
+                      onTap: () => setState(() => _viewMode = 'table'),
                     ),
                   ],
                 ),
@@ -488,7 +549,7 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
               Expanded(
                 flex: 4,
                 child: DropdownButtonFormField<String>(
-                  value: _selectedArea,
+                  initialValue: _selectedArea,
                   isExpanded: true,
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF94A3B8)),
@@ -509,6 +570,48 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
             ],
           ),
 
+          const SizedBox(height: 14),
+
+          // Purpose Filter Chips
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                'All',
+                'Complaint',
+                'Meeting',
+                'Greeting',
+                'Donation',
+                'Help',
+                'Other',
+              ].map((purpose) {
+                final isSel = _purposeFilter == purpose;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: FilterChip(
+                    selected: isSel,
+                    showCheckmark: false,
+                    label: Text(purpose),
+                    labelStyle: TextStyle(
+                      fontSize: 12,
+                      fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
+                      color: isSel ? const Color(0xFF0284C7) : const Color(0xFF64748B),
+                    ),
+                    backgroundColor: Colors.white,
+                    selectedColor: const Color(0xFFF0F9FF),
+                    side: BorderSide(
+                      color: isSel ? const Color(0xFF0284C7) : const Color(0xFFE2E8F0),
+                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    onSelected: (_) {
+                      setState(() => _purposeFilter = purpose);
+                    },
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+
           const SizedBox(height: 20),
 
           // Content
@@ -525,11 +628,13 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
     );
   }
 
-  // --- Grid View (2 columns on wide area) ---
+  // --- Grid View (Responsive 1-4 columns) ---
   Widget _buildVisitorGrid(List<VisitorModel> items, bool isMr) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 700 ? 2 : 1;
+        final crossAxisCount = constraints.maxWidth > 1200
+            ? 3
+            : (constraints.maxWidth > 800 ? 2 : 1);
 
         return GridView.builder(
           shrinkWrap: true,
@@ -555,7 +660,7 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
@@ -581,13 +686,13 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
               _buildPurposeBadge(visitor.purpose),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           if (visitor.mobile.isNotEmpty) ...[
             Row(
               children: [
-                const Icon(Icons.phone_outlined, size: 12, color: Color(0xFF64748B)),
+                const Icon(Icons.phone_outlined, size: 13, color: Color(0xFF64748B)),
                 const SizedBox(width: 4),
-                Text('+91 ${visitor.mobile}', style: const TextStyle(fontSize: 11, color: Color(0xFF475569))),
+                Text('+91 ${visitor.mobile}', style: const TextStyle(fontSize: 12, color: Color(0xFF475569))),
               ],
             ),
             const SizedBox(height: 4),
@@ -595,10 +700,10 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
           if (visitor.area != null && visitor.area!.isNotEmpty) ...[
             Row(
               children: [
-                const Icon(Icons.location_on_outlined, size: 12, color: Color(0xFF64748B)),
+                const Icon(Icons.location_on_outlined, size: 13, color: Color(0xFF64748B)),
                 const SizedBox(width: 4),
                 Expanded(
-                  child: Text(visitor.area!, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)), overflow: TextOverflow.ellipsis),
+                  child: Text(visitor.area!, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)), overflow: TextOverflow.ellipsis),
                 ),
               ],
             ),
@@ -634,6 +739,7 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
                       icon: const Icon(Icons.edit_outlined, size: 16, color: Color(0xFF64748B)),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
+                      tooltip: 'Edit Visitor',
                       onPressed: () => _startEdit(visitor),
                     ),
                     const SizedBox(width: 8),
@@ -641,9 +747,30 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
                       icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFEF4444)),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
+                      tooltip: 'Delete Visitor',
                       onPressed: () async {
-                        await ref.read(visitorsRepoProvider).deleteVisitor(visitor.id);
-                        _loadVisitors();
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('Delete Visitor'),
+                            content: Text('Are you sure you want to delete ${visitor.name}?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: const Text('Cancel'),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
+                                onPressed: () => Navigator.pop(ctx, true),
+                                child: const Text('Delete', style: TextStyle(color: Colors.white)),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirm == true) {
+                          await ref.read(visitorsRepoProvider).deleteVisitor(visitor.id);
+                          _loadVisitors();
+                        }
                       },
                     ),
                   ],
@@ -690,6 +817,7 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
           DataColumn(label: Text('Purpose', style: TextStyle(fontWeight: FontWeight.w700))),
           DataColumn(label: Text('Area', style: TextStyle(fontWeight: FontWeight.w700))),
           DataColumn(label: Text('Date & Time', style: TextStyle(fontWeight: FontWeight.w700))),
+          DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.w700))),
         ],
         rows: items.map((v) {
           return DataRow(
@@ -699,6 +827,51 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
               DataCell(_buildPurposeBadge(v.purpose)),
               DataCell(Text(v.area ?? '-')),
               DataCell(Text('${v.formattedDate} • ${v.formattedTime}')),
+              DataCell(
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined, size: 16, color: Color(0xFF64748B)),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      tooltip: 'Edit',
+                      onPressed: () => _startEdit(v),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFEF4444)),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      tooltip: 'Delete',
+                      onPressed: () async {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('Delete Visitor'),
+                            content: Text('Are you sure you want to delete ${v.name}?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: const Text('Cancel'),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
+                                onPressed: () => Navigator.pop(ctx, true),
+                                child: const Text('Delete', style: TextStyle(color: Colors.white)),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirm == true) {
+                          await ref.read(visitorsRepoProvider).deleteVisitor(v.id);
+                          _loadVisitors();
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
             ],
           );
         }).toList(),

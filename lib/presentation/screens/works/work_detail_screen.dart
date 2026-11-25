@@ -569,7 +569,7 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
               child: Padding(
                 padding: const EdgeInsets.only(right: 4),
                 child: AppPdfButton.icon(
-                  tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Work Docket PDF',
+                  tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Report',
                   onPressed: () => AhwalReportGenerator.generateAndPrintAhwal(
                     selectedWorks: [_currentWork],
                   ),

@@ -48,8 +48,8 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
     _loadData();
   }
 
-  Future<void> _loadData() async {
-    setState(() => _isLoading = true);
+  Future<void> _loadData({bool showLoading = true}) async {
+    if (showLoading) setState(() => _isLoading = true);
     final repo = ref.read(housingSocietyRepoProvider);
 
     final list = await repo.getSocieties(
@@ -662,7 +662,7 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                         Container(width: 1, height: 24, color: const Color(0xFFE2E8F0)),
                         const SizedBox(width: 4),
                         AppPdfButton.icon(
-                          tooltip: 'Download PDF Report',
+                          tooltip: 'Download Report',
                           onPressed: () => HousingSocietyReportGenerator.generateAndPrintReport(societies: _societies),
                         ),
                       ],
@@ -987,7 +987,7 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
             MaterialPageRoute(
               builder: (_) => HousingSocietyDetailScreen(society: soc),
             ),
-          ).then((_) => _loadData());
+          ).then((res) { if (res == true) _loadData(showLoading: false); });
         },
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -1301,7 +1301,7 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                           MaterialPageRoute(
                             builder: (_) => HousingSocietyDetailScreen(society: soc),
                           ),
-                        ).then((_) => _loadData());
+                        ).then((res) { if (res == true) _loadData(showLoading: false); });
                       },
                       child: Text(
                         soc.displayName(true),
@@ -1377,7 +1377,7 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                               MaterialPageRoute(
                                 builder: (_) => HousingSocietyDetailScreen(society: soc),
                               ),
-                            ).then((_) => _loadData());
+                            ).then((res) { if (res == true) _loadData(showLoading: false); });
                           },
                         ),
                         IconButton(

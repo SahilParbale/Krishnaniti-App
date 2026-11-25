@@ -117,7 +117,7 @@ class _GalleryDetailScreenState extends ConsumerState<GalleryDetailScreen> {
               child: Padding(
                 padding: const EdgeInsets.only(right: 4),
                 child: AppPdfButton.icon(
-                  tooltip: 'Official PDF Report',
+                  tooltip: 'Download Report',
                   onPressed: () => GalleryReportGenerator.generateAndPrintReport(items: [_item]),
                 ),
               ),

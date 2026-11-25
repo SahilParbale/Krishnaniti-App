@@ -60,6 +60,19 @@ class DesktopScaffold extends ConsumerStatefulWidget {
 
 class _DesktopScaffoldState extends ConsumerState<DesktopScaffold> {
   bool _isSidebarCollapsed = false;
+  final Set<String> _visitedScreens = {'dashboard'};
+  final Map<String, Widget> _cachedScreens = {};
+
+  static const List<String> _screenKeyList = [
+    'dashboard', 'complaints', 'letters', 'profile_settings', 'diary',
+    'visitors', 'schemes', 'ward_problems', 'ward_map', 'work_history',
+    'improvements', 'provisions', 'gb_register', 'ward_budget', 'gov_office',
+    'social_analytics', 'newspaper', 'media_tracking', 'ai_content', 'events',
+    'gallery', 'result_analysis', 'sadasya', 'surveys', 'voters', 'team',
+    'opposition', 'ngo_mandals', 'housing_societies', 'duplicate_voters',
+    'voter_forms', 'karyakarta_work', 'sms', 'whatsapp_message', 'whatsapp_call',
+    'voice_call', 'ai_voice_call', 'conference_room', 'analysis_strategy', 'bar_customization',
+  ];
 
   void _openCommandPalette() {
     DesktopCommandPalette.show(context, (key) {
@@ -89,18 +102,8 @@ class _DesktopScaffoldState extends ConsumerState<DesktopScaffold> {
   }
 
   void _navigateToIndex(int index) {
-    const screenKeyList = [
-      'dashboard', 'complaints', 'letters', 'profile_settings', 'diary',
-      'visitors', 'schemes', 'ward_problems', 'ward_map', 'work_history',
-      'improvements', 'provisions', 'gb_register', 'ward_budget', 'gov_office',
-      'social_analytics', 'newspaper', 'media_tracking', 'ai_content', 'events',
-      'gallery', 'result_analysis', 'sadasya', 'surveys', 'voters', 'team',
-      'opposition', 'ngo_mandals', 'housing_societies', 'duplicate_voters',
-      'voter_forms', 'karyakarta_work', 'sms', 'whatsapp_message', 'whatsapp_call',
-      'voice_call', 'ai_voice_call', 'conference_room', 'analysis_strategy', 'bar_customization',
-    ];
-    if (index >= 0 && index < screenKeyList.length) {
-      ref.read(activeScreenProvider.notifier).setScreen(screenKeyList[index]);
+    if (index >= 0 && index < _screenKeyList.length) {
+      ref.read(activeScreenProvider.notifier).setScreen(_screenKeyList[index]);
     }
   }
 
@@ -195,6 +198,16 @@ class _DesktopScaffoldState extends ConsumerState<DesktopScaffold> {
   @override
   Widget build(BuildContext context) {
     final activeKey = ref.watch(activeScreenProvider);
+    _visitedScreens.add(activeKey);
+
+    int activeIndex = _screenKeyList.indexOf(activeKey);
+    if (activeIndex == -1) {
+      if (activeKey == 'tasks') {
+        activeIndex = _screenKeyList.indexOf('diary');
+      } else {
+        activeIndex = 0;
+      }
+    }
 
     return CallbackShortcuts(
       bindings: {
@@ -222,7 +235,16 @@ class _DesktopScaffoldState extends ConsumerState<DesktopScaffold> {
                 child: Container(
                   color: const Color(0xFFF8FAFC), // slate-50
                   height: double.infinity,
-                  child: _buildContent(activeKey),
+                  child: IndexedStack(
+                    index: activeIndex,
+                    children: _screenKeyList.map((k) {
+                      final isVisited = _visitedScreens.contains(k) || (k == 'diary' && _visitedScreens.contains('tasks'));
+                      if (isVisited) {
+                        return _cachedScreens.putIfAbsent(k, () => _buildContent(k));
+                      }
+                      return const SizedBox.shrink();
+                    }).toList(),
+                  ),
                 ),
               ),
             ],

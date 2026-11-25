@@ -347,7 +347,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                               onPressed: () => setState(() => _viewMode = _viewMode == 'feed' ? 'table' : 'feed'),
                             ),
                             AppPdfButton.icon(
-                              tooltip: 'Download PDF Report',
+                              tooltip: 'Download Report',
                               onPressed: () {
                                 if (_summary != null) {
                                   SocialAnalyticsReportGenerator.generateAndPrintReport(

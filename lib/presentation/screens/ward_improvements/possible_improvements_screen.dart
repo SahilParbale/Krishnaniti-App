@@ -55,8 +55,8 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
     super.dispose();
   }
 
-  Future<void> _fetchData() async {
-    setState(() => _loading = true);
+  Future<void> _fetchData({bool showLoading = true}) async {
+    if (showLoading) setState(() => _loading = true);
     final repo = ref.read(improvementsRepoProvider);
     final items = await repo.getImprovements();
     if (mounted) {
@@ -1004,7 +1004,7 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                 MaterialPageRoute(
                   builder: (_) => ImprovementDetailScreen(improvement: item),
                 ),
-              ).then((_) => _fetchData());
+              ).then((res) { if (res == true) _fetchData(showLoading: false); });
             },
             borderRadius: BorderRadius.circular(12),
             child: Container(
@@ -1252,7 +1252,7 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                       MaterialPageRoute(
                         builder: (_) => ImprovementDetailScreen(improvement: item),
                       ),
-                    ).then((_) => _fetchData());
+                    ).then((res) { if (res == true) _fetchData(showLoading: false); });
                   },
                   cells: [
                     DataCell(Text('${idx + 1}', style: const TextStyle(fontSize: 12))),

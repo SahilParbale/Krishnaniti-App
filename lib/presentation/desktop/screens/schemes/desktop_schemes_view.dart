@@ -5,6 +5,7 @@ import 'package:nagarsevak_mobile/data/models/scheme_model.dart';
 import 'package:nagarsevak_mobile/data/repositories/schemes_repository.dart';
 import 'package:nagarsevak_mobile/presentation/desktop/common/desktop_modal_dialog.dart';
 import 'package:nagarsevak_mobile/presentation/desktop/shell/desktop_sidebar.dart';
+import 'package:nagarsevak_mobile/presentation/screens/schemes/scheme_report_generator.dart';
 
 /// Desktop Government Schemes View matching SchemeList.tsx verbatim:
 /// - Sticky Header: Title + Subtitle + Help + Find Schemes (AI) + Add Scheme
@@ -210,8 +211,6 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
               const SizedBox(height: 16),
               _buildSearchBar(isMr),
               const SizedBox(height: 16),
-              _buildViewModeToggle(isMr),
-              const SizedBox(height: 16),
             ],
 
             // 4. Content Area
@@ -270,38 +269,63 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
           ],
         ),
 
-        // Actions: Help + AI Matcher + Add Scheme
+        // Actions: Download Report + Find Schemes (AI) + Add Scheme
         Row(
           children: [
+            OutlinedButton.icon(
+              onPressed: () {
+                SchemeReportGenerator.generateAndPrintListReport(schemes: _filteredSchemes, isMarathi: isMr);
+              },
+              icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
+              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+              style: OutlinedButton.styleFrom(
+                backgroundColor: const Color(0xFFF0F9FF),
+                side: const BorderSide(color: Color(0xFFBAE6FD)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(width: 8),
 
             OutlinedButton.icon(
               onPressed: () {},
-              icon: const Icon(Icons.auto_awesome_rounded, size: 18, color: Color(0xFF0284C7)),
-              label: Text(
+              icon: const Icon(Icons.auto_awesome_rounded, size: 16, color: Color(0xFF0284C7)),
+              label: const Text(
                 'Find Schemes (AI)',
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0369A1)),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0369A1)),
               ),
               style: OutlinedButton.styleFrom(
                 backgroundColor: const Color(0xFFF0F9FF),
                 side: const BorderSide(color: Color(0xFFBAE6FD)),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
-            const SizedBox(width: 10),
-            ElevatedButton.icon(
+            const SizedBox(width: 8),
+            ElevatedButton(
               onPressed: _openAddSchemeDialog,
-              icon: const Icon(Icons.add_rounded, size: 18),
-              label: Text(
-                'Add Scheme',
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0284C7),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                elevation: 1,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.add, size: 16, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text(
+                    'Add Scheme',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      letterSpacing: -0.1,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -412,39 +436,6 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
       ),
-    );
-  }
-
-  // --- View Mode Toggle ---
-  Widget _buildViewModeToggle(bool isMr) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(3),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-          ),
-          child: Row(
-            children: [
-              _buildViewToggleButton(
-                icon: Icons.grid_view_rounded,
-                label: 'Grid',
-                isActive: _viewMode == 'grid',
-                onTap: () => setState(() => _viewMode = 'grid'),
-              ),
-              _buildViewToggleButton(
-                icon: Icons.table_chart_outlined,
-                label: 'Report',
-                isActive: _viewMode == 'report',
-                onTap: () => setState(() => _viewMode = 'report'),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 

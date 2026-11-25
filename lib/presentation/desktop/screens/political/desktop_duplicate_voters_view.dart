@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../common/desktop_modal_dialog.dart';
 import '../../../../data/models/duplicate_voter_group_model.dart';
 import '../../../../data/repositories/duplicate_voters_repository.dart';
+import '../../../screens/duplicate_voters/duplicate_voters_report_generator.dart';
 
 class DesktopDuplicateVotersView extends ConsumerStatefulWidget {
   const DesktopDuplicateVotersView({super.key});
@@ -147,6 +148,8 @@ class _DesktopDuplicateVotersViewState extends ConsumerState<DesktopDuplicateVot
   }
 
   Widget _buildHeader() {
+    final totalAffected = _groups.fold<int>(0, (sum, g) => sum + g.recordsCount);
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -171,7 +174,23 @@ class _DesktopDuplicateVotersViewState extends ConsumerState<DesktopDuplicateVot
           ],
         ),
 
-
+        // Download Report matching DuplicateVoters.tsx
+        OutlinedButton.icon(
+          onPressed: () {
+            DuplicateVotersReportGenerator.generateAndPrintReport(
+              duplicateGroups: _groups,
+              totalAffectedVoters: totalAffected,
+            );
+          },
+          icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
+          label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+          style: OutlinedButton.styleFrom(
+            backgroundColor: const Color(0xFFF0F9FF),
+            side: const BorderSide(color: Color(0xFFBAE6FD)),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
       ],
     );
   }

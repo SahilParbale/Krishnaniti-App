@@ -54,8 +54,8 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
     super.dispose();
   }
 
-  Future<void> _loadSurveys() async {
-    setState(() => _isLoading = true);
+  Future<void> _loadSurveys({bool showLoading = true}) async {
+    if (showLoading) setState(() => _isLoading = true);
     final repo = ref.read(surveysRepoProvider);
     final votersRepo = ref.read(votersRepoProvider);
 
@@ -615,7 +615,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
           ),
 
           AppPdfButton.icon(
-            tooltip: 'Download PDF Report',
+            tooltip: 'Download Report',
             onPressed: () => SurveyReportGenerator.generateAndPrintReport(
               surveys: filtered,
               responseCounts: _surveyResponseCounts,
@@ -1014,7 +1014,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                         MaterialPageRoute(
                           builder: (_) => SurveyDetailScreen(survey: survey),
                         ),
-                      ).then((_) => _loadSurveys());
+                      ).then((res) { if (res == true) _loadSurveys(showLoading: false); });
                     },
                   ),
                 ),
@@ -1137,7 +1137,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                               MaterialPageRoute(
                                 builder: (_) => SurveyDetailScreen(survey: s),
                               ),
-                            ).then((_) => _loadSurveys());
+                            ).then((res) { if (res == true) _loadSurveys(showLoading: false); });
                           },
                         ),
                         IconButton(

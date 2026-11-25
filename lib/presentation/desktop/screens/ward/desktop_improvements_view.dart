@@ -30,8 +30,8 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
     _fetchData();
   }
 
-  Future<void> _fetchData() async {
-    setState(() => _loading = true);
+  Future<void> _fetchData({bool showLoading = true}) async {
+    if (showLoading) setState(() => _loading = true);
     try {
       final repo = ref.read(improvementsRepoProvider);
       final list = await repo.getImprovements();
@@ -388,64 +388,49 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
           ],
         ),
 
-        // Actions
+        // Actions: Download Report + Propose Improvement
         Row(
           children: [
-            // View Mode Switcher
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-                boxShadow: const [BoxShadow(color: Color(0x05000000), blurRadius: 4, offset: Offset(0, 1))],
-              ),
-              child: Row(
-                children: [
-                  _viewModeButton(
-                    label: 'Grid',
-                    icon: Icons.grid_view_rounded,
-                    isActive: _viewMode == 'grid',
-                    onTap: () => setState(() => _viewMode = 'grid'),
-                  ),
-                  _viewModeButton(
-                    label: 'Report',
-                    icon: Icons.table_chart_outlined,
-                    isActive: _viewMode == 'report',
-                    onTap: () => setState(() => _viewMode = 'report'),
-                  ),
-                ],
+            OutlinedButton.icon(
+              onPressed: () {
+                ImprovementReportGenerator.generateAndPrintImprovementReport(improvements: _filteredImprovements);
+              },
+              icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
+              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+              style: OutlinedButton.styleFrom(
+                backgroundColor: const Color(0xFFF0F9FF),
+                side: const BorderSide(color: Color(0xFFBAE6FD)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
 
-            if (_viewMode == 'report') ...[
-              OutlinedButton.icon(
-                onPressed: () {
-                  ImprovementReportGenerator.generateAndPrintImprovementReport(improvements: _filteredImprovements);
-                },
-                icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
-                label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 13)),
-                style: OutlinedButton.styleFrom(
-                  backgroundColor: const Color(0xFFF0F9FF),
-                  side: const BorderSide(color: Color(0xFFBAE6FD)),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-              ),
-              const SizedBox(width: 10),
-            ],
-
-            // Propose New Button
-            ElevatedButton.icon(
+            // Propose New Button (ns-btn-primary matching PossibleImprovements.tsx)
+            ElevatedButton(
               onPressed: _showAddModal,
-              icon: const Icon(Icons.add_rounded, size: 18, color: Colors.white),
-              label: const Text('+ Propose Improvement', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0284C7),
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                backgroundColor: const Color(0xFF0284C7), // bg-brand-600
+                foregroundColor: Colors.white,
                 elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), // rounded-xl
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.add, size: 16, color: Colors.white), // Plus w-4 h-4
+                  SizedBox(width: 8), // gap-2
+                  Text(
+                    'Propose Improvement',
+                    style: TextStyle(
+                      fontSize: 14, // text-sm
+                      fontWeight: FontWeight.w600, // font-semibold
+                      color: Colors.white,
+                      letterSpacing: -0.1,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -674,11 +659,13 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
 
             return InkWell(
               onTap: () {
-                Navigator.of(context).push(
+                Navigator.of(context).push<bool>(
                   MaterialPageRoute(
                     builder: (_) => ImprovementDetailScreen(improvement: item),
                   ),
-                ).then((_) => _fetchData());
+                ).then((res) {
+                  if (res == true) _fetchData(showLoading: false);
+                });
               },
               borderRadius: BorderRadius.circular(20),
               child: Stack(

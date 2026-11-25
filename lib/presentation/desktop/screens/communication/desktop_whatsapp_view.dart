@@ -7,6 +7,7 @@ import '../../../../data/models/voter_model.dart';
 import '../../../../data/models/whatsapp_broadcast_model.dart';
 import '../../../../data/repositories/whatsapp_repository.dart';
 import '../../shell/desktop_sidebar.dart';
+import '../../../screens/whatsapp/whatsapp_history_report_generator.dart';
 
 class DesktopWhatsappView extends ConsumerStatefulWidget {
   const DesktopWhatsappView({super.key});
@@ -271,19 +272,20 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppColors.slate200),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.help_outline_rounded, size: 16, color: AppColors.slate600),
-                          const SizedBox(width: 6),
-                          const Text('Help', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.slate700)),
-                        ],
+                    // Download Report matching WhatsAppCommunication.tsx
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        WhatsAppHistoryReportGenerator.generateAndPrintReport(
+                          broadcasts: _broadcastHistory,
+                        );
+                      },
+                      icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
+                      label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: const Color(0xFFF0F9FF),
+                        side: const BorderSide(color: Color(0xFFBAE6FD)),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
                   ],
@@ -612,10 +614,6 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
                         Text(
                           'WhatsApp Broadcast History',
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.slate800),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.refresh_rounded, color: AppColors.brand600),
-                          onPressed: _loadHistory,
                         ),
                       ],
                     ),

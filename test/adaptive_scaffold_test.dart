@@ -121,7 +121,6 @@ void main() {
     expect(find.text('Letters Dashboard'), findsOneWidget);
     expect(find.text('Manage Types'), findsOneWidget);
     expect(find.text('New Request'), findsOneWidget);
-    expect(find.text('Grid'), findsOneWidget);
-    expect(find.text('Report'), findsOneWidget);
+    expect(find.text('Download Report'), findsWidgets);
   });
 }

@@ -726,7 +726,7 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                                 ),
                                 const SizedBox(width: 6),
                                 AppPdfButton.icon(
-                                  tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download PDF Report',
+                                  tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Report',
                                   onPressed: () {
                                     GbRegisterReportGenerator.generateAndPrintGbReport(
                                       entries: displayed,

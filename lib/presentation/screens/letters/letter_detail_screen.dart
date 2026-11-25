@@ -521,7 +521,7 @@ class _LetterDetailScreenState extends ConsumerState<LetterDetailScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         AppPdfButton.icon(
-                          tooltip: isMr ? 'पत्र पीडीएफ डाउनलोड करा' : 'Download Letter PDF',
+                          tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Report',
                           onPressed: () => LetterReportGenerator.generateAndPrintSingleLetter(
                             letter: _letter,
                             letterBody: _letterPreviewText,

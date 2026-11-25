@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -62,15 +63,56 @@ class _AppImagePickerFieldState extends State<AppImagePickerField> {
 
   Future<void> _pick(ImageSource source) async {
     try {
-      if (widget.allowMultiple && source == ImageSource.gallery) {
-        final picked = await _picker.pickMultiImage();
-        if (picked.isNotEmpty) {
-          setState(() {
-            _files.addAll(picked);
-          });
-          widget.onFilesChanged(_files);
+      final isDesktopPlatform = kIsWeb || (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux));
+      if (source == ImageSource.gallery || isDesktopPlatform) {
+        // Use FilePicker to allow images and PDF / document files matching web MultiFileUpload
+        final List<PlatformFile> platformFiles;
+        if (widget.allowMultiple) {
+          platformFiles = await FilePicker.pickFiles(
+            type: FileType.custom,
+            allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xlsx', 'xls', 'txt'],
+          );
+        } else {
+          final single = await FilePicker.pickFile(
+            type: FileType.custom,
+            allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xlsx', 'xls', 'txt'],
+          );
+          platformFiles = single != null ? [single] : [];
         }
-      } else {
+
+        if (platformFiles.isNotEmpty) {
+          final newXFiles = platformFiles.map((f) => f.xFile).toList();
+
+          if (newXFiles.isNotEmpty) {
+            setState(() {
+              if (widget.allowMultiple) {
+                _files.addAll(newXFiles);
+              } else {
+                _files = [newXFiles.first];
+                _existingUrl = null;
+              }
+            });
+            widget.onFilesChanged(_files);
+            return;
+          }
+        }
+        return;
+      }
+
+      final picked = await _picker.pickImage(source: source);
+      if (picked != null) {
+        setState(() {
+          if (widget.allowMultiple) {
+            _files.add(picked);
+          } else {
+            _files = [picked];
+            _existingUrl = null;
+          }
+        });
+        widget.onFilesChanged(_files);
+      }
+    } catch (_) {
+      try {
         final picked = await _picker.pickImage(source: source);
         if (picked != null) {
           setState(() {
@@ -83,18 +125,18 @@ class _AppImagePickerFieldState extends State<AppImagePickerField> {
           });
           widget.onFilesChanged(_files);
         }
-      }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              widget.isMarathi
-                  ? 'फोटो निवडताना त्रुटी आली'
-                  : 'Failed to pick image',
+      } catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                widget.isMarathi
+                    ? 'फाईल किंवा फोटो निवडताना त्रुटी आली'
+                    : 'Failed to pick file or document',
+              ),
             ),
-          ),
-        );
+          );
+        }
       }
     }
   }
@@ -386,6 +428,7 @@ class _AppImagePickerFieldState extends State<AppImagePickerField> {
                 ..._files.asMap().entries.map((entry) {
                   final idx = entry.key;
                   final file = entry.value;
+                  final isPdf = file.name.toLowerCase().endsWith('.pdf');
 
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
@@ -397,27 +440,46 @@ class _AppImagePickerFieldState extends State<AppImagePickerField> {
                           child: Container(
                             width: 68,
                             height: 68,
-                            color: const Color(0xFFF1F5F9),
-                            child: kIsWeb
-                                ? Image.network(file.path, fit: BoxFit.cover)
-                                : Image.file(
-                                    File(file.path),
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, _, _) => Center(
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          const Icon(Icons.insert_drive_file_rounded, size: 22, color: Color(0xFF0284C7)),
-                                          Text(
+                            color: isPdf ? const Color(0xFFFEF2F2) : const Color(0xFFF1F5F9),
+                            child: isPdf
+                                ? Center(
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(Icons.picture_as_pdf_rounded, size: 24, color: Color(0xFFDC2626)),
+                                        const SizedBox(height: 2),
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                                          child: Text(
                                             file.name,
-                                            style: const TextStyle(fontSize: 8, color: Color(0xFF475569)),
+                                            style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Color(0xFF991B1B)),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
+                                  )
+                                : kIsWeb
+                                    ? Image.network(file.path, fit: BoxFit.cover)
+                                    : Image.file(
+                                        File(file.path),
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, _, _) => Center(
+                                          child: Column(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              const Icon(Icons.insert_drive_file_rounded, size: 22, color: Color(0xFF0284C7)),
+                                              Text(
+                                                file.name,
+                                                style: const TextStyle(fontSize: 8, color: Color(0xFF475569)),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
                           ),
                         ),
                         Positioned(

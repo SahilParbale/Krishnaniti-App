@@ -654,7 +654,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                       },
                     ),
                     AppPdfButton.icon(
-                      tooltip: 'Official PDF Report',
+                      tooltip: 'Download Report',
                       onPressed: () => EventReportGenerator.generateAndPrintReport(events: filtered),
                     ),
                   ],

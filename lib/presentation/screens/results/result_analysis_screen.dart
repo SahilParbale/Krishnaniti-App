@@ -341,7 +341,7 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
 
                   const SizedBox(width: 4),
                   AppPdfButton.icon(
-                    tooltip: 'Download PDF Report',
+                    tooltip: 'Download Report',
                     onPressed: _exportPdfReport,
                   ),
                 ],
@@ -639,7 +639,7 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
                 ),
                 const SizedBox(width: 8),
                 AppPdfButton.outlined(
-                  label: 'PDF Report',
+                  label: 'Download Report',
                   onPressed: _exportPdfReport,
                 ),
               ],
@@ -1339,7 +1339,7 @@ class _ResultAnalysisScreenState extends ConsumerState<ResultAnalysisScreen> {
               ),
               SizedBox(height: 4),
               Text(
-                'Click "Download PDF" to generate and print a full landscape A4 performance audit report.',
+                'Click "Download Report" to generate and print a full landscape A4 performance audit report.',
                 style: TextStyle(fontSize: 12, color: Color(0xFF475569)),
               ),
             ],

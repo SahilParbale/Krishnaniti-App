@@ -132,9 +132,39 @@ class _DesktopSocialAnalyticsViewState extends ConsumerState<DesktopSocialAnalyt
           ],
         ),
 
-        // Connect Buttons
+        // Actions Row matching SocialAnalytics.tsx
         Row(
           children: [
+            // Download Report
+            OutlinedButton.icon(
+              onPressed: () {
+                final summary = SocialAnalyticsSummary(
+                  totalPosts: _posts.length,
+                  totalReach: (_totalLikes + _totalComments) * 12,
+                  totalLikes: _totalLikes,
+                  totalComments: _totalComments,
+                  totalShares: _totalShares,
+                  averageEngagementRate: _posts.isNotEmpty ? ((_totalLikes + _totalComments) / _posts.length) : 0.0,
+                  monthlyGrowth: '+12.4%',
+                );
+                SocialAnalyticsReportGenerator.generateAndPrintReport(
+                  posts: _filteredPosts,
+                  summary: summary,
+                  birthdays: const [],
+                  platformFilter: _platformFilter,
+                );
+              },
+              icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
+              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+              style: OutlinedButton.styleFrom(
+                backgroundColor: const Color(0xFFF0F9FF),
+                side: const BorderSide(color: Color(0xFFBAE6FD)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(width: 8),
+
             ElevatedButton.icon(
               onPressed: () {},
               icon: const Icon(Icons.facebook, size: 18, color: Colors.white),

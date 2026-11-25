@@ -63,8 +63,8 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
     super.dispose();
   }
 
-  Future<void> _fetchComplaints() async {
-    setState(() => _isLoading = true);
+  Future<void> _fetchComplaints({bool showLoading = true}) async {
+    if (showLoading) setState(() => _isLoading = true);
     try {
       final repo = ref.read(complaintsRepoProvider);
       final results = await repo.getComplaints();
@@ -141,13 +141,13 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
 
   // Open Full Complaint Details Page matching ComplaintDetail.tsx
   void _openDetailSheet(ComplaintModel complaint, bool isMr) {
-    Navigator.push(
+    Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (_) => ComplaintDetailScreen(complaint: complaint),
       ),
-    ).then((_) {
-      _fetchComplaints();
+    ).then((res) {
+      if (res == true) _fetchComplaints(showLoading: false);
     });
   }
 
@@ -414,7 +414,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
 
                   // Download Complaints PDF Report Button
                   AppPdfButton.icon(
-                    tooltip: isMr ? 'तक्रार अहवाल डाउनलोड करा' : 'Download Complaints PDF Report',
+                    tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Report',
                     onPressed: () {
                       ComplaintReportGenerator.generateAndPrintReport(
                         complaints: filtered,

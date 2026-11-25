@@ -6,6 +6,7 @@ import 'package:nagarsevak_mobile/data/repositories/complaints_repository.dart';
 import 'package:nagarsevak_mobile/presentation/desktop/shell/desktop_sidebar.dart';
 import 'package:nagarsevak_mobile/presentation/screens/complaints/new_complaint_screen.dart';
 import 'package:nagarsevak_mobile/presentation/screens/complaints/complaint_detail_screen.dart';
+import 'package:nagarsevak_mobile/presentation/screens/complaints/complaint_report_generator.dart';
 
 /// Desktop Complaints & Requests View matching ComplaintList.tsx 1:1:
 /// - Sticky Header with Title, Found badge, Help button, and + New Request button
@@ -37,8 +38,8 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
     _loadComplaints();
   }
 
-  Future<void> _loadComplaints() async {
-    setState(() => _loading = true);
+  Future<void> _loadComplaints({bool showLoading = true}) async {
+    if (showLoading) setState(() => _loading = true);
     try {
       final repo = ref.read(complaintsRepoProvider);
       final data = await repo.getComplaints(limit: 100);
@@ -107,7 +108,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
   }
 
   void _openNewComplaintModal() {
-    showDialog(
+    showDialog<bool>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.45),
       builder: (ctx) => Dialog(
@@ -124,15 +125,19 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
           child: const NewComplaintScreen(),
         ),
       ),
-    ).then((_) => _loadComplaints());
+    ).then((res) {
+      if (res == true) _loadComplaints(showLoading: false);
+    });
   }
 
   void _openComplaintDetail(ComplaintModel complaint) {
-    Navigator.of(context).push(
+    Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => ComplaintDetailScreen(complaint: complaint),
       ),
-    ).then((_) => _loadComplaints());
+    ).then((res) {
+      if (res == true) _loadComplaints(showLoading: false);
+    });
   }
 
   @override
@@ -224,25 +229,52 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
           ),
         ),
 
-        // Action Buttons: Help & + New Request
+        // Action Buttons: Download Report + New Request / New Complaint matching ns-btn-primary
         Row(
           children: [
-
-            ElevatedButton.icon(
-              onPressed: _openNewComplaintModal,
-              icon: const Icon(Icons.add_rounded, size: 18),
-              label: Text(
-                _activeTab == 'Personal Help'
-                    ? ('New Personal Request')
-                    : ('New Complaint'),
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+            OutlinedButton.icon(
+              onPressed: () {
+                ComplaintReportGenerator.generateAndPrintReport(
+                  complaints: _filteredComplaints,
+                  statusFilter: _filterStatus,
+                  areaFilter: _selectedArea,
+                  title: _activeTab == 'Personal Help' ? 'Personal Requests Report' : 'Area Complaints Report',
+                );
+              },
+              icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
+              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+              style: OutlinedButton.styleFrom(
+                backgroundColor: const Color(0xFFF0F9FF),
+                side: const BorderSide(color: Color(0xFFBAE6FD)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton(
+              onPressed: _openNewComplaintModal,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0284C7), // bg-brand-600
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                elevation: 1,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), // rounded-xl
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.add, size: 16, color: Colors.white), // Plus w-4 h-4
+                  const SizedBox(width: 8), // gap-2
+                  Text(
+                    _activeTab == 'Personal Help' ? 'New Request' : 'New Complaint',
+                    style: const TextStyle(
+                      fontSize: 14, // text-sm
+                      fontWeight: FontWeight.w600, // font-semibold
+                      color: Colors.white,
+                      letterSpacing: -0.1,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -275,32 +307,6 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
                 onTap: () => setState(() => _activeTab = 'Personal Help'),
               ),
             ],
-          ),
-
-          // View Mode Toggle (matching ComplaintList.tsx lines 516-537)
-          Container(
-            padding: const EdgeInsets.all(3),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
-            child: Row(
-              children: [
-                _buildViewToggleButton(
-                  icon: Icons.grid_view_rounded,
-                  label: 'Grid',
-                  isActive: _viewMode == 'grid',
-                  onTap: () => setState(() => _viewMode = 'grid'),
-                ),
-                _buildViewToggleButton(
-                  icon: Icons.description_outlined,
-                  label: 'Report',
-                  isActive: _viewMode == 'report',
-                  onTap: () => setState(() => _viewMode = 'report'),
-                ),
-              ],
-            ),
           ),
         ],
       ),

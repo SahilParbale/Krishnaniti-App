@@ -389,7 +389,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                         ),
                         const SizedBox(width: 8),
                         AppPdfButton.icon(
-                          tooltip: 'Export Dossier PDF',
+                          tooltip: 'Download Report',
                           onPressed: _exportDossierPdf,
                         ),
                       ],

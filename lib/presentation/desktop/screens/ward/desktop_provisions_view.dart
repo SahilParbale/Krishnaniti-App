@@ -523,26 +523,41 @@ class _DesktopProvisionsViewState extends ConsumerState<DesktopProvisionsView> {
                 WardProvisionReportGenerator.generateAndPrintProvisionReport(provisions: _provisions, year: _year);
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
-              label: const Text('Download PDF', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 13)),
+              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
               style: OutlinedButton.styleFrom(
                 backgroundColor: const Color(0xFFF0F9FF),
                 side: const BorderSide(color: Color(0xFFBAE6FD)),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
             const SizedBox(width: 12),
 
-            // Add Request Button
-            ElevatedButton.icon(
+            // Add Request Button (ns-btn-primary matching WardProvisions.tsx)
+            ElevatedButton(
               onPressed: _showAddModal,
-              icon: const Icon(Icons.add_rounded, size: 18, color: Colors.white),
-              label: const Text('+ Add Provision Request', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0284C7),
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                backgroundColor: const Color(0xFF0284C7), // bg-brand-600
+                foregroundColor: Colors.white,
                 elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), // rounded-xl
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.add, size: 16, color: Colors.white), // Plus w-4 h-4
+                  SizedBox(width: 8), // gap-2
+                  Text(
+                    'Add Provision Request',
+                    style: TextStyle(
+                      fontSize: 14, // text-sm
+                      fontWeight: FontWeight.w600, // font-semibold
+                      color: Colors.white,
+                      letterSpacing: -0.1,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

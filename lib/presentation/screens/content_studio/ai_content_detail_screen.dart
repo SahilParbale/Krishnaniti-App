@@ -141,7 +141,7 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
             ),
             IconButton(
               icon: const Icon(Icons.print_rounded, color: Colors.white),
-              tooltip: 'Print Letterhead PDF',
+              tooltip: 'Download Report',
               onPressed: _handlePrintPdf,
             ),
             IconButton(

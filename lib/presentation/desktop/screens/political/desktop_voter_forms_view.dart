@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../data/models/voter_application_model.dart';
 import '../../../../data/repositories/voter_applications_repository.dart';
+import '../../../screens/voter_forms/voter_forms_report_generator.dart';
 
 class DesktopVoterFormsView extends ConsumerStatefulWidget {
   const DesktopVoterFormsView({super.key});
@@ -315,17 +316,55 @@ class _DesktopVoterFormsViewState extends ConsumerState<DesktopVoterFormsView> {
           ],
         ),
 
-        // Add Button
-        ElevatedButton.icon(
-          onPressed: () => _showAddModal(),
-          icon: const Icon(Icons.note_add_outlined, size: 18, color: Colors.white),
-          label: const Text('+ New Application', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF0284C7),
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            elevation: 0,
-          ),
+        // Actions Row matching VoterForms.tsx
+        Row(
+          children: [
+            // Download Report
+            OutlinedButton.icon(
+              onPressed: () {
+                VoterFormsReportGenerator.generateAndPrintReport(
+                  applications: _applications,
+                );
+              },
+              icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
+              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+              style: OutlinedButton.styleFrom(
+                backgroundColor: const Color(0xFFF0F9FF),
+                side: const BorderSide(color: Color(0xFFBAE6FD)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(width: 8),
+
+            // Add Button
+            ElevatedButton(
+              onPressed: () => _showAddModal(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0284C7),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.add, size: 16, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text(
+                    'New Application',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      letterSpacing: -0.1,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ],
     );

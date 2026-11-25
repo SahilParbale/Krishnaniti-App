@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../shell/desktop_sidebar.dart';
+import '../../../screens/voice/conference_room_screen.dart';
+import '../../../screens/voice/conference_meeting_report_generator.dart';
 
 class MeetingItem {
   final String id;
@@ -226,16 +228,58 @@ class _DesktopConferenceViewState extends ConsumerState<DesktopConferenceView> {
                 ),
                 Row(
                   children: [
-                    ElevatedButton.icon(
+                    // Download Report matching ConferenceRoom.tsx
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        final mapped = _meetings.map<ConferenceMeetingModel>((m) => ConferenceMeetingModel(
+                          id: m.id,
+                          title: m.title,
+                          meetLink: m.meetLink,
+                          scheduledAt: m.scheduledAt,
+                          status: m.status,
+                          invitedCount: m.invitedCount,
+                          createdAt: DateTime.now(),
+                        )).toList();
+                        ConferenceMeetingReportGenerator.generateAndPrintMeetingReport(
+                          meetings: mapped,
+                        );
+                      },
+                      icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
+                      label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: const Color(0xFFF0F9FF),
+                        side: const BorderSide(color: Color(0xFFBAE6FD)),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+
+                    ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.brandPrimary,
+                        backgroundColor: const Color(0xFF0284C7),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
                       ),
                       onPressed: () => _openCreateMeetingDialog(isMr),
-                      icon: const Icon(Icons.add_rounded, size: 18),
-                      label: const Text('Schedule Meeting'),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(Icons.add, size: 16, color: Colors.white),
+                          SizedBox(width: 8),
+                          Text(
+                            'Schedule Meeting',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                              letterSpacing: -0.1,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),

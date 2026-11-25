@@ -38,8 +38,8 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
     _fetchDashboardData();
   }
 
-  Future<void> _fetchDashboardData() async {
-    setState(() => _loading = true);
+  Future<void> _fetchDashboardData({bool showLoading = true}) async {
+    if (showLoading) setState(() => _loading = true);
     try {
       final compRepo = ComplaintsRepository();
       final voterRepo = VotersRepository();
@@ -78,7 +78,7 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
   }
 
   void _openNewRequestModal() {
-    showDialog(
+    showDialog<bool>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.45),
       builder: (ctx) => Dialog(
@@ -95,7 +95,9 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
           child: const NewComplaintScreen(),
         ),
       ),
-    ).then((_) => _fetchDashboardData());
+    ).then((res) {
+      if (res == true) _fetchDashboardData(showLoading: false);
+    });
   }
 
   @override
@@ -272,18 +274,31 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
           children: [
 
 
-            // + New Request Button (ns-btn-primary)
-            ElevatedButton.icon(
+            // New Request Button (ns-btn-primary matching Dashboard.tsx)
+            ElevatedButton(
               onPressed: _openNewRequestModal,
-              icon: const Icon(Icons.add_rounded, size: 18),
-              label: const Text('+ New Request'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brand600,
+                backgroundColor: AppColors.brand600, // bg-brand-600
                 foregroundColor: Colors.white,
                 elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                textStyle: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), // rounded-xl
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.add, size: 16, color: Colors.white), // Plus w-4 h-4
+                  SizedBox(width: 8), // gap-2
+                  Text(
+                    'New Request',
+                    style: TextStyle(
+                      fontSize: 14, // text-sm
+                      fontWeight: FontWeight.w600, // font-semibold
+                      color: Colors.white,
+                      letterSpacing: -0.1,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

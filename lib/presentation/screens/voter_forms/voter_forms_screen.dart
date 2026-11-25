@@ -1066,7 +1066,7 @@ class _VoterFormsScreenState extends ConsumerState<VoterFormsScreen> with Single
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF16A34A)),
                   ),
                   AppPdfButton.outlined(
-                    label: 'PDF Report',
+                    label: 'Download Report',
                     onPressed: () => VoterFormsReportGenerator.generateAndPrintReport(applications: _applications),
                   ),
                 ],
