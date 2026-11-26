@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../data/models/karyakarta_work_model.dart';
 import '../../../../data/repositories/karyakarta_work_repository.dart';
 import '../../../screens/karyakarta_work/karyakarta_work_report_generator.dart';
+import '../../../widgets/app_dropdown.dart';
 
 class DesktopKaryakartaWorkView extends ConsumerStatefulWidget {
   const DesktopKaryakartaWorkView({super.key});
@@ -116,8 +117,11 @@ class _DesktopKaryakartaWorkViewState extends ConsumerState<DesktopKaryakartaWor
                           children: [
                             const Text('Priority', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
                             const SizedBox(height: 6),
-                            DropdownButtonFormField<String>(
+                            AppDropdown<String>(
                               value: priority,
+                              height: 44,
+                              backgroundColor: const Color(0xFFF8FAFC),
+                              borderColor: const Color(0xFFE2E8F0),
                               items: const [
                                 DropdownMenuItem(value: 'High', child: Text('High')),
                                 DropdownMenuItem(value: 'Medium', child: Text('Medium')),
@@ -126,14 +130,6 @@ class _DesktopKaryakartaWorkViewState extends ConsumerState<DesktopKaryakartaWor
                               onChanged: (val) {
                                 if (val != null) setModalState(() => priority = val);
                               },
-                              decoration: InputDecoration(
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  filled: true,
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                              ),
                             ),
                           ],
                         ),

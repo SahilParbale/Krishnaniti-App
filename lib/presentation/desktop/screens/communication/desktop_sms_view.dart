@@ -8,6 +8,7 @@ import '../../../../data/models/sms_campaign_model.dart';
 import '../../../../data/repositories/sms_repository.dart';
 import '../../shell/desktop_sidebar.dart';
 import '../../../screens/sms/sms_history_report_generator.dart';
+import '../../../widgets/app_dropdown.dart';
 
 class DesktopSmsView extends ConsumerStatefulWidget {
   const DesktopSmsView({super.key});
@@ -334,17 +335,16 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
                         const SizedBox(width: 12),
                         SizedBox(
                           width: 150,
-                          child: DropdownButtonFormField<String>(
-                            value: _selectedGender.isEmpty ? null : _selectedGender,
-                            hint: const Text('Gender', style: TextStyle(fontSize: 13)),
-                            decoration: InputDecoration(
-                              isDense: true,
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                            ),
-                            items: [
-                              const DropdownMenuItem(value: '', child: Text('All Genders')),
-                              const DropdownMenuItem(value: 'M', child: Text('Male')),
-                              const DropdownMenuItem(value: 'F', child: Text('Female')),
+                          child: AppDropdown<String>(
+                            value: _selectedGender,
+                            height: 40,
+                            prefixIcon: const Icon(Icons.people_outline, size: 16, color: Color(0xFF94A3B8)),
+                            backgroundColor: Colors.white,
+                            borderColor: const Color(0xFFE2E8F0),
+                            items: const [
+                              DropdownMenuItem(value: '', child: Text('All Genders')),
+                              DropdownMenuItem(value: 'M', child: Text('Male')),
+                              DropdownMenuItem(value: 'F', child: Text('Female')),
                             ],
                             onChanged: (v) {
                               setState(() => _selectedGender = v ?? '');

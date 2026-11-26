@@ -7,6 +7,7 @@ import '../../../../data/models/improvement_model.dart';
 import '../../../../data/repositories/improvements_repository.dart';
 import '../../../screens/ward_improvements/improvement_detail_screen.dart';
 import '../../../screens/ward_improvements/improvement_report_generator.dart';
+import '../../../widgets/app_dropdown.dart';
 
 class DesktopImprovementsView extends ConsumerStatefulWidget {
   const DesktopImprovementsView({super.key});
@@ -19,10 +20,30 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
   bool _loading = true;
   List<ImprovementModel> _improvements = [];
   String _searchTerm = '';
-  String _areaSearch = '';
-  String _dateSearch = '';
+  String _selectedArea = 'All';
+  String _selectedDate = 'All';
   String _statusFilter = 'All'; // 'All' | 'Pending' | 'Planned' | 'In Progress' | 'Complete'
   String _viewMode = 'grid'; // 'grid' | 'table'
+
+  List<String> get _uniqueAreas {
+    final areas = _improvements
+        .map((i) => i.area.trim())
+        .where((a) => a.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
+    return ['All', ...areas];
+  }
+
+  List<String> get _uniqueDates {
+    final dates = _improvements
+        .map((i) => _formatDate(i.createdAt).trim())
+        .where((d) => d.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort((a, b) => b.compareTo(a));
+    return ['All', ...dates];
+  }
 
   @override
   void initState() {
@@ -68,11 +89,11 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
           item.description.toLowerCase().contains(_searchTerm.toLowerCase()) ||
           item.location.toLowerCase().contains(_searchTerm.toLowerCase());
 
-      final matchesArea = _areaSearch.isEmpty ||
-          item.area.toLowerCase().contains(_areaSearch.toLowerCase());
+      final matchesArea = _selectedArea == 'All' ||
+          item.area.toLowerCase().trim() == _selectedArea.toLowerCase().trim();
 
-      final matchesDate = _dateSearch.isEmpty ||
-          _formatDate(item.createdAt).toLowerCase().contains(_dateSearch.toLowerCase());
+      final matchesDate = _selectedDate == 'All' ||
+          _formatDate(item.createdAt).toLowerCase().trim() == _selectedDate.toLowerCase().trim();
 
       final matchesStatus = _statusFilter == 'All' || item.status == _statusFilter;
 
@@ -275,8 +296,11 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
                             children: [
                               const Text('Status', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
                               const SizedBox(height: 6),
-                              DropdownButtonFormField<String>(
+                              AppDropdown<String>(
                                 value: selectedStatus,
+                                height: 44,
+                                backgroundColor: const Color(0xFFF8FAFC),
+                                borderColor: const Color(0xFFE2E8F0),
                                 items: const [
                                   DropdownMenuItem(value: 'Pending', child: Text('Pending')),
                                   DropdownMenuItem(value: 'Planned', child: Text('Planned')),
@@ -286,14 +310,6 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
                                 onChanged: (val) {
                                   if (val != null) setModalState(() => selectedStatus = val);
                                 },
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  filled: true,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                ),
                               ),
                             ],
                           ),
@@ -499,25 +515,21 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
         // Area Filter (Col 3)
         Expanded(
           flex: 3,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
-            child: TextField(
-              onChanged: (val) => setState(() => _areaSearch = val),
-              decoration: InputDecoration(
-                hintText: 'Search Area...',
-                hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF94A3B8)),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                suffixIcon: _areaSearch.isNotEmpty
-                    ? IconButton(icon: const Icon(Icons.clear, size: 16), onPressed: () => setState(() => _areaSearch = ''))
-                    : null,
-              ),
-            ),
+          child: AppDropdown<String>(
+            value: _selectedArea,
+            height: 44,
+            prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF94A3B8)),
+            backgroundColor: Colors.white,
+            borderColor: const Color(0xFFE2E8F0),
+            items: _uniqueAreas.map((area) {
+              return DropdownMenuItem(
+                value: area,
+                child: Text(area == 'All' ? 'All Areas' : area, overflow: TextOverflow.ellipsis),
+              );
+            }).toList(),
+            onChanged: (val) {
+              if (val != null) setState(() => _selectedArea = val);
+            },
           ),
         ),
         const SizedBox(width: 14),
@@ -525,25 +537,21 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
         // Date Filter (Col 3)
         Expanded(
           flex: 3,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
-            child: TextField(
-              onChanged: (val) => setState(() => _dateSearch = val),
-              decoration: InputDecoration(
-                hintText: 'Search date (e.g. Nov 2024)',
-                hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                prefixIcon: const Icon(Icons.calendar_today_outlined, size: 18, color: Color(0xFF94A3B8)),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                suffixIcon: _dateSearch.isNotEmpty
-                    ? IconButton(icon: const Icon(Icons.clear, size: 16), onPressed: () => setState(() => _dateSearch = ''))
-                    : null,
-              ),
-            ),
+          child: AppDropdown<String>(
+            value: _selectedDate,
+            height: 44,
+            prefixIcon: const Icon(Icons.calendar_today_outlined, size: 18, color: Color(0xFF94A3B8)),
+            backgroundColor: Colors.white,
+            borderColor: const Color(0xFFE2E8F0),
+            items: _uniqueDates.map((date) {
+              return DropdownMenuItem(
+                value: date,
+                child: Text(date == 'All' ? 'All Dates' : date, overflow: TextOverflow.ellipsis),
+              );
+            }).toList(),
+            onChanged: (val) {
+              if (val != null) setState(() => _selectedDate = val);
+            },
           ),
         ),
       ],

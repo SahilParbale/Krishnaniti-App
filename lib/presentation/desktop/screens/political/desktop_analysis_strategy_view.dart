@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../shell/desktop_sidebar.dart';
 import '../../../screens/analysis_strategy/analysis_strategy_screen.dart';
 import '../../../screens/analysis_strategy/analysis_strategy_report_generator.dart';
+import '../../../widgets/app_dropdown.dart';
 
 class DesktopAnalysisStrategyView extends ConsumerStatefulWidget {
   const DesktopAnalysisStrategyView({super.key});
@@ -196,24 +196,22 @@ class _DesktopAnalysisStrategyViewState extends ConsumerState<DesktopAnalysisStr
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.slate700),
                   ),
                   const SizedBox(width: 14),
-                  SizedBox(
+                  AppDropdown<String>(
+                    value: _selectedArea,
+                    height: 40,
                     width: 220,
-                    child: DropdownButtonFormField<String>(
-                      value: _selectedArea,
-                      decoration: InputDecoration(
-                        isDense: true,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                      items: _areas
-                          .map((a) => DropdownMenuItem(value: a, child: Text(a, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold))))
-                          .toList(),
-                      onChanged: (v) {
-                        if (v != null) {
-                          setState(() => _selectedArea = v);
-                          _triggerAiAnalysis();
-                        }
-                      },
-                    ),
+                    prefixIcon: const Icon(Icons.location_on_outlined, size: 16, color: Color(0xFF94A3B8)),
+                    backgroundColor: Colors.white,
+                    borderColor: const Color(0xFFE2E8F0),
+                    items: _areas
+                        .map((a) => DropdownMenuItem(value: a, child: Text(a)))
+                        .toList(),
+                    onChanged: (v) {
+                      if (v != null) {
+                        setState(() => _selectedArea = v);
+                        _triggerAiAnalysis();
+                      }
+                    },
                   ),
                 ],
               ),

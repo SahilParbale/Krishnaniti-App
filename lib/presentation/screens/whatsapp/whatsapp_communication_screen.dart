@@ -63,13 +63,6 @@ class _WhatsAppCommunicationScreenState
   bool _isSending = false;
   WhatsAppTemplateModel? _selectedTemplate;
 
-  // Bot status simulation (UI only since socket not available in mobile)
-  final String _botStatus = 'connected';
-
-  // Pulsing animation for bot indicator
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnim;
-
   @override
   void initState() {
     super.initState();
@@ -80,14 +73,6 @@ class _WhatsAppCommunicationScreenState
       }
       setState(() {});
     });
-
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 1),
-    )..repeat(reverse: true);
-    _pulseAnim = Tween<double>(begin: 0.5, end: 1.0).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
 
     _loadVoters();
     _loadHistory();
@@ -101,7 +86,6 @@ class _WhatsAppCommunicationScreenState
     _houseNoController.dispose();
     _casteController.dispose();
     _messageController.dispose();
-    _pulseController.dispose();
     super.dispose();
   }
 
@@ -275,7 +259,7 @@ class _WhatsAppCommunicationScreenState
                     children: const [
                       Text('Channel:', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
                       Text(
-                        'WhatsApp Bot (wa.me)',
+                        'Official WhatsApp (wa.me)',
                         style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF047857)),
                       ),
                     ],
@@ -383,76 +367,6 @@ class _WhatsAppCommunicationScreenState
     await WhatsAppHistoryReportGenerator.generateAndPrintReport(broadcasts: _broadcastHistory);
   }
 
-  void _showBotStatusDialog() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: const [
-            Icon(Icons.hub_rounded, color: _kWaGreen),
-            SizedBox(width: 8),
-            Text('WhatsApp Bot Status', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF0FDF4),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFBBF7D0)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 10,
-                    height: 10,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: _kWaGreen,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text(
-                      'Bot Connected & Active',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: _kWaDark),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Server Endpoint: nagarsevak-managment-1.onrender.com',
-              style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'Directly integrated with the Ward 12 official WhatsApp Business account. Outbound broadcasts are automatically queued and dispatched by the bot.',
-              style: TextStyle(fontSize: 11.5, color: Color(0xFF475569)),
-            ),
-          ],
-        ),
-        actions: [
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _kWaDark,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _showHelpTutorialDialog() {
     showDialog(
       context: context,
@@ -472,8 +386,8 @@ class _WhatsAppCommunicationScreenState
             children: [
               _buildTutorialStep(
                 step: '1',
-                title: 'Check Bot Status',
-                desc: 'Ensure the "Bot Active" indicator is green. Messages are dispatched only when the bot service is online.',
+                title: 'Select Voters',
+                desc: 'Filter and select voters from your directory to prepare targeted WhatsApp communications.',
               ),
               _buildTutorialStep(
                 step: '2',
@@ -596,7 +510,13 @@ class _WhatsAppCommunicationScreenState
             ),
           ],
         ),
-        actions: const [],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline_rounded, color: Colors.white),
+            tooltip: 'Guide',
+            onPressed: _showHelpTutorialDialog,
+          ),
+        ],
         ),
       body: Column(
         children: [
@@ -663,54 +583,6 @@ class _WhatsAppCommunicationScreenState
                   ),
                 ),
                 const SizedBox(width: 8),
-                // Bot status pill (clickable)
-                AnimatedBuilder(
-                  animation: _pulseAnim,
-                  builder: (context, child) {
-                    final isConn = _botStatus == 'connected';
-                    return InkWell(
-                      onTap: _showBotStatusDialog,
-                      borderRadius: BorderRadius.circular(20),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: isConn ? const Color(0xFFF0FDF4) : const Color(0xFFFEF2F2),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: isConn ? const Color(0xFFBBF7D0) : const Color(0xFFFECACA),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 7,
-                              height: 7,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: isConn
-                                    ? const Color(0xFF16A34A)
-                                    : const Color(0xFFDC2626),
-                              ),
-                            ),
-                            const SizedBox(width: 5),
-                            Text(
-                              isConn ? 'Active' : 'Offline',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: isConn ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(width: 6),
-
-                const SizedBox(width: 4),
                 AppPdfButton.outlined(
                   label: 'Reports',
                   tooltip: 'Reports',
@@ -1619,7 +1491,7 @@ class _WhatsAppCommunicationScreenState
                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                 ),
                 const Text(
-                  'Dispatched via official WhatsApp Bot',
+                  'Dispatched via official WhatsApp',
                   style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
                 ),
               ],

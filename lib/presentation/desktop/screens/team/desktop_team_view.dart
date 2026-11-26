@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../data/models/team_model.dart';
 import '../../../../data/repositories/team_repository.dart';
 import '../../../screens/team/team_report_generator.dart';
+import '../../../widgets/app_dropdown.dart';
 
 class DesktopTeamView extends ConsumerStatefulWidget {
   const DesktopTeamView({super.key});
@@ -18,6 +19,28 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
   List<TeamMemberModel> _teamMembers = [];
   String _activeTab = 'Office'; // 'Office', 'Party', 'Cooperative'
   String _searchTerm = '';
+  String _selectedArea = 'All';
+  String _selectedWing = 'All';
+
+  List<String> get _uniqueAreas {
+    final areas = _teamMembers
+        .map((m) => (m.area ?? '').trim())
+        .where((a) => a.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
+    return ['All', ...areas];
+  }
+
+  List<String> get _uniqueWings {
+    final wings = _teamMembers
+        .map((m) => (m.partyWing ?? '').trim())
+        .where((w) => w.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
+    return ['All', ...wings];
+  }
 
   @override
   void initState() {
@@ -55,7 +78,13 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
           m.role.toLowerCase().contains(_searchTerm.toLowerCase()) ||
           (m.area?.toLowerCase().contains(_searchTerm.toLowerCase()) ?? false);
 
-      return matchesSearch;
+      final matchesArea = _selectedArea == 'All' ||
+          (m.area != null && m.area!.toLowerCase().contains(_selectedArea.toLowerCase()));
+
+      final matchesWing = _selectedWing == 'All' ||
+          (m.partyWing != null && m.partyWing!.toLowerCase() == _selectedWing.toLowerCase());
+
+      return matchesSearch && matchesArea && matchesWing;
     }).toList();
   }
 
@@ -452,22 +481,74 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
   }
 
   Widget _buildSearchRow() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: TextField(
-        onChanged: (val) => setState(() => _searchTerm = val),
-        decoration: const InputDecoration(
-          hintText: 'Search staff by name, role, mobile...',
-          hintStyle: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-          prefixIcon: Icon(Icons.search, size: 18, color: Color(0xFF94A3B8)),
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    return Row(
+      children: [
+        // Name / Mobile Search (Col 6)
+        Expanded(
+          flex: 6,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: TextField(
+              onChanged: (val) => setState(() => _searchTerm = val),
+              decoration: const InputDecoration(
+                hintText: 'Search staff by name, role, mobile...',
+                hintStyle: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                prefixIcon: Icon(Icons.search, size: 18, color: Color(0xFF94A3B8)),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              ),
+            ),
+          ),
         ),
-      ),
+        const SizedBox(width: 14),
+
+        // Area Filter (Col 3)
+        Expanded(
+          flex: 3,
+          child: AppDropdown<String>(
+            value: _selectedArea,
+            height: 44,
+            prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF94A3B8)),
+            backgroundColor: Colors.white,
+            borderColor: const Color(0xFFE2E8F0),
+            items: _uniqueAreas.map((area) {
+              return DropdownMenuItem(
+                value: area,
+                child: Text(area == 'All' ? 'All Areas' : area, overflow: TextOverflow.ellipsis),
+              );
+            }).toList(),
+            onChanged: (val) {
+              if (val != null) setState(() => _selectedArea = val);
+            },
+          ),
+        ),
+        const SizedBox(width: 14),
+
+        // Wing Filter (Col 3)
+        Expanded(
+          flex: 3,
+          child: AppDropdown<String>(
+            value: _selectedWing,
+            height: 44,
+            prefixIcon: const Icon(Icons.flag_outlined, size: 18, color: Color(0xFF94A3B8)),
+            backgroundColor: Colors.white,
+            borderColor: const Color(0xFFE2E8F0),
+            items: [
+              const DropdownMenuItem(value: 'All', child: Text('All Wings / Cells')),
+              ..._uniqueWings.where((w) => w != 'All').map((wing) {
+                return DropdownMenuItem(value: wing, child: Text(wing, overflow: TextOverflow.ellipsis));
+              }),
+            ],
+            onChanged: (val) {
+              if (val != null) setState(() => _selectedWing = val);
+            },
+          ),
+        ),
+      ],
     );
   }
 

@@ -7,6 +7,7 @@ import 'package:nagarsevak_mobile/data/repositories/diary_tasks_repository.dart'
 import 'package:nagarsevak_mobile/presentation/desktop/common/desktop_modal_dialog.dart';
 import 'package:nagarsevak_mobile/presentation/desktop/shell/desktop_sidebar.dart';
 import 'package:nagarsevak_mobile/presentation/screens/diary/diary_report_generator.dart';
+import 'package:nagarsevak_mobile/presentation/widgets/app_dropdown.dart';
 
 /// Desktop Tasks View matching Tasks.tsx verbatim:
 /// - Sticky Header: Title + Found Counter + Help + Scan Doc + New Task
@@ -27,6 +28,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
   DateTime _selectedDate = DateTime.now();
   String _searchQuery = '';
   String _selectedArea = 'All';
+  String _selectedDateFilter = 'All';
 
   bool _loading = true;
   List<DiaryTaskModel> _tasks = [];
@@ -66,12 +68,31 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
     return ['All', ...sorted];
   }
 
+  List<String> get _uniqueDates {
+    final dates = <String>{};
+    for (final t in _tasks) {
+      if (t.dueDate != null) {
+        dates.add(DateFormat('MMM d, yyyy').format(t.dueDate!));
+      }
+    }
+    final sorted = dates.toList()..sort((a, b) => b.compareTo(a));
+    return ['All', ...sorted];
+  }
+
   List<DiaryTaskModel> get _filteredTasks {
     return _tasks.where((t) {
       if (_selectedArea != 'All') {
         final matches = (t.address != null && t.address == _selectedArea) ||
             (t.officeName != null && t.officeName == _selectedArea);
         if (!matches) return false;
+      }
+      if (_selectedDateFilter != 'All') {
+        if (t.dueDate != null) {
+          final formatted = DateFormat('MMM d, yyyy').format(t.dueDate!);
+          if (!formatted.toLowerCase().contains(_selectedDateFilter.toLowerCase())) {
+            return false;
+          }
+        }
       }
       if (_searchQuery.trim().isNotEmpty) {
         final q = _searchQuery.toLowerCase().trim();
@@ -382,35 +403,48 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
         // Area Dropdown (3 cols)
         Expanded(
           flex: 3,
-          child: DropdownButtonFormField<String>(
+          child: AppDropdown<String>(
             value: _selectedArea,
-            isExpanded: true,
-            decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF94A3B8)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-              ),
-            ),
+            height: 42,
+            prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF94A3B8)),
+            backgroundColor: Colors.white,
+            borderColor: const Color(0xFFE2E8F0),
             items: _uniqueAreas.map((area) {
               return DropdownMenuItem(
                 value: area,
                 child: Text(
                   area == 'All' ? 'All Areas' : area,
-                  style: const TextStyle(fontSize: 13),
                   overflow: TextOverflow.ellipsis,
                 ),
               );
             }).toList(),
             onChanged: (val) {
               if (val != null) setState(() => _selectedArea = val);
+            },
+          ),
+        ),
+        const SizedBox(width: 12),
+
+        // Date Dropdown (3 cols matching Tasks.tsx:441)
+        Expanded(
+          flex: 3,
+          child: AppDropdown<String>(
+            value: _selectedDateFilter,
+            height: 42,
+            prefixIcon: const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFF94A3B8)),
+            backgroundColor: Colors.white,
+            borderColor: const Color(0xFFE2E8F0),
+            items: _uniqueDates.map((date) {
+              return DropdownMenuItem(
+                value: date,
+                child: Text(
+                  date == 'All' ? 'All Dates' : date,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              );
+            }).toList(),
+            onChanged: (val) {
+              if (val != null) setState(() => _selectedDateFilter = val);
             },
           ),
         ),

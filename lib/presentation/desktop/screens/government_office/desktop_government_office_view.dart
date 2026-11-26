@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../data/models/government_office_model.dart';
 import '../../../../data/repositories/government_office_repository.dart';
 import '../../../screens/government_office/gov_office_report_generator.dart';
+import '../../../widgets/app_dropdown.dart';
 
 class DesktopGovernmentOfficeView extends ConsumerStatefulWidget {
   const DesktopGovernmentOfficeView({super.key});
@@ -136,8 +137,11 @@ class _DesktopGovernmentOfficeViewState extends ConsumerState<DesktopGovernmentO
                             children: [
                               const Text('Department / Category *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
                               const SizedBox(height: 6),
-                              DropdownButtonFormField<String>(
+                              AppDropdown<String>(
                                 value: selectedCategory,
+                                height: 44,
+                                backgroundColor: const Color(0xFFF8FAFC),
+                                borderColor: const Color(0xFFE2E8F0),
                                 items: const [
                                   DropdownMenuItem(value: 'Municipal PMC', child: Text('Municipal Corporation (PMC)')),
                                   DropdownMenuItem(value: 'Police', child: Text('Police Station')),
@@ -149,14 +153,6 @@ class _DesktopGovernmentOfficeViewState extends ConsumerState<DesktopGovernmentO
                                 onChanged: (val) {
                                   if (val != null) setModalState(() => selectedCategory = val);
                                 },
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  filled: true,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                ),
                               ),
                             ],
                           ),

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../data/models/social_organization_model.dart';
 import '../../../../data/repositories/social_organization_repository.dart';
 import '../../../screens/social_organizations/social_org_report_generator.dart';
+import '../../../widgets/app_dropdown.dart';
 
 class DesktopNgoMandalsView extends ConsumerStatefulWidget {
   const DesktopNgoMandalsView({super.key});
@@ -18,6 +19,7 @@ class _DesktopNgoMandalsViewState extends ConsumerState<DesktopNgoMandalsView> {
   List<SocialOrganizationModel> _orgs = [];
   String _selectedType = 'All';
   String _searchTerm = '';
+  String _statusFilter = 'all';
 
   @override
   void initState() {
@@ -54,7 +56,10 @@ class _DesktopNgoMandalsViewState extends ConsumerState<DesktopNgoMandalsView> {
           o.presidentMobile.contains(_searchTerm) ||
           o.area.toLowerCase().contains(_searchTerm.toLowerCase());
 
-      return matchesSearch;
+      final matchesStatus = _statusFilter == 'all' ||
+          o.status.toLowerCase() == _statusFilter.toLowerCase();
+
+      return matchesSearch && matchesStatus;
     }).toList();
   }
 
@@ -141,8 +146,11 @@ class _DesktopNgoMandalsViewState extends ConsumerState<DesktopNgoMandalsView> {
                             children: [
                               const Text('Type *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
                               const SizedBox(height: 6),
-                              DropdownButtonFormField<String>(
+                              AppDropdown<String>(
                                 value: type,
+                                height: 44,
+                                backgroundColor: const Color(0xFFF8FAFC),
+                                borderColor: const Color(0xFFE2E8F0),
                                 items: const [
                                   DropdownMenuItem(value: 'ngo', child: Text('NGO / Foundation')),
                                   DropdownMenuItem(value: 'sports_cricket', child: Text('Sports & Cricket Club')),
@@ -153,14 +161,6 @@ class _DesktopNgoMandalsViewState extends ConsumerState<DesktopNgoMandalsView> {
                                 onChanged: (val) {
                                   if (val != null) setModalState(() => type = val);
                                 },
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  filled: true,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                ),
                               ),
                             ],
                           ),
@@ -457,22 +457,47 @@ class _DesktopNgoMandalsViewState extends ConsumerState<DesktopNgoMandalsView> {
   }
 
   Widget _buildSearchRow() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: TextField(
-        onChanged: (val) => setState(() => _searchTerm = val),
-        decoration: const InputDecoration(
-          hintText: 'Search organization by name, president or area...',
-          hintStyle: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-          prefixIcon: Icon(Icons.search, size: 18, color: Color(0xFF94A3B8)),
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: TextField(
+              onChanged: (val) => setState(() => _searchTerm = val),
+              decoration: const InputDecoration(
+                hintText: 'Search organization by name, president or area...',
+                hintStyle: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                prefixIcon: Icon(Icons.search, size: 18, color: Color(0xFF94A3B8)),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              ),
+            ),
+          ),
         ),
-      ),
+        const SizedBox(width: 14),
+
+        // Status Filter
+        AppDropdown<String>(
+          value: _statusFilter,
+          height: 44,
+          width: 150,
+          prefixIcon: const Icon(Icons.check_circle_outline, size: 16, color: Color(0xFF94A3B8)),
+          backgroundColor: Colors.white,
+          borderColor: const Color(0xFFE2E8F0),
+          items: const [
+            DropdownMenuItem(value: 'all', child: Text('All Status')),
+            DropdownMenuItem(value: 'Active', child: Text('Active')),
+            DropdownMenuItem(value: 'Inactive', child: Text('Inactive')),
+          ],
+          onChanged: (val) {
+            if (val != null) setState(() => _statusFilter = val);
+          },
+        ),
+      ],
     );
   }
 

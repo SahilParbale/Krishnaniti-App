@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../data/models/housing_society_model.dart';
 import '../../../../data/repositories/housing_society_repository.dart';
 import '../../../screens/housing_societies/housing_society_report_generator.dart';
+import '../../../widgets/app_dropdown.dart';
 
 class DesktopHousingSocietiesView extends ConsumerStatefulWidget {
   const DesktopHousingSocietiesView({super.key});
@@ -18,6 +19,7 @@ class _DesktopHousingSocietiesViewState extends ConsumerState<DesktopHousingSoci
   List<HousingSocietyModel> _societies = [];
   String _searchTerm = '';
   String _selectedArea = 'All';
+  String _statusFilter = 'all';
   List<String> _availableAreas = ['All'];
 
   @override
@@ -61,8 +63,9 @@ class _DesktopHousingSocietiesViewState extends ConsumerState<DesktopHousingSoci
           s.area.toLowerCase().contains(_searchTerm.toLowerCase());
 
       final matchesArea = _selectedArea == 'All' || s.area.toLowerCase() == _selectedArea.toLowerCase();
+      final matchesStatus = _statusFilter == 'all' || s.status.toLowerCase() == _statusFilter.toLowerCase();
 
-      return matchesSearch && matchesArea;
+      return matchesSearch && matchesArea && matchesStatus;
     }).toList();
   }
 
@@ -569,23 +572,38 @@ class _DesktopHousingSocietiesViewState extends ConsumerState<DesktopHousingSoci
         const SizedBox(width: 14),
 
         // Area Filter
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: DropdownButton<String>(
-            value: _selectedArea,
-            underline: const SizedBox(),
-            items: _availableAreas.map((a) {
-              return DropdownMenuItem(value: a, child: Text(a == 'All' ? 'All Areas' : a, style: const TextStyle(fontSize: 12)));
-            }).toList(),
-            onChanged: (val) {
-              if (val != null) setState(() => _selectedArea = val);
-            },
-          ),
+        AppDropdown<String>(
+          value: _selectedArea,
+          height: 40,
+          width: 160,
+          prefixIcon: const Icon(Icons.location_on_outlined, size: 16, color: Color(0xFF94A3B8)),
+          backgroundColor: Colors.white,
+          borderColor: const Color(0xFFE2E8F0),
+          items: _availableAreas.map((a) {
+            return DropdownMenuItem(value: a, child: Text(a == 'All' ? 'All Areas' : a));
+          }).toList(),
+          onChanged: (val) {
+            if (val != null) setState(() => _selectedArea = val);
+          },
+        ),
+        const SizedBox(width: 12),
+
+        // Status Filter
+        AppDropdown<String>(
+          value: _statusFilter,
+          height: 40,
+          width: 140,
+          prefixIcon: const Icon(Icons.check_circle_outline, size: 16, color: Color(0xFF94A3B8)),
+          backgroundColor: Colors.white,
+          borderColor: const Color(0xFFE2E8F0),
+          items: const [
+            DropdownMenuItem(value: 'all', child: Text('All Status')),
+            DropdownMenuItem(value: 'Active', child: Text('Active')),
+            DropdownMenuItem(value: 'Inactive', child: Text('Inactive')),
+          ],
+          onChanged: (val) {
+            if (val != null) setState(() => _statusFilter = val);
+          },
         ),
       ],
     );

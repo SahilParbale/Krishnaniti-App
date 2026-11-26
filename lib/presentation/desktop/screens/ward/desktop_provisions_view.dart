@@ -6,6 +6,7 @@ import '../../../../data/models/ward_provision_model.dart';
 import '../../../../data/repositories/ward_provisions_repository.dart';
 import '../../common/desktop_modal_dialog.dart';
 import '../../../screens/ward_provisions/ward_provision_report_generator.dart';
+import '../../../widgets/app_dropdown.dart';
 
 class DesktopProvisionsView extends ConsumerStatefulWidget {
   const DesktopProvisionsView({super.key});
@@ -281,8 +282,11 @@ class _DesktopProvisionsViewState extends ConsumerState<DesktopProvisionsView> {
                 // Status
                 const Text('Status', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
                 const SizedBox(height: 6),
-                DropdownButtonFormField<String>(
+                AppDropdown<String>(
                   value: selectedStatus,
+                  height: 44,
+                  backgroundColor: const Color(0xFFF8FAFC),
+                  borderColor: const Color(0xFFE2E8F0),
                   items: const [
                     DropdownMenuItem(value: 'Approved', child: Text('Approved')),
                     DropdownMenuItem(value: 'Partially Approved', child: Text('Partially Approved')),
@@ -292,7 +296,6 @@ class _DesktopProvisionsViewState extends ConsumerState<DesktopProvisionsView> {
                   onChanged: (val) {
                     if (val != null) setModalState(() => selectedStatus = val);
                   },
-                  decoration: desktopInputDecoration(hintText: 'Status'),
                 ),
               ],
             ),
@@ -487,33 +490,23 @@ class _DesktopProvisionsViewState extends ConsumerState<DesktopProvisionsView> {
         Row(
           children: [
             // Year Selector
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.calendar_today_outlined, size: 14, color: Color(0xFF64748B)),
-                  const SizedBox(width: 8),
-                  DropdownButton<String>(
-                    value: _year,
-                    underline: const SizedBox.shrink(),
-                    items: const [
-                      DropdownMenuItem(value: '2024-2025', child: Text('FY 2024-2025', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600))),
-                      DropdownMenuItem(value: '2023-2024', child: Text('FY 2023-2024', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600))),
-                    ],
-                    onChanged: (val) {
-                      if (val != null) {
-                        setState(() => _year = val);
-                        _loadProvisions();
-                      }
-                    },
-                  ),
-                ],
-              ),
+            AppDropdown<String>(
+              value: _year,
+              height: 40,
+              width: 160,
+              prefixIcon: const Icon(Icons.calendar_today_outlined, size: 15, color: Color(0xFF94A3B8)),
+              backgroundColor: Colors.white,
+              borderColor: const Color(0xFFE2E8F0),
+              items: const [
+                DropdownMenuItem(value: '2024-2025', child: Text('FY 2024-2025')),
+                DropdownMenuItem(value: '2023-2024', child: Text('FY 2023-2024')),
+              ],
+              onChanged: (val) {
+                if (val != null) {
+                  setState(() => _year = val);
+                  _loadProvisions();
+                }
+              },
             ),
             const SizedBox(width: 12),
 

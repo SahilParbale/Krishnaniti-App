@@ -8,6 +8,7 @@ import '../../../../data/repositories/work_history_repository.dart';
 import '../../../screens/works/work_detail_screen.dart';
 import '../../../screens/works/work_report_generator.dart';
 import '../../../screens/works/ahwal_report_generator.dart';
+import '../../../widgets/app_dropdown.dart';
 
 class DesktopWorkHistoryView extends ConsumerStatefulWidget {
   const DesktopWorkHistoryView({super.key});
@@ -307,8 +308,11 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
                             children: [
                               const Text('Status', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
                               const SizedBox(height: 6),
-                              DropdownButtonFormField<String>(
+                              AppDropdown<String>(
                                 value: selectedStatus,
+                                height: 44,
+                                backgroundColor: const Color(0xFFF8FAFC),
+                                borderColor: const Color(0xFFE2E8F0),
                                 items: const [
                                   DropdownMenuItem(value: 'Planned', child: Text('Planned')),
                                   DropdownMenuItem(value: 'InProgress', child: Text('In Progress')),
@@ -317,14 +321,6 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
                                 onChanged: (val) {
                                   if (val != null) setModalState(() => selectedStatus = val);
                                 },
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  filled: true,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                ),
                               ),
                             ],
                           ),
@@ -660,31 +656,31 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
         ),
         const SizedBox(width: 14),
 
-        // Area Search (Col 3)
+        // Area Filter (Col 3)
         Expanded(
           flex: 3,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
-            child: TextField(
-              onChanged: (val) => setState(() => _areaSearch = val),
-              decoration: InputDecoration(
-                hintText: 'Search Area...',
-                hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF94A3B8)),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                suffixIcon: _areaSearch.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear, size: 16),
-                        onPressed: () => setState(() => _areaSearch = ''),
-                      )
-                    : null,
-              ),
-            ),
+          child: AppDropdown<String>(
+            value: _areaSearch.isEmpty ? 'All' : _areaSearch,
+            height: 44,
+            prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF94A3B8)),
+            backgroundColor: Colors.white,
+            borderColor: const Color(0xFFE2E8F0),
+            items: ['All', ..._areaSuggestions.keys].map((area) {
+              final count = area == 'All' ? _items.length : (_areaSuggestions[area] ?? 0);
+              return DropdownMenuItem(
+                value: area,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(area == 'All' ? 'All Areas' : area),
+                    Text('($count)', style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                  ],
+                ),
+              );
+            }).toList(),
+            onChanged: (val) {
+              setState(() => _areaSearch = (val == null || val == 'All') ? '' : val);
+            },
           ),
         ),
         const SizedBox(width: 14),
@@ -692,28 +688,28 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
         // Date Filter (Col 3)
         Expanded(
           flex: 3,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
-            child: TextField(
-              onChanged: (val) => setState(() => _dateSearch = val),
-              decoration: InputDecoration(
-                hintText: 'Search date (e.g. Nov 2024)',
-                hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                prefixIcon: const Icon(Icons.calendar_today_outlined, size: 18, color: Color(0xFF94A3B8)),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                suffixIcon: _dateSearch.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear, size: 16),
-                        onPressed: () => setState(() => _dateSearch = ''),
-                      )
-                    : null,
-              ),
-            ),
+          child: AppDropdown<String>(
+            value: _dateSearch.isEmpty ? 'All' : _dateSearch,
+            height: 44,
+            prefixIcon: const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFF94A3B8)),
+            backgroundColor: Colors.white,
+            borderColor: const Color(0xFFE2E8F0),
+            items: ['All', ..._dateSuggestions.keys].map((date) {
+              final count = date == 'All' ? _items.length : (_dateSuggestions[date] ?? 0);
+              return DropdownMenuItem(
+                value: date,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(date == 'All' ? 'All Dates' : date),
+                    Text('($count)', style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                  ],
+                ),
+              );
+            }).toList(),
+            onChanged: (val) {
+              setState(() => _dateSearch = (val == null || val == 'All') ? '' : val);
+            },
           ),
         ),
         const SizedBox(width: 14),

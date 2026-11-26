@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../data/models/sadasya_model.dart';
 import '../../../../data/repositories/sadasya_repository.dart';
 import '../../../screens/sadasya/sadasya_report_generator.dart';
+import '../../../widgets/app_dropdown.dart';
 
 class DesktopSadasyaView extends ConsumerStatefulWidget {
   const DesktopSadasyaView({super.key});
@@ -18,6 +19,7 @@ class _DesktopSadasyaViewState extends ConsumerState<DesktopSadasyaView> {
   List<SadasyaModel> _sadasyas = [];
   String _searchTerm = '';
   String _areaFilter = 'All';
+  String _addressSearch = '';
   String _voterFilter = 'all'; // 'all', 'voter', 'non-voter'
   String _viewMode = 'grid'; // 'grid' | 'table'
   List<String> _availableAreas = [];
@@ -60,12 +62,14 @@ class _DesktopSadasyaViewState extends ConsumerState<DesktopSadasyaView> {
           (s.voterId?.toLowerCase().contains(_searchTerm.toLowerCase()) ?? false);
 
       final matchesArea = _areaFilter == 'All' || (s.area ?? '').toLowerCase() == _areaFilter.toLowerCase();
+      final matchesAddress = _addressSearch.isEmpty ||
+          s.displayAddress.toLowerCase().contains(_addressSearch.toLowerCase());
 
       bool matchesVoter = true;
       if (_voterFilter == 'voter') matchesVoter = s.isVoter;
       if (_voterFilter == 'non-voter') matchesVoter = !s.isVoter;
 
-      return matchesSearch && matchesArea && matchesVoter;
+      return matchesSearch && matchesArea && matchesAddress && matchesVoter;
     }).toList();
   }
 
@@ -500,44 +504,62 @@ class _DesktopSadasyaViewState extends ConsumerState<DesktopSadasyaView> {
           const SizedBox(width: 16),
 
           // Area Dropdown
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: DropdownButton<String>(
-              value: _areaFilter,
-              underline: const SizedBox(),
-              items: _availableAreas.map((a) {
-                return DropdownMenuItem(value: a, child: Text(a == 'All' ? 'All Areas' : a, style: const TextStyle(fontSize: 12)));
-              }).toList(),
-              onChanged: (val) {
-                if (val != null) setState(() => _areaFilter = val);
-              },
+          AppDropdown<String>(
+            value: _areaFilter,
+            height: 40,
+            width: 155,
+            prefixIcon: const Icon(Icons.location_on_outlined, size: 16, color: Color(0xFF94A3B8)),
+            backgroundColor: Colors.white,
+            borderColor: const Color(0xFFE2E8F0),
+            items: _availableAreas.map((a) {
+              return DropdownMenuItem(value: a, child: Text(a == 'All' ? 'All Areas' : a));
+            }).toList(),
+            onChanged: (val) {
+              if (val != null) setState(() => _areaFilter = val);
+            },
+          ),
+          const SizedBox(width: 12),
+
+          // Address Search Input
+          Expanded(
+            flex: 2,
+            child: Container(
+              height: 40,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: TextField(
+                onChanged: (val) => setState(() => _addressSearch = val),
+                decoration: const InputDecoration(
+                  hintText: 'Search Address...',
+                  hintStyle: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                  prefixIcon: Icon(Icons.home_outlined, size: 18, color: Color(0xFF94A3B8)),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 12),
 
           // Voter Filter Dropdown
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: DropdownButton<String>(
-              value: _voterFilter,
-              underline: const SizedBox(),
-              items: const [
-                DropdownMenuItem(value: 'all', child: Text('All', style: TextStyle(fontSize: 12))),
-                DropdownMenuItem(value: 'voter', child: Text('Voters', style: TextStyle(fontSize: 12))),
-                DropdownMenuItem(value: 'non-voter', child: Text('Non-Voters', style: TextStyle(fontSize: 12))),
-              ],
-              onChanged: (val) {
-                if (val != null) setState(() => _voterFilter = val);
-              },
-            ),
+          AppDropdown<String>(
+            value: _voterFilter,
+            height: 40,
+            width: 145,
+            prefixIcon: const Icon(Icons.people_outline, size: 16, color: Color(0xFF94A3B8)),
+            backgroundColor: Colors.white,
+            borderColor: const Color(0xFFE2E8F0),
+            items: const [
+              DropdownMenuItem(value: 'all', child: Text('All')),
+              DropdownMenuItem(value: 'voter', child: Text('Voters')),
+              DropdownMenuItem(value: 'non-voter', child: Text('Non-Voters')),
+            ],
+            onChanged: (val) {
+              if (val != null) setState(() => _voterFilter = val);
+            },
           ),
           const SizedBox(width: 14),
           Container(

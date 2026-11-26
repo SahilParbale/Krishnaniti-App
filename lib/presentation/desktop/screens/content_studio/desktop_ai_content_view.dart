@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../data/models/ai_content_model.dart';
-import '../../../../data/repositories/ai_content_repository.dart';
 import '../../../screens/content_studio/ai_content_report_generator.dart';
+import '../../../widgets/app_dropdown.dart';
 
 class DesktopAiContentView extends ConsumerStatefulWidget {
   const DesktopAiContentView({super.key});
@@ -272,8 +272,11 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
                   children: [
                     const Text('Content Type', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
                     const SizedBox(height: 6),
-                    DropdownButtonFormField<String>(
+                    AppDropdown<String>(
                       value: _contentType,
+                      height: 44,
+                      backgroundColor: Colors.white,
+                      borderColor: const Color(0xFFE2E8F0),
                       items: const [
                         DropdownMenuItem(value: 'Speech', child: Text('Speech')),
                         DropdownMenuItem(value: 'Social Media Caption', child: Text('Social Media Caption')),
@@ -283,10 +286,6 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
                       onChanged: (val) {
                         if (val != null) setState(() => _contentType = val);
                       },
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      ),
                     ),
                   ],
                 ),
@@ -298,8 +297,11 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
                   children: [
                     const Text('Tone / Voice', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
                     const SizedBox(height: 6),
-                    DropdownButtonFormField<String>(
+                    AppDropdown<String>(
                       value: _tone,
+                      height: 44,
+                      backgroundColor: Colors.white,
+                      borderColor: const Color(0xFFE2E8F0),
                       items: const [
                         DropdownMenuItem(value: 'Enthusiastic', child: Text('Enthusiastic')),
                         DropdownMenuItem(value: 'Formal', child: Text('Formal')),
@@ -309,10 +311,6 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
                       onChanged: (val) {
                         if (val != null) setState(() => _tone = val);
                       },
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      ),
                     ),
                   ],
                 ),
@@ -324,8 +322,11 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
                   children: [
                     const Text('Language', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
                     const SizedBox(height: 6),
-                    DropdownButtonFormField<String>(
+                    AppDropdown<String>(
                       value: _language,
+                      height: 44,
+                      backgroundColor: Colors.white,
+                      borderColor: const Color(0xFFE2E8F0),
                       items: const [
                         DropdownMenuItem(value: 'Marathi', child: Text('Marathi')),
                         DropdownMenuItem(value: 'English', child: Text('English')),
@@ -334,10 +335,6 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
                       onChanged: (val) {
                         if (val != null) setState(() => _language = val);
                       },
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      ),
                     ),
                   ],
                 ),

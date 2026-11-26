@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../../data/models/survey_model.dart';
 import '../../../../data/repositories/surveys_repository.dart';
 import '../../../screens/surveys/survey_report_generator.dart';
+import '../../../widgets/app_dropdown.dart';
 
 class DesktopSurveysView extends ConsumerStatefulWidget {
   const DesktopSurveysView({super.key});
@@ -433,23 +434,19 @@ class _DesktopSurveysViewState extends ConsumerState<DesktopSurveysView> {
         const SizedBox(width: 14),
 
         // Area Filter
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: DropdownButton<String>(
-            value: _areaFilter,
-            underline: const SizedBox(),
-            items: _availableAreas.map((a) {
-              return DropdownMenuItem(value: a, child: Text(a == 'All' ? 'All Areas' : a, style: const TextStyle(fontSize: 12)));
-            }).toList(),
-            onChanged: (val) {
-              if (val != null) setState(() => _areaFilter = val);
-            },
-          ),
+        AppDropdown<String>(
+          value: _areaFilter,
+          height: 40,
+          width: 160,
+          prefixIcon: const Icon(Icons.location_on_outlined, size: 16, color: Color(0xFF94A3B8)),
+          backgroundColor: Colors.white,
+          borderColor: const Color(0xFFE2E8F0),
+          items: _availableAreas.map((a) {
+            return DropdownMenuItem(value: a, child: Text(a == 'All' ? 'All Areas' : a));
+          }).toList(),
+          onChanged: (val) {
+            if (val != null) setState(() => _areaFilter = val);
+          },
         ),
       ],
     );

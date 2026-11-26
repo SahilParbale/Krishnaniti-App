@@ -7,6 +7,7 @@ import 'package:nagarsevak_mobile/presentation/desktop/shell/desktop_sidebar.dar
 import 'package:nagarsevak_mobile/presentation/screens/complaints/new_complaint_screen.dart';
 import 'package:nagarsevak_mobile/presentation/screens/complaints/complaint_detail_screen.dart';
 import 'package:nagarsevak_mobile/presentation/screens/complaints/complaint_report_generator.dart';
+import 'package:nagarsevak_mobile/presentation/widgets/app_dropdown.dart';
 
 /// Desktop Complaints & Requests View matching ComplaintList.tsx 1:1:
 /// - Sticky Header with Title, Found badge, Help button, and + New Request button
@@ -28,6 +29,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
   String _viewMode = 'grid'; // 'grid' | 'table'
   String _searchQuery = '';
   String _selectedArea = 'All';
+  String _selectedDate = 'All';
   ComplaintModel? _selectedComplaint;
 
   bool _loading = true;
@@ -68,6 +70,15 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
     return ['All', ...sorted];
   }
 
+  List<String> get _uniqueDates {
+    final dates = <String>{};
+    for (final c in _complaints) {
+      dates.add(DateFormat('MMM d, yyyy').format(c.createdAt));
+    }
+    final sorted = dates.toList()..sort((a, b) => b.compareTo(a));
+    return ['All', ...sorted];
+  }
+
   List<ComplaintModel> get _filteredComplaints {
     return _complaints.where((c) {
       // Tab filter
@@ -93,6 +104,14 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
         final matchesArea = (c.area != null && c.area == _selectedArea) ||
             (c.location != null && c.location == _selectedArea);
         if (!matchesArea) return false;
+      }
+
+      // Date filter matching ComplaintList.tsx:371
+      if (_selectedDate != 'All') {
+        final formattedDate = DateFormat('MMM d, yyyy').format(c.createdAt);
+        if (!formattedDate.toLowerCase().contains(_selectedDate.toLowerCase())) {
+          return false;
+        }
       }
 
       // Search query
@@ -478,6 +497,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Row 1: Search Inputs
+          // Row 1: Search + Area Dropdown + Date Dropdown (matching ComplaintList.tsx grid-cols-3)
           Row(
             children: [
               // 1. General Search
@@ -508,35 +528,48 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
               // 2. Area Filter Dropdown
               Expanded(
                 flex: 1,
-                child: DropdownButtonFormField<String>(
+                child: AppDropdown<String>(
                   value: _selectedArea,
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF94A3B8)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    filled: true,
-                    fillColor: const Color(0xFFF8FAFC),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                    ),
-                  ),
+                  height: 42,
+                  prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF94A3B8)),
+                  backgroundColor: const Color(0xFFF8FAFC),
+                  borderColor: const Color(0xFFE2E8F0),
                   items: _uniqueAreas.map((area) {
                     return DropdownMenuItem(
                       value: area,
                       child: Text(
                         area == 'All' ? 'All Areas' : area,
-                        style: const TextStyle(fontSize: 13),
                         overflow: TextOverflow.ellipsis,
                       ),
                     );
                   }).toList(),
                   onChanged: (val) {
                     if (val != null) setState(() => _selectedArea = val);
+                  },
+                ),
+              ),
+              const SizedBox(width: 12),
+
+              // 3. Date Filter Dropdown
+              Expanded(
+                flex: 1,
+                child: AppDropdown<String>(
+                  value: _selectedDate,
+                  height: 42,
+                  prefixIcon: const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFF94A3B8)),
+                  backgroundColor: const Color(0xFFF8FAFC),
+                  borderColor: const Color(0xFFE2E8F0),
+                  items: _uniqueDates.map((date) {
+                    return DropdownMenuItem(
+                      value: date,
+                      child: Text(
+                        date == 'All' ? 'All Dates' : date,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    if (val != null) setState(() => _selectedDate = val);
                   },
                 ),
               ),

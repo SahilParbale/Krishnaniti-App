@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:nagarsevak_mobile/data/models/visitor_model.dart';
 import 'package:nagarsevak_mobile/data/repositories/visitors_repository.dart';
 import 'package:nagarsevak_mobile/presentation/desktop/common/desktop_modal_dialog.dart';
 import 'package:nagarsevak_mobile/presentation/desktop/shell/desktop_sidebar.dart';
 import 'package:nagarsevak_mobile/presentation/screens/visitors/visitor_report_generator.dart';
+import 'package:nagarsevak_mobile/presentation/widgets/app_dropdown.dart';
 
 /// Desktop Visitor Log View
 /// - Full-width layout matching other desktop views
@@ -23,6 +25,7 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
   String _viewMode = 'grid'; // 'grid' | 'table'
   String _searchQuery = '';
   String _selectedArea = 'All';
+  String _selectedDate = 'All';
   String _purposeFilter = 'All';
 
   bool _loading = true;
@@ -61,9 +64,21 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
     return ['All', ...sorted];
   }
 
+  List<String> get _uniqueDates {
+    final dates = <String>{};
+    for (final v in _visitors) {
+      dates.add(DateFormat('yyyy-MM-dd').format(v.visitDate));
+    }
+    final sorted = dates.toList()..sort((a, b) => b.compareTo(a));
+    return ['All', ...sorted];
+  }
+
   List<VisitorModel> get _filteredVisitors {
     return _visitors.where((v) {
       if (_selectedArea != 'All' && v.area != _selectedArea) {
+        return false;
+      }
+      if (_selectedDate != 'All' && DateFormat('yyyy-MM-dd').format(v.visitDate) != _selectedDate) {
         return false;
       }
       if (_purposeFilter != 'All' && v.purpose.toLowerCase() != _purposeFilter.toLowerCase()) {
@@ -212,16 +227,11 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
                               style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
                             ),
                             const SizedBox(height: 6),
-                            DropdownButtonFormField<String>(
-                              initialValue: selectedPurpose,
-                              decoration: InputDecoration(
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                                focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: Color(0xFF0284C7), width: 1.5)),
-                                fillColor: const Color(0xFFF8FAFC),
-                                filled: true,
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                              ),
+                            AppDropdown<String>(
+                              value: selectedPurpose,
+                              height: 44,
+                              backgroundColor: const Color(0xFFF8FAFC),
+                              borderColor: const Color(0xFFE2E8F0),
                               items: [
                                 'Complaint',
                                 'Meeting',
@@ -533,7 +543,7 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
 
           const SizedBox(height: 16),
 
-          // Filters: Search & Area dropdown
+          // Filters: Search, Area dropdown, Date dropdown
           Row(
             children: [
               Expanded(
@@ -550,15 +560,13 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                flex: 4,
-                child: DropdownButtonFormField<String>(
-                  initialValue: _selectedArea,
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF94A3B8)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
+                flex: 3,
+                child: AppDropdown<String>(
+                  value: _selectedArea,
+                  height: 42,
+                  prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF94A3B8)),
+                  backgroundColor: const Color(0xFFF8FAFC),
+                  borderColor: const Color(0xFFE2E8F0),
                   items: _uniqueAreas.map((a) {
                     return DropdownMenuItem(
                       value: a,
@@ -567,6 +575,26 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
                   }).toList(),
                   onChanged: (val) {
                     if (val != null) setState(() => _selectedArea = val);
+                  },
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 3,
+                child: AppDropdown<String>(
+                  value: _selectedDate,
+                  height: 42,
+                  prefixIcon: const Icon(Icons.calendar_today_outlined, size: 18, color: Color(0xFF94A3B8)),
+                  backgroundColor: const Color(0xFFF8FAFC),
+                  borderColor: const Color(0xFFE2E8F0),
+                  items: _uniqueDates.map((d) {
+                    return DropdownMenuItem(
+                      value: d,
+                      child: Text(d == 'All' ? 'All Dates' : d, overflow: TextOverflow.ellipsis),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    if (val != null) setState(() => _selectedDate = val);
                   },
                 ),
               ),

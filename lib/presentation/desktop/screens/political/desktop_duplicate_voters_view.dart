@@ -4,6 +4,7 @@ import '../../common/desktop_modal_dialog.dart';
 import '../../../../data/models/duplicate_voter_group_model.dart';
 import '../../../../data/repositories/duplicate_voters_repository.dart';
 import '../../../screens/duplicate_voters/duplicate_voters_report_generator.dart';
+import '../../../widgets/app_dropdown.dart';
 
 class DesktopDuplicateVotersView extends ConsumerStatefulWidget {
   const DesktopDuplicateVotersView({super.key});
@@ -273,28 +274,24 @@ class _DesktopDuplicateVotersViewState extends ConsumerState<DesktopDuplicateVot
         const SizedBox(width: 14),
 
         // Match Criteria Dropdown
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: DropdownButton<String>(
-            value: _matchType,
-            underline: const SizedBox(),
-            items: const [
-              DropdownMenuItem(value: 'name', child: Text('Match by Name', style: TextStyle(fontSize: 12))),
-              DropdownMenuItem(value: 'epic', child: Text('Match by EPIC', style: TextStyle(fontSize: 12))),
-              DropdownMenuItem(value: 'mobile', child: Text('Match by Mobile', style: TextStyle(fontSize: 12))),
-            ],
-            onChanged: (val) {
-              if (val != null) {
-                setState(() => _matchType = val);
-                _fetchDuplicates();
-              }
-            },
-          ),
+        AppDropdown<String>(
+          value: _matchType,
+          height: 40,
+          width: 170,
+          prefixIcon: const Icon(Icons.filter_list_rounded, size: 16, color: Color(0xFF94A3B8)),
+          backgroundColor: Colors.white,
+          borderColor: const Color(0xFFE2E8F0),
+          items: const [
+            DropdownMenuItem(value: 'name', child: Text('Match by Name')),
+            DropdownMenuItem(value: 'epic', child: Text('Match by EPIC')),
+            DropdownMenuItem(value: 'mobile', child: Text('Match by Mobile')),
+          ],
+          onChanged: (val) {
+            if (val != null) {
+              setState(() => _matchType = val);
+              _fetchDuplicates();
+            }
+          },
         ),
         const SizedBox(width: 10),
 

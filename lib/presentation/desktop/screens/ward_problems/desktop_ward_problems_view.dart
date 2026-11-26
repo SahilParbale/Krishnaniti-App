@@ -7,6 +7,7 @@ import 'package:nagarsevak_mobile/presentation/desktop/shell/desktop_sidebar.dar
 import 'package:nagarsevak_mobile/presentation/screens/complaints/new_complaint_screen.dart';
 import 'package:nagarsevak_mobile/presentation/screens/complaints/complaint_detail_screen.dart';
 import 'package:nagarsevak_mobile/presentation/screens/ward_problems/ward_problems_report_generator.dart';
+import 'package:nagarsevak_mobile/presentation/widgets/app_dropdown.dart';
 
 /// Desktop Ward Problems View matching WardWiseProblem.tsx verbatim:
 /// - Sticky Header: Title + Subtitle + Found Badge + Help + New Problem
@@ -26,6 +27,7 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
   String _filterStatus = 'All'; // 'All', 'Pending', 'Assigned', 'InProgress', 'Resolved'
   String _searchQuery = '';
   String _selectedArea = 'All';
+  String _selectedDate = 'All';
   ComplaintModel? _selectedProblem;
 
   bool _loading = true;
@@ -72,6 +74,15 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
     return ['All', ...sorted];
   }
 
+  List<String> get _uniqueDates {
+    final dates = <String>{};
+    for (final c in _problems) {
+      dates.add(DateFormat('MMM d, yyyy').format(c.createdAt));
+    }
+    final sorted = dates.toList()..sort((a, b) => b.compareTo(a));
+    return ['All', ...sorted];
+  }
+
   List<ComplaintModel> get _filteredProblems {
     return _problems.where((c) {
       if (_filterStatus != 'All') {
@@ -81,6 +92,12 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
         final matches = (c.area != null && c.area == _selectedArea) ||
             (c.location != null && c.location == _selectedArea);
         if (!matches) return false;
+      }
+      if (_selectedDate != 'All') {
+        final formattedDate = DateFormat('MMM d, yyyy').format(c.createdAt);
+        if (!formattedDate.toLowerCase().contains(_selectedDate.toLowerCase())) {
+          return false;
+        }
       }
       if (_searchQuery.trim().isNotEmpty) {
         final q = _searchQuery.toLowerCase().trim();
@@ -282,7 +299,7 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Row 1: Search & Area Filter
+          // Row 1: Search & Area & Date Filters (matching WardWiseProblem.tsx grid-cols-3)
           Row(
             children: [
               Expanded(
@@ -300,14 +317,12 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
               const SizedBox(width: 12),
               Expanded(
                 flex: 1,
-                child: DropdownButtonFormField<String>(
+                child: AppDropdown<String>(
                   value: _selectedArea,
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF94A3B8)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
+                  height: 42,
+                  prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF94A3B8)),
+                  backgroundColor: const Color(0xFFF8FAFC),
+                  borderColor: const Color(0xFFE2E8F0),
                   items: _uniqueAreas.map((area) {
                     return DropdownMenuItem(
                       value: area,
@@ -316,6 +331,26 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
                   }).toList(),
                   onChanged: (val) {
                     if (val != null) setState(() => _selectedArea = val);
+                  },
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 1,
+                child: AppDropdown<String>(
+                  value: _selectedDate,
+                  height: 42,
+                  prefixIcon: const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFF94A3B8)),
+                  backgroundColor: const Color(0xFFF8FAFC),
+                  borderColor: const Color(0xFFE2E8F0),
+                  items: _uniqueDates.map((date) {
+                    return DropdownMenuItem(
+                      value: date,
+                      child: Text(date == 'All' ? 'All Dates' : date, overflow: TextOverflow.ellipsis),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    if (val != null) setState(() => _selectedDate = val);
                   },
                 ),
               ),

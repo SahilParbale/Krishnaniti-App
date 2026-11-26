@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../data/models/opposition_model.dart';
 import '../../../../data/repositories/opposition_repository.dart';
 import '../../../screens/opposition/opposition_report_generator.dart';
+import '../../../widgets/app_dropdown.dart';
 
 class DesktopOppositionView extends ConsumerStatefulWidget {
   const DesktopOppositionView({super.key});
@@ -19,6 +20,17 @@ class _DesktopOppositionViewState extends ConsumerState<DesktopOppositionView> {
   String _searchTerm = '';
   String _partyFilter = 'All';
   String _typeFilter = 'all'; // 'all', 'candidates', 'workers'
+  String _areaFilter = 'All';
+
+  List<String> get _uniqueAreas {
+    final areas = _members
+        .map((m) => (m.area ?? '').trim())
+        .where((a) => a.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
+    return ['All', ...areas];
+  }
 
   @override
   void initState() {
@@ -30,10 +42,7 @@ class _DesktopOppositionViewState extends ConsumerState<DesktopOppositionView> {
     setState(() => _loading = true);
     try {
       final repo = ref.read(oppositionRepoProvider);
-      final list = await repo.getMembers(
-        party: _partyFilter,
-        type: _typeFilter,
-      );
+      final list = await repo.getMembers();
       if (mounted) {
         setState(() {
           _members = list;
@@ -58,7 +67,16 @@ class _DesktopOppositionViewState extends ConsumerState<DesktopOppositionView> {
           (m.mobile?.contains(_searchTerm) ?? false) ||
           (m.area?.toLowerCase().contains(_searchTerm.toLowerCase()) ?? false);
 
-      return matchesSearch;
+      final matchesParty = _partyFilter == 'All' || m.party == _partyFilter;
+
+      final matchesType = _typeFilter == 'all' ||
+          (_typeFilter == 'candidates' && m.isCandidate) ||
+          (_typeFilter == 'workers' && !m.isCandidate);
+
+      final matchesArea = _areaFilter == 'All' ||
+          (m.area != null && m.area!.toLowerCase().contains(_areaFilter.toLowerCase()));
+
+      return matchesSearch && matchesParty && matchesType && matchesArea;
     }).toList();
   }
 
@@ -478,7 +496,9 @@ class _DesktopOppositionViewState extends ConsumerState<DesktopOppositionView> {
   Widget _buildFilterBar() {
     return Row(
       children: [
+        // Main Search (flex 4)
         Expanded(
+          flex: 4,
           child: Container(
             decoration: BoxDecoration(
               color: Colors.white,
@@ -497,29 +517,71 @@ class _DesktopOppositionViewState extends ConsumerState<DesktopOppositionView> {
             ),
           ),
         ),
-        const SizedBox(width: 14),
+        const SizedBox(width: 12),
 
-        // Type Filter (All, Candidates, Workers)
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: DropdownButton<String>(
+        // Record Type Filter (flex 3)
+        Expanded(
+          flex: 3,
+          child: AppDropdown<String>(
             value: _typeFilter,
-            underline: const SizedBox(),
+            height: 44,
+            prefixIcon: const Icon(Icons.people_outline, size: 16, color: Color(0xFF94A3B8)),
+            backgroundColor: Colors.white,
+            borderColor: const Color(0xFFE2E8F0),
             items: const [
-              DropdownMenuItem(value: 'all', child: Text('All', style: TextStyle(fontSize: 12))),
-              DropdownMenuItem(value: 'candidates', child: Text('Candidates Only', style: TextStyle(fontSize: 12))),
-              DropdownMenuItem(value: 'workers', child: Text('Workers Only', style: TextStyle(fontSize: 12))),
+              DropdownMenuItem(value: 'all', child: Text('All Types')),
+              DropdownMenuItem(value: 'candidates', child: Text('Opposition Candidate')),
+              DropdownMenuItem(value: 'workers', child: Text('Opposition Worker')),
             ],
             onChanged: (val) {
-              if (val != null) {
-                setState(() => _typeFilter = val);
-                _fetchMembers();
-              }
+              if (val != null) setState(() => _typeFilter = val);
+            },
+          ),
+        ),
+        const SizedBox(width: 12),
+
+        // Party Filter (flex 3)
+        Expanded(
+          flex: 3,
+          child: AppDropdown<String>(
+            value: _partyFilter,
+            height: 44,
+            prefixIcon: const Icon(Icons.flag_outlined, size: 16, color: Color(0xFF94A3B8)),
+            backgroundColor: Colors.white,
+            borderColor: const Color(0xFFE2E8F0),
+            items: const [
+              DropdownMenuItem(value: 'All', child: Text('All Opposition Parties')),
+              DropdownMenuItem(value: 'INC', child: Text('Congress (INC)')),
+              DropdownMenuItem(value: 'NCP', child: Text('NCP')),
+              DropdownMenuItem(value: 'UBT', child: Text('Shivsena (UBT)')),
+              DropdownMenuItem(value: 'MNS', child: Text('MNS')),
+              DropdownMenuItem(value: 'BJP', child: Text('BJP')),
+              DropdownMenuItem(value: 'Independent', child: Text('Independent')),
+            ],
+            onChanged: (val) {
+              if (val != null) setState(() => _partyFilter = val);
+            },
+          ),
+        ),
+        const SizedBox(width: 12),
+
+        // Area Filter (flex 2)
+        Expanded(
+          flex: 2,
+          child: AppDropdown<String>(
+            value: _areaFilter,
+            height: 44,
+            prefixIcon: const Icon(Icons.location_on_outlined, size: 16, color: Color(0xFF94A3B8)),
+            backgroundColor: Colors.white,
+            borderColor: const Color(0xFFE2E8F0),
+            items: _uniqueAreas.map((area) {
+              return DropdownMenuItem(
+                value: area,
+                child: Text(area == 'All' ? 'All Areas' : area, overflow: TextOverflow.ellipsis),
+              );
+            }).toList(),
+            onChanged: (val) {
+              if (val != null) setState(() => _areaFilter = val);
             },
           ),
         ),

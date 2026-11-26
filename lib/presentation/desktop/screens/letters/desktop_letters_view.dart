@@ -7,6 +7,7 @@ import 'package:nagarsevak_mobile/presentation/desktop/shell/desktop_sidebar.dar
 import 'package:nagarsevak_mobile/presentation/screens/letters/new_letter_bottom_sheet.dart';
 import 'package:nagarsevak_mobile/presentation/screens/letters/letter_type_manager_sheet.dart';
 import 'package:nagarsevak_mobile/presentation/screens/letters/letter_report_generator.dart';
+import 'package:nagarsevak_mobile/presentation/widgets/app_dropdown.dart';
 
 /// Desktop Letters Dashboard View matching LetterDashboard.tsx verbatim:
 /// - Sticky Header: Icon + Title + Found counter + Help + Manage Types + New Request / Upload
@@ -25,6 +26,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
   String _viewMode = 'grid'; // 'grid' | 'table'
   String _searchQuery = '';
   String _selectedArea = 'All';
+  String _selectedDate = 'All';
   String _previewLang = 'mr'; // 'mr' | 'en'
 
   bool _loading = true;
@@ -75,10 +77,25 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
     return ['All', ...sorted];
   }
 
+  List<String> get _uniqueDates {
+    final dates = <String>{};
+    for (final l in _currentList) {
+      dates.add(DateFormat('MMM d, yyyy').format(l.createdAt));
+    }
+    final sorted = dates.toList()..sort((a, b) => b.compareTo(a));
+    return ['All', ...sorted];
+  }
+
   List<LetterModel> get _filteredLetters {
     return _currentList.where((l) {
       if (_selectedArea != 'All' && l.area != _selectedArea) {
         return false;
+      }
+      if (_selectedDate != 'All') {
+        final formattedDate = DateFormat('MMM d, yyyy').format(l.createdAt);
+        if (!formattedDate.toLowerCase().contains(_selectedDate.toLowerCase())) {
+          return false;
+        }
       }
       if (_searchQuery.trim().isNotEmpty) {
         final q = _searchQuery.toLowerCase().trim();
@@ -534,35 +551,48 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
         // Area Search Dropdown (3 cols)
         Expanded(
           flex: 3,
-          child: DropdownButtonFormField<String>(
+          child: AppDropdown<String>(
             value: _selectedArea,
-            isExpanded: true,
-            decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF94A3B8)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-              ),
-            ),
+            height: 42,
+            prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF94A3B8)),
+            backgroundColor: Colors.white,
+            borderColor: const Color(0xFFE2E8F0),
             items: _uniqueAreas.map((area) {
               return DropdownMenuItem(
                 value: area,
                 child: Text(
                   area == 'All' ? 'All Areas' : area,
-                  style: const TextStyle(fontSize: 13),
                   overflow: TextOverflow.ellipsis,
                 ),
               );
             }).toList(),
             onChanged: (val) {
               if (val != null) setState(() => _selectedArea = val);
+            },
+          ),
+        ),
+        const SizedBox(width: 12),
+
+        // Date Search Dropdown (3 cols matching LetterDashboard.tsx)
+        Expanded(
+          flex: 3,
+          child: AppDropdown<String>(
+            value: _selectedDate,
+            height: 42,
+            prefixIcon: const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFF94A3B8)),
+            backgroundColor: Colors.white,
+            borderColor: const Color(0xFFE2E8F0),
+            items: _uniqueDates.map((date) {
+              return DropdownMenuItem(
+                value: date,
+                child: Text(
+                  date == 'All' ? 'All Dates' : date,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              );
+            }).toList(),
+            onChanged: (val) {
+              if (val != null) setState(() => _selectedDate = val);
             },
           ),
         ),

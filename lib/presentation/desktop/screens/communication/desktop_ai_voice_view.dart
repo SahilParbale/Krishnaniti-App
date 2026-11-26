@@ -6,6 +6,7 @@ import '../../../../data/models/whatsapp_broadcast_model.dart';
 import '../../../../data/repositories/sms_repository.dart';
 import '../../shell/desktop_sidebar.dart';
 import '../../../screens/voice/communication_history_report_generator.dart';
+import '../../../widgets/app_dropdown.dart';
 
 class DesktopAiVoiceView extends ConsumerStatefulWidget {
   const DesktopAiVoiceView({super.key});
@@ -399,12 +400,11 @@ class _DesktopAiVoiceViewState extends ConsumerState<DesktopAiVoiceView> {
                           const SizedBox(height: 16),
                           Text('Voice Language:', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.slate600)),
                           const SizedBox(height: 6),
-                          DropdownButtonFormField<String>(
+                          AppDropdown<String>(
                             value: _callLanguage,
-                            decoration: InputDecoration(
-                              isDense: true,
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                            ),
+                            height: 42,
+                            backgroundColor: Colors.white,
+                            borderColor: const Color(0xFFE2E8F0),
                             items: const [
                               DropdownMenuItem(value: 'mr-IN', child: Text('Marathi - India')),
                               DropdownMenuItem(value: 'hi-IN', child: Text('Hindi - India')),

@@ -86,6 +86,9 @@ class VotersRepository {
     String? favourFilter,
     String? genderFilter,
     String? ageRangeFilter,
+    String? addressFilter,
+    String? houseNoFilter,
+    String? casteFilter,
     bool isFriendOnly = false,
   }) async {
     try {
@@ -121,6 +124,18 @@ class VotersRepository {
         } else if (ageRangeFilter == '60+') {
           dbQuery = dbQuery.gt('age', 60);
         }
+      }
+
+      if (addressFilter != null && addressFilter.trim().isNotEmpty && addressFilter != 'All') {
+        dbQuery = dbQuery.ilike('address', '%${addressFilter.trim()}%');
+      }
+
+      if (houseNoFilter != null && houseNoFilter.trim().isNotEmpty && houseNoFilter != 'All') {
+        dbQuery = dbQuery.or('house_no.eq.${houseNoFilter.trim()},house_no.ilike.%${houseNoFilter.trim()}%');
+      }
+
+      if (casteFilter != null && casteFilter.trim().isNotEmpty && casteFilter != 'All') {
+        dbQuery = dbQuery.ilike('caste', '%${casteFilter.trim()}%');
       }
 
       if (query != null && query.trim().isNotEmpty) {

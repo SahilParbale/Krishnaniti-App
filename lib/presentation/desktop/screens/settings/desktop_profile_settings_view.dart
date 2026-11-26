@@ -2,18 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/services/supabase_service.dart';
-import '../../shell/desktop_sidebar.dart';
+import '../../../providers/navigation_provider.dart';
+import 'desktop_bot_dashboard_view.dart';
 
 class DesktopProfileSettingsView extends ConsumerStatefulWidget {
-  const DesktopProfileSettingsView({super.key});
+  final String? initialTab;
+  const DesktopProfileSettingsView({super.key, this.initialTab});
 
   @override
   ConsumerState<DesktopProfileSettingsView> createState() => _DesktopProfileSettingsViewState();
 }
 
 class _DesktopProfileSettingsViewState extends ConsumerState<DesktopProfileSettingsView> {
-  String _activeTab = 'profile'; // 'profile' | 'sms' | 'security' | 'support'
+  String _activeTab = 'profile'; // 'profile' | 'bot' | 'sms' | 'security' | 'support'
 
   // Profile Form Controllers
   final _nameEnCtrl = TextEditingController(text: 'Ramesh Patil');
@@ -35,7 +36,6 @@ class _DesktopProfileSettingsViewState extends ConsumerState<DesktopProfileSetti
   final _ticketTitleCtrl = TextEditingController();
   final _ticketDescCtrl = TextEditingController();
   String _ticketPriority = 'Medium';
-  bool _isSubmittingTicket = false;
 
   final List<Map<String, dynamic>> _tickets = [
     {
@@ -53,6 +53,16 @@ class _DesktopProfileSettingsViewState extends ConsumerState<DesktopProfileSetti
       'date': DateTime.now().subtract(const Duration(days: 1)),
     },
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialTab != null) {
+      _activeTab = widget.initialTab!;
+    } else {
+      _activeTab = ref.read(desktopSettingsTabProvider);
+    }
+  }
 
   @override
   void dispose() {
@@ -113,6 +123,12 @@ class _DesktopProfileSettingsViewState extends ConsumerState<DesktopProfileSetti
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<String>(desktopSettingsTabProvider, (prev, next) {
+      if (next != _activeTab && mounted) {
+        setState(() => _activeTab = next);
+      }
+    });
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: SingleChildScrollView(
@@ -167,6 +183,7 @@ class _DesktopProfileSettingsViewState extends ConsumerState<DesktopProfileSetti
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   _buildTabButton('profile', 'Profile Details', Icons.person_outline_rounded),
+                  _buildTabButton('bot', 'WhatsApp Bot', Icons.smart_toy_outlined),
                   _buildTabButton('sms', 'SMS Gateway', Icons.phone_android_rounded),
                   _buildTabButton('security', 'Security Logs', Icons.shield_outlined),
                   _buildTabButton('support', 'Support Tickets', Icons.support_agent_rounded),
@@ -253,6 +270,8 @@ class _DesktopProfileSettingsViewState extends ConsumerState<DesktopProfileSetti
                   ],
                 ),
               ),
+            ] else if (_activeTab == 'bot') ...[
+              const DesktopBotDashboardView(),
             ] else if (_activeTab == 'sms') ...[
               // SMS Gateway Connection
               Container(
@@ -608,7 +627,10 @@ class _DesktopProfileSettingsViewState extends ConsumerState<DesktopProfileSetti
   Widget _buildTabButton(String key, String label, IconData icon) {
     final isSelected = _activeTab == key;
     return InkWell(
-      onTap: () => setState(() => _activeTab = key),
+      onTap: () {
+        setState(() => _activeTab = key);
+        ref.read(desktopSettingsTabProvider.notifier).setTab(key);
+      },
       borderRadius: BorderRadius.circular(8),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

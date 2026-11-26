@@ -81,6 +81,16 @@ class MainTabNotifier extends Notifier<int> {
 
 final mainTabIndexProvider = NotifierProvider<MainTabNotifier, int>(MainTabNotifier.new);
 
+class DesktopSettingsTabNotifier extends Notifier<String> {
+  @override
+  String build() => 'profile';
+
+  void setTab(String tab) => state = tab;
+}
+
+final desktopSettingsTabProvider =
+    NotifierProvider<DesktopSettingsTabNotifier, String>(DesktopSettingsTabNotifier.new);
+
 String? resolveScreenKey(String raw) {
   final lower = raw.trim().toLowerCase();
   if (lower == 'dashboard' || lower == 'home' || lower.contains('मुख्य')) return 'dashboard';

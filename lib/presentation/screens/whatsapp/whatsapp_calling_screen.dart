@@ -23,10 +23,8 @@ class WhatsAppCallingScreen extends ConsumerStatefulWidget {
 }
 
 class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
-    with TickerProviderStateMixin {
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnim;
 
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
@@ -37,9 +35,6 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
   bool _isLoadingHistory = false;
   List<WhatsAppBroadcastModel> _callLogs = [];
   bool _isExportingPdf = false;
-
-  // Bot Status
-  final String _botStatus = 'connected'; // Connected bot indicator
 
   @override
   void initState() {
@@ -52,14 +47,6 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
       setState(() {});
     });
 
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 1),
-    )..repeat(reverse: true);
-    _pulseAnim = Tween<double>(begin: 0.5, end: 1.0).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
-
     _loadVoters();
     _loadHistory();
   }
@@ -67,7 +54,6 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
   @override
   void dispose() {
     _tabController.dispose();
-    _pulseController.dispose();
     _searchController.dispose();
     _addressController.dispose();
     super.dispose();
@@ -232,8 +218,8 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
             children: [
               _buildTutorialStep(
                 step: '1',
-                title: 'Check Bot Status',
-                desc: 'Ensure the "Bot Active" green indicator is active. This enables direct internet WhatsApp call routing.',
+                title: 'Select Recipient',
+                desc: 'Browse or search voter directory by name, mobile, or address to connect.',
               ),
               _buildTutorialStep(
                 step: '2',
@@ -354,7 +340,13 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
             ),
           ],
         ),
-        actions: const [],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline_rounded, color: Colors.white),
+            tooltip: 'Guide',
+            onPressed: _showTutorialDialog,
+          ),
+        ],
         ),
       body: Column(
         children: [
@@ -427,44 +419,6 @@ class _WhatsAppCallingScreenState extends ConsumerState<WhatsAppCallingScreen>
                   ),
                 ),
                 const SizedBox(width: 8),
-                // Bot status badge
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: _botStatus == 'connected' ? const Color(0xFFF0FDF4) : const Color(0xFFFEF2F2),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: _botStatus == 'connected' ? const Color(0xFFBBF7D0) : const Color(0xFFFECACA),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      FadeTransition(
-                        opacity: _pulseAnim,
-                        child: Container(
-                          width: 7,
-                          height: 7,
-                          decoration: BoxDecoration(
-                            color: _botStatus == 'connected' ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        _botStatus == 'connected' ? 'Active' : 'Offline',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: _botStatus == 'connected' ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 4),
-
               ],
             ),
           ),

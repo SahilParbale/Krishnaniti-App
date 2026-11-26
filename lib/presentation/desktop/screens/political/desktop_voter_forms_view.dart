@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../../data/models/voter_application_model.dart';
 import '../../../../data/repositories/voter_applications_repository.dart';
 import '../../../screens/voter_forms/voter_forms_report_generator.dart';
+import '../../../widgets/app_dropdown.dart';
 
 class DesktopVoterFormsView extends ConsumerStatefulWidget {
   const DesktopVoterFormsView({super.key});
@@ -153,8 +154,11 @@ class _DesktopVoterFormsViewState extends ConsumerState<DesktopVoterFormsView> {
                             children: [
                               const Text('Form Type *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
                               const SizedBox(height: 6),
-                              DropdownButtonFormField<String>(
+                              AppDropdown<String>(
                                 value: formType,
+                                height: 44,
+                                backgroundColor: const Color(0xFFF8FAFC),
+                                borderColor: const Color(0xFFE2E8F0),
                                 items: const [
                                   DropdownMenuItem(value: 'Form 6', child: Text('Form 6 (New Voter)')),
                                   DropdownMenuItem(value: 'Form 7', child: Text('Form 7 (Objection / Deletion)')),
@@ -164,14 +168,6 @@ class _DesktopVoterFormsViewState extends ConsumerState<DesktopVoterFormsView> {
                                 onChanged: (val) {
                                   if (val != null) setModalState(() => formType = val);
                                 },
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  filled: true,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                ),
                               ),
                             ],
                           ),
@@ -183,8 +179,11 @@ class _DesktopVoterFormsViewState extends ConsumerState<DesktopVoterFormsView> {
                     // Status
                     const Text('Application Status', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
                     const SizedBox(height: 6),
-                    DropdownButtonFormField<String>(
+                    AppDropdown<String>(
                       value: status,
+                      height: 44,
+                      backgroundColor: const Color(0xFFF8FAFC),
+                      borderColor: const Color(0xFFE2E8F0),
                       items: const [
                         DropdownMenuItem(value: 'Submitted', child: Text('Submitted')),
                         DropdownMenuItem(value: 'Pending', child: Text('Pending')),
@@ -194,14 +193,6 @@ class _DesktopVoterFormsViewState extends ConsumerState<DesktopVoterFormsView> {
                       onChanged: (val) {
                         if (val != null) setModalState(() => status = val);
                       },
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  filled: true,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      ),
                     ),
                     const SizedBox(height: 16),
 
@@ -479,30 +470,26 @@ class _DesktopVoterFormsViewState extends ConsumerState<DesktopVoterFormsView> {
         const SizedBox(width: 14),
 
         // Status Filter
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: DropdownButton<String>(
-            value: _selectedStatus,
-            underline: const SizedBox(),
-            items: const [
-              DropdownMenuItem(value: 'All', child: Text('All Status', style: TextStyle(fontSize: 12))),
-              DropdownMenuItem(value: 'Submitted', child: Text('Submitted', style: TextStyle(fontSize: 12))),
-              DropdownMenuItem(value: 'Pending', child: Text('Pending', style: TextStyle(fontSize: 12))),
-              DropdownMenuItem(value: 'Approved', child: Text('Approved', style: TextStyle(fontSize: 12))),
-              DropdownMenuItem(value: 'Rejected', child: Text('Rejected', style: TextStyle(fontSize: 12))),
-            ],
-            onChanged: (val) {
-              if (val != null) {
-                setState(() => _selectedStatus = val);
-                _fetchApplications();
-              }
-            },
-          ),
+        AppDropdown<String>(
+          value: _selectedStatus,
+          height: 40,
+          width: 160,
+          prefixIcon: const Icon(Icons.filter_list_rounded, size: 16, color: Color(0xFF94A3B8)),
+          backgroundColor: Colors.white,
+          borderColor: const Color(0xFFE2E8F0),
+          items: const [
+            DropdownMenuItem(value: 'All', child: Text('All Status')),
+            DropdownMenuItem(value: 'Submitted', child: Text('Submitted')),
+            DropdownMenuItem(value: 'Pending', child: Text('Pending')),
+            DropdownMenuItem(value: 'Approved', child: Text('Approved')),
+            DropdownMenuItem(value: 'Rejected', child: Text('Rejected')),
+          ],
+          onChanged: (val) {
+            if (val != null) {
+              setState(() => _selectedStatus = val);
+              _fetchApplications();
+            }
+          },
         ),
       ],
     );

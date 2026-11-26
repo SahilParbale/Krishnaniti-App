@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:nagarsevak_mobile/core/theme/app_colors.dart';
 import 'package:nagarsevak_mobile/presentation/providers/navigation_provider.dart';
 import 'desktop_sidebar.dart';
 import 'desktop_command_palette.dart';
@@ -76,7 +75,12 @@ class _DesktopScaffoldState extends ConsumerState<DesktopScaffold> {
 
   void _openCommandPalette() {
     DesktopCommandPalette.show(context, (key) {
-      ref.read(activeScreenProvider.notifier).setScreen(key);
+      if (key == 'whatsapp_bot') {
+        ref.read(desktopSettingsTabProvider.notifier).setTab('bot');
+        ref.read(activeScreenProvider.notifier).setScreen('profile_settings');
+      } else {
+        ref.read(activeScreenProvider.notifier).setScreen(key);
+      }
     });
   }
 

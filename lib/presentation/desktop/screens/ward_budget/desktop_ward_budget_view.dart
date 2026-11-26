@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../data/models/ward_budget_model.dart';
 import '../../../../data/repositories/ward_budget_repository.dart';
 import '../../common/desktop_modal_dialog.dart';
 import '../../../screens/ward_budget/ward_budget_report_generator.dart';
+import '../../../widgets/app_dropdown.dart';
 
 class DesktopWardBudgetView extends ConsumerStatefulWidget {
   const DesktopWardBudgetView({super.key});
@@ -19,7 +19,17 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
   bool _loading = true;
   List<WardBudgetModel> _budgets = [];
   String _searchTerm = '';
-  String _areaSearch = '';
+  String _selectedArea = 'All';
+
+  List<String> get _uniqueAreas {
+    final areas = _budgets
+        .map((b) => (b.area).trim())
+        .where((a) => a.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
+    return ['All', ...areas];
+  }
 
   @override
   void initState() {
@@ -64,8 +74,8 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
           b.category.toLowerCase().contains(_searchTerm.toLowerCase()) ||
           b.area.toLowerCase().contains(_searchTerm.toLowerCase());
 
-      final matchesArea = _areaSearch.isEmpty ||
-          b.area.toLowerCase().contains(_areaSearch.toLowerCase());
+      final matchesArea = _selectedArea == 'All' ||
+          b.area.toLowerCase().trim() == _selectedArea.toLowerCase().trim();
 
       return matchesSearch && matchesArea;
     }).toList();
@@ -328,27 +338,23 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
         Row(
           children: [
             // Year Selector
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: DropdownButton<String>(
-                value: _year,
-                underline: const SizedBox.shrink(),
-                items: const [
-                  DropdownMenuItem(value: '2024-2025', child: Text('FY 2024-2025', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600))),
-                  DropdownMenuItem(value: '2023-2024', child: Text('FY 2023-2024', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600))),
-                ],
-                onChanged: (val) {
-                  if (val != null) {
-                    setState(() => _year = val);
-                    _loadBudgets();
-                  }
-                },
-              ),
+            AppDropdown<String>(
+              value: _year,
+              height: 40,
+              width: 160,
+              prefixIcon: const Icon(Icons.calendar_today_outlined, size: 15, color: Color(0xFF94A3B8)),
+              backgroundColor: Colors.white,
+              borderColor: const Color(0xFFE2E8F0),
+              items: const [
+                DropdownMenuItem(value: '2024-2025', child: Text('FY 2024-2025')),
+                DropdownMenuItem(value: '2023-2024', child: Text('FY 2023-2024')),
+              ],
+              onChanged: (val) {
+                if (val != null) {
+                  setState(() => _year = val);
+                  _loadBudgets();
+                }
+              },
             ),
             const SizedBox(width: 12),
 
@@ -563,25 +569,21 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
         // Area Filter (Col 4)
         Expanded(
           flex: 4,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
-            child: TextField(
-              onChanged: (val) => setState(() => _areaSearch = val),
-              decoration: InputDecoration(
-                hintText: 'Search Area...',
-                hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF94A3B8)),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                suffixIcon: _areaSearch.isNotEmpty
-                    ? IconButton(icon: const Icon(Icons.clear, size: 16), onPressed: () => setState(() => _areaSearch = ''))
-                    : null,
-              ),
-            ),
+          child: AppDropdown<String>(
+            value: _selectedArea,
+            height: 44,
+            prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF94A3B8)),
+            backgroundColor: Colors.white,
+            borderColor: const Color(0xFFE2E8F0),
+            items: _uniqueAreas.map((area) {
+              return DropdownMenuItem(
+                value: area,
+                child: Text(area == 'All' ? 'All Areas' : area, overflow: TextOverflow.ellipsis),
+              );
+            }).toList(),
+            onChanged: (val) {
+              if (val != null) setState(() => _selectedArea = val);
+            },
           ),
         ),
       ],

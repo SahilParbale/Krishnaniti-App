@@ -139,11 +139,35 @@ Future<void> _openAnchoredDesktopDropdown<T>({
     ),
     constraints: BoxConstraints(
       minWidth: math.max(buttonWidth, 180),
-      maxWidth: math.max(buttonWidth, 240),
+      maxWidth: math.max(buttonWidth, 280),
       maxHeight: 280,
     ),
     items: items.map((item) {
       final isSelected = item.value == currentValue;
+      Widget childText;
+      if (item.child is Text) {
+        final t = item.child as Text;
+        childText = Text(
+          t.data ?? '',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+            color: isSelected ? const Color(0xFF0284C7) : const Color(0xFF334155),
+          ),
+          overflow: TextOverflow.ellipsis,
+        );
+      } else {
+        childText = DefaultTextStyle(
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+            color: isSelected ? const Color(0xFF0284C7) : const Color(0xFF334155),
+          ),
+          overflow: TextOverflow.ellipsis,
+          child: item.child,
+        );
+      }
+
       return PopupMenuItem<_DropdownValueWrapper<T>>(
         value: _DropdownValueWrapper<T>(item.value),
         height: 38,
@@ -159,17 +183,7 @@ Future<void> _openAnchoredDesktopDropdown<T>({
               else
                 const SizedBox(width: 16),
               const SizedBox(width: 8),
-              Expanded(
-                child: DefaultTextStyle(
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                    color: isSelected ? const Color(0xFF0284C7) : const Color(0xFF334155),
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  child: item.child,
-                ),
-              ),
+              Expanded(child: childText),
             ],
           ),
         ),
@@ -268,11 +282,24 @@ class AppDropdown<T> extends StatelessWidget {
         orElse: () => null,
       );
       if (selectedItem != null) {
+        if (selectedItem.child is Text) {
+          final t = selectedItem.child as Text;
+          return Text(
+            t.data ?? '',
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF334155),
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          );
+        }
         return DefaultTextStyle(
           style: const TextStyle(
-            fontSize: 12.5,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF334155),
           ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
@@ -284,9 +311,9 @@ class AppDropdown<T> extends StatelessWidget {
     return Text(
       displayHint,
       style: const TextStyle(
-        fontSize: 12.5,
-        color: AppColors.textMuted,
-        fontWeight: FontWeight.w500,
+        fontSize: 13,
+        color: Color(0xFF94A3B8),
+        fontWeight: FontWeight.w400,
       ),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
@@ -300,12 +327,12 @@ class AppDropdown<T> extends StatelessWidget {
         final content = Container(
           width: width,
           height: height,
-          padding: padding ?? const EdgeInsets.symmetric(horizontal: 10),
+          padding: padding ?? const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
             color: backgroundColor ?? Colors.white,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: borderColor ?? AppColors.slate300,
+              color: borderColor ?? const Color(0xFFE2E8F0),
               width: 1,
             ),
           ),
@@ -315,7 +342,7 @@ class AppDropdown<T> extends StatelessWidget {
             children: [
               if (prefixIcon != null) ...[
                 prefixIcon!,
-                const SizedBox(width: 6),
+                const SizedBox(width: 8),
               ],
               if (isExpanded)
                 Expanded(child: _buildSelectedDisplay())
@@ -324,8 +351,8 @@ class AppDropdown<T> extends StatelessWidget {
               const SizedBox(width: 4),
               const Icon(
                 Icons.keyboard_arrow_down_rounded,
-                color: AppColors.brandPrimary,
-                size: 20,
+                color: Color(0xFF94A3B8),
+                size: 19,
               ),
             ],
           ),
@@ -433,11 +460,24 @@ class AppDropdownFormField<T> extends FormField<T> {
                   orElse: () => null,
                 );
                 if (selectedItem != null) {
+                  if (selectedItem.child is Text) {
+                    final t = selectedItem.child as Text;
+                    return Text(
+                      t.data ?? '',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF334155),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    );
+                  }
                   return DefaultTextStyle(
                     style: const TextStyle(
                       fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF334155),
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -449,9 +489,9 @@ class AppDropdownFormField<T> extends FormField<T> {
               return Text(
                 displayHint,
                 style: const TextStyle(
-                  color: AppColors.textMuted,
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF94A3B8),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w400,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -500,7 +540,7 @@ class AppDropdownFormField<T> extends FormField<T> {
                       border: Border.all(
                         color: state.hasError
                             ? const Color(0xFFEF4444)
-                            : (borderColor ?? AppColors.slate300),
+                            : (borderColor ?? const Color(0xFFE2E8F0)),
                         width: state.hasError ? 1.5 : 1,
                       ),
                     ),
@@ -513,8 +553,8 @@ class AppDropdownFormField<T> extends FormField<T> {
                         Expanded(child: buildSelectedDisplay()),
                         const Icon(
                           Icons.keyboard_arrow_down_rounded,
-                          color: AppColors.brandPrimary,
-                          size: 20,
+                          color: Color(0xFF94A3B8),
+                          size: 19,
                         ),
                       ],
                     ),

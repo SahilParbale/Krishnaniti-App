@@ -95,6 +95,7 @@ class _DesktopCommandPaletteState extends State<DesktopCommandPalette> {
     // Strategy & Settings
     _CommandItem(key: 'analysis_strategy', title: 'Analysis & Strategy', category: 'Strategy', icon: Icons.query_stats_outlined),
     _CommandItem(key: 'profile_settings', title: 'Profile Settings', category: 'Settings', icon: Icons.manage_accounts_outlined),
+    _CommandItem(key: 'whatsapp_bot', title: 'WhatsApp Bot (Baileys)', category: 'Settings', icon: Icons.smart_toy_outlined),
   ];
 
   List<_CommandItem> _filteredItems = _allItems;

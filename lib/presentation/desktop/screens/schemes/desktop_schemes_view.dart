@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:nagarsevak_mobile/core/theme/app_colors.dart';
 import 'package:nagarsevak_mobile/data/models/scheme_model.dart';
 import 'package:nagarsevak_mobile/data/repositories/schemes_repository.dart';
 import 'package:nagarsevak_mobile/presentation/desktop/common/desktop_modal_dialog.dart';
 import 'package:nagarsevak_mobile/presentation/desktop/shell/desktop_sidebar.dart';
 import 'package:nagarsevak_mobile/presentation/screens/schemes/scheme_report_generator.dart';
+import 'package:nagarsevak_mobile/presentation/widgets/app_dropdown.dart';
 
 /// Desktop Government Schemes View matching SchemeList.tsx verbatim:
 /// - Sticky Header: Title + Subtitle + Help + Find Schemes (AI) + Add Scheme
@@ -135,9 +135,11 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
               const SizedBox(height: 14),
               const Text('Category *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
               const SizedBox(height: 6),
-              DropdownButtonFormField<String>(
+              AppDropdown<String>(
                 value: category,
-                decoration: desktopInputDecoration(hintText: 'Select Category'),
+                height: 44,
+                backgroundColor: const Color(0xFFF8FAFC),
+                borderColor: const Color(0xFFE2E8F0),
                 items: _categories.map((c) => DropdownMenuItem(value: c['id']!, child: Text(c['en']!))).toList(),
                 onChanged: (val) {
                   if (val != null) setDlgState(() => category = val);

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../providers/navigation_provider.dart';
-import 'desktop_sidebar.dart';
 
 class DesktopHeader extends ConsumerWidget {
   final VoidCallback onOpenCommandPalette;

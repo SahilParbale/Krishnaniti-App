@@ -7,6 +7,7 @@ import '../../../../data/models/gb_register_entry_model.dart';
 import '../../../../data/repositories/diary_repository.dart';
 import '../../common/desktop_modal_dialog.dart';
 import '../../../screens/gb_register/gb_register_report_generator.dart';
+import '../../../widgets/app_dropdown.dart';
 
 class DesktopGbRegisterView extends ConsumerStatefulWidget {
   const DesktopGbRegisterView({super.key});
@@ -137,8 +138,11 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
                             children: [
                               const Text('Meeting Type *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
                               const SizedBox(height: 6),
-                              DropdownButtonFormField<String>(
+                              AppDropdown<String>(
                                 value: selectedType,
+                                height: 44,
+                                backgroundColor: const Color(0xFFF8FAFC),
+                                borderColor: const Color(0xFFE2E8F0),
                                 items: const [
                                   DropdownMenuItem(value: 'GB', child: Text('General Body (GB)')),
                                   DropdownMenuItem(value: 'Standing Committee', child: Text('Standing Committee')),
@@ -149,14 +153,6 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
                                 onChanged: (val) {
                                   if (val != null) setModalState(() => selectedType = val);
                                 },
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  filled: true,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                ),
                               ),
                             ],
                           ),
@@ -319,8 +315,11 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
                             children: [
                               const Text('Status *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
                               const SizedBox(height: 6),
-                              DropdownButtonFormField<String>(
+                              AppDropdown<String>(
                                 value: selectedStatus,
+                                height: 44,
+                                backgroundColor: const Color(0xFFF8FAFC),
+                                borderColor: const Color(0xFFE2E8F0),
                                 items: const [
                                   DropdownMenuItem(value: 'Raised', child: Text('Raised')),
                                   DropdownMenuItem(value: 'In Discussion', child: Text('In Discussion')),
@@ -330,14 +329,6 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
                                 onChanged: (val) {
                                   if (val != null) setModalState(() => selectedStatus = val);
                                 },
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  filled: true,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                ),
                               ),
                             ],
                           ),
@@ -623,29 +614,23 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
         // Meeting Type Dropdown (Col 3)
         Expanded(
           flex: 3,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
-            child: DropdownButton<String>(
-              value: _meetingType,
-              isExpanded: true,
-              underline: const SizedBox.shrink(),
-              items: const [
-                DropdownMenuItem(value: 'All', child: Text('All Meetings', style: TextStyle(fontSize: 13))),
-                DropdownMenuItem(value: 'GB', child: Text('General Body (GB)', style: TextStyle(fontSize: 13))),
-                DropdownMenuItem(value: 'Standing Committee', child: Text('Standing Committee', style: TextStyle(fontSize: 13))),
-                DropdownMenuItem(value: 'Ward Committee', child: Text('Ward Committee', style: TextStyle(fontSize: 13))),
-                DropdownMenuItem(value: 'Special GB', child: Text('Special GB', style: TextStyle(fontSize: 13))),
-                DropdownMenuItem(value: 'Other', child: Text('Other', style: TextStyle(fontSize: 13))),
-              ],
-              onChanged: (val) {
-                if (val != null) setState(() => _meetingType = val);
-              },
-            ),
+          child: AppDropdown<String>(
+            value: _meetingType,
+            height: 42,
+            prefixIcon: const Icon(Icons.groups_outlined, size: 18, color: Color(0xFF94A3B8)),
+            backgroundColor: Colors.white,
+            borderColor: const Color(0xFFE2E8F0),
+            items: const [
+              DropdownMenuItem(value: 'All', child: Text('All Meetings')),
+              DropdownMenuItem(value: 'GB', child: Text('General Body (GB)')),
+              DropdownMenuItem(value: 'Standing Committee', child: Text('Standing Committee')),
+              DropdownMenuItem(value: 'Ward Committee', child: Text('Ward Committee')),
+              DropdownMenuItem(value: 'Special GB', child: Text('Special GB')),
+              DropdownMenuItem(value: 'Other', child: Text('Other')),
+            ],
+            onChanged: (val) {
+              if (val != null) setState(() => _meetingType = val);
+            },
           ),
         ),
       ],

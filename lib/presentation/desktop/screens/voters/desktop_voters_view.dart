@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../data/models/voter_model.dart';
 import '../../../../data/repositories/voters_repository.dart';
 import '../../../screens/voters/voter_slip_generator.dart';
 import '../../common/desktop_modal_dialog.dart';
+import '../../../widgets/app_dropdown.dart';
 
 class DesktopVotersView extends ConsumerStatefulWidget {
   const DesktopVotersView({super.key});
@@ -21,6 +21,9 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
   static const int _pageSize = 24;
 
   String _searchQuery = '';
+  String _addressFilter = '';
+  String _houseNoFilter = '';
+  String _casteFilter = '';
   String _selectedBooth = 'All';
   String _selectedFavour = 'All';
   String _selectedGender = 'All';
@@ -28,6 +31,20 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
   bool _isFriendOnly = false;
   List<String> _availableBooths = [];
   String _viewMode = 'grid'; // 'grid' | 'table'
+
+  final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _houseNoController = TextEditingController();
+  final TextEditingController _casteController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _addressController.dispose();
+    _houseNoController.dispose();
+    _casteController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -60,6 +77,9 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
         favourFilter: _selectedFavour,
         genderFilter: _selectedGender,
         ageRangeFilter: _selectedAgeRange,
+        addressFilter: _addressFilter,
+        houseNoFilter: _houseNoFilter,
+        casteFilter: _casteFilter,
         isFriendOnly: _isFriendOnly,
       );
 
@@ -227,8 +247,11 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
                         children: [
                           const Text('Gender', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
                           const SizedBox(height: 6),
-                          DropdownButtonFormField<String>(
+                          AppDropdown<String>(
                             value: gender,
+                            height: 44,
+                            backgroundColor: const Color(0xFFF8FAFC),
+                            borderColor: const Color(0xFFE2E8F0),
                             items: const [
                               DropdownMenuItem(value: 'M', child: Text('Male')),
                               DropdownMenuItem(value: 'F', child: Text('Female')),
@@ -237,7 +260,6 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
                             onChanged: (val) {
                               if (val != null) setModalState(() => gender = val);
                             },
-                            decoration: desktopInputDecoration(hintText: 'Gender'),
                           ),
                         ],
                       ),
@@ -458,125 +480,337 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Search
-          Expanded(
-            flex: 3,
-            child: TextField(
-              onSubmitted: (val) {
-                _searchQuery = val;
-                _currentPage = 1;
-                _fetchVoters();
-              },
-              decoration: InputDecoration(
-                hintText: 'Search voter by name, EPIC number or mobile...',
-                hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF94A3B8)),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.arrow_forward_rounded, size: 16, color: Color(0xFF0284C7)),
-                  onPressed: _fetchVoters,
+          // Row 1: Text Filters (Name, Address, House No, Caste)
+          Row(
+            children: [
+              // Search Name / EPIC / Mobile
+              Expanded(
+                flex: 3,
+                child: Container(
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    onSubmitted: (val) {
+                      _searchQuery = val;
+                      _currentPage = 1;
+                      _fetchVoters();
+                    },
+                    decoration: InputDecoration(
+                      hintText: 'Search voter by name, EPIC, mobile...',
+                      hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                      prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF94A3B8)),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.arrow_forward_rounded, size: 16, color: Color(0xFF0284C7)),
+                        onPressed: () {
+                          _searchQuery = _searchController.text;
+                          _currentPage = 1;
+                          _fetchVoters();
+                        },
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                  ),
                 ),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               ),
-            ),
-          ),
-          const SizedBox(width: 14),
+              const SizedBox(width: 10),
 
-          // Booth Filter
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            decoration: BoxDecoration(border: Border.all(color: const Color(0xFFE2E8F0)), borderRadius: BorderRadius.circular(8)),
-            child: DropdownButton<String>(
-              value: _selectedBooth,
-              underline: const SizedBox(),
-              items: _availableBooths.map((b) {
-                return DropdownMenuItem(value: b, child: Text(b == 'All' ? 'All Booths' : 'Booth $b', style: const TextStyle(fontSize: 12)));
-              }).toList(),
-              onChanged: (val) {
-                if (val != null) {
-                  setState(() => _selectedBooth = val);
-                  _currentPage = 1;
-                  _fetchVoters();
-                }
-              },
-            ),
-          ),
-          const SizedBox(width: 10),
-
-          // Favour Filter
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            decoration: BoxDecoration(border: Border.all(color: const Color(0xFFE2E8F0)), borderRadius: BorderRadius.circular(8)),
-            child: DropdownButton<String>(
-              value: _selectedFavour,
-              underline: const SizedBox(),
-              items: const [
-                DropdownMenuItem(value: 'All', child: Text('All Favour', style: TextStyle(fontSize: 12))),
-                DropdownMenuItem(value: 'Favourable', child: Text('Favourable', style: TextStyle(fontSize: 12))),
-                DropdownMenuItem(value: 'Neutral', child: Text('Neutral', style: TextStyle(fontSize: 12))),
-                DropdownMenuItem(value: 'Against', child: Text('Against', style: TextStyle(fontSize: 12))),
-                DropdownMenuItem(value: 'Swing', child: Text('Swing', style: TextStyle(fontSize: 12))),
-              ],
-              onChanged: (val) {
-                if (val != null) {
-                  setState(() => _selectedFavour = val);
-                  _currentPage = 1;
-                  _fetchVoters();
-                }
-              },
-            ),
-          ),
-          const SizedBox(width: 10),
-
-          // Gender Filter
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            decoration: BoxDecoration(border: Border.all(color: const Color(0xFFE2E8F0)), borderRadius: BorderRadius.circular(8)),
-            child: DropdownButton<String>(
-              value: _selectedGender,
-              underline: const SizedBox(),
-              items: const [
-                DropdownMenuItem(value: 'All', child: Text('All Genders', style: TextStyle(fontSize: 12))),
-                DropdownMenuItem(value: 'M', child: Text('Male', style: TextStyle(fontSize: 12))),
-                DropdownMenuItem(value: 'F', child: Text('Female', style: TextStyle(fontSize: 12))),
-              ],
-              onChanged: (val) {
-                if (val != null) {
-                  setState(() => _selectedGender = val);
-                  _currentPage = 1;
-                  _fetchVoters();
-                }
-              },
-            ),
-          ),
-          const SizedBox(width: 14),
-
-          // View Mode Toggle
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                _buildViewToggleButton(
-                  icon: Icons.grid_view_rounded,
-                  label: 'Grid',
-                  isActive: _viewMode == 'grid',
-                  onTap: () => setState(() => _viewMode = 'grid'),
+              // Address Filter
+              Expanded(
+                flex: 2,
+                child: Container(
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: TextField(
+                    controller: _addressController,
+                    onSubmitted: (val) {
+                      _addressFilter = val;
+                      _currentPage = 1;
+                      _fetchVoters();
+                    },
+                    decoration: InputDecoration(
+                      hintText: 'Search Address...',
+                      hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                      prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF94A3B8)),
+                      suffixIcon: _addressFilter.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, size: 16),
+                              onPressed: () {
+                                _addressController.clear();
+                                _addressFilter = '';
+                                _currentPage = 1;
+                                _fetchVoters();
+                              },
+                            )
+                          : null,
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                  ),
                 ),
-                const SizedBox(width: 4),
-                _buildViewToggleButton(
-                  icon: Icons.table_rows_rounded,
-                  label: 'Table',
-                  isActive: _viewMode == 'table',
-                  onTap: () => setState(() => _viewMode = 'table'),
+              ),
+              const SizedBox(width: 10),
+
+              // House No Filter
+              SizedBox(
+                width: 130,
+                height: 42,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: TextField(
+                    controller: _houseNoController,
+                    onSubmitted: (val) {
+                      _houseNoFilter = val;
+                      _currentPage = 1;
+                      _fetchVoters();
+                    },
+                    decoration: InputDecoration(
+                      hintText: 'House No',
+                      hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                      prefixIcon: const Icon(Icons.home_outlined, size: 18, color: Color(0xFF94A3B8)),
+                      suffixIcon: _houseNoFilter.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, size: 16),
+                              onPressed: () {
+                                _houseNoController.clear();
+                                _houseNoFilter = '';
+                                _currentPage = 1;
+                                _fetchVoters();
+                              },
+                            )
+                          : null,
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                    ),
+                  ),
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 10),
+
+              // Caste Filter
+              Expanded(
+                flex: 2,
+                child: Container(
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: TextField(
+                    controller: _casteController,
+                    onSubmitted: (val) {
+                      _casteFilter = val;
+                      _currentPage = 1;
+                      _fetchVoters();
+                    },
+                    decoration: InputDecoration(
+                      hintText: 'Caste / Community...',
+                      hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                      prefixIcon: const Icon(Icons.filter_list_rounded, size: 18, color: Color(0xFF94A3B8)),
+                      suffixIcon: _casteFilter.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, size: 16),
+                              onPressed: () {
+                                _casteController.clear();
+                                _casteFilter = '';
+                                _currentPage = 1;
+                                _fetchVoters();
+                              },
+                            )
+                          : null,
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Row 2: Dropdowns & View Mode
+          Row(
+            children: [
+              // Booth Filter
+              AppDropdown<String>(
+                value: _selectedBooth,
+                height: 40,
+                width: 135,
+                prefixIcon: const Icon(Icons.how_to_vote_outlined, size: 16, color: Color(0xFF94A3B8)),
+                backgroundColor: Colors.white,
+                borderColor: const Color(0xFFE2E8F0),
+                items: _availableBooths.map((b) {
+                  return DropdownMenuItem(value: b, child: Text(b == 'All' ? 'All Booths' : 'Booth $b'));
+                }).toList(),
+                onChanged: (val) {
+                  if (val != null) {
+                    setState(() => _selectedBooth = val);
+                    _currentPage = 1;
+                    _fetchVoters();
+                  }
+                },
+              ),
+              const SizedBox(width: 10),
+
+              // Age Range Filter
+              AppDropdown<String>(
+                value: _selectedAgeRange,
+                height: 40,
+                width: 135,
+                prefixIcon: const Icon(Icons.cake_outlined, size: 16, color: Color(0xFF94A3B8)),
+                backgroundColor: Colors.white,
+                borderColor: const Color(0xFFE2E8F0),
+                items: const [
+                  DropdownMenuItem(value: 'All', child: Text('All Ages')),
+                  DropdownMenuItem(value: '18-25', child: Text('18 - 25 yrs')),
+                  DropdownMenuItem(value: '26-40', child: Text('26 - 40 yrs')),
+                  DropdownMenuItem(value: '41-60', child: Text('41 - 60 yrs')),
+                  DropdownMenuItem(value: '60+', child: Text('60+ yrs')),
+                ],
+                onChanged: (val) {
+                  if (val != null) {
+                    setState(() => _selectedAgeRange = val);
+                    _currentPage = 1;
+                    _fetchVoters();
+                  }
+                },
+              ),
+              const SizedBox(width: 10),
+
+              // Gender Filter
+              AppDropdown<String>(
+                value: _selectedGender,
+                height: 40,
+                width: 130,
+                prefixIcon: const Icon(Icons.people_outline, size: 16, color: Color(0xFF94A3B8)),
+                backgroundColor: Colors.white,
+                borderColor: const Color(0xFFE2E8F0),
+                items: const [
+                  DropdownMenuItem(value: 'All', child: Text('All Genders')),
+                  DropdownMenuItem(value: 'M', child: Text('Male')),
+                  DropdownMenuItem(value: 'F', child: Text('Female')),
+                  DropdownMenuItem(value: 'O', child: Text('Other')),
+                ],
+                onChanged: (val) {
+                  if (val != null) {
+                    setState(() => _selectedGender = val);
+                    _currentPage = 1;
+                    _fetchVoters();
+                  }
+                },
+              ),
+              const SizedBox(width: 10),
+
+              // Favour Filter
+              AppDropdown<String>(
+                value: _selectedFavour,
+                height: 40,
+                width: 140,
+                prefixIcon: const Icon(Icons.sentiment_satisfied_alt_outlined, size: 16, color: Color(0xFF94A3B8)),
+                backgroundColor: Colors.white,
+                borderColor: const Color(0xFFE2E8F0),
+                items: const [
+                  DropdownMenuItem(value: 'All', child: Text('All Favour')),
+                  DropdownMenuItem(value: 'Favourable', child: Text('Favourable')),
+                  DropdownMenuItem(value: 'Neutral', child: Text('Neutral')),
+                  DropdownMenuItem(value: 'Against', child: Text('Against')),
+                  DropdownMenuItem(value: 'Swing', child: Text('Swing')),
+                ],
+                onChanged: (val) {
+                  if (val != null) {
+                    setState(() => _selectedFavour = val);
+                    _currentPage = 1;
+                    _fetchVoters();
+                  }
+                },
+              ),
+              const SizedBox(width: 10),
+
+              // Reset filters button
+              InkWell(
+                onTap: () {
+                  setState(() {
+                    _searchController.clear();
+                    _addressController.clear();
+                    _houseNoController.clear();
+                    _casteController.clear();
+                    _searchQuery = '';
+                    _addressFilter = '';
+                    _houseNoFilter = '';
+                    _casteFilter = '';
+                    _selectedBooth = 'All';
+                    _selectedAgeRange = 'All';
+                    _selectedGender = 'All';
+                    _selectedFavour = 'All';
+                    _currentPage = 1;
+                  });
+                  _fetchVoters();
+                },
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  height: 40,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFCBD5E1)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.refresh_rounded, size: 16, color: Color(0xFF475569)),
+                      SizedBox(width: 6),
+                      Text('Reset', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+                    ],
+                  ),
+                ),
+              ),
+
+              const Spacer(),
+
+              // View Mode Toggle
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    _buildViewToggleButton(
+                      icon: Icons.grid_view_rounded,
+                      label: 'Grid',
+                      isActive: _viewMode == 'grid',
+                      onTap: () => setState(() => _viewMode = 'grid'),
+                    ),
+                    const SizedBox(width: 4),
+                    _buildViewToggleButton(
+                      icon: Icons.table_rows_rounded,
+                      label: 'Table',
+                      isActive: _viewMode == 'table',
+                      onTap: () => setState(() => _viewMode = 'table'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../data/models/election_result_model.dart';
 import '../../../../data/repositories/election_results_repository.dart';
 import '../../../screens/results/result_analysis_report_generator.dart';
+import '../../../widgets/app_dropdown.dart';
 
 class DesktopResultAnalysisView extends ConsumerStatefulWidget {
   const DesktopResultAnalysisView({super.key});
@@ -137,58 +138,42 @@ class _DesktopResultAnalysisViewState extends ConsumerState<DesktopResultAnalysi
         Row(
           children: [
             // Ward Dropdown
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: Row(
-                children: [
-                  const Text('Ward: ', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
-                  DropdownButton<String>(
-                    value: _availableWards.contains(_selectedWard) ? _selectedWard : null,
-                    underline: const SizedBox(),
-                    items: _availableWards.map((w) {
-                      return DropdownMenuItem(value: w, child: Text(w, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))));
-                    }).toList(),
-                    onChanged: (val) {
-                      if (val != null) {
-                        setState(() => _selectedWard = val);
-                        _loadResultsForWard(val);
-                      }
-                    },
-                  ),
-                ],
-              ),
+            AppDropdown<String>(
+              value: _availableWards.contains(_selectedWard) ? _selectedWard : null,
+              height: 40,
+              width: 160,
+              label: 'Ward',
+              prefixIcon: const Icon(Icons.location_on_outlined, size: 16, color: Color(0xFF94A3B8)),
+              backgroundColor: Colors.white,
+              borderColor: const Color(0xFFE2E8F0),
+              items: _availableWards.map((w) {
+                return DropdownMenuItem(value: w, child: Text(w));
+              }).toList(),
+              onChanged: (val) {
+                if (val != null) {
+                  setState(() => _selectedWard = val);
+                  _loadResultsForWard(val);
+                }
+              },
             ),
             const SizedBox(width: 12),
 
             // Candidate Dropdown
             if (_availableCandidates.isNotEmpty)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Row(
-                  children: [
-                    const Text('Candidate: ', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
-                    DropdownButton<String>(
-                      value: _availableCandidates.contains(_selectedCandidate) ? _selectedCandidate : null,
-                      underline: const SizedBox(),
-                      items: _availableCandidates.map((c) {
-                        return DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0369A1))));
-                      }).toList(),
-                      onChanged: (val) {
-                        if (val != null) setState(() => _selectedCandidate = val);
-                      },
-                    ),
-                  ],
-                ),
+              AppDropdown<String>(
+                value: _availableCandidates.contains(_selectedCandidate) ? _selectedCandidate : null,
+                height: 40,
+                width: 180,
+                label: 'Candidate',
+                prefixIcon: const Icon(Icons.person_outline, size: 16, color: Color(0xFF94A3B8)),
+                backgroundColor: Colors.white,
+                borderColor: const Color(0xFFE2E8F0),
+                items: _availableCandidates.map((c) {
+                  return DropdownMenuItem(value: c, child: Text(c));
+                }).toList(),
+                onChanged: (val) {
+                  if (val != null) setState(() => _selectedCandidate = val);
+                },
               ),
           ],
         ),

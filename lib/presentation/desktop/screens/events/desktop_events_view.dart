@@ -7,6 +7,7 @@ import '../../../../data/repositories/events_repository.dart';
 import '../../common/desktop_modal_dialog.dart';
 import '../../../screens/events/event_invite_modal.dart';
 import '../../../screens/events/event_report_generator.dart';
+import '../../../widgets/app_dropdown.dart';
 
 class DesktopEventsView extends ConsumerStatefulWidget {
   const DesktopEventsView({super.key});
@@ -20,7 +21,28 @@ class _DesktopEventsViewState extends ConsumerState<DesktopEventsView> {
   List<EventModel> _events = [];
   String _searchTerm = '';
   String _selectedType = 'All';
+  String _selectedArea = 'All';
+  String _selectedDate = 'All';
   String _viewMode = 'grid'; // 'grid' | 'table'
+
+  List<String> get _uniqueAreas {
+    final areas = _events
+        .map((e) => e.area.trim())
+        .where((a) => a.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
+    return ['All', ...areas];
+  }
+
+  List<String> get _uniqueDates {
+    final dates = _events
+        .map((e) => DateFormat('yyyy-MM-dd').format(e.eventDate))
+        .toSet()
+        .toList()
+      ..sort((a, b) => b.compareTo(a));
+    return ['All', ...dates];
+  }
 
   @override
   void initState() {
@@ -60,7 +82,13 @@ class _DesktopEventsViewState extends ConsumerState<DesktopEventsView> {
           e.type.id.toLowerCase() == _selectedType.toLowerCase() ||
           e.type.titleMr.toLowerCase() == _selectedType.toLowerCase();
 
-      return matchesSearch && matchesType;
+      final matchesArea = _selectedArea == 'All' ||
+          e.area.toLowerCase().trim() == _selectedArea.toLowerCase().trim();
+
+      final matchesDate = _selectedDate == 'All' ||
+          DateFormat('yyyy-MM-dd').format(e.eventDate) == _selectedDate;
+
+      return matchesSearch && matchesType && matchesArea && matchesDate;
     }).toList();
   }
 
@@ -139,15 +167,17 @@ class _DesktopEventsViewState extends ConsumerState<DesktopEventsView> {
                         children: [
                           const Text('Event Type *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
                           const SizedBox(height: 6),
-                          DropdownButtonFormField<EventType>(
+                          AppDropdown<EventType>(
                             value: selectedType,
+                            height: 44,
+                            backgroundColor: const Color(0xFFF8FAFC),
+                            borderColor: const Color(0xFFE2E8F0),
                             items: EventType.values.map((t) {
                               return DropdownMenuItem(value: t, child: Text(t.titleMr));
                             }).toList(),
                             onChanged: (val) {
                               if (val != null) setModalState(() => selectedType = val);
                             },
-                            decoration: desktopInputDecoration(hintText: 'Select Type'),
                           ),
                         ],
                       ),
@@ -443,7 +473,9 @@ class _DesktopEventsViewState extends ConsumerState<DesktopEventsView> {
   Widget _buildFilterRow() {
     return Row(
       children: [
+        // Main Search (Col 6)
         Expanded(
+          flex: 6,
           child: Container(
             decoration: BoxDecoration(
               color: Colors.white,
@@ -466,6 +498,52 @@ class _DesktopEventsViewState extends ConsumerState<DesktopEventsView> {
           ),
         ),
         const SizedBox(width: 14),
+
+        // Area Filter (Col 3)
+        Expanded(
+          flex: 3,
+          child: AppDropdown<String>(
+            value: _selectedArea,
+            height: 44,
+            prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF94A3B8)),
+            backgroundColor: Colors.white,
+            borderColor: const Color(0xFFE2E8F0),
+            items: _uniqueAreas.map((area) {
+              return DropdownMenuItem(
+                value: area,
+                child: Text(area == 'All' ? 'All Areas' : area, overflow: TextOverflow.ellipsis),
+              );
+            }).toList(),
+            onChanged: (val) {
+              if (val != null) setState(() => _selectedArea = val);
+            },
+          ),
+        ),
+        const SizedBox(width: 14),
+
+        // Date Filter (Col 3)
+        Expanded(
+          flex: 3,
+          child: AppDropdown<String>(
+            value: _selectedDate,
+            height: 44,
+            prefixIcon: const Icon(Icons.calendar_today_outlined, size: 18, color: Color(0xFF94A3B8)),
+            backgroundColor: Colors.white,
+            borderColor: const Color(0xFFE2E8F0),
+            items: _uniqueDates.map((date) {
+              return DropdownMenuItem(
+                value: date,
+                child: Text(date == 'All' ? 'All Dates' : date, overflow: TextOverflow.ellipsis),
+              );
+            }).toList(),
+            onChanged: (val) {
+              if (val != null) setState(() => _selectedDate = val);
+            },
+          ),
+        ),
+        const SizedBox(width: 14),
+
+        // View Mode Toggle
         Container(
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(

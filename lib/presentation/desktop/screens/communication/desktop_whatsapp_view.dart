@@ -6,8 +6,10 @@ import '../../common/desktop_modal_dialog.dart';
 import '../../../../data/models/voter_model.dart';
 import '../../../../data/models/whatsapp_broadcast_model.dart';
 import '../../../../data/repositories/whatsapp_repository.dart';
+import '../../../providers/navigation_provider.dart';
 import '../../shell/desktop_sidebar.dart';
 import '../../../screens/whatsapp/whatsapp_history_report_generator.dart';
+import '../../../widgets/app_dropdown.dart';
 
 class DesktopWhatsappView extends ConsumerStatefulWidget {
   const DesktopWhatsappView({super.key});
@@ -240,35 +242,45 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
                 ),
                 Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: _isBotConnected ? AppColors.brand50 : const Color(0xFFFEF2F2),
+                    Tooltip(
+                      message: 'Click to manage WhatsApp Bot connection & QR code',
+                      child: InkWell(
+                        onTap: () {
+                          ref.read(desktopSettingsTabProvider.notifier).setTab('bot');
+                          ref.read(activeScreenProvider.notifier).setScreen('profile_settings');
+                        },
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: _isBotConnected ? AppColors.brand200 : const Color(0xFFFECACA)),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: _isBotConnected ? AppColors.brand600 : Colors.red,
-                            ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: _isBotConnected ? AppColors.brand50 : const Color(0xFFFEF2F2),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: _isBotConnected ? AppColors.brand200 : const Color(0xFFFECACA)),
                           ),
-                          const SizedBox(width: 6),
-                          Text(
-                            _isBotConnected
-                                ? ('Bot Active')
-                                : ('Bot Inactive'),
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: _isBotConnected ? AppColors.brand600 : Colors.red,
-                            ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: _isBotConnected ? AppColors.brand600 : Colors.red,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                _isBotConnected
+                                    ? ('Bot Active')
+                                    : ('Bot Inactive'),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: _isBotConnected ? AppColors.brand600 : Colors.red,
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -365,17 +377,16 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
                     const SizedBox(width: 12),
                     SizedBox(
                       width: 140,
-                      child: DropdownButtonFormField<String>(
-                        value: _selectedGender.isEmpty ? null : _selectedGender,
-                        hint: const Text('Gender', style: TextStyle(fontSize: 13)),
-                        decoration: InputDecoration(
-                          isDense: true,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                        items: [
-                          const DropdownMenuItem(value: '', child: Text('All Genders')),
-                          const DropdownMenuItem(value: 'M', child: Text('Male')),
-                          const DropdownMenuItem(value: 'F', child: Text('Female')),
+                      child: AppDropdown<String>(
+                        value: _selectedGender,
+                        height: 40,
+                        prefixIcon: const Icon(Icons.people_outline, size: 16, color: Color(0xFF94A3B8)),
+                        backgroundColor: Colors.white,
+                        borderColor: const Color(0xFFE2E8F0),
+                        items: const [
+                          DropdownMenuItem(value: '', child: Text('All Genders')),
+                          DropdownMenuItem(value: 'M', child: Text('Male')),
+                          DropdownMenuItem(value: 'F', child: Text('Female')),
                         ],
                         onChanged: (v) {
                           setState(() => _selectedGender = v ?? '');
