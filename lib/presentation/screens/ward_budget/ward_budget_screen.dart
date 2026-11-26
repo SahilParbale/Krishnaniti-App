@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../../data/models/ward_budget_model.dart';
 import '../../../data/repositories/ward_budget_repository.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_pdf_button.dart';
@@ -541,7 +544,8 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
+    final isMr = lang == 'mr';
     final displayed = _filteredBudgets;
     final numFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹ ', decimalDigits: 0);
 
@@ -579,12 +583,12 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
-            children: const [
+            children: [
               Text(
-                'Ward Budget',
+                AppTranslations.getNavTitle('budget', lang),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 16.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
@@ -592,10 +596,14 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                 ),
               ),
               Text(
-                'Ward funds & budget tracking',
+                lang == 'mr'
+                    ? 'प्रभाग निधी आणि अंदाजपत्रक'
+                    : (lang == 'hi'
+                        ? 'वार्ड निधि और बजट ट्रैकिंग'
+                        : 'Ward funds & budget tracking'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w400,
                   color: Color(0xFFE0F2FE),
@@ -611,7 +619,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
           elevation: 4,
           icon: const Icon(Icons.add_rounded),
           label: Text(
-            isMr ? 'नवीन बजेट वाटप' : 'Add Allocation',
+            AppTranslations.t('budget.add_allocation', lang: lang),
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           onPressed: _showAddModal,
@@ -639,7 +647,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                                 Expanded(
                                   flex: isWide ? 1 : 0,
                                   child: _overviewCard(
-                                    title: isMr ? 'एकूण वाटप' : 'Total Allocated',
+                                    title: AppTranslations.t('budget.allocated', lang: lang),
                                     amount: numFormat.format(totalAllocated),
                                     icon: Icons.account_balance_wallet_outlined,
                                     iconColor: const Color(0xFF0284C7),
@@ -649,7 +657,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                                         const Icon(Icons.trending_up, size: 14, color: Color(0xFF64748B)),
                                         const SizedBox(width: 4),
                                         Text(
-                                          'Financial Year $_selectedYear',
+                                          lang == 'mr' ? 'आर्थिक वर्ष $_selectedYear' : (lang == 'hi' ? 'वित्तीय वर्ष $_selectedYear' : 'Financial Year $_selectedYear'),
                                           style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                                         ),
                                       ],
@@ -662,7 +670,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                                 Expanded(
                                   flex: isWide ? 1 : 0,
                                   child: _overviewCard(
-                                    title: isMr ? 'खर्च झालेला निधी' : 'Total Utilized',
+                                    title: AppTranslations.t('budget.utilized', lang: lang),
                                     amount: numFormat.format(totalUtilized),
                                     icon: Icons.pie_chart_outline_rounded,
                                     iconColor: const Color(0xFF6366F1),
@@ -683,7 +691,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
-                                          '${utilizationPercentage.toStringAsFixed(1)}% utilized',
+                                          lang == 'mr' ? '${utilizationPercentage.toStringAsFixed(1)}% वापरले' : (lang == 'hi' ? '${utilizationPercentage.toStringAsFixed(1)}% उपयोग हुआ' : '${utilizationPercentage.toStringAsFixed(1)}% utilized'),
                                           style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                                         ),
                                       ],
@@ -696,13 +704,13 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                                 Expanded(
                                   flex: isWide ? 1 : 0,
                                   child: _overviewCard(
-                                    title: isMr ? 'शिल्लक उपलब्ध निधी' : 'Remaining Available',
+                                    title: AppTranslations.t('budget.remaining', lang: lang),
                                     amount: numFormat.format(totalRemaining),
                                     icon: Icons.savings_outlined,
                                     iconColor: const Color(0xFF16A34A),
                                     iconBgColor: const Color(0xFFF0FDF4),
                                     footerWidget: Text(
-                                      isMr ? 'पुढील प्रभाग विकास कामांसाठी उपलब्ध' : 'Available for ward works',
+                                      lang == 'mr' ? 'पुढील प्रभाग विकास कामांसाठी उपलब्ध' : (lang == 'hi' ? 'आगे के वार्ड विकास कार्यों के लिए उपलब्ध' : 'Available for ward works'),
                                       style: const TextStyle(fontSize: 11, color: Color(0xFF16A34A), fontWeight: FontWeight.w500),
                                     ),
                                   ),
@@ -725,7 +733,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                                 controller: _searchCtrl,
                                 onChanged: (_) => setState(() => _displayedLimit = 20),
                                 decoration: InputDecoration(
-                                  hintText: isMr ? 'बजेट खाते किंवा परिसर शोधा...' : 'Search budget head or area...',
+                                  hintText: AppTranslations.t('budget.search_placeholder', lang: lang),
                                   hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                                   prefixIcon: const Icon(Icons.search, size: 20, color: Color(0xFF64748B)),
                                   suffixIcon: _searchCtrl.text.isNotEmpty
@@ -757,14 +765,17 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                             Expanded(
                               flex: 2,
                               child: AppDropdown<String>(
-                                title: isMr ? 'परिसर निवडा' : 'Filter by Area',
+                                title: AppTranslations.t('budget.filter_area', lang: lang),
                                 value: _areas.contains(_selectedArea) ? _selectedArea : 'All',
                                 height: 48,
                                 items: _areas.map((a) {
+                                  final label = a == 'All'
+                                      ? (lang == 'mr' ? 'सर्व परिसर' : (lang == 'hi' ? 'सभी क्षेत्र' : 'All Areas'))
+                                      : a;
                                   return DropdownMenuItem(
                                     value: a,
                                     child: Text(
-                                      a == 'All' ? (isMr ? 'सर्व परिसर' : 'All Areas') : a,
+                                      label,
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   );
@@ -782,7 +793,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                             const SizedBox(width: 8),
                             // Financial Year Selector
                             AppDropdown<String>(
-                              title: isMr ? 'आर्थिक वर्ष निवडा' : 'Select Financial Year',
+                              title: lang == 'mr' ? 'आर्थिक वर्ष निवडा' : (lang == 'hi' ? 'वित्तीय वर्ष चुनें' : 'Select Financial Year'),
                               value: _selectedYear,
                               height: 48,
                               isExpanded: false,
@@ -791,7 +802,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                                 return DropdownMenuItem(
                                   value: y,
                                   child: Text(
-                                    y == 'All' ? (isMr ? 'सर्व वर्षे' : 'All FY') : 'FY $y',
+                                    y == 'All' ? (lang == 'mr' ? 'सर्व वर्षे' : (lang == 'hi' ? 'सभी वर्ष' : 'All FY')) : 'FY $y',
                                     style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.bold, fontSize: 12),
                                   ),
                                 );
@@ -833,12 +844,13 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                             const SizedBox(width: 8),
                             // Download PDF
                             AppPdfButton.icon(
-                              tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Report',
+                              tooltip: lang == 'mr' ? 'अहवाल डाउनलोड करा' : (lang == 'hi' ? 'रिपोर्ट डाउनलोड करें' : 'Download Report'),
                               onPressed: () {
                                 WardBudgetReportGenerator.generateAndPrintBudgetReport(
                                   budgets: displayed,
                                   year: _selectedYear,
                                   areaFilter: _selectedArea != 'All' ? _selectedArea : null,
+                                  lang: lang,
                                 );
                               },
                             ),
@@ -864,12 +876,18 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                               Icon(Icons.account_balance_wallet_outlined, size: 48, color: Colors.grey.shade400),
                               const SizedBox(height: 12),
                               Text(
-                                isMr ? 'कोणतेही बजेट खाते सापडले नाही' : 'No Budget Records Found',
+                                lang == 'mr'
+                                    ? 'कोणतेही बजेट खाते सापडले नाही'
+                                    : (lang == 'hi' ? 'कोई बजट रिकॉर्ड नहीं मिला' : 'No Budget Records Found'),
                                 style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                isMr ? 'कृपया शोध निकष बदला किंवा नवीन बजेट वाटप जोडा.' : 'Try adjusting your filters or add a new allocation.',
+                                lang == 'mr'
+                                    ? 'कृपया शोध निकष बदला किंवा नवीन बजेट वाटप जोडा.'
+                                    : (lang == 'hi'
+                                        ? 'कृपया अपने फ़िल्टर समायोजित करें या नया आवंटन जोड़ें।'
+                                        : 'Try adjusting your filters or add a new allocation.'),
                                 style: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
                                 textAlign: TextAlign.center,
                               ),
@@ -878,15 +896,15 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                         )
                       else ...[
                         if (_viewMode == 'grid')
-                          _buildGridCardView(_visibleBudgets, isMr, numFormat)
+                          _buildGridCardView(_visibleBudgets, lang, numFormat)
                         else
-                          _buildTableView(_visibleBudgets, isMr, numFormat),
+                          _buildTableView(_visibleBudgets, lang, numFormat),
                         AppLoadMoreFooter(
                           currentCount: _visibleBudgets.length,
                           totalCount: displayed.length,
                           pageSize: 20,
                           onLoadMore: () => setState(() => _displayedLimit += 20),
-                          label: isMr ? 'बजेट नोंदी' : 'budgets',
+                          label: lang == 'mr' ? 'बजेट नोंदी' : (lang == 'hi' ? 'बजट प्रविष्टियां' : 'budgets'),
                           isMarathi: isMr,
                         ),
                       ],
@@ -953,7 +971,8 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
     );
   }
 
-  Widget _buildGridCardView(List<WardBudgetModel> items, bool isMr, NumberFormat numFormat) {
+  Widget _buildGridCardView(List<WardBudgetModel> items, String lang, NumberFormat numFormat) {
+    final isMr = lang == 'mr';
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -1016,8 +1035,8 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                         children: [
                           const Icon(Icons.location_on_outlined, size: 12, color: Color(0xFF64748B)),
                           const SizedBox(width: 2),
-                          Text(
-                            item.area,
+                          AppTranslatedText(item.area,
+                            targetLanguage: lang,
                             style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF475569)),
                           ),
                         ],
@@ -1040,8 +1059,8 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                 const SizedBox(height: 10),
 
                 // Category Title
-                Text(
-                  item.category,
+                AppTranslatedText(item.category,
+                  targetLanguage: lang,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -1061,9 +1080,9 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                   ),
                   child: Row(
                     children: [
-                      _miniAmountPill('Allocated', numFormat.format(item.totalAllocation), const Color(0xFF0F172A)),
-                      _miniAmountPill('Utilized', numFormat.format(item.utilizedAmount), const Color(0xFF0284C7)),
-                      _miniAmountPill('Remaining', numFormat.format(item.remainingAmount), const Color(0xFF16A34A)),
+                      _miniAmountPill(AppTranslations.t('budget.allocated', lang: lang), numFormat.format(item.totalAllocation), const Color(0xFF0F172A)),
+                      _miniAmountPill(AppTranslations.t('budget.utilized', lang: lang), numFormat.format(item.utilizedAmount), const Color(0xFF0284C7)),
+                      _miniAmountPill(AppTranslations.t('budget.remaining', lang: lang), numFormat.format(item.remainingAmount), const Color(0xFF16A34A)),
                     ],
                   ),
                 ),
@@ -1074,11 +1093,11 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '${percent.toStringAsFixed(0)}% utilized',
+                      '${percent.toStringAsFixed(0)}% ${lang == 'mr' ? 'वापरले' : (lang == 'hi' ? 'उपयोग' : 'utilized')}',
                       style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: item.progressColor),
                     ),
                     Text(
-                      'Balance: ${numFormat.format(item.remainingAmount)}',
+                      '${AppTranslations.t('budget.remaining', lang: lang)}: ${numFormat.format(item.remainingAmount)}',
                       style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                     ),
                   ],
@@ -1108,7 +1127,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                       ),
                       icon: const Icon(Icons.edit_note_rounded, size: 16, color: Color(0xFF0284C7)),
                       label: Text(
-                        isMr ? 'खर्च अपडेट' : 'Update Utilized',
+                        lang == 'mr' ? 'खर्च अपडेट' : (lang == 'hi' ? 'व्यय अपडेट' : 'Update Utilized'),
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                       ),
                       onPressed: () => _showQuickUpdateModal(item),
@@ -1127,7 +1146,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                           child: Row(
                             children: [
                               Text(
-                                isMr ? 'तपशील' : 'Details',
+                                lang == 'mr' ? 'तपशील' : (lang == 'hi' ? 'विवरण' : 'Details'),
                                 style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                               ),
                               const SizedBox(width: 2),
@@ -1137,7 +1156,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                         ),
                         IconButton(
                           icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Color(0xFF94A3B8)),
-                          tooltip: 'Delete',
+                          tooltip: AppTranslations.getCommon('delete', lang),
                           visualDensity: VisualDensity.compact,
                           onPressed: () => _showDeleteConfirmation(item),
                         ),
@@ -1171,7 +1190,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
     );
   }
 
-  Widget _buildTableView(List<WardBudgetModel> items, bool isMr, NumberFormat numFormat) {
+  Widget _buildTableView(List<WardBudgetModel> items, String lang, NumberFormat numFormat) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
@@ -1188,13 +1207,13 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
             horizontalMargin: 16,
             columnSpacing: 20,
             columns: [
-              DataColumn(label: Text(isMr ? 'अ.क्र.' : '#', style: const TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text(isMr ? 'बजेट खाते' : 'Category / Head', style: const TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text(isMr ? 'परिसर' : 'Area', style: const TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text(isMr ? 'मंजूर वाटप' : 'Allocated', style: const TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text(isMr ? 'झालेला खर्च' : 'Utilized', style: const TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text(isMr ? 'प्रगती' : 'Progress', style: const TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text(isMr ? 'कृती' : 'Actions', style: const TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(label: Text(AppTranslations.getReportColumn('#', lang), style: const TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(label: Text(AppTranslations.getReportColumn('category', lang), style: const TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(label: Text(AppTranslations.getReportColumn('area', lang), style: const TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(label: Text(AppTranslations.t('budget.allocated', lang: lang), style: const TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(label: Text(AppTranslations.t('budget.utilized', lang: lang), style: const TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(label: Text(lang == 'mr' ? 'प्रगती' : (lang == 'hi' ? 'प्रगति' : 'Progress'), style: const TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(label: Text(AppTranslations.getReportColumn('actions', lang), style: const TextStyle(fontWeight: FontWeight.bold))),
             ],
             rows: items.asMap().entries.map((entry) {
               final idx = entry.key + 1;
@@ -1211,8 +1230,8 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
-                            item.category,
+                          AppTranslatedText(item.category,
+                            targetLanguage: lang,
                             style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -1222,7 +1241,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                       ),
                     ),
                   ),
-                  DataCell(Text(item.area, style: const TextStyle(fontSize: 12))),
+                  DataCell(AppTranslatedText(item.area, targetLanguage: lang, style: const TextStyle(fontSize: 12))),
                   DataCell(Text(numFormat.format(item.totalAllocation), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500))),
                   DataCell(Text(numFormat.format(item.utilizedAmount), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)))),
                   DataCell(

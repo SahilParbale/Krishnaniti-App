@@ -8,6 +8,9 @@ import 'package:nagarsevak_mobile/presentation/screens/complaints/new_complaint_
 import 'package:nagarsevak_mobile/presentation/screens/complaints/complaint_detail_screen.dart';
 import 'package:nagarsevak_mobile/presentation/screens/complaints/complaint_report_generator.dart';
 import 'package:nagarsevak_mobile/presentation/widgets/app_dropdown.dart';
+import 'package:nagarsevak_mobile/core/localization/app_translations.dart';
+import 'package:nagarsevak_mobile/core/services/translation_service.dart';
+import 'package:nagarsevak_mobile/presentation/providers/language_provider.dart';
 
 /// Desktop Complaints & Requests View matching ComplaintList.tsx 1:1:
 /// - Sticky Header with Title, Found badge, Help button, and + New Request button
@@ -179,18 +182,18 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Header Row (matching ComplaintList.tsx lines 442-484)
-            _buildHeader(isMr, items.length),
+            // 1. Header Row
+            _buildHeader(lang, items.length),
 
             const SizedBox(height: 16),
 
-            // 2. Tabs & View Toggle Row (matching ComplaintList.tsx lines 487-558)
-            _buildTabsAndViewToggle(isMr),
+            // 2. Tabs & View Toggle Row
+            _buildTabsAndViewToggle(lang),
 
             const SizedBox(height: 16),
 
-            // 3. Search and Filters Card (matching ComplaintList.tsx lines 578-677)
-            _buildFilterCard(isMr),
+            // 3. Search and Filters Card
+            _buildFilterCard(lang),
 
             const SizedBox(height: 24),
 
@@ -200,9 +203,9 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
             else if (items.isEmpty)
               _buildEmptyState(isMr)
             else if (_viewMode == 'table')
-              _buildComplaintTable(items, isMr)
+              _buildComplaintTable(items, lang)
             else
-              _buildComplaintGrid(items, isMr),
+              _buildComplaintGrid(items, lang),
           ],
         ),
       ),
@@ -210,7 +213,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
   }
 
   // --- Header Row ---
-  Widget _buildHeader(bool isMr, int foundCount) {
+  Widget _buildHeader(String lang, int foundCount) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -219,11 +222,11 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Complaints & Requests',
+                AppTranslations.t('complaints.title', lang: lang),
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF0F172A), // text-slate-900
+                  color: Color(0xFF0F172A),
                   letterSpacing: -0.5,
                 ),
               ),
@@ -231,23 +234,23 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
               Row(
                 children: [
                   Text(
-                    'Manage citizen issues and personal requests',
+                    AppTranslations.t('complaints.subtitle', lang: lang),
                     style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
                   ),
                   const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF0F9FF), // bg-brand-50
+                      color: const Color(0xFFF0F9FF),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFFBAE6FD)), // border-brand-200
+                      border: Border.all(color: const Color(0xFFBAE6FD)),
                     ),
                     child: Text(
-                      'Found: $foundCount',
+                      '${lang == "mr" ? "सापडले" : (lang == "hi" ? "मिले" : "Found")}: $foundCount',
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF0369A1), // text-brand-700
+                        color: Color(0xFF0369A1),
                       ),
                     ),
                   ),
@@ -257,7 +260,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
           ),
         ),
 
-        // Action Buttons: Download Report + New Request / New Complaint matching ns-btn-primary
+        // Action Buttons: Download Report + New Request / New Complaint
         Row(
           children: [
             OutlinedButton.icon(
@@ -267,11 +270,21 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
                   complaints: _filteredComplaints,
                   statusFilter: _filterStatus,
                   areaFilter: _selectedArea,
-                  title: _activeTab == 'Personal Help' ? 'Personal Requests Report' : 'Area Complaints Report',
+                  title: _activeTab == 'Personal Help'
+                      ? (lang == 'mr'
+                          ? 'वैयक्तिक मदत विनंती अहवाल'
+                          : (lang == 'hi' ? 'व्यक्तिगत अनुरोध रिपोर्ट' : 'Personal Requests Report'))
+                      : (lang == 'mr'
+                          ? 'प्रभागातील तक्रारी अहवाल'
+                          : (lang == 'hi' ? 'वार्ड शिकायतें रिपोर्ट' : 'Area Complaints Report')),
+                  lang: lang,
                 );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
-              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+              label: Text(
+                lang == 'mr' ? 'अहवाल डाउनलोड करा' : (lang == 'hi' ? 'रिपोर्ट डाउनलोड करें' : 'Download Report'),
+                style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
+              ),
               style: OutlinedButton.styleFrom(
                 backgroundColor: const Color(0xFFF0F9FF),
                 side: const BorderSide(color: Color(0xFFBAE6FD)),
@@ -283,22 +296,24 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
             ElevatedButton(
               onPressed: _openNewComplaintModal,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0284C7), // bg-brand-600
+                backgroundColor: const Color(0xFF0284C7),
                 foregroundColor: Colors.white,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), // rounded-xl
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.add, size: 16, color: Colors.white), // Plus w-4 h-4
-                  const SizedBox(width: 8), // gap-2
+                  const Icon(Icons.add, size: 16, color: Colors.white),
+                  const SizedBox(width: 8),
                   Text(
-                    _activeTab == 'Personal Help' ? 'New Request' : 'New Complaint',
+                    _activeTab == 'Personal Help'
+                        ? (lang == 'mr' ? 'नवीन विनंती' : (lang == 'hi' ? 'नया अनुरोध' : 'New Request'))
+                        : (lang == 'mr' ? 'नवीन तक्रार' : (lang == 'hi' ? 'नई शिकायत' : 'New Complaint')),
                     style: const TextStyle(
-                      fontSize: 14, // text-sm
-                      fontWeight: FontWeight.w600, // font-semibold
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
                       color: Colors.white,
                       letterSpacing: -0.1,
                     ),
@@ -313,25 +328,24 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
   }
 
   // --- Tabs & View Toggle Row ---
-  Widget _buildTabsAndViewToggle(bool isMr) {
+  Widget _buildTabsAndViewToggle(String lang) {
     return Container(
       decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))), // border-gray-200
+        border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Navigation Tabs (matching ComplaintList.tsx lines 489-512)
           Row(
             children: [
               _buildTabButton(
-                title: 'Area Complaints',
+                title: AppTranslations.t('complaints.tabs_area', lang: lang),
                 isActive: _activeTab == 'Complaints',
                 onTap: () => setState(() => _activeTab = 'Complaints'),
               ),
               const SizedBox(width: 24),
               _buildTabButton(
-                title: 'Personal Requests',
+                title: AppTranslations.t('complaints.tabs_personal', lang: lang),
                 isActive: _activeTab == 'Personal Help',
                 onTap: () => setState(() => _activeTab = 'Personal Help'),
               ),
@@ -347,14 +361,14 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
               children: [
                 _buildViewToggleButton(
                   icon: Icons.grid_view_rounded,
-                  label: 'Grid',
+                  label: lang == 'mr' ? 'ग्रिड' : (lang == 'hi' ? 'ग्रिड' : 'Grid'),
                   isActive: _viewMode == 'grid',
                   onTap: () => setState(() => _viewMode = 'grid'),
                 ),
                 const SizedBox(width: 4),
                 _buildViewToggleButton(
                   icon: Icons.table_rows_rounded,
-                  label: 'Table',
+                  label: lang == 'mr' ? 'तक्ता' : (lang == 'hi' ? 'तालिका' : 'Table'),
                   isActive: _viewMode == 'table',
                   onTap: () => setState(() => _viewMode = 'table'),
                 ),
@@ -394,7 +408,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
     );
   }
 
-  Widget _buildComplaintTable(List<ComplaintModel> items, bool isMr) {
+  Widget _buildComplaintTable(List<ComplaintModel> items, String lang) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -405,14 +419,14 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: DataTable(
-          columns: const [
-            DataColumn(label: Text('Complaint / Title', style: TextStyle(fontWeight: FontWeight.w700))),
-            DataColumn(label: Text('Citizen', style: TextStyle(fontWeight: FontWeight.w700))),
-            DataColumn(label: Text('Category', style: TextStyle(fontWeight: FontWeight.w700))),
-            DataColumn(label: Text('Area', style: TextStyle(fontWeight: FontWeight.w700))),
-            DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.w700))),
-            DataColumn(label: Text('Date', style: TextStyle(fontWeight: FontWeight.w700))),
-            DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.w700))),
+          columns: [
+            DataColumn(label: Text(AppTranslations.getReportColumn('title', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text(AppTranslations.getReportColumn('citizen', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text(AppTranslations.getReportColumn('category', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text(AppTranslations.getReportColumn('area', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text(AppTranslations.getReportColumn('status', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text(AppTranslations.getReportColumn('date', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text(lang == 'mr' ? 'कृती' : (lang == 'hi' ? 'कार्रवाई' : 'Actions'), style: const TextStyle(fontWeight: FontWeight.w700))),
           ],
           rows: items.map((c) {
             final dateStr = DateFormat('dd MMM yyyy, hh:mm a').format(c.createdAt);
@@ -421,7 +435,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
                 DataCell(
                   ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 240),
-                    child: Text(
+                    child: AppTranslatedText(
                       c.title,
                       style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
                       overflow: TextOverflow.ellipsis,
@@ -431,7 +445,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
                 DataCell(Text(c.citizenName ?? '-')),
                 DataCell(_buildCategoryBadge(c.category)),
                 DataCell(Text(c.area ?? '-')),
-                DataCell(_buildStatusBadge(c.status, isMr)),
+                DataCell(_buildStatusBadge(c.status, lang)),
                 DataCell(Text(dateStr, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)))),
                 DataCell(
                   IconButton(
@@ -478,7 +492,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
   }
 
   // --- Filter Bar Card ---
-  Widget _buildFilterCard(bool isMr) {
+  Widget _buildFilterCard(String lang) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -497,7 +511,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Row 1: Search Inputs
-          // Row 1: Search + Area Dropdown + Date Dropdown (matching ComplaintList.tsx grid-cols-3)
+          // Row 1: Search + Area Dropdown + Date Dropdown
           Row(
             children: [
               // 1. General Search
@@ -506,7 +520,9 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
                 child: TextField(
                   onChanged: (v) => setState(() => _searchQuery = v),
                   decoration: InputDecoration(
-                    hintText: 'Search complaints by title, description...',
+                    hintText: lang == 'mr'
+                        ? 'तक्रार, नागरिक किंवा फोन शोधा...'
+                        : (lang == 'hi' ? 'शिकायत, नागरिक या फोन खोजें...' : 'Search complaints by title, description...'),
                     hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                     prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFF94A3B8)),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -538,7 +554,9 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
                     return DropdownMenuItem(
                       value: area,
                       child: Text(
-                        area == 'All' ? 'All Areas' : area,
+                        area == 'All'
+                            ? (lang == 'mr' ? 'सर्व भाग' : (lang == 'hi' ? 'सभी क्षेत्र' : 'All Areas'))
+                            : area,
                         overflow: TextOverflow.ellipsis,
                       ),
                     );
@@ -563,7 +581,9 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
                     return DropdownMenuItem(
                       value: date,
                       child: Text(
-                        date == 'All' ? 'All Dates' : date,
+                        date == 'All'
+                            ? (lang == 'mr' ? 'सर्व तारखा' : (lang == 'hi' ? 'सभी तिथियां' : 'All Dates'))
+                            : date,
                         overflow: TextOverflow.ellipsis,
                       ),
                     );
@@ -581,11 +601,11 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
           // Row 2: Status Pills
           Row(
             children: [
-              _buildStatusPill('All', 'All'),
-              _buildStatusPill('Pending', 'Pending'),
-              _buildStatusPill('Assigned', 'Assigned'),
-              _buildStatusPill('InProgress', 'In Progress'),
-              _buildStatusPill('Resolved', 'Resolved'),
+              _buildStatusPill('All', AppTranslations.t('common.all', lang: lang)),
+              _buildStatusPill('Pending', AppTranslations.getStatus('pending', lang)),
+              _buildStatusPill('Assigned', AppTranslations.getStatus('assigned', lang)),
+              _buildStatusPill('InProgress', AppTranslations.getStatus('inprogress', lang)),
+              _buildStatusPill('Resolved', AppTranslations.getStatus('resolved', lang)),
             ],
           ),
         ],
@@ -623,7 +643,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
   }
 
   // --- Complaint Grid (matching ComplaintList.tsx lines 681-750) ---
-  Widget _buildComplaintGrid(List<ComplaintModel> items, bool isMr) {
+  Widget _buildComplaintGrid(List<ComplaintModel> items, String lang) {
     return LayoutBuilder(
       builder: (context, constraints) {
         // Standard 3-by-3 format across desktop screens
@@ -641,18 +661,14 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
           itemCount: items.length,
           itemBuilder: (context, index) {
             final complaint = items[index];
-            return _buildComplaintCard(complaint, isMr);
+            return _buildComplaintCard(complaint, lang);
           },
         );
       },
     );
   }
 
-  Widget _buildComplaintCard(ComplaintModel complaint, bool isMr) {
-    // Status card border & background colors matching ComplaintList.tsx lines 689-693:
-    // Resolved: bg-green-50 border-green-300
-    // InProgress/Assigned: bg-yellow-50 border-yellow-300
-    // Pending: bg-red-50 border-red-300
+  Widget _buildComplaintCard(ComplaintModel complaint, String lang) {
     Color bgColor = Colors.white;
     Color borderColor = const Color(0xFFE2E8F0);
 
@@ -694,7 +710,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildStatusBadge(complaint.status, isMr),
+                _buildStatusBadge(complaint.status, lang),
                 _buildCategoryBadge(complaint.category),
               ],
             ),
@@ -755,8 +771,8 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
               const SizedBox(height: 6),
             ],
 
-            // Complaint Title (matching line-clamp-1)
-            Text(
+            // Complaint Title with on-the-fly dynamic translation
+            AppTranslatedText(
               complaint.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -769,9 +785,9 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
 
             const SizedBox(height: 4),
 
-            // Complaint Description (matching line-clamp-2)
+            // Complaint Description with on-the-fly dynamic translation
             Expanded(
-              child: Text(
+              child: AppTranslatedText(
                 complaint.description,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -826,34 +842,31 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
     );
   }
 
-  Widget _buildStatusBadge(String status, bool isMr) {
+  Widget _buildStatusBadge(String status, String lang) {
     Color bg = const Color(0xFFF1F5F9);
     Color fg = const Color(0xFF475569);
     Color border = const Color(0xFFCBD5E1);
-    String label = status;
 
     final lower = status.toLowerCase();
     if (lower == 'pending') {
       bg = const Color(0xFFFEE2E2);
       fg = const Color(0xFFDC2626);
       border = const Color(0xFFFECACA);
-      label = 'Pending';
     } else if (lower == 'assigned') {
       bg = const Color(0xFFE0E7FF);
       fg = const Color(0xFF4338CA);
       border = const Color(0xFFC7D2FE);
-      label = 'Assigned';
     } else if (lower == 'inprogress') {
       bg = const Color(0xFFFEF3C7);
       fg = const Color(0xFFD97706);
       border = const Color(0xFFFDE68A);
-      label = 'In Progress';
     } else if (lower == 'resolved') {
       bg = const Color(0xFFDCFCE7);
       fg = const Color(0xFF16A34A);
       border = const Color(0xFFBBF7D0);
-      label = 'Resolved';
     }
+
+    final label = AppTranslations.getStatus(status, lang);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),

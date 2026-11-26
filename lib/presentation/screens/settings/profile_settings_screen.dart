@@ -12,6 +12,7 @@ import '../../../core/services/supabase_service.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/custom_navigation_provider.dart';
+import '../../providers/language_provider.dart';
 import '../landing/landing_screen.dart';
 import 'bar_customization_screen.dart';
 
@@ -776,40 +777,15 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
               ),
             ],
           ),
-          actions: [
-            // Language Switch Pill
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: InkWell(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    ref.read(isMarathiProvider.notifier).toggle();
-                  },
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.language_rounded, size: 14, color: Colors.white),
-                        const SizedBox(width: 4),
-                        Text(
-                          isMr ? 'English' : 'मराठी',
-                          style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Colors.white),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+          actions: const [
+            // Language Switch Selector
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8),
+              child: Center(
+                child: AppLanguageSegmentedSelector(isCompact: true),
               ),
             ),
-            const SizedBox(width: 4),
+            SizedBox(width: 4),
           ],
         ),
         body: _isLoading

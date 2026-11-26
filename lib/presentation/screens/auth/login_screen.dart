@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../widgets/krishnaniti_logo.dart';
 import '../../navigation/adaptive_scaffold.dart';
 
@@ -249,39 +250,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               }
             },
           ),
-          actions: [
-            // Language Toggle Pill
+          actions: const [
+            // Language Selector
             Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: InkWell(
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  ref.read(isMarathiProvider.notifier).toggle();
-                },
-                borderRadius: BorderRadius.circular(20),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.language_rounded, size: 15, color: Color(0xFF0284C7)),
-                      const SizedBox(width: 5),
-                      Text(
-                        isMr ? 'English' : 'मराठी',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF0284C7),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              padding: EdgeInsets.only(right: 12),
+              child: Center(
+                child: AppLanguageSegmentedSelector(isCompact: true),
               ),
             ),
           ],

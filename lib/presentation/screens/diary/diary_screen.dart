@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../data/models/diary_task_model.dart';
 import '../../../data/repositories/diary_tasks_repository.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
+import '../../providers/language_provider.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
@@ -506,7 +509,8 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
+    final isMr = lang == 'mr';
     final filtered = _filteredTasks;
 
     final todayTasksCount = _allTasks.where((t) => t.dueDate != null && _isSameDay(t.dueDate!, DateTime.now())).length;
@@ -544,12 +548,12 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
-            children: const [
+            children: [
               Text(
-                'Diary',
+                AppTranslations.getNavTitle('tasks', lang),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 16.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
@@ -557,10 +561,14 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                 ),
               ),
               Text(
-                'Task management, daily visits and itinerary',
+                lang == 'mr'
+                    ? 'दैनिक नियोजन, बैठका व क्षेत्रीय भेटींची नोंद'
+                    : (lang == 'hi'
+                        ? 'दैनिक कार्यसूची, बैठकें और क्षेत्रीय दौरे'
+                        : 'Task management, daily visits and itinerary'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w400,
                   color: Color(0xFFE0F2FE),
@@ -575,7 +583,7 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
           backgroundColor: const Color(0xFF0284C7),
           icon: const Icon(Icons.add_rounded, color: Colors.white),
           label: Text(
-            isMr ? 'नवीन नोंद' : 'New Task',
+            lang == 'mr' ? 'नवीन नोंद' : (lang == 'hi' ? 'नई प्रविष्टि' : 'New Task'),
             style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
           ),
         ),
@@ -596,7 +604,7 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                     // Timeline Tab
                     Expanded(
                       child: _buildPrimaryTab(
-                        label: isMr ? 'टाइमलाइन' : 'Timeline',
+                        label: lang == 'mr' ? 'टाइमलाइन' : (lang == 'hi' ? 'समयरेखा' : 'Timeline'),
                         count: todayTasksCount,
                         isActive: _activeTab == 'timeline',
                         icon: Icons.access_time_rounded,
@@ -610,7 +618,7 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                     // All Tasks Tab
                     Expanded(
                       child: _buildPrimaryTab(
-                        label: isMr ? 'सर्व कामे' : 'All Tasks',
+                        label: lang == 'mr' ? 'सर्व कामे' : (lang == 'hi' ? 'सभी कार्य' : 'All Tasks'),
                         count: allTasksCount,
                         isActive: _activeTab == 'all',
                         icon: Icons.format_list_bulleted_rounded,
@@ -624,7 +632,7 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                     // Completed Tab
                     Expanded(
                       child: _buildPrimaryTab(
-                        label: isMr ? 'पूर्ण झालेली' : 'Completed',
+                        label: AppTranslations.getStatus('completed', lang),
                         count: completedCount,
                         isActive: _activeTab == 'completed',
                         icon: Icons.check_circle_outline_rounded,
@@ -664,7 +672,7 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                           ),
                         ),
                         child: Text(
-                          isMr ? 'आज' : 'Today',
+                          lang == 'mr' ? 'आज' : (lang == 'hi' ? 'आज' : 'Today'),
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
@@ -733,13 +741,14 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                     ),
                     const SizedBox(width: 8),
                     AppPdfButton.icon(
-                      tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Report',
+                      tooltip: lang == 'mr' ? 'अहवाल डाउनलोड करा' : (lang == 'hi' ? 'रिपोर्ट डाउनलोड करें' : 'Download Report'),
                       onPressed: () {
                         DiaryReportGenerator.generateAndPrintTasksReport(
                           tasks: filtered,
                           filterTitle: _activeTab == 'timeline'
                               ? 'Date: ${DateFormat('dd MMM yyyy').format(_selectedTimelineDate)}'
                               : 'Tab: $_activeTab | Priority: $_selectedPriority',
+                          lang: lang,
                         );
                       },
                     ),
@@ -758,7 +767,11 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                         controller: _searchCtrl,
                         onChanged: (_) => setState(() => _displayedLimit = 20),
                         decoration: InputDecoration(
-                          hintText: isMr ? 'शीर्षक, पत्ता, कार्यालय किंवा व्यक्ती शोधा...' : 'Search title, address, office...',
+                          hintText: lang == 'mr'
+                              ? 'शीर्षक, पत्ता, कार्यालय किंवा व्यक्ती शोधा...'
+                              : (lang == 'hi'
+                                  ? 'शीर्षक, पता, कार्यालय या व्यक्ति खोजें...'
+                                  : 'Search title, address, office...'),
                           hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                           prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF94A3B8)),
                           suffixIcon: _searchCtrl.text.isNotEmpty
@@ -787,7 +800,7 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                     if (_uniqueAreas.isNotEmpty) ...[
                       const SizedBox(width: 8),
                       AppDropdown<String>(
-                        title: isMr ? 'भाग निवडा' : 'Filter by Area',
+                        title: lang == 'mr' ? 'भाग निवडा' : (lang == 'hi' ? 'क्षेत्र चुनें' : 'Filter by Area'),
                         value: _selectedArea,
                         height: 40,
                         isExpanded: false,
@@ -800,7 +813,12 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                           color: _selectedArea != 'All' ? const Color(0xFF0284C7) : const Color(0xFF475569),
                         ),
                         items: [
-                          const DropdownMenuItem(value: 'All', child: Text('All Areas (सर्व परिसर)')),
+                          DropdownMenuItem(
+                            value: 'All',
+                            child: Text(
+                              lang == 'mr' ? 'सर्व परिसर' : (lang == 'hi' ? 'सभी क्षेत्र' : 'All Areas'),
+                            ),
+                          ),
                           ..._uniqueAreas.map((a) => DropdownMenuItem(value: a, child: Text(a))),
                         ],
                         onChanged: (val) {
@@ -815,11 +833,12 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                     ],
                     const SizedBox(width: 8),
                     AppPdfButton.icon(
-                      tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Report',
+                      tooltip: lang == 'mr' ? 'अहवाल डाउनलोड करा' : (lang == 'hi' ? 'रिपोर्ट डाउनलोड करें' : 'Download Report'),
                       onPressed: () {
                         DiaryReportGenerator.generateAndPrintTasksReport(
                           tasks: filtered,
                           filterTitle: 'Tab: $_activeTab | Priority: $_selectedPriority',
+                          lang: lang,
                         );
                       },
                     ),
@@ -845,15 +864,25 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                                 const SizedBox(height: 12),
                                 Text(
                                   _activeTab == 'timeline'
-                                      ? (isMr ? 'आजच्या तारखेला कोणतीही कामे नाहीत' : 'No tasks scheduled for this day')
-                                      : (isMr ? 'कोणत्याही नोंदी आढळल्या नाहीत' : 'No diary tasks found'),
+                                      ? (lang == 'mr'
+                                          ? 'आजच्या तारखेला कोणतीही कामे नाहीत'
+                                          : (lang == 'hi'
+                                              ? 'आज के लिए कोई कार्य निर्धारित नहीं है'
+                                              : 'No tasks scheduled for this day'))
+                                      : (lang == 'mr'
+                                          ? 'कोणत्याही नोंदी आढळल्या नाहीत'
+                                          : (lang == 'hi'
+                                              ? 'कोई डायरी कार्य नहीं मिला'
+                                              : 'No diary tasks found')),
                                   style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
-                                  isMr
+                                  lang == 'mr'
                                       ? 'नवीन काम किंवा दौरा जोडण्यासाठी खालील "+ नवीन नोंद" वर टॅप करा.'
-                                      : 'Tap "+ New Task" below to record a meeting, visit, or appointment.',
+                                      : (lang == 'hi'
+                                          ? 'नई प्रविष्टि या दौरा जोड़ने के लिए नीचे "+ नई प्रविष्टि" पर टैप करें।'
+                                          : 'Tap "+ New Task" below to record a meeting, visit, or appointment.'),
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                                 ),
@@ -873,12 +902,12 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                                   totalCount: filtered.length,
                                   pageSize: 20,
                                   onLoadMore: () => setState(() => _displayedLimit += 20),
-                                  label: isMr ? 'कामे' : 'tasks',
+                                  label: lang == 'mr' ? 'कामे' : (lang == 'hi' ? 'कार्य' : 'tasks'),
                                   isMarathi: isMr,
                                 );
                               }
                               final task = _visibleTasks[index];
-                              return _buildTaskCard(task, isMr);
+                              return _buildTaskCard(task, lang);
                             },
                           ),
                         ),
@@ -936,7 +965,7 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
     );
   }
 
-  Widget _buildTaskCard(DiaryTaskModel task, bool isMr) {
+  Widget _buildTaskCard(DiaryTaskModel task, String lang) {
     Color priorityColor;
     Color priorityBg;
     switch (task.priority.toLowerCase()) {
@@ -1007,8 +1036,8 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          task.title,
+                        AppTranslatedText(task.title,
+                          targetLanguage: lang,
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
@@ -1019,8 +1048,8 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                         ),
                         if (task.description != null && task.description!.isNotEmpty) ...[
                           const SizedBox(height: 4),
-                          Text(
-                            task.description!,
+                          AppTranslatedText(task.description!,
+                            targetLanguage: lang,
                             style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.3),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -1041,7 +1070,7 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                       border: Border.all(color: priorityColor.withOpacity(0.3)),
                     ),
                     child: Text(
-                      task.priority,
+                      AppTranslations.getStatus(task.priority, lang),
                       style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: priorityColor),
                     ),
                   ),
@@ -1091,7 +1120,7 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                   Row(
                     children: [
                       Text(
-                        isMr ? 'तपशील' : 'Details',
+                        lang == 'mr' ? 'तपशील' : (lang == 'hi' ? 'विवरण' : 'Details'),
                         style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                       ),
                       const Icon(Icons.chevron_right_rounded, size: 16, color: Color(0xFF0284C7)),

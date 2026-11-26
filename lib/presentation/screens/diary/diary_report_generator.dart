@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import '../../../core/localization/app_translations.dart';
 import '../../../data/models/diary_task_model.dart';
 import '../../widgets/app_pdf_report_theme.dart';
 import '../../widgets/app_report_preview_modal.dart';
@@ -18,11 +19,23 @@ class DiaryReportGenerator {
     String? filterTitle,
     String title = 'Daily Work Diary & Tasks Report',
     String subtitle = 'Executive Itinerary & Scheduled Field Tasks',
+    String lang = 'en',
   }) async {
     final pdf = pw.Document();
     final now = DateTime.now();
     final formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(now);
     final total = tasks.length;
+
+    final effectiveTitle = title != 'Daily Work Diary & Tasks Report'
+        ? title
+        : (lang == 'mr'
+            ? 'दैनंदिनी आणि कार्ये अहवाल'
+            : (lang == 'hi' ? 'दैनिक डायरी और कार्य रिपोर्ट' : 'Daily Work Diary & Tasks Report'));
+    final effectiveSubtitle = subtitle != 'Executive Itinerary & Scheduled Field Tasks'
+        ? subtitle
+        : (lang == 'mr'
+            ? 'नियोजित कार्ये आणि फील्ड भेटी'
+            : (lang == 'hi' ? 'अनुसूचित कार्य और फील्ड बैठकें' : 'Executive Itinerary & Scheduled Field Tasks'));
 
     pdf.addPage(
       pw.MultiPage(
@@ -32,18 +45,20 @@ class DiaryReportGenerator {
           if (context.pageNumber > 1) {
             return WebReportTheme.buildContinuationHeader(
               context,
-              title: title,
+              title: effectiveTitle,
+              lang: lang,
             );
           }
           return WebReportTheme.buildHeader(
-            title: title,
-            subtitle: subtitle,
+            title: effectiveTitle,
+            subtitle: effectiveSubtitle,
             dateFormatted: formattedDate,
             totalCount: total,
-            foundLabel: 'Total Tasks',
+            foundLabel: lang == 'mr' ? 'एकूण कार्ये' : (lang == 'hi' ? 'कुल कार्य' : 'Total Tasks'),
+            lang: lang,
           );
         },
-        footer: (pw.Context context) => WebReportTheme.buildFooter(context),
+        footer: (pw.Context context) => WebReportTheme.buildFooter(context, lang: lang),
         build: (pw.Context context) {
           return [
             pw.TableHelper.fromTextArray(
@@ -65,11 +80,11 @@ class DiaryReportGenerator {
               },
               headers: [
                 '#',
-                'Task Title & Details',
-                'Priority',
-                'Due Date / Time',
-                'Location / Contact',
-                'Status',
+                lang == 'mr' ? 'कार्याचे शीर्षक आणि तपशील' : (lang == 'hi' ? 'कार्य शीर्षक और विवरण' : 'Task Title & Details'),
+                AppTranslations.getReportColumn('priority', lang),
+                lang == 'mr' ? 'देय तारीख / वेळ' : (lang == 'hi' ? 'नियत तारीख / समय' : 'Due Date / Time'),
+                lang == 'mr' ? 'स्थान / संपर्क' : (lang == 'hi' ? 'स्थान / संपर्क' : 'Location / Contact'),
+                AppTranslations.getReportColumn('status', lang),
               ],
               data: List.generate(tasks.length, (index) {
                 final t = tasks[index];
@@ -91,10 +106,10 @@ class DiaryReportGenerator {
                 return [
                   '${index + 1}',
                   desc,
-                  t.priority.toUpperCase(),
+                  AppTranslations.getStatus(t.priority, lang).toUpperCase(),
                   due,
                   '$loc$meet',
-                  t.status.toUpperCase(),
+                  AppTranslations.getStatus(t.status, lang).toUpperCase(),
                 ];
               }),
               cellAlignments: {
@@ -132,13 +147,21 @@ class DiaryReportGenerator {
   static Future<void> generateAndPrintSingleTask(
     DiaryTaskModel task, {
     BuildContext? context,
+    String lang = 'en',
   }) async {
     final pdf = pw.Document();
     final now = DateTime.now();
     final formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(now);
     final taskDueDateStr = task.dueDate != null
         ? DateFormat('dd/MM/yyyy').format(task.dueDate!)
-        : 'Not scheduled';
+        : (lang == 'mr' ? 'नियोजित नाही' : (lang == 'hi' ? 'निर्धारित नहीं' : 'Not scheduled'));
+
+    final docketTitle = lang == 'mr'
+        ? 'कार्य / दैनंदिनी डॉकेट'
+        : (lang == 'hi' ? 'कार्य / डायरी डॉकेट' : 'Task / Diary Docket');
+    final docketSubtitle = lang == 'mr'
+        ? 'नगरसेवक कार्यालय • दैनिक वेळापत्रक व कृती नोंद'
+        : (lang == 'hi' ? 'नगरसेवक कार्यालय • दैनिक अनुसूची और कार्य विवरण' : 'Office of Nagarsevak • Executive Schedule & Action Item');
 
     pdf.addPage(
       pw.MultiPage(
@@ -148,18 +171,20 @@ class DiaryReportGenerator {
           if (context.pageNumber > 1) {
             return WebReportTheme.buildContinuationHeader(
               context,
-              title: 'Task Docket • ${task.id}',
+              title: '$docketTitle • ${task.id}',
+              lang: lang,
             );
           }
           return WebReportTheme.buildHeader(
-            title: 'Task / Diary Docket',
-            subtitle: 'Office of Nagarsevak • Executive Schedule & Action Item',
+            title: docketTitle,
+            subtitle: docketSubtitle,
             dateFormatted: formattedDate,
             totalCount: 1,
             foundLabel: 'Task ID: ${task.id}',
+            lang: lang,
           );
         },
-        footer: (pw.Context context) => WebReportTheme.buildFooter(context),
+        footer: (pw.Context context) => WebReportTheme.buildFooter(context, lang: lang),
         build: (pw.Context context) {
           return [
             // Status and priority strip

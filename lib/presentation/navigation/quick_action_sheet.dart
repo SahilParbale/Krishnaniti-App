@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
+import '../providers/language_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../screens/complaints/new_complaint_bottom_sheet.dart';
 import '../screens/letters/new_letter_bottom_sheet.dart';
@@ -40,14 +41,22 @@ class QuickActionSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
+    final isMr = lang == 'mr';
+    final isHi = lang == 'hi';
     final isDesktop = MediaQuery.of(context).size.width >= 768;
+
+    String t(String en, String mr, String hi) => isMr ? mr : (isHi ? hi : en);
 
     final actions = [
       _QuickActionItem(
         icon: Icons.add_task_rounded,
-        title: isMr ? 'नवीन तक्रार / विनंती' : 'New Citizen Request',
-        subtitle: isMr ? 'नागरी समस्या व तक्रार नोंदवा' : 'Log civic issue, road, water or street light grievance',
+        title: t('New Citizen Request', 'नवीन तक्रार / विनंती', 'नई नागरिक शिकायत / अनुरोध'),
+        subtitle: t(
+          'Log civic issue, road, water or street light grievance',
+          'नागरी समस्या व तक्रार नोंदवा',
+          'नागरिक समस्याएं व शिकायत दर्ज करें',
+        ),
         gradient: const [Color(0xFF0284C7), Color(0xFF0369A1)],
         onTap: () {
           Navigator.pop(context);
@@ -56,8 +65,12 @@ class QuickActionSheet extends ConsumerWidget {
       ),
       _QuickActionItem(
         icon: Icons.mail_outline_rounded,
-        title: isMr ? 'नवीन पत्र व्यवहार' : 'Draft Official Letter',
-        subtitle: isMr ? 'प्रभागातील पत्र व आवक-जावक' : 'Ward correspondence, administrative letters & proposals',
+        title: t('Draft Official Letter', 'नवीन पत्र व्यवहार', 'नया पत्र व्यवहार'),
+        subtitle: t(
+          'Ward correspondence, administrative letters & proposals',
+          'प्रभागातील पत्र व आवक-जावक',
+          'वार्ड पत्राचार व आवक-जावक',
+        ),
         gradient: const [Color(0xFF6366F1), Color(0xFF4F46E5)],
         onTap: () {
           Navigator.pop(context);
@@ -66,8 +79,12 @@ class QuickActionSheet extends ConsumerWidget {
       ),
       _QuickActionItem(
         icon: Icons.person_search_rounded,
-        title: isMr ? 'मतदार शोध व यादी' : 'Voter Directory & Search',
-        subtitle: isMr ? 'बूथ, कुटुंब व मतदार स्लिप' : 'Lookup booth, family details & print voter slip',
+        title: t('Voter Directory & Search', 'मतदार शोध व यादी', 'मतदाता खोज व सूची'),
+        subtitle: t(
+          'Lookup booth, family details & print voter slip',
+          'बूथ, कुटुंब व मतदार स्लिप',
+          'बूथ, परिवार विवरण व मतदाता पर्ची',
+        ),
         gradient: const [Color(0xFF10B981), Color(0xFF059669)],
         onTap: () {
           Navigator.pop(context);
@@ -76,8 +93,12 @@ class QuickActionSheet extends ConsumerWidget {
       ),
       _QuickActionItem(
         icon: Icons.event_note_rounded,
-        title: isMr ? 'दौरा / दैनंदिनी नोंद' : 'Diary Meeting / Visit',
-        subtitle: isMr ? 'दौरे, बैठका व नियोजित कार्यक्रम' : 'Schedule field visit, event or personal meeting',
+        title: t('Diary Meeting / Visit', 'दौरा / दैनंदिनी नोंद', 'दौरा / दैनंदिनी प्रविष्टि'),
+        subtitle: t(
+          'Schedule field visit, event or personal meeting',
+          'दौरे, बैठका व नियोजित कार्यक्रम',
+          'दौरे, बैठकें व तय कार्यक्रम',
+        ),
         gradient: const [Color(0xFFF59E0B), Color(0xFFD97706)],
         onTap: () {
           Navigator.pop(context);
@@ -86,8 +107,12 @@ class QuickActionSheet extends ConsumerWidget {
       ),
       _QuickActionItem(
         icon: Icons.badge_outlined,
-        title: isMr ? 'कार्यालय भेट नोंद' : 'Record Visitor',
-        subtitle: isMr ? 'कार्यालयात आलेले नागरिक व शिष्टमंडळ' : 'Log citizen delegation, visitor info & purpose',
+        title: t('Record Visitor', 'कार्यालय भेट नोंद', 'कार्यालय आगंतुक प्रविष्टि'),
+        subtitle: t(
+          'Log citizen delegation, visitor info & purpose',
+          'कार्यालयात आलेले नागरिक व शिष्टमंडळ',
+          'कार्यालय में आए नागरिक व शिष्टमंडल',
+        ),
         gradient: const [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
         onTap: () {
           Navigator.pop(context);
@@ -96,8 +121,12 @@ class QuickActionSheet extends ConsumerWidget {
       ),
       _QuickActionItem(
         icon: Icons.auto_awesome_rounded,
-        title: isMr ? 'एआय भाषण व मजकूर' : 'AI Content Studio',
-        subtitle: isMr ? 'भाषण, शुभेच्छा पत्र व सोशल पोस्ट' : 'Generate political speech, greeting or social post',
+        title: t('AI Content Studio', 'एआय भाषण व मजकूर', 'एआई भाषण व सामग्री'),
+        subtitle: t(
+          'Generate political speech, greeting or social post',
+          'भाषण, शुभेच्छा पत्र व सोशल पोस्ट',
+          'भाषण, शुभकामना संदेश व सोशल पोस्ट',
+        ),
         gradient: const [Color(0xFFEC4899), Color(0xFFDB2777)],
         onTap: () {
           Navigator.pop(context);
@@ -167,7 +196,7 @@ class QuickActionSheet extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isMr ? 'जलद कृती मेनू' : 'Quick Actions',
+                      t('Quick Actions', 'जलद कृती मेनू', 'त्वरित कार्रवाई मेनू'),
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
@@ -177,7 +206,7 @@ class QuickActionSheet extends ConsumerWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      isMr ? 'दैनंदिन कामांसाठी जलद शॉर्टकट' : 'Shortcuts for daily ward operations & logging',
+                      t('Shortcuts for daily ward operations & logging', 'दैनंदिन कामांसाठी जलद शॉर्टकट', 'दैनिक कार्यों के लिए त्वरित शॉर्टकट'),
                       style: const TextStyle(
                         fontSize: 11.5,
                         color: Color(0xFF64748B),

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/localization/app_translations.dart';
+import '../../../../core/services/translation_service.dart';
+import '../../../providers/language_provider.dart';
 import 'package:nagarsevak_mobile/data/models/scheme_model.dart';
 import 'package:nagarsevak_mobile/data/repositories/schemes_repository.dart';
 import 'package:nagarsevak_mobile/presentation/desktop/common/desktop_modal_dialog.dart';
@@ -32,14 +35,14 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
   List<SchemeModel> _schemes = [];
 
   static const List<Map<String, String>> _categories = [
-    {'id': 'All', 'en': 'All', 'mr': 'All'},
-    {'id': 'Women', 'en': 'Women', 'mr': 'Women'},
-    {'id': 'Student', 'en': 'Student', 'mr': 'Student'},
-    {'id': 'Senior Citizen', 'en': 'Senior Citizen', 'mr': 'Senior Citizen'},
-    {'id': 'Farmer', 'en': 'Farmer', 'mr': 'Farmer'},
-    {'id': 'Health', 'en': 'Health', 'mr': 'Health'},
-    {'id': 'Youth', 'en': 'Youth', 'mr': 'Youth'},
-    {'id': 'Housing', 'en': 'Housing', 'mr': 'Housing'},
+    {'id': 'All', 'en': 'All', 'mr': 'सर्व', 'hi': 'सभी'},
+    {'id': 'Women', 'en': 'Women', 'mr': 'महिला', 'hi': 'महिला'},
+    {'id': 'Student', 'en': 'Student', 'mr': 'विद्यार्थी', 'hi': 'छात्र'},
+    {'id': 'Senior Citizen', 'en': 'Senior Citizen', 'mr': 'ज्येष्ठ नागरिक', 'hi': 'वरिष्ठ नागरिक'},
+    {'id': 'Farmer', 'en': 'Farmer', 'mr': 'शेतकरी', 'hi': 'किसान'},
+    {'id': 'Health', 'en': 'Health', 'mr': 'आरोग्य', 'hi': 'स्वास्थ्य'},
+    {'id': 'Youth', 'en': 'Youth', 'mr': 'युवा', 'hi': 'युवा'},
+    {'id': 'Housing', 'en': 'Housing', 'mr': 'गृहनिर्माण', 'hi': 'आवास'},
   ];
 
   @override
@@ -186,8 +189,7 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
 
   @override
   Widget build(BuildContext context) {
-    final lang = ref.watch(desktopLanguageProvider);
-    final isMr = lang == 'mr';
+    final lang = ref.watch(appLanguageProvider);
     final items = _filteredSchemes;
 
     return Scaffold(
@@ -198,20 +200,20 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 1. Header (matching SchemeList.tsx lines 180-200)
-            _buildHeader(isMr, items.length),
+            _buildHeader(lang, items.length),
 
             const SizedBox(height: 16),
 
             // 2. Tabs: Schemes vs Applications (matching lines 200-210)
-            _buildTabRow(isMr),
+            _buildTabRow(lang),
 
             const SizedBox(height: 16),
 
             // 3. Category Filter Pills & Search (matching lines 212-276)
             if (_activeTab == 'schemes') ...[
-              _buildCategoryPills(isMr),
+              _buildCategoryPills(lang),
               const SizedBox(height: 16),
-              _buildSearchBar(isMr),
+              _buildSearchBar(lang),
               const SizedBox(height: 16),
             ],
 
@@ -219,11 +221,11 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
             if (_loading)
               _buildLoadingGrid()
             else if (items.isEmpty)
-              _buildEmptyState(isMr)
+              _buildEmptyState(lang)
             else if (_viewMode == 'grid')
-              _buildSchemesGrid(items, isMr)
+              _buildSchemesGrid(items, lang)
             else
-              _buildReportTable(items, isMr),
+              _buildReportTable(items, lang),
           ],
         ),
       ),
@@ -231,7 +233,11 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
   }
 
   // --- Header ---
-  Widget _buildHeader(bool isMr, int count) {
+  Widget _buildHeader(String lang, int count) {
+    final title = AppTranslations.t('schemes.title', lang: lang);
+    final subtitle = AppTranslations.t('schemes.subtitle', lang: lang);
+    final totalLabel = lang == 'mr' ? 'एकूण' : (lang == 'hi' ? 'कुल' : 'Total');
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -243,7 +249,7 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
                 const Icon(Icons.assignment_turned_in_rounded, size: 26, color: Color(0xFF0369A1)),
                 const SizedBox(width: 10),
                 Text(
-                  'Government Schemes',
+                  title,
                   style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: Color(0xFF0F172A), letterSpacing: -0.5),
                 ),
                 const SizedBox(width: 10),
@@ -255,7 +261,7 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
                     border: Border.all(color: const Color(0xFFBAE6FD)),
                   ),
                   child: Text(
-                    'Total: $count',
+                    '$totalLabel: $count',
                     style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0369A1)),
                   ),
                 ),
@@ -263,9 +269,7 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
             ),
             const SizedBox(height: 4),
             Text(
-              isMr
-                  ? 'Government schemes directory, citizen welfare applications and beneficiaries'
-                  : 'Explore, apply and manage government welfare schemes for citizens',
+              subtitle,
               style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
             ),
           ],
@@ -279,11 +283,14 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
                 SchemeReportGenerator.generateAndPrintListReport(
                   context: context,
                   schemes: _filteredSchemes,
-                  isMarathi: isMr,
+                  lang: lang,
                 );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
-              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+              label: Text(
+                AppTranslations.t('common.download_report', lang: lang),
+                style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
+              ),
               style: OutlinedButton.styleFrom(
                 backgroundColor: const Color(0xFFF0F9FF),
                 side: const BorderSide(color: Color(0xFFBAE6FD)),
@@ -296,9 +303,9 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
             OutlinedButton.icon(
               onPressed: () {},
               icon: const Icon(Icons.auto_awesome_rounded, size: 16, color: Color(0xFF0284C7)),
-              label: const Text(
-                'Find Schemes (AI)',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0369A1)),
+              label: Text(
+                lang == 'mr' ? 'योजना शोधा (AI)' : (lang == 'hi' ? 'योजनाएं खोजें (AI)' : 'Find Schemes (AI)'),
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0369A1)),
               ),
               style: OutlinedButton.styleFrom(
                 backgroundColor: const Color(0xFFF0F9FF),
@@ -319,12 +326,12 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Icon(Icons.add, size: 16, color: Colors.white),
-                  SizedBox(width: 8),
+                children: [
+                  const Icon(Icons.add, size: 16, color: Colors.white),
+                  const SizedBox(width: 8),
                   Text(
-                    'Add Scheme',
-                    style: TextStyle(
+                    AppTranslations.t('schemes.add_scheme', lang: lang),
+                    style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: Colors.white,
@@ -341,7 +348,7 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
   }
 
   // --- Tab Row (Schemes vs Applications) ---
-  Widget _buildTabRow(bool isMr) {
+  Widget _buildTabRow(String lang) {
     return Container(
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
@@ -352,13 +359,13 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
           Row(
             children: [
               _buildTabButton(
-                title: 'Schemes',
+                title: lang == 'mr' ? 'योजना' : (lang == 'hi' ? 'योजनाएं' : 'Schemes'),
                 isActive: _activeTab == 'schemes',
                 onTap: () => setState(() => _activeTab = 'schemes'),
               ),
               const SizedBox(width: 24),
               _buildTabButton(
-                title: 'Applications',
+                title: lang == 'mr' ? 'अर्ज' : (lang == 'hi' ? 'आवेदन' : 'Applications'),
                 isActive: _activeTab == 'applications',
                 onTap: () => setState(() => _activeTab = 'applications'),
               ),
@@ -374,14 +381,14 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
               children: [
                 _buildViewToggleButton(
                   icon: Icons.grid_view_rounded,
-                  label: 'Grid',
+                  label: AppTranslations.t('common.grid', lang: lang),
                   isActive: _viewMode == 'grid',
                   onTap: () => setState(() => _viewMode = 'grid'),
                 ),
                 const SizedBox(width: 4),
                 _buildViewToggleButton(
                   icon: Icons.table_rows_rounded,
-                  label: 'Table',
+                  label: lang == 'mr' ? 'तक्ता' : (lang == 'hi' ? 'तालिका' : 'Table'),
                   isActive: _viewMode == 'table',
                   onTap: () => setState(() => _viewMode = 'table'),
                 ),
@@ -451,13 +458,13 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
   }
 
   // --- Category Pills ---
-  Widget _buildCategoryPills(bool isMr) {
+  Widget _buildCategoryPills(String lang) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: _categories.map((c) {
           final isSelected = _activeCategory == c['id'];
-          final label = isMr ? c['mr']! : c['en']!;
+          final label = c[lang] ?? c['en']!;
           return Padding(
             padding: const EdgeInsets.only(right: 8),
             child: InkWell(
@@ -487,11 +494,13 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
   }
 
   // --- Search Bar ---
-  Widget _buildSearchBar(bool isMr) {
+  Widget _buildSearchBar(String lang) {
     return TextField(
       onChanged: (v) => setState(() => _searchQuery = v),
       decoration: InputDecoration(
-        hintText: 'Search schemes by title, eligibility, benefits...',
+        hintText: lang == 'mr'
+            ? 'शीर्षक, पात्रता, लाभांनुसार शोधा...'
+            : (lang == 'hi' ? 'शीर्षक, पात्रता, लाभों द्वारा खोजें...' : 'Search schemes by title, eligibility, benefits...'),
         prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFF94A3B8)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         filled: true,
@@ -503,7 +512,8 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
   }
 
   // --- Schemes Grid (Expandable Accordion Cards) ---
-  Widget _buildSchemesGrid(List<SchemeModel> items, bool isMr) {
+  Widget _buildSchemesGrid(List<SchemeModel> items, String lang) {
+    final isMr = lang == 'mr';
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -563,7 +573,7 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
                             Row(
                               children: [
                                 Expanded(
-                                  child: Text(
+                                  child: AppTranslatedText(
                                     name,
                                     style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
                                   ),
@@ -581,7 +591,7 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
                               ],
                             ),
                             const SizedBox(height: 4),
-                            Text(
+                            AppTranslatedText(
                               desc,
                               maxLines: isExpanded ? 10 : 2,
                               overflow: isExpanded ? null : TextOverflow.ellipsis,
@@ -609,15 +619,15 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       if (elig.isNotEmpty) ...[
-                        _buildDetailSection('Eligibility:', elig, Icons.check_circle_outline_rounded, const Color(0xFF16A34A)),
+                        _buildDetailSection(lang == 'mr' ? 'पात्रता:' : (lang == 'hi' ? 'पात्रता:' : 'Eligibility:'), elig, Icons.check_circle_outline_rounded, const Color(0xFF16A34A)),
                         const SizedBox(height: 14),
                       ],
                       if (ben.isNotEmpty) ...[
-                        _buildDetailSection('Benefits:', ben, Icons.card_giftcard_rounded, const Color(0xFF0284C7)),
+                        _buildDetailSection(lang == 'mr' ? 'लाभ:' : (lang == 'hi' ? 'लाभ:' : 'Benefits:'), ben, Icons.card_giftcard_rounded, const Color(0xFF0284C7)),
                         const SizedBox(height: 14),
                       ],
                       if (docs.isNotEmpty) ...[
-                        _buildDetailSection('Documents:', docs, Icons.attachment_rounded, const Color(0xFFD97706)),
+                        _buildDetailSection(lang == 'mr' ? 'कागदपत्रे:' : (lang == 'hi' ? 'दस्तावेज़:' : 'Documents:'), docs, Icons.attachment_rounded, const Color(0xFFD97706)),
                         const SizedBox(height: 14),
                       ],
 
@@ -628,7 +638,7 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
                           OutlinedButton.icon(
                             onPressed: () {},
                             icon: const Icon(Icons.download_rounded, size: 16),
-                            label: const Text('Download Brochure'),
+                            label: Text(lang == 'mr' ? 'माहिती पुस्तिका डाउनलोड करा' : (lang == 'hi' ? 'विवरणिका डाउनलोड करें' : 'Download Brochure')),
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -638,7 +648,7 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
                           ElevatedButton.icon(
                             onPressed: () {},
                             icon: const Icon(Icons.person_add_alt_1_rounded, size: 16),
-                            label: const Text('Apply for Citizen'),
+                            label: Text(lang == 'mr' ? 'नागरिकासाठी अर्ज करा' : (lang == 'hi' ? 'नागरिक के लिए आवेदन करें' : 'Apply for Citizen')),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF0284C7),
                               foregroundColor: Colors.white,
@@ -671,7 +681,7 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
             children: [
               Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF334155))),
               const SizedBox(height: 2),
-              Text(content, style: const TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.4)),
+              AppTranslatedText(content, style: const TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.4)),
             ],
           ),
         ),
@@ -680,7 +690,8 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
   }
 
   // --- Report Table View (matching SchemeList.tsx lines 318-368) ---
-  Widget _buildReportTable(List<SchemeModel> items, bool isMr) {
+  Widget _buildReportTable(List<SchemeModel> items, String lang) {
+    final isMr = lang == 'mr';
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -690,12 +701,12 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: DataTable(
-          columns: const [
-            DataColumn(label: Text('#', style: TextStyle(fontWeight: FontWeight.w700))),
-            DataColumn(label: Text('Scheme Name', style: TextStyle(fontWeight: FontWeight.w700))),
-            DataColumn(label: Text('Category', style: TextStyle(fontWeight: FontWeight.w700))),
-            DataColumn(label: Text('Eligibility', style: TextStyle(fontWeight: FontWeight.w700))),
-            DataColumn(label: Text('Benefits', style: TextStyle(fontWeight: FontWeight.w700))),
+          columns: [
+            DataColumn(label: Text(AppTranslations.getReportColumn('sr_no', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text(AppTranslations.getReportColumn('scheme_name', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text(AppTranslations.getReportColumn('category', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text(AppTranslations.getReportColumn('eligibility', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text(AppTranslations.getReportColumn('benefits', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
           ],
           rows: items.asMap().entries.map((entry) {
             final idx = entry.key + 1;
@@ -703,10 +714,10 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
             return DataRow(
               cells: [
                 DataCell(Text('$idx')),
-                DataCell(Text(s.localizedName(isMr), style: const TextStyle(fontWeight: FontWeight.w600))),
+                DataCell(AppTranslatedText(s.localizedName(isMr), style: const TextStyle(fontWeight: FontWeight.w600))),
                 DataCell(Text(s.category)),
-                DataCell(Text(s.localizedEligibility(isMr))),
-                DataCell(Text(s.localizedBenefits(isMr))),
+                DataCell(AppTranslatedText(s.localizedEligibility(isMr))),
+                DataCell(AppTranslatedText(s.localizedBenefits(isMr))),
               ],
             );
           }).toList(),
@@ -721,7 +732,10 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
     );
   }
 
-  Widget _buildEmptyState(bool isMr) {
+  Widget _buildEmptyState(String lang) {
+    final emptyMsg = lang == 'mr'
+        ? 'कोणतीही शासकीय योजना आढळली नाही'
+        : (lang == 'hi' ? 'कोई सरकारी योजना नहीं मिली' : 'No government schemes found');
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 40),
@@ -730,7 +744,7 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
         children: [
           const Icon(Icons.inbox_outlined, size: 40, color: Color(0xFF94A3B8)),
           const SizedBox(height: 10),
-          const Text('No government schemes found', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+          Text(emptyMsg, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
         ],
       ),
     );

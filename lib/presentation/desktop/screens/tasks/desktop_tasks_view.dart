@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/localization/app_translations.dart';
+import '../../../../core/services/translation_service.dart';
+import '../../../providers/language_provider.dart';
 import 'package:nagarsevak_mobile/core/theme/app_colors.dart';
 import 'package:nagarsevak_mobile/data/models/diary_task_model.dart';
 import 'package:nagarsevak_mobile/data/repositories/diary_tasks_repository.dart';
@@ -216,8 +219,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
 
   @override
   Widget build(BuildContext context) {
-    final lang = ref.watch(desktopLanguageProvider);
-    final isMr = lang == 'mr';
+    final lang = ref.watch(appLanguageProvider);
     final items = _viewMode == 'timeline' ? _timelineTasks : _filteredTasks;
 
     return Scaffold(
@@ -228,17 +230,17 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 1. Header Row (matching Tasks.tsx lines 361-392)
-            _buildHeader(isMr, items.length),
+            _buildHeader(lang, items.length),
 
             const SizedBox(height: 16),
 
             // 2. Filters Grid (matching Tasks.tsx lines 395-468)
-            _buildFilterBar(isMr),
+            _buildFilterBar(lang),
 
             const SizedBox(height: 16),
 
             // 3. View Mode & Date Navigator Bar (matching Tasks.tsx lines 471-525)
-            _buildViewModeBar(isMr),
+            _buildViewModeBar(lang),
 
             const SizedBox(height: 20),
 
@@ -246,13 +248,13 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
             if (_loading)
               _buildLoadingGrid()
             else if (items.isEmpty)
-              _buildEmptyState(isMr)
+              _buildEmptyState(lang)
             else if (_viewMode == 'grid')
-              _build3x3TaskGrid(items, isMr)
+              _build3x3TaskGrid(items, lang)
             else if (_viewMode == 'timeline')
-              _buildTimelineView(items, isMr)
+              _buildTimelineView(items, lang)
             else
-              _buildReportView(items, isMr),
+              _buildReportView(items, lang),
           ],
         ),
       ),
@@ -260,7 +262,11 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
   }
 
   // --- Header Row ---
-  Widget _buildHeader(bool isMr, int foundCount) {
+  Widget _buildHeader(String lang, int foundCount) {
+    final title = AppTranslations.t('tasks.title', lang: lang);
+    final subtitle = AppTranslations.t('tasks.subtitle', lang: lang);
+    final foundLabel = lang == 'mr' ? 'एकूण' : (lang == 'hi' ? 'कुल' : 'Found');
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -270,7 +276,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
             Row(
               children: [
                 Text(
-                  'Task Management',
+                  title,
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
@@ -287,7 +293,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
                     border: Border.all(color: const Color(0xFFBAE6FD)),
                   ),
                   child: Text(
-                    'Found: $foundCount',
+                    '$foundLabel: $foundCount',
                     style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0369A1)),
                   ),
                 ),
@@ -295,9 +301,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
             ),
             const SizedBox(height: 4),
             Text(
-              isMr
-                  ? 'Daily office diaries, citizen meetings and task tracking'
-                  : 'Schedule and manage daily office tasks and citizen visits',
+              subtitle,
               style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
             ),
           ],
@@ -311,10 +315,14 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
                 DiaryReportGenerator.generateAndPrintTasksReport(
                   context: context,
                   tasks: _filteredTasks,
+                  lang: lang,
                 );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
-              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+              label: Text(
+                AppTranslations.t('common.download_report', lang: lang),
+                style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
+              ),
               style: OutlinedButton.styleFrom(
                 backgroundColor: const Color(0xFFF0F9FF),
                 side: const BorderSide(color: Color(0xFFBAE6FD)),
@@ -327,9 +335,9 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
             OutlinedButton.icon(
               onPressed: () {},
               icon: const Icon(Icons.document_scanner_outlined, size: 16, color: Color(0xFF475569)),
-              label: const Text(
-                'Scan Doc',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+              label: Text(
+                AppTranslations.t('tasks.scan_doc', lang: lang),
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
               ),
               style: OutlinedButton.styleFrom(
                 backgroundColor: Colors.white,
@@ -350,12 +358,12 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Icon(Icons.add, size: 16, color: Colors.white),
-                  SizedBox(width: 8),
+                children: [
+                  const Icon(Icons.add, size: 16, color: Colors.white),
+                  const SizedBox(width: 8),
                   Text(
-                    'New Task',
-                    style: TextStyle(
+                    AppTranslations.t('tasks.new_task', lang: lang),
+                    style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: Colors.white,
@@ -372,7 +380,13 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
   }
 
   // --- Filter Bar (12-column layout matching Tasks.tsx lines 395-468) ---
-  Widget _buildFilterBar(bool isMr) {
+  Widget _buildFilterBar(String lang) {
+    final searchHint = lang == 'mr'
+        ? 'कार्ये, वर्णन, कर्मचाऱ्यांनुसार शोधा...'
+        : (lang == 'hi' ? 'कार्य, विवरण, कर्मचारियों द्वारा खोजें...' : 'Search tasks by title, description, staff...');
+    final allAreasLabel = lang == 'mr' ? 'सर्व भाग' : (lang == 'hi' ? 'सभी क्षेत्र' : 'All Areas');
+    final allDatesLabel = lang == 'mr' ? 'सर्व तारखा' : (lang == 'hi' ? 'सभी तिथियां' : 'All Dates');
+
     return Row(
       children: [
         // Main Search (6 cols)
@@ -381,7 +395,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
           child: TextField(
             onChanged: (v) => setState(() => _searchQuery = v),
             decoration: InputDecoration(
-              hintText: 'Search tasks by title, description, staff...',
+              hintText: searchHint,
               hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
               prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFF94A3B8)),
               contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -413,7 +427,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
               return DropdownMenuItem(
                 value: area,
                 child: Text(
-                  area == 'All' ? 'All Areas' : area,
+                  area == 'All' ? allAreasLabel : area,
                   overflow: TextOverflow.ellipsis,
                 ),
               );
@@ -438,7 +452,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
               return DropdownMenuItem(
                 value: date,
                 child: Text(
-                  date == 'All' ? 'All Dates' : date,
+                  date == 'All' ? allDatesLabel : date,
                   overflow: TextOverflow.ellipsis,
                 ),
               );
@@ -453,7 +467,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
   }
 
   // --- View Mode & Date Navigator Bar (matching Tasks.tsx lines 471-525) ---
-  Widget _buildViewModeBar(bool isMr) {
+  Widget _buildViewModeBar(String lang) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -482,19 +496,19 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
               children: [
                 _buildViewToggleButton(
                   icon: Icons.schedule_rounded,
-                  label: 'Timeline',
+                  label: lang == 'mr' ? 'टाइमलाइन' : (lang == 'hi' ? 'समयरेखा' : 'Timeline'),
                   isActive: _viewMode == 'timeline',
                   onTap: () => setState(() => _viewMode = 'timeline'),
                 ),
                 _buildViewToggleButton(
                   icon: Icons.grid_view_rounded,
-                  label: 'Grid',
+                  label: AppTranslations.t('common.grid', lang: lang),
                   isActive: _viewMode == 'grid',
                   onTap: () => setState(() => _viewMode = 'grid'),
                 ),
                 _buildViewToggleButton(
                   icon: Icons.table_rows_rounded,
-                  label: 'Table',
+                  label: lang == 'mr' ? 'तक्ता' : (lang == 'hi' ? 'तालिका' : 'Table'),
                   isActive: _viewMode == 'table',
                   onTap: () => setState(() => _viewMode = 'table'),
                 ),
@@ -516,7 +530,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      'TODAY',
+                      lang == 'mr' ? 'आज' : (lang == 'hi' ? 'आज' : 'TODAY'),
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
@@ -604,7 +618,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
   }
 
   // --- 3x3 Layout Grid View (matching Tasks.tsx lines 878-960) ---
-  Widget _build3x3TaskGrid(List<DiaryTaskModel> items, bool isMr) {
+  Widget _build3x3TaskGrid(List<DiaryTaskModel> items, String lang) {
     return LayoutBuilder(
       builder: (context, constraints) {
         // Standard 3-by-3 format across desktop screens
@@ -622,14 +636,14 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
           itemCount: items.length,
           itemBuilder: (context, index) {
             final task = items[index];
-            return _buildTaskCard(task, isMr);
+            return _buildTaskCard(task, lang);
           },
         );
       },
     );
   }
 
-  Widget _buildTaskCard(DiaryTaskModel task, bool isMr) {
+  Widget _buildTaskCard(DiaryTaskModel task, String lang) {
     final isDone = task.isCompleted;
 
     return Container(
@@ -655,7 +669,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Text(
+                child: AppTranslatedText(
                   task.title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -682,7 +696,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
                     border: Border.all(color: isDone ? const Color(0xFF86EFAC) : const Color(0xFFCBD5E1)),
                   ),
                   child: Text(
-                    isDone ? 'Completed' : 'Pending',
+                    isDone ? AppTranslations.getStatus('completed', lang) : AppTranslations.getStatus('pending', lang),
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
@@ -699,7 +713,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
           // Description
           if (task.description != null && task.description!.isNotEmpty) ...[
             Expanded(
-              child: Text(
+              child: AppTranslatedText(
                 task.description!,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -713,7 +727,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
           const SizedBox(height: 8),
 
           // Priority badge
-          _buildPriorityBadge(task.priority, isMr),
+          _buildPriorityBadge(task.priority, lang),
 
           const SizedBox(height: 8),
 
@@ -753,7 +767,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
     );
   }
 
-  Widget _buildPriorityBadge(String priority, bool isMr) {
+  Widget _buildPriorityBadge(String priority, String lang) {
     Color bg = const Color(0xFFFEF3C7);
     Color fg = const Color(0xFFD97706);
     final pLower = priority.toLowerCase();
@@ -768,14 +782,14 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(4)),
       child: Text(
-        priority,
+        AppTranslations.getStatus(priority, lang),
         style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: fg),
       ),
     );
   }
 
   // --- Timeline View (matching Tasks.tsx lines 746-820) ---
-  Widget _buildTimelineView(List<DiaryTaskModel> items, bool isMr) {
+  Widget _buildTimelineView(List<DiaryTaskModel> items, String lang) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -797,7 +811,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
               SizedBox(
                 width: 90,
                 child: Text(
-                  task.formattedTime.isNotEmpty ? task.formattedTime : 'Anytime',
+                  task.formattedTime.isNotEmpty ? task.formattedTime : (lang == 'mr' ? 'कधीही' : (lang == 'hi' ? 'कभी भी' : 'Anytime')),
                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0284C7)),
                 ),
               ),
@@ -828,13 +842,13 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      AppTranslatedText(
                         task.title,
                         style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
                       ),
                       if (task.description != null && task.description!.isNotEmpty) ...[
                         const SizedBox(height: 4),
-                        Text(task.description!, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                        AppTranslatedText(task.description!, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
                       ],
                     ],
                   ),
@@ -848,7 +862,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
   }
 
   // --- Report View (matching Tasks.tsx lines 663-740) ---
-  Widget _buildReportView(List<DiaryTaskModel> items, bool isMr) {
+  Widget _buildReportView(List<DiaryTaskModel> items, String lang) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -858,21 +872,21 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: DataTable(
-          columns: const [
-            DataColumn(label: Text('Title', style: TextStyle(fontWeight: FontWeight.w700))),
-            DataColumn(label: Text('Priority', style: TextStyle(fontWeight: FontWeight.w700))),
-            DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.w700))),
-            DataColumn(label: Text('Due Date', style: TextStyle(fontWeight: FontWeight.w700))),
-            DataColumn(label: Text('Location', style: TextStyle(fontWeight: FontWeight.w700))),
+          columns: [
+            DataColumn(label: Text(AppTranslations.getReportColumn('title', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text(AppTranslations.getReportColumn('priority', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text(AppTranslations.getReportColumn('status', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text(AppTranslations.getReportColumn('due_date', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text(AppTranslations.getReportColumn('location_area', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
           ],
           rows: items.map((task) {
             return DataRow(
               cells: [
-                DataCell(Text(task.title, style: const TextStyle(fontWeight: FontWeight.w600))),
-                DataCell(_buildPriorityBadge(task.priority, isMr)),
-                DataCell(Text(task.status)),
+                DataCell(AppTranslatedText(task.title, style: const TextStyle(fontWeight: FontWeight.w600))),
+                DataCell(_buildPriorityBadge(task.priority, lang)),
+                DataCell(Text(AppTranslations.getStatus(task.status, lang))),
                 DataCell(Text(task.formattedDate)),
-                DataCell(Text(task.address ?? task.officeName ?? '-')),
+                DataCell(AppTranslatedText(task.address ?? task.officeName ?? '-')),
               ],
             );
           }).toList(),
@@ -890,7 +904,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
     );
   }
 
-  Widget _buildEmptyState(bool isMr) {
+  Widget _buildEmptyState(String lang) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 60),
@@ -900,12 +914,12 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
           const Icon(Icons.inbox_outlined, size: 48, color: Color(0xFF94A3B8)),
           const SizedBox(height: 12),
           Text(
-            'No tasks found',
+            AppTranslations.t('tasks.no_tasks', lang: lang),
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
           ),
           const SizedBox(height: 4),
           Text(
-            'Try adjusting your search criteria',
+            lang == 'mr' ? 'कृपया फिल्टर किंवा शोध निकष बदला' : (lang == 'hi' ? 'कृपया फ़िल्टर या खोज मानदंड बदलें' : 'Try adjusting your search criteria'),
             style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
           ),
         ],

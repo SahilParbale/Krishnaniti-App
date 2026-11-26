@@ -1,4 +1,7 @@
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/localization/app_translations.dart';
+import '../../../../core/services/translation_service.dart';
+import '../../../providers/language_provider.dart';
 import '../../common/desktop_modal_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -380,6 +383,7 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(appLanguageProvider);
     final filtered = _filteredItems;
 
     return SingleChildScrollView(
@@ -388,32 +392,32 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Sticky Top Section
-          _buildHeader(filtered.length),
+          _buildHeader(filtered.length, lang),
           const SizedBox(height: 16),
 
           // Selection Mode Bar
           if (_selectionMode) ...[
-            _buildSelectionBar(),
+            _buildSelectionBar(lang),
             const SizedBox(height: 16),
           ],
 
           // Filter Row
-          _buildFilterRow(),
+          _buildFilterRow(lang),
           const SizedBox(height: 24),
 
           // Content
           if (_loading)
             _buildLoadingGrid()
           else if (_viewMode == 'table')
-            _buildReportTable(filtered)
+            _buildReportTable(filtered, lang)
           else
-            _buildCardGrid(filtered),
+            _buildCardGrid(filtered, lang),
         ],
       ),
     );
   }
 
-  Widget _buildHeader(int count) {
+  Widget _buildHeader(int count, String lang) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -424,9 +428,9 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
           children: [
             Row(
               children: [
-                const Text(
-                  'Work History',
-                  style: TextStyle(
+                Text(
+                  AppTranslations.getNavTitle('work_history', lang),
+                  style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF0F172A),
@@ -442,7 +446,7 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
                     border: Border.all(color: const Color(0xFFBAE6FD)),
                   ),
                   child: Text(
-                    'Total: $count',
+                    lang == 'mr' ? 'एकूण: $count' : (lang == 'hi' ? 'कुल: $count' : 'Total: $count'),
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -453,9 +457,13 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
               ],
             ),
             const SizedBox(height: 4),
-            const Text(
-              'Recorded development and maintenance civil works',
-              style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+            Text(
+              lang == 'mr'
+                  ? 'प्रभागातील विकास कामे व अहवाल व्यवस्थापन'
+                  : (lang == 'hi'
+                      ? 'वार्ड में विकास कार्य और अहवाल प्रबंधन'
+                      : 'Recorded development and maintenance civil works'),
+              style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
             ),
           ],
         ),
@@ -470,10 +478,14 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
                   WorkReportGenerator.generateAndPrintWorkReport(
                     context: context,
                     works: _filteredItems,
+                    lang: lang,
                   );
                 },
                 icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
-                label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+                label: Text(
+                  lang == 'mr' ? 'अहवाल डाउनलोड करा' : (lang == 'hi' ? 'रिपोर्ट डाउनलोड करें' : 'Download Report'),
+                  style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
+                ),
                 style: OutlinedButton.styleFrom(
                   backgroundColor: const Color(0xFFF0F9FF),
                   side: const BorderSide(color: Color(0xFFBAE6FD)),
@@ -487,7 +499,10 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
               OutlinedButton.icon(
                 onPressed: _toggleSelectionMode,
                 icon: const Icon(Icons.description_outlined, size: 16, color: Color(0xFF334155)),
-                label: const Text('Generate Ahwal', style: TextStyle(color: Color(0xFF334155), fontWeight: FontWeight.w600, fontSize: 14)),
+                label: Text(
+                  lang == 'mr' ? 'अहवाल तयार करा' : (lang == 'hi' ? 'अहवाल बनाएं' : 'Generate Ahwal'),
+                  style: const TextStyle(color: Color(0xFF334155), fontWeight: FontWeight.w600, fontSize: 14),
+                ),
                 style: OutlinedButton.styleFrom(
                   backgroundColor: Colors.white,
                   side: const BorderSide(color: Color(0xFFCBD5E1)),
@@ -498,26 +513,26 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
               const SizedBox(width: 10),
             ],
 
-            // Add Work Button (ns-btn-primary matching WorkHistory.tsx)
+            // Add Work Button
             ElevatedButton(
               onPressed: _showAddWorkModal,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0284C7), // bg-brand-600
+                backgroundColor: const Color(0xFF0284C7),
                 foregroundColor: Colors.white,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), // rounded-xl
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.add, size: 16, color: Colors.white), // Plus w-4 h-4
-                  SizedBox(width: 8), // gap-2
+                  const Icon(Icons.add, size: 16, color: Colors.white),
+                  const SizedBox(width: 8),
                   Text(
-                    'Add Work',
-                    style: TextStyle(
-                      fontSize: 14, // text-sm
-                      fontWeight: FontWeight.w600, // font-semibold
+                    lang == 'mr' ? 'नवीन काम जोडा' : (lang == 'hi' ? 'नया कार्य जोड़ें' : 'Add Work'),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
                       color: Colors.white,
                       letterSpacing: -0.1,
                     ),
@@ -559,7 +574,7 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
     );
   }
 
-  Widget _buildSelectionBar() {
+  Widget _buildSelectionBar(String lang) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -585,9 +600,19 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
               const SizedBox(width: 14),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  const Text('Works Selected', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                  Text('Select works to include in the Ahwal report.', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                children: [
+                  Text(
+                    lang == 'mr' ? 'कामे निवडली' : (lang == 'hi' ? 'कार्य चयनित' : 'Works Selected'),
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  ),
+                  Text(
+                    lang == 'mr'
+                        ? 'अहवालात समाविष्ट करण्यासाठी कामे निवडा.'
+                        : (lang == 'hi'
+                            ? 'अहवाल में शामिल करने के लिए कार्य चुनें।'
+                            : 'Select works to include in the Ahwal report.'),
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  ),
                 ],
               ),
             ],
@@ -601,7 +626,10 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
                   side: const BorderSide(color: Color(0xFFCBD5E1)),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
-                child: const Text('Cancel', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w600)),
+                child: Text(
+                  lang == 'mr' ? 'रद्द करा' : (lang == 'hi' ? 'रद्द करें' : 'Cancel'),
+                  style: const TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w600),
+                ),
               ),
               const SizedBox(width: 10),
               ElevatedButton.icon(
@@ -612,10 +640,14 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
                         AhwalReportGenerator.generateAndPrintAhwal(
                           context: context,
                           selectedWorks: selectedWorks,
+                          lang: lang,
                         );
                       },
                 icon: const Icon(Icons.description, size: 16, color: Colors.white),
-                label: const Text('Preview Ahwal Report', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                label: Text(
+                  lang == 'mr' ? 'अहवाल पूर्वावलोकन' : (lang == 'hi' ? 'अहवाल पूर्वावलोकन' : 'Preview Ahwal Report'),
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0284C7),
                   disabledBackgroundColor: const Color(0xFF7DD3FC),
@@ -630,7 +662,7 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
     );
   }
 
-  Widget _buildFilterRow() {
+  Widget _buildFilterRow(String lang) {
     return Row(
       children: [
         // Main Search (Col 6)
@@ -644,12 +676,16 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
             ),
             child: TextField(
               onChanged: (val) => setState(() => _searchTerm = val),
-              decoration: const InputDecoration(
-                hintText: 'Search work by title, location...',
-                hintStyle: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                prefixIcon: Icon(Icons.search, size: 18, color: Color(0xFF94A3B8)),
+              decoration: InputDecoration(
+                hintText: lang == 'mr'
+                    ? 'शीर्षक किंवा पत्त्याने शोधा...'
+                    : (lang == 'hi'
+                        ? 'शीर्षक या स्थान से खोजें...'
+                        : 'Search work by title, location...'),
+                hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF94A3B8)),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               ),
             ),
           ),
@@ -667,12 +703,15 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
             borderColor: const Color(0xFFE2E8F0),
             items: ['All', ..._areaSuggestions.keys].map((area) {
               final count = area == 'All' ? _items.length : (_areaSuggestions[area] ?? 0);
+              final areaLabel = area == 'All'
+                  ? (lang == 'mr' ? 'सर्व परिसर' : (lang == 'hi' ? 'सभी क्षेत्र' : 'All Areas'))
+                  : area;
               return DropdownMenuItem(
                 value: area,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(area == 'All' ? 'All Areas' : area),
+                    Text(areaLabel),
                     Text('($count)', style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
                   ],
                 ),
@@ -696,12 +735,15 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
             borderColor: const Color(0xFFE2E8F0),
             items: ['All', ..._dateSuggestions.keys].map((date) {
               final count = date == 'All' ? _items.length : (_dateSuggestions[date] ?? 0);
+              final dateLabel = date == 'All'
+                  ? (lang == 'mr' ? 'सर्व तारखा' : (lang == 'hi' ? 'सभी तिथियां' : 'All Dates'))
+                  : date;
               return DropdownMenuItem(
                 value: date,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(date == 'All' ? 'All Dates' : date),
+                    Text(dateLabel),
                     Text('($count)', style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
                   ],
                 ),
@@ -723,14 +765,14 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
             children: [
               _buildViewToggleButton(
                 icon: Icons.grid_view_rounded,
-                label: 'Grid',
+                label: lang == 'mr' ? 'ग्रिड' : (lang == 'hi' ? 'ग्रिड' : 'Grid'),
                 isActive: _viewMode == 'grid',
                 onTap: () => setState(() => _viewMode = 'grid'),
               ),
               const SizedBox(width: 4),
               _buildViewToggleButton(
                 icon: Icons.table_rows_rounded,
-                label: 'Table',
+                label: lang == 'mr' ? 'तक्ता' : (lang == 'hi' ? 'तालिका' : 'Table'),
                 isActive: _viewMode == 'table',
                 onTap: () => setState(() => _viewMode = 'table'),
               ),
@@ -741,7 +783,7 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
     );
   }
 
-  Widget _buildCardGrid(List<WorkHistoryModel> items) {
+  Widget _buildCardGrid(List<WorkHistoryModel> items, String lang) {
     if (items.isEmpty) {
       return Container(
         width: double.infinity,
@@ -752,10 +794,13 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
           border: Border.all(color: const Color(0xFFE2E8F0)),
         ),
         child: Column(
-          children: const [
-            Icon(Icons.assignment_outlined, size: 48, color: Color(0xFFCBD5E1)),
-            SizedBox(height: 12),
-            const Text('No records found', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500)),
+          children: [
+            const Icon(Icons.assignment_outlined, size: 48, color: Color(0xFFCBD5E1)),
+            const SizedBox(height: 12),
+            Text(
+              lang == 'mr' ? 'कोणत्याही नोंदी आढळल्या नाहीत' : (lang == 'hi' ? 'कोई रिकॉर्ड नहीं मिला' : 'No records found'),
+              style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+            ),
           ],
         ),
       );
@@ -815,7 +860,7 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _buildStatusBadge(item.status),
+                        _buildStatusBadge(item.status, lang),
                         Row(
                           children: [
                             Container(
@@ -862,8 +907,8 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
-                          child: Text(
-                            item.title,
+                          child: AppTranslatedText(item.title,
+                            targetLanguage: lang,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -881,8 +926,8 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
 
                     // Description
                     Expanded(
-                      child: Text(
-                        item.description,
+                      child: AppTranslatedText(item.description,
+                        targetLanguage: lang,
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -965,7 +1010,7 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
     );
   }
 
-  Widget _buildStatusBadge(String status) {
+  Widget _buildStatusBadge(String status, String lang) {
     if (status == 'Completed') {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -975,10 +1020,10 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
-          children: const [
-            Icon(Icons.check_circle, size: 12, color: Color(0xFF16A34A)),
-            SizedBox(width: 4),
-            const Text('Completed', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF15803D))),
+          children: [
+            const Icon(Icons.check_circle, size: 12, color: Color(0xFF16A34A)),
+            const SizedBox(width: 4),
+            Text(AppTranslations.getStatus('completed', lang), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF15803D))),
           ],
         ),
       );
@@ -991,10 +1036,10 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
-          children: const [
-            Icon(Icons.handyman, size: 12, color: Color(0xFF0284C7)),
-            SizedBox(width: 4),
-            const Text('In Progress', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0369A1))),
+          children: [
+            const Icon(Icons.handyman, size: 12, color: Color(0xFF0284C7)),
+            const SizedBox(width: 4),
+            Text(AppTranslations.getStatus('in_progress', lang), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0369A1))),
           ],
         ),
       );
@@ -1007,17 +1052,17 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
-          children: const [
-            Icon(Icons.schedule, size: 12, color: Color(0xFF64748B)),
-            SizedBox(width: 4),
-            const Text('Planned', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
+          children: [
+            const Icon(Icons.schedule, size: 12, color: Color(0xFF64748B)),
+            const SizedBox(width: 4),
+            Text(AppTranslations.getStatus('planned', lang), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
           ],
         ),
       );
     }
   }
 
-  Widget _buildReportTable(List<WorkHistoryModel> items) {
+  Widget _buildReportTable(List<WorkHistoryModel> items, String lang) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1031,13 +1076,13 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
           headingRowColor: WidgetStateProperty.all(const Color(0xFFF8FAFC)),
           columnSpacing: 24,
           horizontalMargin: 20,
-          columns: const [
-            const DataColumn(label: Text('Sr No', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
-            const DataColumn(label: Text('Work Title & Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
-            const DataColumn(label: Text('Location & Ward', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
-            const DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
-            const DataColumn(label: Text('Date', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
-            const DataColumn(label: Text('Amount (₹)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
+          columns: [
+            DataColumn(label: Text(AppTranslations.getReportColumn('sr_no', lang), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
+            DataColumn(label: Text(AppTranslations.getReportColumn('work_title', lang), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
+            DataColumn(label: Text(AppTranslations.getReportColumn('location', lang), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
+            DataColumn(label: Text(AppTranslations.getReportColumn('status', lang), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
+            DataColumn(label: Text(AppTranslations.getReportColumn('date', lang), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
+            DataColumn(label: Text(AppTranslations.getReportColumn('amount', lang), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
           ],
           rows: List.generate(items.length, (index) {
             final item = items[index];
@@ -1056,14 +1101,22 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
-                      Text(item.description, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                      AppTranslatedText(item.title,
+                        targetLanguage: lang,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                      ),
+                      AppTranslatedText(item.description,
+                        targetLanguage: lang,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                      ),
                     ],
                   ),
                   onTap: () => _handleCardClick(item),
                 ),
                 DataCell(Text('${item.location} (${item.area})', style: const TextStyle(fontSize: 12, color: Color(0xFF334155)))),
-                DataCell(_buildStatusBadge(item.status)),
+                DataCell(_buildStatusBadge(item.status, lang)),
                 DataCell(Text(_formatDate(item.date), style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)))),
                 DataCell(
                   Text(

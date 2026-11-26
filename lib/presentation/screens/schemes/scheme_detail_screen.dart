@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/services/translation_service.dart';
+import '../../providers/language_provider.dart';
 import '../../../data/models/scheme_model.dart';
 import '../../../data/models/voter_model.dart';
 import '../../../data/repositories/schemes_repository.dart';
@@ -417,7 +419,7 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
                                 ),
                               ),
                               const SizedBox(height: 8),
-                              Text(
+                              AppTranslatedText(
                                 _scheme.localizedName(isMr),
                                 style: const TextStyle(
                                   fontSize: 18,
@@ -432,7 +434,7 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
                       ],
                     ),
                     const SizedBox(height: 14),
-                    Text(
+                    AppTranslatedText(
                       _scheme.localizedDescription(isMr),
                       style: const TextStyle(
                         fontSize: 13.5,
@@ -653,7 +655,7 @@ class _DetailSectionCard extends StatelessWidget {
                       ),
                     ),
                     Expanded(
-                      child: Text(
+                      child: AppTranslatedText(
                         line,
                         style: const TextStyle(
                           fontSize: 13,
@@ -667,7 +669,7 @@ class _DetailSectionCard extends StatelessWidget {
               ),
             )
           else
-            Text(
+            AppTranslatedText(
               content,
               style: const TextStyle(
                 fontSize: 13,

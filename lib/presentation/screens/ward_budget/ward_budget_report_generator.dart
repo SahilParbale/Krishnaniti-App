@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import '../../../core/localization/app_translations.dart';
 import '../../../data/models/ward_budget_model.dart';
 import '../../widgets/app_pdf_report_theme.dart';
 import '../../widgets/app_report_preview_modal.dart';
@@ -19,6 +20,7 @@ class WardBudgetReportGenerator {
     String? areaFilter,
     String title = 'Ward Budget & Provision Report',
     String subtitle = 'Financial Planning & Allocation Audit',
+    String lang = 'en',
   }) async {
     final pdf = pw.Document();
     final nowStr = DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now());
@@ -28,6 +30,25 @@ class WardBudgetReportGenerator {
     final totalUtilized = budgets.fold<double>(0, (sum, b) => sum + b.utilizedAmount);
     final totalRemaining = (totalAllocated - totalUtilized).clamp(0.0, double.infinity);
     final utilizationPercentage = totalAllocated > 0 ? (totalUtilized / totalAllocated) * 100 : 0.0;
+
+    final effectiveTitle = title != 'Ward Budget & Provision Report'
+        ? title
+        : (lang == 'mr'
+            ? 'प्रभाग अंदाजपत्रक आणि तरतूद अहवाल'
+            : (lang == 'hi' ? 'वार्ड बजट और प्रावधान रिपोर्ट' : 'Ward Budget & Provision Report'));
+    final effectiveSubtitle = subtitle != 'Financial Planning & Allocation Audit'
+        ? subtitle
+        : (lang == 'mr'
+            ? 'आर्थिक नियोजन आणि तरतूद लेखापरीक्षण'
+            : (lang == 'hi' ? 'वित्तीय योजना और आवंटन ऑडिट' : 'Financial Planning & Allocation Audit'));
+
+    final yearLabel = lang == 'mr' ? 'आर्थिक वर्ष' : (lang == 'hi' ? 'वित्तीय वर्ष' : 'Financial Year');
+    final dateLabel = lang == 'mr' ? 'तारीख' : (lang == 'hi' ? 'दिनांक' : 'Date');
+    final headsLabel = lang == 'mr' ? 'एकूण शीर्ष' : (lang == 'hi' ? 'कुल शीर्ष' : 'Total Heads');
+    final allocatedLabel = lang == 'mr' ? 'एकूण तरतूद' : (lang == 'hi' ? 'कुल आवंटित' : 'TOTAL ALLOCATED');
+    final utilizedLabel = lang == 'mr' ? 'एकूण खर्च' : (lang == 'hi' ? 'कुल उपयोग' : 'TOTAL UTILIZED');
+    final remainingLabel = lang == 'mr' ? 'शिल्लक निधी' : (lang == 'hi' ? 'शेष राशि' : 'REMAINING BALANCE');
+    final utilizedSuffix = lang == 'mr' ? 'खर्च' : (lang == 'hi' ? 'उपयोग' : 'utilized');
 
     String formatCurrency(double val) {
       return 'Rs. ${NumberFormat.decimalPattern().format(val.toInt())}';
@@ -41,7 +62,8 @@ class WardBudgetReportGenerator {
           if (context.pageNumber > 1) {
             return WebReportTheme.buildContinuationHeader(
               context,
-              title: title,
+              title: effectiveTitle,
+              lang: lang,
             );
           }
           return pw.Container(
@@ -61,7 +83,7 @@ class WardBudgetReportGenerator {
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
                       pw.Text(
-                        title,
+                        effectiveTitle,
                         style: pw.TextStyle(
                           fontSize: 20,
                           fontWeight: pw.FontWeight.bold,
@@ -70,7 +92,7 @@ class WardBudgetReportGenerator {
                       ),
                       pw.SizedBox(height: 3),
                       pw.Text(
-                        subtitle,
+                        effectiveSubtitle,
                         style: const pw.TextStyle(
                           fontSize: 9.5,
                           color: WebReportTheme.slate500,
@@ -83,7 +105,7 @@ class WardBudgetReportGenerator {
                   crossAxisAlignment: pw.CrossAxisAlignment.end,
                   children: [
                     pw.Text(
-                      'Financial Year: $year',
+                      '$yearLabel: $year',
                       style: const pw.TextStyle(
                         fontSize: 8.5,
                         color: WebReportTheme.slate400,
@@ -91,7 +113,7 @@ class WardBudgetReportGenerator {
                     ),
                     pw.SizedBox(height: 1),
                     pw.Text(
-                      'Date: $nowStr',
+                      '$dateLabel: $nowStr',
                       style: const pw.TextStyle(
                         fontSize: 8,
                         color: WebReportTheme.slate400,
@@ -99,7 +121,7 @@ class WardBudgetReportGenerator {
                     ),
                     pw.SizedBox(height: 1),
                     pw.Text(
-                      'Total Heads: $totalCount',
+                      '$headsLabel: $totalCount',
                       style: const pw.TextStyle(
                         fontSize: 8.5,
                         color: WebReportTheme.slate400,
@@ -111,7 +133,7 @@ class WardBudgetReportGenerator {
             ),
           );
         },
-        footer: (pw.Context context) => WebReportTheme.buildFooter(context),
+        footer: (pw.Context context) => WebReportTheme.buildFooter(context, lang: lang),
         build: (pw.Context context) {
           return [
             // Summary Overview (3-card grid matching BudgetReportGenerator.tsx)
@@ -128,7 +150,7 @@ class WardBudgetReportGenerator {
                     child: pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
-                        pw.Text('TOTAL ALLOCATED', style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold, color: WebReportTheme.slate500)),
+                        pw.Text(allocatedLabel, style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold, color: WebReportTheme.slate500)),
                         pw.SizedBox(height: 3),
                         pw.Text(formatCurrency(totalAllocated), style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: WebReportTheme.slate900)),
                       ],
@@ -147,11 +169,11 @@ class WardBudgetReportGenerator {
                     child: pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
-                        pw.Text('TOTAL UTILIZED', style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold, color: WebReportTheme.brand600)),
+                        pw.Text(utilizedLabel, style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold, color: WebReportTheme.brand600)),
                         pw.SizedBox(height: 3),
                         pw.Text(formatCurrency(totalUtilized), style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: WebReportTheme.brand900)),
                         pw.SizedBox(height: 1),
-                        pw.Text('${utilizationPercentage.toStringAsFixed(1)}% utilized', style: const pw.TextStyle(fontSize: 7, color: WebReportTheme.brand700)),
+                        pw.Text('${utilizationPercentage.toStringAsFixed(1)}% $utilizedSuffix', style: const pw.TextStyle(fontSize: 7, color: WebReportTheme.brand700)),
                       ],
                     ),
                   ),
@@ -168,7 +190,7 @@ class WardBudgetReportGenerator {
                     child: pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
-                        pw.Text('REMAINING BALANCE', style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold, color: const PdfColor.fromInt(0xFF15803D))),
+                        pw.Text(remainingLabel, style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold, color: const PdfColor.fromInt(0xFF15803D))),
                         pw.SizedBox(height: 3),
                         pw.Text(formatCurrency(totalRemaining), style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: const PdfColor.fromInt(0xFF14532D))),
                       ],
@@ -198,10 +220,10 @@ class WardBudgetReportGenerator {
               },
               headers: [
                 '#',
-                'Category / Head',
-                'Allocated',
-                'Utilized',
-                'Progress',
+                lang == 'mr' ? 'वर्गवारी / शीर्ष' : (lang == 'hi' ? 'श्रेणी / शीर्ष' : 'Category / Head'),
+                lang == 'mr' ? 'तरतूद' : (lang == 'hi' ? 'आवंटित' : 'Allocated'),
+                lang == 'mr' ? 'खर्च' : (lang == 'hi' ? 'उपयोग' : 'Utilized'),
+                lang == 'mr' ? 'प्रगती' : (lang == 'hi' ? 'प्रगति' : 'Progress'),
               ],
               data: List.generate(budgets.length, (index) {
                 final b = budgets[index];
@@ -215,7 +237,7 @@ class WardBudgetReportGenerator {
                   '${b.category}$areaStr',
                   formatCurrency(b.totalAllocation),
                   formatCurrency(b.utilizedAmount),
-                  '${percent.toStringAsFixed(0)}% Utilized',
+                  '${percent.toStringAsFixed(0)}% $utilizedSuffix',
                 ];
               }),
               cellAlignments: {

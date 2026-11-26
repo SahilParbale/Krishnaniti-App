@@ -5,6 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../data/models/work_history_model.dart';
 import '../../../data/repositories/work_history_repository.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
+import '../../providers/language_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_modal_sheet.dart';
@@ -517,7 +520,8 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
+    final isMr = lang == 'mr';
     final w = _currentWork;
     final numFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹ ', decimalDigits: 0);
 
@@ -546,7 +550,9 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                isMr ? 'कामाचा तपशील (Work Details)' : 'Work Details',
+                lang == 'mr'
+                    ? 'कामाचा तपशील'
+                    : (lang == 'hi' ? 'कार्य विवरण' : 'Work Details'),
                 style: const TextStyle(
                   fontSize: 17.5,
                   fontWeight: FontWeight.w800,
@@ -569,9 +575,10 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
               child: Padding(
                 padding: const EdgeInsets.only(right: 4),
                 child: AppPdfButton.icon(
-                  tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Report',
+                  tooltip: lang == 'mr' ? 'अहवाल डाउनलोड करा' : (lang == 'hi' ? 'रिपोर्ट डाउनलोड करें' : 'Download Report'),
                   onPressed: () => AhwalReportGenerator.generateAndPrintAhwal(
                     selectedWorks: [_currentWork],
+                    lang: lang,
                   ),
                 ),
               ),
@@ -672,7 +679,7 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: Text(
-                                  isMr ? w.statusDisplayMr : w.statusDisplayEn,
+                                  AppTranslations.getStatus(w.status, lang),
                                   style: TextStyle(
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.bold,
@@ -683,8 +690,8 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                             ],
                           ),
                           const SizedBox(height: 14),
-                          Text(
-                            w.title,
+                          AppTranslatedText(w.title,
+                            targetLanguage: lang,
                             style: const TextStyle(
                               fontSize: 19,
                               fontWeight: FontWeight.bold,
@@ -693,8 +700,8 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                             ),
                           ),
                           const SizedBox(height: 10),
-                          Text(
-                            w.description,
+                          AppTranslatedText(w.description,
+                            targetLanguage: lang,
                             style: const TextStyle(
                               fontSize: 14,
                               color: Color(0xFF334155),

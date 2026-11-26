@@ -4,6 +4,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../data/models/letter_model.dart';
+import '../../../core/localization/app_translations.dart';
 import '../../widgets/app_pdf_report_theme.dart';
 import '../../widgets/app_report_preview_modal.dart';
 
@@ -18,13 +19,23 @@ class LetterReportGenerator {
     String? statusFilter,
     String? typeFilter,
     String? areaFilter,
-    String title = 'Letters Register Report',
-    String subtitle = 'Inward & Outward Letters Official Register',
+    String? title,
+    String? subtitle,
+    String lang = 'en',
   }) async {
     final pdf = pw.Document();
     final now = DateTime.now();
     final formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(now);
     final total = letters.length;
+
+    final resolvedTitle = title ??
+        (lang == 'mr'
+            ? 'पत्र नोंदवही अहवाल'
+            : (lang == 'hi' ? 'पत्र रजिस्टर रिपोर्ट' : 'Letters Register Report'));
+    final resolvedSubtitle = subtitle ??
+        (lang == 'mr'
+            ? 'आवक आणि जावक अधिकृत पत्र नोंदवही'
+            : (lang == 'hi' ? 'आवक और जावक आधिकारिक पत्र रजिस्टर' : 'Inward & Outward Letters Official Register'));
 
     pdf.addPage(
       pw.MultiPage(
@@ -34,18 +45,20 @@ class LetterReportGenerator {
           if (context.pageNumber > 1) {
             return WebReportTheme.buildContinuationHeader(
               context,
-              title: title,
+              title: resolvedTitle,
+              lang: lang,
             );
           }
           return WebReportTheme.buildHeader(
-            title: title,
-            subtitle: subtitle,
+            title: resolvedTitle,
+            subtitle: resolvedSubtitle,
             dateFormatted: formattedDate,
             totalCount: total,
-            foundLabel: 'Found',
+            foundLabel: lang == 'mr' ? 'एकूण आढळले' : (lang == 'hi' ? 'कुल मिले' : 'Found'),
+            lang: lang,
           );
         },
-        footer: (pw.Context context) => WebReportTheme.buildFooter(context),
+        footer: (pw.Context context) => WebReportTheme.buildFooter(context, lang: lang),
         build: (pw.Context context) {
           return [
             pw.TableHelper.fromTextArray(
@@ -59,12 +72,12 @@ class LetterReportGenerator {
               oddRowDecoration: WebReportTheme.oddRowDecoration,
               headers: [
                 '#',
-                'Ref / Date',
-                'Flow',
-                'Citizen / Sender / Dept',
-                'Letter Type & Subject',
-                'Area / Ward',
-                'Status',
+                lang == 'mr' ? 'संदर्भ / दिनांक' : (lang == 'hi' ? 'संदर्भ / दिनांक' : 'Ref / Date'),
+                lang == 'mr' ? 'प्रवाह' : (lang == 'hi' ? 'प्रवाह' : 'Flow'),
+                AppTranslations.getReportColumn('citizen', lang),
+                AppTranslations.getReportColumn('subject', lang),
+                AppTranslations.getReportColumn('area', lang),
+                AppTranslations.getReportColumn('status', lang),
               ],
               columnWidths: const {
                 0: pw.FixedColumnWidth(22),
@@ -79,7 +92,9 @@ class LetterReportGenerator {
                 final l = letters[index];
                 final dateStr = DateFormat('dd/MM/yyyy').format(l.receivedDate ?? l.createdAt);
                 final refNo = l.details['letter_ref']?.toString() ?? (l.id.length >= 8 ? l.id.substring(0, 8).toUpperCase() : l.id);
-                final flow = l.isIncoming ? 'INWARD' : 'OUTWARD';
+                final flow = l.isIncoming
+                    ? (lang == 'mr' ? 'आवक' : (lang == 'hi' ? 'आवक' : 'INWARD'))
+                    : (lang == 'mr' ? 'जावक' : (lang == 'hi' ? 'जावक' : 'OUTWARD'));
                 final recipient = l.isIncoming ? (l.sender ?? l.citizenName) : l.citizenName;
                 final typeSubject = '${l.letterType ?? l.title}\n${l.subject}';
                 final area = l.area ?? 'Prabhag 12';
@@ -90,7 +105,7 @@ class LetterReportGenerator {
                   recipient,
                   typeSubject,
                   area,
-                  l.status,
+                  AppTranslations.getStatus(l.status, lang),
                 ];
               }),
               cellAlignments: {
@@ -112,8 +127,8 @@ class LetterReportGenerator {
     if (context != null) {
       await AppReportPreviewModal.show(
         context: context,
-        title: title,
-        subtitle: subtitle,
+        title: resolvedTitle,
+        subtitle: resolvedSubtitle,
         fileName: fileName,
         onBuildPdf: () async => pdf.save(),
       );
@@ -132,6 +147,7 @@ class LetterReportGenerator {
     String? letterBody,
     String? nagarsevakName = 'Nagarsevak Office',
     String? wardName = 'Ward No. 12 (Prabhag 12)',
+    String lang = 'en',
   }) async {
     final pdf = pw.Document();
     final dateStr = DateFormat('dd MMMM yyyy').format(letter.createdAt);
@@ -140,6 +156,16 @@ class LetterReportGenerator {
         : (letter.isIncoming ? 'INW-${letter.id}' : 'OUT-${letter.id}');
 
     final bodyText = letterBody ?? letter.description ?? letter.details['text']?.toString() ?? letter.details['details']?.toString() ?? 'Official letter representation recorded for civic administration and department follow-up.';
+
+    final flowText = letter.isIncoming
+        ? (lang == 'mr' ? 'आवक / प्राप्त' : (lang == 'hi' ? 'आवक / प्राप्त' : 'INWARD / RECEIVED'))
+        : (lang == 'mr' ? 'जावक / पाठवले' : (lang == 'hi' ? 'जावक / भेजा गया' : 'OUTWARD / DISPATCHED'));
+    final statusText = AppTranslations.getStatus(letter.status, lang);
+    final fromLabel = letter.isIncoming
+        ? (lang == 'mr' ? 'प्रेषक (पाठवणारा)' : (lang == 'hi' ? 'प्रेषक (भेजने वाला)' : 'FROM (SENDER)'))
+        : (lang == 'mr' ? 'नागरिक / अर्जदार' : (lang == 'hi' ? 'नागरिक / आवेदक' : 'CITIZEN / APPLICANT'));
+    final typeLabel = lang == 'mr' ? 'प्रकार आणि अधिकारक्षेत्र' : (lang == 'hi' ? 'प्रकार और अधिकार क्षेत्र' : 'TYPE & JURISDICTION');
+    final subjectHeader = lang == 'mr' ? 'पत्राचा विषय आणि तपशील' : (lang == 'hi' ? 'पत्र विषय और विवरण' : 'LETTER SUBJECT & SUBMISSION DETAILS');
 
     pdf.addPage(
       pw.Page(
@@ -170,7 +196,9 @@ class LetterReportGenerator {
                         ),
                         pw.SizedBox(height: 2),
                         pw.Text(
-                          letter.isIncoming ? 'INWARD CORRESPONDENCE' : 'OUTWARD LETTER',
+                          letter.isIncoming
+                              ? (lang == 'mr' ? 'आवक पत्र' : (lang == 'hi' ? 'आवक पत्र' : 'INWARD CORRESPONDENCE'))
+                              : (lang == 'mr' ? 'जावक पत्र' : (lang == 'hi' ? 'जावक पत्र' : 'OUTWARD LETTER')),
                           style: pw.TextStyle(
                             fontSize: 18,
                             fontWeight: pw.FontWeight.bold,
@@ -200,7 +228,7 @@ class LetterReportGenerator {
                           ),
                         ),
                         pw.SizedBox(height: 3),
-                        pw.Text('Date: $dateStr', style: const pw.TextStyle(fontSize: 8, color: WebReportTheme.slate400)),
+                        pw.Text('${lang == 'mr' ? 'दिनांक' : (lang == 'hi' ? 'दिनांक' : 'Date')}: $dateStr', style: const pw.TextStyle(fontSize: 8, color: WebReportTheme.slate400)),
                       ],
                     ),
                   ],
@@ -219,8 +247,8 @@ class LetterReportGenerator {
                 child: pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
-                    pw.Text('FLOW: ${letter.isIncoming ? "INWARD / RECEIVED" : "OUTWARD / DISPATCHED"}', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: WebReportTheme.brand700)),
-                    pw.Text('STATUS: ${letter.status.toUpperCase()}', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: WebReportTheme.slate700)),
+                    pw.Text('${lang == 'mr' ? 'प्रवाह' : (lang == 'hi' ? 'प्रवाह' : 'FLOW')}: $flowText', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: WebReportTheme.brand700)),
+                    pw.Text('${AppTranslations.getReportColumn('status', lang)}: $statusText', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: WebReportTheme.slate700)),
                   ],
                 ),
               ),
@@ -240,10 +268,10 @@ class LetterReportGenerator {
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
-                          pw.Text(letter.isIncoming ? 'FROM (SENDER)' : 'CITIZEN / APPLICANT', style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: WebReportTheme.slate700)),
+                          pw.Text(fromLabel, style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: WebReportTheme.slate700)),
                           pw.SizedBox(height: 4),
                           pw.Text(letter.isIncoming ? (letter.sender ?? letter.citizenName) : letter.citizenName, style: pw.TextStyle(fontSize: 9.5, fontWeight: pw.FontWeight.bold, color: WebReportTheme.slate900)),
-                          pw.Text('Contact: ${letter.mobile.isNotEmpty ? letter.mobile : "-"}', style: const pw.TextStyle(fontSize: 8.5, color: WebReportTheme.slate600)),
+                          pw.Text('${lang == 'mr' ? 'संपर्क' : (lang == 'hi' ? 'संपर्क' : 'Contact')}: ${letter.mobile.isNotEmpty ? letter.mobile : "-"}', style: const pw.TextStyle(fontSize: 8.5, color: WebReportTheme.slate600)),
                         ],
                       ),
                     ),
@@ -251,10 +279,10 @@ class LetterReportGenerator {
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
-                          pw.Text('TYPE & JURISDICTION', style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: WebReportTheme.slate700)),
+                          pw.Text(typeLabel, style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: WebReportTheme.slate700)),
                           pw.SizedBox(height: 4),
                           pw.Text(letter.letterType ?? letter.title, style: pw.TextStyle(fontSize: 9.5, fontWeight: pw.FontWeight.bold, color: WebReportTheme.slate900)),
-                          pw.Text('Area: ${letter.area ?? "Prabhag 12"}', style: const pw.TextStyle(fontSize: 8.5, color: WebReportTheme.slate600)),
+                          pw.Text('${AppTranslations.getReportColumn('area', lang)}: ${letter.area ?? "Prabhag 12"}', style: const pw.TextStyle(fontSize: 8.5, color: WebReportTheme.slate600)),
                         ],
                       ),
                     ),
@@ -274,9 +302,9 @@ class LetterReportGenerator {
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.Text('LETTER SUBJECT & SUBMISSION DETAILS', style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: WebReportTheme.slate700)),
+                    pw.Text(subjectHeader, style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: WebReportTheme.slate700)),
                     pw.SizedBox(height: 6),
-                    pw.Text('Subject: ${letter.subject}', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: WebReportTheme.slate900)),
+                    pw.Text('${AppTranslations.getReportColumn('subject', lang)}: ${letter.subject}', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: WebReportTheme.slate900)),
                     pw.SizedBox(height: 6),
                     pw.Text(bodyText, style: const pw.TextStyle(fontSize: 9, lineSpacing: 2, color: WebReportTheme.slate800)),
                   ],

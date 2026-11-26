@@ -5,6 +5,9 @@ import 'package:intl/intl.dart';
 import '../../../data/models/ward_budget_model.dart';
 import '../../../data/repositories/ward_budget_repository.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/language_provider.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_dropdown.dart';
 
@@ -364,7 +367,8 @@ class _WardBudgetDetailScreenState extends ConsumerState<WardBudgetDetailScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
+    final isMr = lang == 'mr';
     final budget = _currentBudget;
     final numFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹ ', decimalDigits: 0);
 
@@ -395,7 +399,7 @@ class _WardBudgetDetailScreenState extends ConsumerState<WardBudgetDetailScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                isMr ? 'अंदाजपत्रक तपशील' : 'Budget Head Details',
+                lang == 'mr' ? 'अंदाजपत्रक तपशील' : (lang == 'hi' ? 'बजट विवरण' : 'Budget Head Details'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -495,8 +499,8 @@ class _WardBudgetDetailScreenState extends ConsumerState<WardBudgetDetailScreen>
                             ],
                           ),
                           const SizedBox(height: 14),
-                          Text(
-                            budget.category,
+                          AppTranslatedText(budget.category,
+                            targetLanguage: lang,
                             style: const TextStyle(
                               fontSize: 19,
                               fontWeight: FontWeight.bold,
@@ -509,8 +513,8 @@ class _WardBudgetDetailScreenState extends ConsumerState<WardBudgetDetailScreen>
                             children: [
                               const Icon(Icons.location_on_outlined, size: 16, color: Color(0xFF64748B)),
                               const SizedBox(width: 4),
-                              Text(
-                                budget.area,
+                              AppTranslatedText(budget.area,
+                                targetLanguage: lang,
                                 style: const TextStyle(fontSize: 13, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                               ),
                             ],
@@ -521,19 +525,19 @@ class _WardBudgetDetailScreenState extends ConsumerState<WardBudgetDetailScreen>
                           Row(
                             children: [
                               _kpiPill(
-                                label: isMr ? 'एकूण वाटप' : 'Total Allocated',
+                                label: AppTranslations.t('budget.allocated', lang: lang),
                                 amount: numFormat.format(budget.totalAllocation),
                                 color: const Color(0xFF0F172A),
                               ),
                               const SizedBox(width: 8),
                               _kpiPill(
-                                label: isMr ? 'खर्च झालेला' : 'Utilized',
+                                label: AppTranslations.t('budget.utilized', lang: lang),
                                 amount: numFormat.format(budget.utilizedAmount),
                                 color: const Color(0xFF0284C7),
                               ),
                               const SizedBox(width: 8),
                               _kpiPill(
-                                label: isMr ? 'शिल्लक निधी' : 'Remaining',
+                                label: AppTranslations.t('budget.remaining', lang: lang),
                                 amount: numFormat.format(budget.remainingAmount),
                                 color: const Color(0xFF16A34A),
                               ),

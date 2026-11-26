@@ -4,6 +4,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../data/models/scheme_model.dart';
+import '../../../core/localization/app_translations.dart';
 import '../../widgets/app_pdf_report_theme.dart';
 import '../../widgets/app_report_preview_modal.dart';
 
@@ -14,12 +15,23 @@ class SchemeReportGenerator {
   static Future<void> generateAndPrintListReport({
     BuildContext? context,
     required List<SchemeModel> schemes,
-    required bool isMarathi,
+    bool isMarathi = true,
+    String lang = 'en',
     String? categoryFilter,
   }) async {
     final pdf = pw.Document();
     final nowStr = DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now());
     final total = schemes.length;
+    final activeLang = lang != 'en' ? lang : (isMarathi ? 'mr' : 'en');
+
+    final title = activeLang == 'mr'
+        ? 'शासकीय योजना'
+        : (activeLang == 'hi' ? 'सरकारी योजनाएं' : 'Government Schemes');
+    final subtitle = activeLang == 'mr'
+        ? 'राज्य व केंद्र शासकीय कल्याणकारी योजनांची अधिकृत सूची'
+        : (activeLang == 'hi'
+            ? 'राज्य व केंद्र सरकारी कल्याणकारी योजनाओं की आधिकारिक सूची'
+            : 'Official Directory of State & Central Welfare Schemes');
 
     pdf.addPage(
       pw.MultiPage(
@@ -29,20 +41,20 @@ class SchemeReportGenerator {
           if (context.pageNumber == 1) return pw.SizedBox.shrink();
           return WebReportTheme.buildContinuationHeader(
             context,
-            title: 'Government Schemes Directory (Continued)',
+            title: title,
+            lang: activeLang,
           );
         },
-        footer: (pw.Context context) => WebReportTheme.buildFooter(context),
+        footer: (pw.Context context) => WebReportTheme.buildFooter(context, lang: activeLang),
         build: (pw.Context context) {
           return [
             WebReportTheme.buildHeader(
-              title: isMarathi ? 'शासकीय योजना' : 'Government Schemes',
-              subtitle: 'Official Directory of State & Central Welfare Schemes',
-              metaLines: [
-                'Date: $nowStr',
-                'Found: $total',
-                if (categoryFilter != null && categoryFilter != 'All') 'Category: $categoryFilter',
-              ],
+              title: title,
+              subtitle: subtitle,
+              dateFormatted: nowStr,
+              totalCount: total,
+              foundLabel: activeLang == 'mr' ? 'एकूण आढळले' : (activeLang == 'hi' ? 'कुल मिले' : 'Found'),
+              lang: activeLang,
             ),
             pw.SizedBox(height: 12),
 
@@ -51,7 +63,11 @@ class SchemeReportGenerator {
                 alignment: pw.Alignment.center,
                 padding: const pw.EdgeInsets.all(40),
                 child: pw.Text(
-                  'No government schemes found for the selected view.',
+                  activeLang == 'mr'
+                      ? 'कोणत्याही शासकीय योजना सापडल्या नाहीत.'
+                      : (activeLang == 'hi'
+                          ? 'कोई सरकारी योजना नहीं मिली।'
+                          : 'No government schemes found for the selected view.'),
                   style: const pw.TextStyle(fontSize: 11, color: WebReportTheme.slate500),
                 ),
               )
@@ -71,18 +87,19 @@ class SchemeReportGenerator {
                   3: pw.FlexColumnWidth(1.5),
                   4: pw.FlexColumnWidth(3.0),
                 },
-                headers: const [
+                headers: [
                   '#',
-                  'Scheme Name',
-                  'Description',
-                  'Category',
-                  'Benefits',
+                  activeLang == 'mr' ? 'योजनेचे नाव' : (activeLang == 'hi' ? 'योजना का नाम' : 'Scheme Name'),
+                  AppTranslations.getReportColumn('desc', activeLang),
+                  AppTranslations.getReportColumn('category', activeLang),
+                  activeLang == 'mr' ? 'लाभ' : (activeLang == 'hi' ? 'लाभ' : 'Benefits'),
                 ],
                 data: List.generate(schemes.length, (index) {
                   final item = schemes[index];
-                  final nameStr = item.localizedName(isMarathi);
-                  final descStr = item.localizedDescription(isMarathi);
-                  final benStr = item.localizedBenefits(isMarathi);
+                  final isMrOrHi = activeLang == 'mr' || activeLang == 'hi';
+                  final nameStr = item.localizedName(isMrOrHi);
+                  final descStr = item.localizedDescription(isMrOrHi);
+                  final benStr = item.localizedBenefits(isMrOrHi);
 
                   return [
                     '${index + 1}',
@@ -103,8 +120,8 @@ class SchemeReportGenerator {
     if (context != null) {
       await AppReportPreviewModal.show(
         context: context,
-        title: isMarathi ? 'शासकीय योजना' : 'Government Schemes',
-        subtitle: 'Official Directory of State & Central Welfare Schemes',
+        title: title,
+        subtitle: subtitle,
         fileName: fileName,
         onBuildPdf: () async => pdf.save(),
       );
@@ -258,8 +275,10 @@ class SchemeReportGenerator {
   static Future<void> generateAndPrintBeneficiaryReport({
     BuildContext? context,
     required List<SchemeApplicationModel> applications,
-    required bool isMarathi,
+    bool isMarathi = false,
+    String? lang,
   }) async {
+    final effectiveLang = lang ?? (isMarathi ? 'mr' : 'en');
     final pdf = pw.Document();
     final nowStr = DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now());
 
@@ -267,6 +286,22 @@ class SchemeReportGenerator {
     final approved = applications.where((a) => a.isApproved).length;
     final pending = applications.where((a) => a.isPending).length;
     final rejected = applications.where((a) => a.isRejected).length;
+
+    final title = effectiveLang == 'mr'
+        ? 'शासकीय योजना'
+        : (effectiveLang == 'hi' ? 'सरकारी योजनाएं' : 'Government Schemes');
+    final subtitle = effectiveLang == 'mr'
+        ? 'अर्ज व लाभार्थी अहवाल'
+        : (effectiveLang == 'hi' ? 'आवेदन व लाभार्थी रिपोर्ट' : 'Application & Beneficiary Dossier');
+    final contTitle = effectiveLang == 'mr'
+        ? 'योजना लाभार्थी (पुढे चालू)'
+        : (effectiveLang == 'hi' ? 'योजना लाभार्थी (आगे जारी)' : 'Scheme Beneficiaries (Continued)');
+    final totalAppsLabel = effectiveLang == 'mr'
+        ? 'एकूण अर्ज'
+        : (effectiveLang == 'hi' ? 'कुल आवेदन' : 'Total Applications');
+    final approvedLabel = AppTranslations.getStatus('Approved', effectiveLang);
+    final pendingLabel = AppTranslations.getStatus('Pending', effectiveLang);
+    final rejectedLabel = AppTranslations.getStatus('Rejected', effectiveLang);
 
     pdf.addPage(
       pw.MultiPage(
@@ -276,19 +311,21 @@ class SchemeReportGenerator {
           if (context.pageNumber == 1) return pw.SizedBox.shrink();
           return WebReportTheme.buildContinuationHeader(
             context,
-            title: 'Scheme Beneficiaries (Continued)',
+            title: contTitle,
+            lang: effectiveLang,
           );
         },
-        footer: (pw.Context context) => WebReportTheme.buildFooter(context),
+        footer: (pw.Context context) => WebReportTheme.buildFooter(context, lang: effectiveLang),
         build: (pw.Context context) {
           return [
             WebReportTheme.buildHeader(
-              title: 'Government Schemes',
-              subtitle: 'Application & Beneficiary Dossier',
+              title: title,
+              subtitle: subtitle,
               metaLines: [
-                'Date: $nowStr',
-                'Total Applications: $total',
+                '${effectiveLang == 'mr' ? 'तारीख' : (effectiveLang == 'hi' ? 'दिनांक' : 'Date')}: $nowStr',
+                '$totalAppsLabel: $total',
               ],
+              lang: effectiveLang,
             ),
             pw.SizedBox(height: 12),
 
@@ -302,10 +339,10 @@ class SchemeReportGenerator {
               ),
               child: pw.Row(
                 children: [
-                  _buildSummaryItem('Total Applications', '$total'),
-                  _buildSummaryItem('Approved', '$approved', highlightColor: PdfColors.green700),
-                  _buildSummaryItem('Pending', '$pending', highlightColor: PdfColors.amber800),
-                  _buildSummaryItem('Rejected', '$rejected', highlightColor: PdfColors.red700),
+                  _buildSummaryItem(totalAppsLabel, '$total'),
+                  _buildSummaryItem(approvedLabel, '$approved', highlightColor: PdfColors.green700),
+                  _buildSummaryItem(pendingLabel, '$pending', highlightColor: PdfColors.amber800),
+                  _buildSummaryItem(rejectedLabel, '$rejected', highlightColor: PdfColors.red700),
                 ],
               ),
             ),
@@ -316,7 +353,9 @@ class SchemeReportGenerator {
                 alignment: pw.Alignment.center,
                 padding: const pw.EdgeInsets.all(40),
                 child: pw.Text(
-                  'No scheme application records found for the selected view.',
+                  effectiveLang == 'mr'
+                      ? 'निवडलेल्या दृश्यासाठी कोणतीही योजना अर्ज नोंद आढळली नाही.'
+                      : (effectiveLang == 'hi' ? 'चयनित दृश्य के लिए कोई योजना आवेदन रिकॉर्ड नहीं मिला।' : 'No scheme application records found for the selected view.'),
                   style: const pw.TextStyle(fontSize: 11, color: WebReportTheme.slate500),
                 ),
               )
@@ -338,14 +377,14 @@ class SchemeReportGenerator {
                   5: pw.FlexColumnWidth(1.2),
                   6: pw.FlexColumnWidth(2.2),
                 },
-                headers: const [
+                headers: [
                   '#',
-                  'Applicant Name',
-                  'Mobile / Address',
-                  'Scheme Name',
-                  'Date',
-                  'Status',
-                  'Benefit / Reason',
+                  effectiveLang == 'mr' ? 'अर्जदाराचे नाव' : (effectiveLang == 'hi' ? 'आवेदक का नाम' : 'Applicant Name'),
+                  effectiveLang == 'mr' ? 'मोबाईल / पत्ता' : (effectiveLang == 'hi' ? 'मोबाइल / पता' : 'Mobile / Address'),
+                  AppTranslations.getReportColumn('scheme_name', effectiveLang),
+                  AppTranslations.getReportColumn('date', effectiveLang),
+                  AppTranslations.getReportColumn('status', effectiveLang),
+                  effectiveLang == 'mr' ? 'लाभ / कारण' : (effectiveLang == 'hi' ? 'लाभ / कारण' : 'Benefit / Reason'),
                 ],
                 data: List.generate(applications.length, (index) {
                   final app = applications[index];
@@ -361,7 +400,7 @@ class SchemeReportGenerator {
                     contactPart,
                     app.schemeName ?? '-',
                     dateStr,
-                    app.status,
+                    AppTranslations.getStatus(app.status, effectiveLang),
                     notePart,
                   ];
                 }),

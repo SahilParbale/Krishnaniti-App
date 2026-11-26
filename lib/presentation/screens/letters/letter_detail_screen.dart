@@ -8,6 +8,9 @@ import 'package:printing/printing.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/localization/app_strings.dart';
 import '../../../core/services/supabase_service.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
+import '../../providers/language_provider.dart';
 import '../../../data/models/letter_model.dart';
 import '../../providers/auth_provider.dart';
 import '../dashboard/dashboard_screen.dart';
@@ -450,7 +453,8 @@ class _LetterDetailScreenState extends ConsumerState<LetterDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
+    final isMr = lang == 'mr';
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -521,10 +525,11 @@ class _LetterDetailScreenState extends ConsumerState<LetterDetailScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         AppPdfButton.icon(
-                          tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Report',
+                          tooltip: lang == 'mr' ? 'अहवाल डाउनलोड करा' : (lang == 'hi' ? 'रिपोर्ट डाउनलोड करें' : 'Download Report'),
                           onPressed: () => LetterReportGenerator.generateAndPrintSingleLetter(
                             letter: _letter,
                             letterBody: _letterPreviewText,
+                            lang: lang,
                           ),
                         ),
                         const SizedBox(width: 8),

@@ -9,7 +9,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/localization/app_strings.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../../core/services/supabase_service.dart';
+import '../../providers/language_provider.dart';
 import '../../../data/models/complaint_model.dart';
 import '../../../data/models/staff_model.dart';
 import '../../../data/repositories/complaints_repository.dart';
@@ -1489,8 +1492,8 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
 
           const SizedBox(height: 14),
 
-          // Title
-          Text(
+          // Title with dynamic on-the-fly translation
+          AppTranslatedText(
             _complaint.title,
             style: const TextStyle(
               fontSize: 22,
@@ -1502,7 +1505,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
 
           const SizedBox(height: 14),
 
-          // Description Box
+          // Description Box with dynamic on-the-fly translation
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -1518,7 +1521,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                 ),
               ],
             ),
-            child: Text(
+            child: AppTranslatedText(
               _complaint.description.isNotEmpty ? _complaint.description : _complaint.title,
               style: const TextStyle(
                 fontSize: 14,
@@ -2059,8 +2062,8 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
 
                               const SizedBox(height: 8),
 
-                              // Note Text
-                              Text(
+                              // Note Text with dynamic translation
+                              AppTranslatedText(
                                 item.note,
                                 style: const TextStyle(
                                   fontSize: 13,

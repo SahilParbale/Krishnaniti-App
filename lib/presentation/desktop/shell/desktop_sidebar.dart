@@ -1,19 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../../core/localization/app_translations.dart';
 import '../common/desktop_modal_dialog.dart';
 import '../../providers/navigation_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/tenant_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../../data/models/user_model.dart';
 import '../../../core/services/supabase_service.dart';
 
 /// Language state notifier for desktop UI
 class DesktopLanguageNotifier extends Notifier<String> {
   @override
-  String build() => 'en';
+  String build() {
+    return ref.watch(appLanguageProvider);
+  }
 
-  void setLanguage(String lang) => state = lang;
+  void setLanguage(String lang) {
+    ref.read(appLanguageProvider.notifier).setLanguage(lang);
+    state = lang;
+  }
 }
 
 final desktopLanguageProvider = NotifierProvider<DesktopLanguageNotifier, String>(DesktopLanguageNotifier.new);
@@ -22,6 +29,7 @@ class NavItemData {
   final String key;
   final String label;
   final String labelMr;
+  final String? labelHi;
   final IconData icon;
   final String? permission;
 
@@ -29,6 +37,7 @@ class NavItemData {
     required this.key,
     required this.label,
     required this.labelMr,
+    this.labelHi,
     required this.icon,
     this.permission,
   });
@@ -38,6 +47,7 @@ class NavGroupData {
   final String id;
   final String label;
   final String labelMr;
+  final String? labelHi;
   final IconData icon;
   final List<NavItemData> items;
 
@@ -45,6 +55,7 @@ class NavGroupData {
     required this.id,
     required this.label,
     required this.labelMr,
+    this.labelHi,
     required this.icon,
     required this.items,
   });
@@ -236,29 +247,29 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
                 // 1. Dashboard (Always on top)
                 _buildNavItem(
                   key: 'dashboard',
-                  label: isMr ? 'डॅशबोर्ड' : 'Dashboard',
+                  label: AppTranslations.getNavTitle('dashboard', currentLang),
                   icon: Icons.dashboard_rounded,
                   isActive: activeKey == 'dashboard',
                 ),
                 const SizedBox(height: 4),
 
                 // 2. Daily Work
-                _buildNavGroup(_dailyWorkGroup, activeKey, isMr, user, tenantState),
+                _buildNavGroup(_dailyWorkGroup, activeKey, currentLang, user, tenantState),
                 const SizedBox(height: 4),
 
                 // 3. Ward Information
-                _buildNavGroup(_wardInfoGroup, activeKey, isMr, user, tenantState),
+                _buildNavGroup(_wardInfoGroup, activeKey, currentLang, user, tenantState),
                 const SizedBox(height: 4),
 
                 // 4. Municipal Work
-                _buildNavGroup(_municipalGroup, activeKey, isMr, user, tenantState),
+                _buildNavGroup(_municipalGroup, activeKey, currentLang, user, tenantState),
                 const SizedBox(height: 4),
 
                 // 5. Government Office (Exactly between Municipal Work and Media)
                 if (_checkPermission(user, tenantState, 'gov_office')) ...[
                   _buildNavItem(
                     key: 'gov_office',
-                    label: isMr ? 'सरकारी कार्यालये' : 'Government Office',
+                    label: AppTranslations.getNavTitle('gov_office', currentLang),
                     icon: Icons.account_balance_rounded,
                     isActive: activeKey == 'gov_office',
                   ),
@@ -266,26 +277,26 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
                 ],
 
                 // 6. Media & Promotion
-                _buildNavGroup(_mediaGroup, activeKey, isMr, user, tenantState),
+                _buildNavGroup(_mediaGroup, activeKey, currentLang, user, tenantState),
                 const SizedBox(height: 4),
 
                 // 7. Programs & Activities
-                _buildNavGroup(_programsGroup, activeKey, isMr, user, tenantState),
+                _buildNavGroup(_programsGroup, activeKey, currentLang, user, tenantState),
                 const SizedBox(height: 4),
 
                 // 8. Political
-                _buildNavGroup(_politicalGroup, activeKey, isMr, user, tenantState),
+                _buildNavGroup(_politicalGroup, activeKey, currentLang, user, tenantState),
                 const SizedBox(height: 4),
 
                 // 9. Public Communication
-                _buildNavGroup(_communicationGroup, activeKey, isMr, user, tenantState),
+                _buildNavGroup(_communicationGroup, activeKey, currentLang, user, tenantState),
                 const SizedBox(height: 4),
 
                 // 10. Analysis & Strategy (Immediately following Public Communication)
                 if (_checkPermission(user, tenantState, 'analysis')) ...[
                   _buildNavItem(
                     key: 'analysis_strategy',
-                    label: isMr ? 'विश्लेषण व रणनीती' : 'Analysis Strategy',
+                    label: AppTranslations.getNavTitle('analysis_strategy', currentLang),
                     icon: Icons.query_stats_rounded,
                     isActive: activeKey == 'analysis_strategy',
                   ),
@@ -490,7 +501,40 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
     return content;
   }
 
-  Widget _buildNavGroup(NavGroupData group, String activeKey, bool isMr, UserModel? user, TenantState tenantState) {
+  String _getItemLabel(NavItemData item, String lang) {
+    if (lang == 'mr') return item.labelMr;
+    if (lang == 'hi') {
+      return item.labelHi ?? AppTranslations.getNavTitle(item.key, 'hi');
+    }
+    return item.label;
+  }
+
+  String _getGroupLabel(NavGroupData group, String lang) {
+    if (lang == 'mr') return group.labelMr;
+    if (lang == 'hi') {
+      switch (group.id) {
+        case 'daily_work':
+          return 'दैनिक कार्य';
+        case 'ward_info':
+          return 'वार्ड जानकारी';
+        case 'municipal':
+          return 'नगरपालिका कार्य';
+        case 'media':
+          return 'डिजिटल और मीडिया';
+        case 'programs':
+          return 'कार्यक्रम और गतिविधियां';
+        case 'political':
+          return 'राजनीतिक और चुनावी';
+        case 'public_comm':
+          return 'जनसंचार';
+        default:
+          return group.label;
+      }
+    }
+    return group.label;
+  }
+
+  Widget _buildNavGroup(NavGroupData group, String activeKey, String lang, UserModel? user, TenantState tenantState) {
     final visibleItems = group.items.where((item) => _checkPermission(user, tenantState, item.permission)).toList();
     if (visibleItems.isEmpty) return const SizedBox.shrink();
 
@@ -506,7 +550,7 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
       final iconToUse = activeChild?.icon ?? group.icon;
 
       return Tooltip(
-        message: isMr ? group.labelMr : group.label,
+        message: _getGroupLabel(group, lang),
         child: InkWell(
           onTap: () {
             setState(() {
@@ -557,7 +601,7 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    isMr ? group.labelMr : group.label,
+                    _getGroupLabel(group, lang),
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: hasActiveChild ? FontWeight.w700 : FontWeight.w600,
@@ -595,7 +639,7 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
                     padding: const EdgeInsets.symmetric(vertical: 1.5),
                     child: _buildNavItem(
                       key: item.key,
-                      label: isMr ? item.labelMr : item.label,
+                      label: _getItemLabel(item, lang),
                       icon: item.icon,
                       isActive: isActive,
                       isNested: true,
@@ -618,8 +662,11 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
       ),
       child: Column(
         children: [
-          // User Profile row & Settings & Logout
           if (!widget.isCollapsed) ...[
+            const Padding(
+              padding: EdgeInsets.only(bottom: 12),
+              child: AppLanguageSegmentedSelector(isCompact: true),
+            ),
             Row(
               children: [
                 InkWell(

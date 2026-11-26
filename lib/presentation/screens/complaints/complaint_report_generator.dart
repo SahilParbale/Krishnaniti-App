@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import '../../../core/localization/app_translations.dart';
 import '../../../data/models/complaint_model.dart';
 import '../../widgets/app_pdf_report_theme.dart';
 import '../../widgets/app_report_preview_modal.dart';
@@ -20,11 +21,23 @@ class ComplaintReportGenerator {
     String? areaFilter,
     String title = 'Complaints Report',
     String subtitle = 'Detailed Ward Complaints Register',
+    String lang = 'en',
   }) async {
     final pdf = pw.Document();
     final now = DateTime.now();
     final formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(now);
     final total = complaints.length;
+
+    final resolvedTitle = (title == 'Complaints Report')
+        ? (lang == 'mr'
+            ? 'तक्रार व नागरी समस्या अहवाल'
+            : (lang == 'hi' ? 'शिकायत एवं नागरिक समस्या रिपोर्ट' : title))
+        : title;
+    final resolvedSubtitle = (subtitle == 'Detailed Ward Complaints Register')
+        ? (lang == 'mr'
+            ? 'सविस्तर प्रभाग तक्रार नोंदवही'
+            : (lang == 'hi' ? 'विस्तृत वार्ड शिकायत रजिस्टर' : subtitle))
+        : subtitle;
 
     pdf.addPage(
       pw.MultiPage(
@@ -34,18 +47,19 @@ class ComplaintReportGenerator {
           if (context.pageNumber > 1) {
             return WebReportTheme.buildContinuationHeader(
               context,
-              title: title,
+              title: resolvedTitle,
+              lang: lang,
             );
           }
           return WebReportTheme.buildHeader(
-            title: title,
-            subtitle: subtitle,
+            title: resolvedTitle,
+            subtitle: resolvedSubtitle,
             dateFormatted: formattedDate,
             totalCount: total,
-            foundLabel: 'Found',
+            lang: lang,
           );
         },
-        footer: (pw.Context context) => WebReportTheme.buildFooter(context),
+        footer: (pw.Context context) => WebReportTheme.buildFooter(context, lang: lang),
         build: (pw.Context context) {
           return [
             pw.TableHelper.fromTextArray(
@@ -66,12 +80,12 @@ class ComplaintReportGenerator {
                 5: pw.FlexColumnWidth(1.1), // Status (11%)
               },
               headers: [
-                'Date & Time',
-                'Citizen Info',
-                'Title & Type',
-                'Location / Area',
-                'Staff',
-                'Status',
+                AppTranslations.getReportColumn('date_time', lang),
+                AppTranslations.getReportColumn('citizen_info', lang),
+                AppTranslations.getReportColumn('title_type', lang),
+                AppTranslations.getReportColumn('location_area', lang),
+                AppTranslations.getReportColumn('staff', lang),
+                AppTranslations.getReportColumn('status', lang),
               ],
               data: complaints.map((c) {
                 final dateStr = DateFormat('dd/MM/yyyy').format(c.createdAt);
@@ -102,7 +116,7 @@ class ComplaintReportGenerator {
                   titleType,
                   locationArea,
                   staff,
-                  c.status,
+                  AppTranslations.getStatus(c.status, lang),
                 ];
               }).toList(),
               cellAlignments: {

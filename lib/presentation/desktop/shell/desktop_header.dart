@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/localization/app_translations.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../providers/navigation_provider.dart';
+import '../../providers/language_provider.dart';
 
 class DesktopHeader extends ConsumerWidget {
   final VoidCallback onOpenCommandPalette;
@@ -59,7 +61,8 @@ class DesktopHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final activeKey = ref.watch(activeScreenProvider);
-    final activeTitle = _screenTitles[activeKey] ?? 'Overview';
+    final currentLang = ref.watch(appLanguageProvider);
+    final activeTitle = AppTranslations.getNavTitle(activeKey, currentLang);
     final nowFormatted = DateFormat('EEEE, d MMMM yyyy').format(DateTime.now());
 
     return Container(
@@ -161,10 +164,14 @@ class DesktopHeader extends ConsumerWidget {
                   children: [
                     const Icon(Icons.search_rounded, color: AppColors.slate400, size: 20),
                     const SizedBox(width: 10),
-                    const Expanded(
+                    Expanded(
                       child: Text(
-                        'Search anything across modules...',
-                        style: TextStyle(
+                        currentLang == 'mr'
+                            ? 'सर्व मॉड्युल्समध्ये काहीही शोधा...'
+                            : (currentLang == 'hi'
+                                ? 'सभी मॉड्यूल में कुछ भी खोजें...'
+                                : 'Search anything across modules...'),
+                        style: const TextStyle(
                           fontSize: 13,
                           color: AppColors.slate400,
                           fontWeight: FontWeight.w500,
@@ -201,13 +208,22 @@ class DesktopHeader extends ConsumerWidget {
             ),
           ),
 
-          const SizedBox(width: 24),
+          const SizedBox(width: 20),
+
+          // 3-Language Selector (EN | MR | HI)
+          const AppLanguageSegmentedSelector(isCompact: true),
+
+          const SizedBox(width: 14),
 
           // Action Button: + New Grievance
           ElevatedButton.icon(
             onPressed: onNewComplaint,
             icon: const Icon(Icons.add_rounded, size: 18),
-            label: const Text('+ New Grievance'),
+            label: Text(
+              currentLang == 'mr'
+                  ? '+ नवीन तक्रार'
+                  : (currentLang == 'hi' ? '+ नई शिकायत' : '+ New Grievance'),
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.brand600,
               foregroundColor: Colors.white,

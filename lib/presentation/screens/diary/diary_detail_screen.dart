@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../data/models/diary_task_model.dart';
 import '../../../data/repositories/diary_tasks_repository.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
+import '../../providers/language_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_date_picker.dart';
@@ -545,7 +548,8 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
+    final isMr = lang == 'mr';
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -571,7 +575,9 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                isMr ? 'दैनंदिनी नोंद तपशील' : 'Diary Task Details',
+                lang == 'mr'
+                    ? 'दैनंदिनी नोंद तपशील'
+                    : (lang == 'hi' ? 'डायरी कार्य विवरण' : 'Diary Task Details'),
                 style: const TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
@@ -592,9 +598,9 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
               child: Padding(
                 padding: const EdgeInsets.only(right: 4),
                 child: AppPdfButton.icon(
-                  tooltip: 'Download Report',
+                  tooltip: lang == 'mr' ? 'अहवाल डाउनलोड करा' : (lang == 'hi' ? 'रिपोर्ट डाउनलोड करें' : 'Download Report'),
                   onPressed: () {
-                    DiaryReportGenerator.generateAndPrintSingleTask(_task);
+                    DiaryReportGenerator.generateAndPrintSingleTask(_task, lang: lang);
                   },
                 ),
               ),
@@ -650,7 +656,7 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                                     Icon(Icons.flag_rounded, size: 12, color: _priorityColor),
                                     const SizedBox(width: 4),
                                     Text(
-                                      '${_task.priority} Priority',
+                                      AppTranslations.getStatus(_task.priority, lang),
                                       style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _priorityColor),
                                     ),
                                   ],
@@ -668,7 +674,7 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                                   ),
                                 ),
                                 child: Text(
-                                  _task.isCompleted ? (isMr ? 'पूर्ण झाले' : 'Completed') : (isMr ? 'प्रलंबित' : 'Pending'),
+                                  AppTranslations.getStatus(_task.status, lang),
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
@@ -682,8 +688,8 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                           const SizedBox(height: 14),
 
                           // Task Title
-                          Text(
-                            _task.title,
+                          AppTranslatedText(_task.title,
+                            targetLanguage: lang,
                             style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -828,17 +834,29 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Description & Agenda Notes',
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+                          Text(
+                            lang == 'mr'
+                                ? 'तपशील आणि अजेंडा नोंदी'
+                                : (lang == 'hi'
+                                    ? 'विवरण और कार्यसूची'
+                                    : 'Description & Agenda Notes'),
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
                           ),
                           const SizedBox(height: 8),
-                          Text(
-                            _task.description != null && _task.description!.isNotEmpty
-                                ? _task.description!
-                                : 'No additional discussion details recorded.',
-                            style: const TextStyle(fontSize: 14, color: Color(0xFF1E293B), height: 1.5),
-                          ),
+                          if (_task.description != null && _task.description!.isNotEmpty)
+                            AppTranslatedText(_task.description!,
+                              targetLanguage: lang,
+                              style: const TextStyle(fontSize: 14, color: Color(0xFF1E293B), height: 1.5),
+                            )
+                          else
+                            Text(
+                              lang == 'mr'
+                                  ? 'कोणतीही अतिरिक्त चर्चा किंवा टिपण उपलब्ध नाही.'
+                                  : (lang == 'hi'
+                                      ? 'कोई अतिरिक्त विवरण दर्ज नहीं है।'
+                                      : 'No additional discussion details recorded.'),
+                              style: const TextStyle(fontSize: 14, color: Color(0xFF64748B), height: 1.5),
+                            ),
                         ],
                       ),
                     ),

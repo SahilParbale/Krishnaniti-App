@@ -9,6 +9,8 @@ import 'app_drawer.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/custom_navigation_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/language_provider.dart';
+import '../../core/localization/app_translations.dart';
 
 // All 39 Screens
 import '../screens/dashboard/dashboard_screen.dart';
@@ -335,7 +337,8 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
     var index = screenKeys.indexOf(activeScreen);
     if (index == -1) index = 0;
 
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
+    final isMr = lang == 'mr';
     final customBottomKeys = ref.watch(customBottomBarProvider);
     final customRadialKeys = ref.watch(customQuickActionsProvider);
 
@@ -343,19 +346,19 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
     final bottomItems = [
       BottomBarItemData(
         icon: getModuleConfig(customBottomKeys[0]).icon,
-        label: isMr ? getModuleConfig(customBottomKeys[0]).titleMr : getModuleConfig(customBottomKeys[0]).titleEn,
+        label: AppTranslations.getNavTitle(customBottomKeys[0], lang),
       ),
       BottomBarItemData(
         icon: getModuleConfig(customBottomKeys[1]).icon,
-        label: isMr ? getModuleConfig(customBottomKeys[1]).titleMr : getModuleConfig(customBottomKeys[1]).titleEn,
+        label: AppTranslations.getNavTitle(customBottomKeys[1], lang),
       ),
       BottomBarItemData(
         icon: getModuleConfig(customBottomKeys[2]).icon,
-        label: isMr ? getModuleConfig(customBottomKeys[2]).titleMr : getModuleConfig(customBottomKeys[2]).titleEn,
+        label: AppTranslations.getNavTitle(customBottomKeys[2], lang),
       ),
       BottomBarItemData(
         icon: Icons.person_rounded,
-        label: isMr ? 'प्रोफाईल' : 'Profile',
+        label: lang == 'mr' ? 'प्रोफाईल' : (lang == 'hi' ? 'प्रोफाइल' : 'Profile'),
       ),
     ];
 

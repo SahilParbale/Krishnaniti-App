@@ -5,7 +5,10 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/complaint_model.dart';
 import '../../../data/repositories/complaints_repository.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/language_provider.dart';
 import 'new_complaint_bottom_sheet.dart';
 import 'complaint_detail_screen.dart';
 import '../../navigation/app_drawer.dart';
@@ -154,7 +157,9 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
+    final isMr = lang == 'mr';
+    final isHi = lang == 'hi';
     final filtered = _filteredComplaints;
 
     // Calculate real-time KPI counts for current tab
@@ -197,7 +202,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                isMr ? 'तक्रारी आणि विनंती' : 'Requests & Complaints',
+                AppTranslations.t('complaints.title', lang: lang),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -208,7 +213,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                 ),
               ),
               Text(
-                isMr ? 'समस्या आणि विनंती व्यवस्थापन' : 'Citizen complaints & requests',
+                AppTranslations.t('complaints.subtitle', lang: lang),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -237,7 +242,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                   children: [
                     Expanded(
                       child: _TabButton(
-                        label: isMr ? 'परिसरातील तक्रारी' : 'Area Complaints',
+                        label: AppTranslations.t('complaints.tabs_area', lang: lang),
                         icon: Icons.domain_rounded,
                         badgeCount: _areaComplaints.length,
                         isSelected: _activeTab == 'Complaints',
@@ -253,7 +258,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                     const SizedBox(width: 6),
                     Expanded(
                       child: _TabButton(
-                        label: isMr ? 'वैयक्तिक विनंती' : 'Personal Help',
+                        label: AppTranslations.t('complaints.tabs_personal', lang: lang),
                         icon: Icons.volunteer_activism_rounded,
                         badgeCount: _personalRequests.length,
                         isSelected: _activeTab == 'Personal Help',
@@ -279,7 +284,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                 children: [
                   Expanded(
                     child: _KpiStatCard(
-                      label: isMr ? 'सर्व' : 'Total',
+                      label: AppTranslations.t('common.all', lang: lang),
                       count: totalCount,
                       color: const Color(0xFF0284C7),
                       bgColor: const Color(0xFFF0F9FF),
@@ -293,7 +298,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                   const SizedBox(width: 8),
                   Expanded(
                     child: _KpiStatCard(
-                      label: isMr ? 'प्रलंबित' : 'Pending',
+                      label: AppTranslations.getStatus('pending', lang),
                       count: pendingCount,
                       color: const Color(0xFFDC2626),
                       bgColor: const Color(0xFFFEF2F2),
@@ -307,7 +312,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                   const SizedBox(width: 8),
                   Expanded(
                     child: _KpiStatCard(
-                      label: isMr ? 'चालू' : 'In Progress',
+                      label: AppTranslations.getStatus('inprogress', lang),
                       count: inProgressCount,
                       color: const Color(0xFFD97706),
                       bgColor: const Color(0xFFFFFBEB),
@@ -321,7 +326,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                   const SizedBox(width: 8),
                   Expanded(
                     child: _KpiStatCard(
-                      label: isMr ? 'सोडवले' : 'Resolved',
+                      label: AppTranslations.getStatus('resolved', lang),
                       count: resolvedCount,
                       color: const Color(0xFF16A34A),
                       bgColor: const Color(0xFFF0FDF4),
@@ -359,7 +364,9 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                         }),
                         style: const TextStyle(fontSize: 13.5, color: Color(0xFF0F172A)),
                         decoration: InputDecoration(
-                          hintText: isMr ? 'तक्रार, नागरिक किंवा फोन शोधा...' : 'Search title, citizen, phone...',
+                          hintText: lang == 'mr'
+                              ? 'तक्रार, नागरिक किंवा फोन शोधा...'
+                              : (lang == 'hi' ? 'शिकायत, नागरिक या फोन खोजें...' : 'Search title, citizen, phone...'),
                           hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
                           prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF94A3B8), size: 19),
                           suffixIcon: _searchQuery.isNotEmpty
@@ -384,7 +391,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
 
                   // Area Filter Dropdown (Themed Component)
                   AppDropdown<String>(
-                    title: isMr ? 'भाग निवडा' : 'Filter by Area',
+                    title: lang == 'mr' ? 'भाग निवडा' : (lang == 'hi' ? 'क्षेत्र चुनें' : 'Filter by Area'),
                     value: _selectedArea,
                     height: 42,
                     isExpanded: false,
@@ -398,7 +405,9 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                     items: _availableAreas.map((area) {
                       return DropdownMenuItem<String>(
                         value: area,
-                        child: Text(area == 'All' ? (isMr ? 'सर्व भाग' : 'All Areas') : area),
+                        child: Text(area == 'All'
+                            ? (lang == 'mr' ? 'सर्व भाग' : (lang == 'hi' ? 'सभी क्षेत्र' : 'All Areas'))
+                            : area),
                       );
                     }).toList(),
                     onChanged: (val) {
@@ -414,15 +423,20 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
 
                   // Download Complaints PDF Report Button
                   AppPdfButton.icon(
-                    tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Report',
+                    tooltip: lang == 'mr' ? 'अहवाल डाउनलोड करा' : (lang == 'hi' ? 'रिपोर्ट डाउनलोड करें' : 'Download Report'),
                     onPressed: () {
                       ComplaintReportGenerator.generateAndPrintReport(
                         complaints: filtered,
                         statusFilter: _selectedStatus != 'All' ? _selectedStatus : null,
                         areaFilter: _selectedArea != 'All' ? _selectedArea : null,
                         title: _activeTab == 'Complaints'
-                            ? (isMr ? 'नागरी तक्रारी व अडचणी रजिस्टर' : 'Citizen Grievance & Complaints Register')
-                            : (isMr ? 'वैयक्तिक मदत व विनंत्या रजिस्टर' : 'Personal Assistance Requests Register'),
+                            ? (lang == 'mr'
+                                ? 'नागरी तक्रारी व अडचणी रजिस्टर'
+                                : (lang == 'hi' ? 'नागरिक शिकायत रजिस्टर' : 'Citizen Grievance & Complaints Register'))
+                            : (lang == 'mr'
+                                ? 'वैयक्तिक मदत व विनंत्या रजिस्टर'
+                                : (lang == 'hi' ? 'व्यक्तिगत सहायता अनुरोध रजिस्टर' : 'Personal Assistance Requests Register')),
+                        lang: lang,
                       );
                     },
                   ),
@@ -441,7 +455,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                 child: Row(
                   children: [
                     _FilterPill(
-                      label: isMr ? 'सर्व (${_currentList.length})' : 'All (${_currentList.length})',
+                      label: '${AppTranslations.t("common.all", lang: lang)} (${_currentList.length})',
                       isSelected: _selectedStatus == 'All',
                       onTap: () => setState(() {
                         _selectedStatus = 'All';
@@ -450,7 +464,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                     ),
                     const SizedBox(width: 8),
                     _FilterPill(
-                      label: isMr ? 'प्रलंबित ($pendingCount)' : 'Pending ($pendingCount)',
+                      label: '${AppTranslations.getStatus("pending", lang)} ($pendingCount)',
                       color: const Color(0xFFDC2626),
                       isSelected: _selectedStatus == 'Pending',
                       onTap: () => setState(() {
@@ -461,7 +475,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                     if (_activeTab == 'Complaints') ...[
                       const SizedBox(width: 8),
                       _FilterPill(
-                        label: isMr ? 'सोपवलेले' : 'Assigned',
+                        label: AppTranslations.getStatus('assigned', lang),
                         color: const Color(0xFF0284C7),
                         isSelected: _selectedStatus == 'Assigned',
                         onTap: () => setState(() {
@@ -472,7 +486,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                     ],
                     const SizedBox(width: 8),
                     _FilterPill(
-                      label: isMr ? 'काम चालू ($inProgressCount)' : 'In Progress ($inProgressCount)',
+                      label: '${AppTranslations.getStatus("inprogress", lang)} ($inProgressCount)',
                       color: const Color(0xFFD97706),
                       isSelected: _selectedStatus == 'InProgress',
                       onTap: () => setState(() {
@@ -482,7 +496,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                     ),
                     const SizedBox(width: 8),
                     _FilterPill(
-                      label: isMr ? 'सोडवलेले ($resolvedCount)' : 'Resolved ($resolvedCount)',
+                      label: '${AppTranslations.getStatus("resolved", lang)} ($resolvedCount)',
                       color: const Color(0xFF16A34A),
                       isSelected: _selectedStatus == 'Resolved',
                       onTap: () => setState(() {
@@ -517,7 +531,9 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                               ),
                               const SizedBox(height: 12),
                               Text(
-                                isMr ? 'कोणतीही तक्रार आढळली नाही' : 'No matching requests found',
+                                lang == 'mr'
+                                    ? 'कोणतीही तक्रार आढळली नाही'
+                                    : (lang == 'hi' ? 'कोई शिकायत नहीं मिली' : 'No matching requests found'),
                                 style: const TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w700,
@@ -526,7 +542,9 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                isMr ? 'नवीन तक्रार अथवा विनंती नोंदवा' : 'Try clearing filters or register a new request',
+                                lang == 'mr'
+                                    ? 'नवीन तक्रार अथवा विनंती नोंदवा'
+                                    : (lang == 'hi' ? 'नई शिकायत या अनुरोध दर्ज करें' : 'Try clearing filters or register a new request'),
                                 style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B)),
                               ),
                               const SizedBox(height: 14),
@@ -543,8 +561,12 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                                 icon: const Icon(Icons.add_rounded, size: 18),
                                 label: Text(
                                   _activeTab == 'Complaints'
-                                      ? (isMr ? 'नवीन तक्रार नोंदवा' : 'Add New Complaint')
-                                      : (isMr ? 'नवीन वैयक्तिक विनंती' : 'Add Personal Request'),
+                                      ? (lang == 'mr'
+                                          ? 'नवीन तक्रार नोंदवा'
+                                          : (lang == 'hi' ? 'नई शिकायत दर्ज करें' : 'Add New Complaint'))
+                                      : (lang == 'mr'
+                                          ? 'नवीन वैयक्तिक विनंती'
+                                          : (lang == 'hi' ? 'नया व्यक्तिगत अनुरोध' : 'Add Personal Request')),
                                   style: const TextStyle(fontWeight: FontWeight.w700),
                                 ),
                                 style: ElevatedButton.styleFrom(
@@ -572,7 +594,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                                   onLoadMore: () {
                                     setState(() => _displayedLimit += 20);
                                   },
-                                  label: isMr ? 'तक्रारी' : 'complaints',
+                                  label: lang == 'mr' ? 'तक्रारी' : (lang == 'hi' ? 'शिकायतें' : 'complaints'),
                                   isMarathi: isMr,
                                 );
                               }
@@ -580,6 +602,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                               return _ComplaintCard(
                                 complaint: item,
                                 isMr: isMr,
+                                lang: lang,
                                 onTap: () => _openDetailSheet(item, isMr),
                                 onQuickStatusTap: () => _openDetailSheet(item, isMr),
                               );
@@ -590,7 +613,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
           ],
         ),
 
-        // Floating Action Button (+ New Request Bottom Pop up) matching Nagarsevak-Managment
+        // Floating Action Button
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () async {
             final created = await NewComplaintBottomSheet.show(
@@ -607,8 +630,8 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
           icon: const Icon(Icons.add_rounded, size: 22),
           label: Text(
             _activeTab == 'Complaints'
-                ? (isMr ? 'नवीन तक्रार' : 'New Complaint')
-                : (isMr ? 'नवीन विनंती' : 'New Personal Request'),
+                ? (lang == 'mr' ? 'नवीन तक्रार' : (lang == 'hi' ? 'नई शिकायत' : 'New Complaint'))
+                : (lang == 'mr' ? 'नवीन विनंती' : (lang == 'hi' ? 'नया अनुरोध' : 'New Personal Request')),
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
           ),
         ),
@@ -820,12 +843,14 @@ class _FilterPill extends StatelessWidget {
 class _ComplaintCard extends StatelessWidget {
   final ComplaintModel complaint;
   final bool isMr;
+  final String lang;
   final VoidCallback onTap;
   final VoidCallback onQuickStatusTap;
 
   const _ComplaintCard({
     required this.complaint,
-    required this.isMr,
+    this.isMr = false,
+    this.lang = 'en',
     required this.onTap,
     required this.onQuickStatusTap,
   });
@@ -835,7 +860,6 @@ class _ComplaintCard extends StatelessWidget {
     Color cardBorder;
     Color cardBg;
     Color statusColor;
-    String statusLabel;
 
     switch (complaint.status.toLowerCase()) {
       case 'resolved':
@@ -843,26 +867,24 @@ class _ComplaintCard extends StatelessWidget {
         cardBorder = const Color(0xFFBBF7D0);
         cardBg = const Color(0xFFF0FDF4);
         statusColor = const Color(0xFF16A34A);
-        statusLabel = isMr ? 'सोडवलेले' : 'Resolved';
         break;
       case 'inprogress':
         cardBorder = const Color(0xFFFDE68A);
         cardBg = const Color(0xFFFFFBEB);
         statusColor = const Color(0xFFD97706);
-        statusLabel = isMr ? 'काम चालू' : 'In Progress';
         break;
       case 'assigned':
         cardBorder = const Color(0xFFBAE6FD);
         cardBg = const Color(0xFFF0F9FF);
         statusColor = const Color(0xFF0284C7);
-        statusLabel = isMr ? 'सोपवलेले' : 'Assigned';
         break;
       default:
         cardBorder = const Color(0xFFFECACA);
         cardBg = const Color(0xFFFEF2F2);
         statusColor = const Color(0xFFDC2626);
-        statusLabel = isMr ? 'प्रलंबित' : 'Pending';
     }
+
+    final statusLabel = AppTranslations.getStatus(complaint.status, lang);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -944,8 +966,8 @@ class _ComplaintCard extends StatelessWidget {
 
               const SizedBox(height: 10),
 
-              // Title
-              Text(
+              // Title with dynamic on-the-fly translation
+              AppTranslatedText(
                 complaint.title,
                 style: const TextStyle(
                   fontSize: 14.5,
@@ -957,7 +979,7 @@ class _ComplaintCard extends StatelessWidget {
 
               if (complaint.description.isNotEmpty) ...[
                 const SizedBox(height: 5),
-                Text(
+                AppTranslatedText(
                   complaint.description,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -1047,7 +1069,7 @@ class _ComplaintCard extends StatelessWidget {
                       const Icon(Icons.person_pin_rounded, size: 13, color: Color(0xFF475569)),
                       const SizedBox(width: 5),
                       Text(
-                        '${isMr ? "नोंदणीकर्ता:" : "Added By:"} ${complaint.addedByStaffName}',
+                        '${lang == "mr" ? "नोंदणीकर्ता:" : (lang == "hi" ? "दर्जकर्ता:" : "Added By:")} ${complaint.addedByStaffName}',
                         style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,

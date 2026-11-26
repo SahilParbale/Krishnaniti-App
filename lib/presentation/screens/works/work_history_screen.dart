@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../data/models/work_history_model.dart';
 import '../../../data/repositories/work_history_repository.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
+import '../../providers/language_provider.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
@@ -163,7 +166,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
   }
 
   // Status Badge matching lines 268-277
-  Widget _buildStatusBadge(String status, bool isMr) {
+  Widget _buildStatusBadge(String status, String lang) {
     switch (status) {
       case 'Completed':
         return Container(
@@ -179,7 +182,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
               const Icon(Icons.check_circle_rounded, size: 12, color: Color(0xFF16A34A)),
               const SizedBox(width: 4),
               Text(
-                isMr ? 'पूर्ण' : 'Completed',
+                AppTranslations.getStatus('completed', lang),
                 style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
               ),
             ],
@@ -199,7 +202,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
               const Icon(Icons.build_rounded, size: 12, color: Color(0xFF2563EB)),
               const SizedBox(width: 4),
               Text(
-                isMr ? 'सुरू' : 'In Progress',
+                AppTranslations.getStatus('in_progress', lang),
                 style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8)),
               ),
             ],
@@ -219,7 +222,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
               const Icon(Icons.access_time_rounded, size: 12, color: Color(0xFF6B7280)),
               const SizedBox(width: 4),
               Text(
-                isMr ? 'नियोजित' : 'Planned',
+                AppTranslations.getStatus('planned', lang),
                 style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF374151)),
               ),
             ],
@@ -520,7 +523,8 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
+    final isMr = lang == 'mr';
     final filtered = _filteredItems;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -554,7 +558,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                isMr ? 'कामांचा इतिहास' : 'Work History',
+                AppTranslations.getNavTitle('work_history', lang),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -565,7 +569,11 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                 ),
               ),
               Text(
-                isMr ? 'विकासकामे व प्रगती अहवाल' : 'Civic development works & progress',
+                lang == 'mr'
+                    ? 'विकासकामे व प्रगती अहवाल'
+                    : (lang == 'hi'
+                        ? 'विकास कार्य और प्रगति रिपोर्ट'
+                        : 'Civic development works & progress'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -595,12 +603,13 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                               children: [
                                 Expanded(
                                   child: AppPdfButton(
-                                    label: isMr ? 'अहवाल' : 'Download Report',
+                                    label: lang == 'mr' ? 'अहवाल' : (lang == 'hi' ? 'रिपोर्ट' : 'Download Report'),
                                     style: AppPdfButtonStyle.tonal,
                                     onPressed: () {
                                       WorkReportGenerator.generateAndPrintWorkReport(
                                         works: filtered,
                                         areaFilter: _areaSearchCtrl.text.isNotEmpty ? _areaSearchCtrl.text : 'All Areas',
+                                        lang: lang,
                                       );
                                     },
                                   ),
@@ -618,7 +627,10 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                                       padding: const EdgeInsets.symmetric(vertical: 9),
                                     ),
                                     icon: const Icon(Icons.description_outlined, size: 16, color: Color(0xFF0284C7)),
-                                    label: Text(isMr ? 'अहवाल तयार करा' : 'Generate Ahwal', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                                    label: Text(
+                                      lang == 'mr' ? 'अहवाल तयार करा' : (lang == 'hi' ? 'अहवाल बनाएं' : 'Generate Ahwal'),
+                                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
@@ -699,11 +711,17 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          isMr ? 'कामे निवडली (Ahwal)' : 'Works Selected',
+                                          lang == 'mr'
+                                              ? 'कामे निवडली (Ahwal)'
+                                              : (lang == 'hi' ? 'कार्य चयनित (Ahwal)' : 'Works Selected'),
                                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
                                         ),
                                         Text(
-                                          isMr ? 'अहवालात समाविष्ट करण्यासाठी कामे निवडा' : 'Select works to include in Ahwal report.',
+                                          lang == 'mr'
+                                              ? 'अहवालात समाविष्ट करण्यासाठी कामे निवडा'
+                                              : (lang == 'hi'
+                                                  ? 'अहवाल में शामिल करने के लिए कार्य चुनें'
+                                                  : 'Select works to include in Ahwal report.'),
                                           style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                                         ),
                                       ],
@@ -711,16 +729,22 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                                   ),
                                   TextButton(
                                     onPressed: _toggleSelectionMode,
-                                    child: Text(isMr ? 'रद्द' : 'Cancel', style: const TextStyle(color: Color(0xFF64748B), fontSize: 12)),
+                                    child: Text(
+                                      lang == 'mr' ? 'रद्द' : (lang == 'hi' ? 'रद्द करें' : 'Cancel'),
+                                      style: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
+                                    ),
                                   ),
                                   AppPdfButton.primary(
-                                    label: isMr ? 'अहवाल पहा' : 'Preview',
+                                    label: lang == 'mr' ? 'अहवाल पहा' : (lang == 'hi' ? 'पूर्वावलोकन' : 'Preview'),
                                     isCompact: true,
                                     onPressed: _selectedWorkIds.isEmpty
                                         ? null
                                         : () {
                                             final selected = _items.where((w) => _selectedWorkIds.contains(w.id)).toList();
-                                            AhwalReportGenerator.generateAndPrintAhwal(selectedWorks: selected);
+                                            AhwalReportGenerator.generateAndPrintAhwal(
+                                              selectedWorks: selected,
+                                              lang: lang,
+                                            );
                                           },
                                   ),
                                 ],
@@ -964,9 +988,9 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                     if (_loading) ...[
                       const AppShimmerList(count: 6),
                     ] else if (_viewMode == 'report') ...[
-                      _buildReportTableView(isMr, _visibleWorks),
+                      _buildReportTableView(lang, _visibleWorks),
                     ] else ...[
-                      _buildCardsGridView(isMr, _visibleWorks),
+                      _buildCardsGridView(lang, _visibleWorks),
                     ],
 
                     if (!_loading && filtered.isNotEmpty)
@@ -977,7 +1001,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                         onLoadMore: () {
                           setState(() => _displayedLimit += 20);
                         },
-                        label: isMr ? 'कामे' : 'works',
+                        label: lang == 'mr' ? 'कामे' : (lang == 'hi' ? 'कार्य' : 'works'),
                         isMarathi: isMr,
                       ),
 
@@ -992,7 +1016,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
           onPressed: _openAddWorkModal,
           icon: const Icon(Icons.add_rounded, size: 22),
           label: Text(
-            isMr ? 'नवीन काम नोंदवा' : 'Add Work',
+            lang == 'mr' ? 'नवीन काम नोंदवा' : (lang == 'hi' ? 'नया कार्य जोड़ें' : 'Add Work'),
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
@@ -1001,7 +1025,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
   }
 
   // Cards Grid View matching lines 542-621
-  Widget _buildCardsGridView(bool isMr, List<WorkHistoryModel> items) {
+  Widget _buildCardsGridView(String lang, List<WorkHistoryModel> items) {
     if (items.isEmpty) {
       return Container(
         margin: const EdgeInsets.all(16),
@@ -1017,7 +1041,9 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
             const Icon(Icons.engineering_outlined, size: 48, color: Color(0xFF94A3B8)),
             const SizedBox(height: 12),
             Text(
-              isMr ? 'कोणतेही काम आढळले नाही' : 'No work projects found',
+              lang == 'mr'
+                  ? 'कोणतेही काम आढळले नाही'
+                  : (lang == 'hi' ? 'कोई कार्य नहीं मिला' : 'No work projects found'),
               style: const TextStyle(fontSize: 14, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
             ),
           ],
@@ -1073,7 +1099,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildStatusBadge(item.status, isMr),
+                      _buildStatusBadge(item.status, lang),
                       Row(
                         children: [
                           Container(
@@ -1089,7 +1115,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                                 const SizedBox(width: 4),
                                 Text(
                                   item.source == 'Manual'
-                                      ? (isMr ? 'मॅन्युअल' : 'Manual')
+                                      ? (lang == 'mr' ? 'मॅन्युअल' : (lang == 'hi' ? 'मैनुअल' : 'Manual'))
                                       : item.source,
                                   style: const TextStyle(fontSize: 11, color: Color(0xFF475569)),
                                 ),
@@ -1119,8 +1145,8 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                   Row(
                     children: [
                       Expanded(
-                        child: Text(
-                          item.title,
+                        child: AppTranslatedText(item.title,
+                          targetLanguage: lang,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
@@ -1136,8 +1162,8 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                   const SizedBox(height: 4),
 
                   // Description matching line 581
-                  Text(
-                    item.description,
+                  AppTranslatedText(item.description,
+                    targetLanguage: lang,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontSize: 12.5, color: Color(0xFF475569)),
@@ -1158,7 +1184,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            '${item.feedbackCount} ${isMr ? "नागरिक अभिप्राय" : "Feedbacks"}',
+                            '${item.feedbackCount} ${lang == 'mr' ? "नागरिक अभिप्राय" : (lang == 'hi' ? "नागरिक प्रतिक्रिया" : "Feedbacks")}',
                             style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                           ),
                           Text(
@@ -1221,7 +1247,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
   }
 
   // Report Table View matching lines 460-540
-  Widget _buildReportTableView(bool isMr, List<WorkHistoryModel> items) {
+  Widget _buildReportTableView(String lang, List<WorkHistoryModel> items) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
@@ -1245,15 +1271,16 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '${isMr ? "अहवाल तक्ता" : "Report View"} (${items.length})',
+                  '${lang == "mr" ? "अहवाल तक्ता" : (lang == "hi" ? "रिपोर्ट तालिका" : "Report View")} (${items.length})',
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
                 ),
                 AppPdfButton.outlined(
-                  label: isMr ? 'अहवाल' : 'Download Report',
+                  label: lang == 'mr' ? 'अहवाल' : (lang == 'hi' ? 'रिपोर्ट' : 'Download Report'),
                   onPressed: () {
                     WorkReportGenerator.generateAndPrintWorkReport(
                       works: items,
                       areaFilter: _areaSearchCtrl.text.isNotEmpty ? _areaSearchCtrl.text : 'All Areas',
+                      lang: lang,
                     );
                   },
                 ),
@@ -1269,13 +1296,13 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
               headingRowColor: WidgetStateProperty.all(const Color(0xFFF8FAFC)),
               columnSpacing: 20,
               columns: [
-                DataColumn(label: Text(isMr ? 'क्र.' : 'Sr No', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                DataColumn(label: Text(isMr ? 'प्रकल्प शीर्षक' : 'Project Title', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                DataColumn(label: Text(isMr ? 'ठिकाण व परिसर' : 'Location / Area', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                DataColumn(label: Text(isMr ? 'स्थिती' : 'Status', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                DataColumn(label: Text(isMr ? 'स्रोत' : 'Source', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                DataColumn(label: Text(isMr ? 'तारीख' : 'Date', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                DataColumn(label: Text(isMr ? 'रक्कम (₹)' : 'Amount (₹)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                DataColumn(label: Text(AppTranslations.getReportColumn('sr_no', lang), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                DataColumn(label: Text(AppTranslations.getReportColumn('work_title', lang), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                DataColumn(label: Text(AppTranslations.getReportColumn('location', lang), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                DataColumn(label: Text(AppTranslations.getReportColumn('status', lang), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                DataColumn(label: Text(lang == 'mr' ? 'स्रोत' : (lang == 'hi' ? 'स्रोत' : 'Source'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                DataColumn(label: Text(AppTranslations.getReportColumn('date', lang), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                DataColumn(label: Text(AppTranslations.getReportColumn('amount', lang), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
               ],
               rows: items.asMap().entries.map((entry) {
                 final idx = entry.key;
@@ -1291,14 +1318,14 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              item.title,
+                            AppTranslatedText(item.title,
+                              targetLanguage: lang,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                             ),
-                            Text(
-                              item.description,
+                            AppTranslatedText(item.description,
+                              targetLanguage: lang,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
@@ -1318,7 +1345,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                         ),
                       ),
                     ),
-                    DataCell(_buildStatusBadge(item.status, isMr)),
+                    DataCell(_buildStatusBadge(item.status, lang)),
                     DataCell(
                       Row(
                         children: [

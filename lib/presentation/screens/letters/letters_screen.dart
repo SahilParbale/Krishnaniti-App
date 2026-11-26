@@ -4,8 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/localization/app_strings.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../../data/models/letter_model.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/language_provider.dart';
 import '../dashboard/dashboard_screen.dart';
 import 'letter_detail_screen.dart';
 import 'new_letter_bottom_sheet.dart';
@@ -207,7 +210,8 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
+    final isMr = lang == 'mr';
     final filtered = _filteredLetters;
 
     final outCount = _outgoingLetters.length;
@@ -245,12 +249,12 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
-            children: const [
+            children: [
               Text(
-                'Letters',
+                AppTranslations.getNavTitle('letters', lang),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 16.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
@@ -258,10 +262,14 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                 ),
               ),
               Text(
-                'Inward and outward official municipal correspondence',
+                lang == 'mr'
+                    ? 'आवक आणि जावक अधिकृत पत्रव्यवहार'
+                    : (lang == 'hi'
+                        ? 'आवक और जावक आधिकारिक पत्र व्यवहार'
+                        : 'Inward and outward official municipal correspondence'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w400,
                   color: Color(0xFFE0F2FE),
@@ -272,7 +280,9 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
           actions: [
             IconButton(
               icon: const Icon(Icons.tune_rounded, color: Colors.white, size: 22),
-              tooltip: isMr ? 'पत्रांचे प्रकार व्यवस्थापित करा' : 'Manage Letter Types',
+              tooltip: lang == 'mr'
+                  ? 'पत्रांचे प्रकार व्यवस्थापित करा'
+                  : (lang == 'hi' ? 'पत्र प्रकार प्रबंधित करें' : 'Manage Letter Types'),
               onPressed: () => LetterTypeManagerSheet.show(context),
             ),
           ],
@@ -322,7 +332,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                               const SizedBox(width: 6),
                               Flexible(
                                 child: Text(
-                                  '${isMr ? AppStrings.outgoingLettersMr : AppStrings.outgoingLetters} ($outCount)',
+                                  '${lang == "mr" ? "जावक पत्रे" : (lang == "hi" ? "जावक पत्र" : "Outgoing Letters")} ($outCount)',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
@@ -369,7 +379,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                               const SizedBox(width: 6),
                               Flexible(
                                 child: Text(
-                                  '${isMr ? AppStrings.incomingLettersMr : AppStrings.incomingLetters} ($inCount)',
+                                  '${lang == "mr" ? "आवक पत्रे" : (lang == "hi" ? "आवक पत्र" : "Incoming Letters")} ($inCount)',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
@@ -415,7 +425,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                             }),
                             style: const TextStyle(fontSize: 13),
                             decoration: InputDecoration(
-                              hintText: isMr ? 'पत्र, नागरिक किंवा विषय शोधा...' : 'Search letters, citizen, subject...',
+                              hintText: lang == 'mr' ? 'पत्र, नागरिक किंवा विषय शोधा...' : (lang == 'hi' ? 'पत्र, नागरिक या विषय खोजें...' : 'Search letters, citizen, subject...'),
                               hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12.5),
                               prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF94A3B8), size: 18),
                               suffixIcon: _searchQuery.isNotEmpty
@@ -449,10 +459,10 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                           backgroundColor: const Color(0xFFF8FAFC),
                           borderColor: const Color(0xFFE2E8F0),
                           items: [
-                            DropdownMenuItem(value: 'All', child: Text(isMr ? 'सर्व स्थिती' : 'All Status', style: const TextStyle(fontSize: 12))),
-                            DropdownMenuItem(value: 'Pending', child: Text(isMr ? 'प्रलंबित' : 'Pending', style: const TextStyle(fontSize: 12))),
-                            DropdownMenuItem(value: 'Approved', child: Text(isMr ? 'मंजूर' : 'Approved', style: const TextStyle(fontSize: 12))),
-                            DropdownMenuItem(value: 'Rejected', child: Text(isMr ? 'नाकारले' : 'Rejected', style: const TextStyle(fontSize: 12))),
+                            DropdownMenuItem(value: 'All', child: Text(lang == 'mr' ? 'सर्व स्थिती' : (lang == 'hi' ? 'सभी स्थिति' : 'All Status'), style: const TextStyle(fontSize: 12))),
+                            DropdownMenuItem(value: 'Pending', child: Text(AppTranslations.getStatus('Pending', lang), style: const TextStyle(fontSize: 12))),
+                            DropdownMenuItem(value: 'Approved', child: Text(AppTranslations.getStatus('Approved', lang), style: const TextStyle(fontSize: 12))),
+                            DropdownMenuItem(value: 'Rejected', child: Text(AppTranslations.getStatus('Rejected', lang), style: const TextStyle(fontSize: 12))),
                           ],
                           onChanged: (val) {
                             if (val != null) {
@@ -474,9 +484,10 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                             letters: _filteredLetters,
                             statusFilter: _selectedStatus != 'All' ? _selectedStatus : null,
                             areaFilter: _areaSearch.isNotEmpty ? _areaSearch : null,
+                            lang: lang,
                             title: _isOutgoing
-                                ? (isMr ? 'जावक पत्र अधिकृत नोंदवही (Outgoing Letters)' : 'Official Outgoing Letters Register')
-                                : (isMr ? 'आवक पत्र अधिकृत नोंदवही (Incoming Letters)' : 'Official Incoming Letters Register'),
+                                ? (lang == 'mr' ? 'जावक पत्र अधिकृत नोंदवही (Outgoing Letters)' : (lang == 'hi' ? 'जावक पत्र आधिकारिक रजिस्टर' : 'Official Outgoing Letters Register'))
+                                : (lang == 'mr' ? 'आवक पत्र अधिकृत नोंदवही (Incoming Letters)' : (lang == 'hi' ? 'आवक पत्र आधिकारिक रजिस्टर' : 'Official Incoming Letters Register')),
                           );
                         },
                       ),
@@ -720,6 +731,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                                 child: _LetterCard(
                                   letter: item,
                                   isMr: isMr,
+                                  lang: lang,
                                   onTap: () => _openDetailScreen(item),
                                   onWhatsApp: () => _shareOnWhatsApp(item),
                                 ),
@@ -859,12 +871,14 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
 class _LetterCard extends StatelessWidget {
   final LetterModel letter;
   final bool isMr;
+  final String lang;
   final VoidCallback onTap;
   final VoidCallback onWhatsApp;
 
   const _LetterCard({
     required this.letter,
     required this.isMr,
+    this.lang = 'en',
     required this.onTap,
     required this.onWhatsApp,
   });
@@ -937,8 +951,9 @@ class _LetterCard extends StatelessWidget {
                         const SizedBox(height: 8),
 
                         // Title / Subject
-                        Text(
+                        AppTranslatedText(
                           letter.title,
+                          targetLanguage: lang,
                           style: const TextStyle(
                             fontSize: 14.5,
                             fontWeight: FontWeight.w700,
@@ -955,8 +970,9 @@ class _LetterCard extends StatelessWidget {
                             const Icon(Icons.person_outline_rounded, size: 14, color: Color(0xFF64748B)),
                             const SizedBox(width: 4),
                             Expanded(
-                              child: Text(
+                              child: AppTranslatedText(
                                 letter.citizenName,
+                                targetLanguage: lang,
                                 style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -1024,9 +1040,9 @@ class _LetterCard extends StatelessWidget {
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
-                                    children: const [
+                                    children: [
                                       Text(
-                                        'Details',
+                                        lang == 'mr' ? 'तपशील' : (lang == 'hi' ? 'विवरण' : 'Details'),
                                         style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF0284C7)),
                                       ),
                                       SizedBox(width: 2),

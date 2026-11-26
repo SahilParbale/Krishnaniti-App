@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
+import '../../providers/language_provider.dart';
 import '../../../data/models/scheme_model.dart';
 import '../../../data/repositories/schemes_repository.dart';
 import '../../navigation/app_drawer.dart';
@@ -1142,6 +1145,7 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                       SchemeReportGenerator.generateAndPrintListReport(
                         schemes: displayedSchemes,
                         isMarathi: isMr,
+                        lang: ref.read(appLanguageProvider),
                         categoryFilter: _selectedCategory,
                       );
                     },
@@ -1357,7 +1361,7 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                         ),
                       ),
                       const SizedBox(height: 6),
-                      Text(
+                      AppTranslatedText(
                         scheme.localizedName(isMr),
                         style: const TextStyle(
                           fontSize: 15.5,
@@ -1376,7 +1380,7 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
             const SizedBox(height: 10),
 
             // Description
-            Text(
+            AppTranslatedText(
               scheme.localizedDescription(isMr),
               style: const TextStyle(
                 fontSize: 12.5,
@@ -1403,7 +1407,7 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                   const Icon(Icons.stars_rounded, color: Color(0xFF16A34A), size: 16),
                   const SizedBox(width: 6),
                   Expanded(
-                    child: Text(
+                    child: AppTranslatedText(
                       scheme.localizedBenefits(isMr),
                       style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF15803D)),
                       maxLines: 1,
@@ -1533,6 +1537,7 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                       SchemeReportGenerator.generateAndPrintBeneficiaryReport(
                         applications: displayedApps,
                         isMarathi: isMr,
+                        lang: ref.read(appLanguageProvider),
                       );
                     },
                   ),
@@ -1663,7 +1668,7 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    AppTranslatedText(
                       app.applicantName,
                       style: const TextStyle(
                         fontSize: 16,
@@ -1672,7 +1677,7 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                       ),
                     ),
                     const SizedBox(height: 3),
-                    Text(
+                    AppTranslatedText(
                       app.schemeName ?? 'Scheme #${app.schemeId}',
                       style: const TextStyle(
                         fontSize: 12.5,
@@ -1690,7 +1695,7 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  app.status.toUpperCase(),
+                  AppTranslations.getStatus(app.status, ref.read(appLanguageProvider)).toUpperCase(),
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
@@ -1774,7 +1779,7 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                   const Icon(Icons.stars_rounded, color: Color(0xFF16A34A), size: 15),
                   const SizedBox(width: 6),
                   Expanded(
-                    child: Text(
+                    child: AppTranslatedText(
                       'Benefit: ${app.benefit}',
                       style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
                     ),
@@ -1798,7 +1803,7 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                   const Icon(Icons.error_outline_rounded, color: Color(0xFFDC2626), size: 15),
                   const SizedBox(width: 6),
                   Expanded(
-                    child: Text(
+                    child: AppTranslatedText(
                       'Reason: ${app.rejectionReason}',
                       style: const TextStyle(fontSize: 12, color: Color(0xFFB91C1C)),
                     ),

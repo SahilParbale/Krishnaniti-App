@@ -126,29 +126,37 @@ class CategoryOption {
   final String key;
   final String en;
   final String mr;
+  final String hi;
 
   const CategoryOption({
     required this.key,
     required this.en,
     required this.mr,
+    this.hi = '',
   });
+
+  String getLabel(String lang) {
+    if (lang == 'mr') return mr;
+    if (lang == 'hi') return hi.isNotEmpty ? hi : mr;
+    return en;
+  }
 }
 
 const List<CategoryOption> kComplaintCategories = [
-  CategoryOption(key: 'Cleaning', en: 'Cleaning / Garbage', mr: 'स्वच्छता / कचरा'),
-  CategoryOption(key: 'Water', en: 'Water Supply', mr: 'पाणी पुरवठा'),
-  CategoryOption(key: 'Road', en: 'Road / Potholes', mr: 'रस्ते / खड्डे'),
-  CategoryOption(key: 'Drainage', en: 'Drainage', mr: 'ड्रेनेज (गटार)'),
-  CategoryOption(key: 'StreetLight', en: 'Street Light', mr: 'पथदिवे'),
-  CategoryOption(key: 'SelfIdentified', en: 'Ward Problem', mr: 'प्रभागातील समस्या'),
-  CategoryOption(key: 'Other', en: 'Other', mr: 'इतर'),
+  CategoryOption(key: 'Cleaning', en: 'Cleaning / Garbage', mr: 'स्वच्छता / कचरा', hi: 'स्वच्छता / कचरा'),
+  CategoryOption(key: 'Water', en: 'Water Supply', mr: 'पाणी पुरवठा', hi: 'जल आपूर्ति'),
+  CategoryOption(key: 'Road', en: 'Road / Potholes', mr: 'रस्ते / खड्डे', hi: 'सड़कें / गड्ढे'),
+  CategoryOption(key: 'Drainage', en: 'Drainage', mr: 'ड्रेनेज (गटार)', hi: 'जल निकासी (नाली)'),
+  CategoryOption(key: 'StreetLight', en: 'Street Light', mr: 'पथदिवे', hi: 'स्ट्रीट लाइट'),
+  CategoryOption(key: 'SelfIdentified', en: 'Ward Problem', mr: 'प्रभागातील समस्या', hi: 'वार्ड समस्या'),
+  CategoryOption(key: 'Other', en: 'Other', mr: 'इतर', hi: 'अन्य'),
 ];
 
 const List<CategoryOption> kPersonalRequestCategories = [
-  CategoryOption(key: 'Admission', en: 'Education / Admission', mr: 'शिक्षण / प्रवेश मदत'),
-  CategoryOption(key: 'Medical', en: 'Medical Help', mr: 'वैद्यकीय मदत'),
-  CategoryOption(key: 'Financial', en: 'Financial Help', mr: 'आर्थिक मदत'),
-  CategoryOption(key: 'Help', en: 'Help', mr: 'मदत'),
-  CategoryOption(key: 'Personal Help', en: 'Personal Help', mr: 'वैयक्तिक मदत'),
+  CategoryOption(key: 'Admission', en: 'Education / Admission', mr: 'शिक्षण / प्रवेश मदत', hi: 'शिक्षा / प्रवेश सहायता'),
+  CategoryOption(key: 'Medical', en: 'Medical Help', mr: 'वैद्यकीय मदत', hi: 'चिकित्सा सहायता'),
+  CategoryOption(key: 'Financial', en: 'Financial Help', mr: 'आर्थिक मदत', hi: 'वित्तीय सहायता'),
+  CategoryOption(key: 'Help', en: 'Help', mr: 'मदत', hi: 'सहायता'),
+  CategoryOption(key: 'Personal Help', en: 'Personal Help', mr: 'वैयक्तिक मदत', hi: 'व्यक्तिगत सहायता'),
 ];
 

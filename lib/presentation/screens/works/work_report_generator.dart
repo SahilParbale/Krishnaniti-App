@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import '../../../core/localization/app_translations.dart';
 import '../../../data/models/work_history_model.dart';
 import '../../widgets/app_pdf_report_theme.dart';
 import '../../widgets/app_report_preview_modal.dart';
@@ -19,11 +20,23 @@ class WorkReportGenerator {
     String? areaFilter,
     String title = 'Work History Report',
     String subtitle = 'Historical Register of Development Works & Municipal Projects',
+    String lang = 'en',
   }) async {
     final pdf = pw.Document();
     final now = DateTime.now();
     final formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(now);
     final total = works.length;
+
+    final effectiveTitle = title != 'Work History Report'
+        ? title
+        : (lang == 'mr'
+            ? 'विकास कामांचा अहवाल'
+            : (lang == 'hi' ? 'विकास कार्य रिपोर्ट' : 'Work History Report'));
+    final effectiveSubtitle = subtitle != 'Historical Register of Development Works & Municipal Projects'
+        ? subtitle
+        : (lang == 'mr'
+            ? 'विकास कामे आणि विकास प्रकल्पांची ऐतिहासिक नोंद'
+            : (lang == 'hi' ? 'विकास कार्यों और नगर निगम परियोजनाओं का ऐतिहासिक रजिस्टर' : 'Historical Register of Development Works & Municipal Projects'));
 
     pdf.addPage(
       pw.MultiPage(
@@ -33,18 +46,20 @@ class WorkReportGenerator {
           if (context.pageNumber > 1) {
             return WebReportTheme.buildContinuationHeader(
               context,
-              title: title,
+              title: effectiveTitle,
+              lang: lang,
             );
           }
           return WebReportTheme.buildHeader(
-            title: title,
-            subtitle: subtitle,
+            title: effectiveTitle,
+            subtitle: effectiveSubtitle,
             dateFormatted: formattedDate,
             totalCount: total,
-            foundLabel: 'Found',
+            foundLabel: lang == 'mr' ? 'एकूण कामे' : (lang == 'hi' ? 'कुल कार्य' : 'Found'),
+            lang: lang,
           );
         },
-        footer: (pw.Context context) => WebReportTheme.buildFooter(context),
+        footer: (pw.Context context) => WebReportTheme.buildFooter(context, lang: lang),
         build: (pw.Context context) {
           if (works.isEmpty) {
             return [
@@ -52,7 +67,9 @@ class WorkReportGenerator {
                 alignment: pw.Alignment.center,
                 padding: const pw.EdgeInsets.all(40),
                 child: pw.Text(
-                  'No development work records found.',
+                  lang == 'mr'
+                      ? 'विकास कामांच्या कोणत्याही नोंदी आढळल्या नाहीत.'
+                      : (lang == 'hi' ? 'कोई विकास कार्य रिकॉर्ड नहीं मिला।' : 'No development work records found.'),
                   style: const pw.TextStyle(fontSize: 12, color: WebReportTheme.slate400),
                 ),
               ),
@@ -78,10 +95,10 @@ class WorkReportGenerator {
               },
               headers: [
                 '#',
-                'Complaint / Subject',
-                'Location / Area',
-                'Status',
-                'Amount',
+                lang == 'mr' ? 'तक्रार / विषय' : (lang == 'hi' ? 'शिकायत / विषय' : 'Complaint / Subject'),
+                lang == 'mr' ? 'स्थान / क्षेत्र' : (lang == 'hi' ? 'स्थान / क्षेत्र' : 'Location / Area'),
+                AppTranslations.getReportColumn('status', lang),
+                AppTranslations.getReportColumn('amount', lang),
               ],
               data: List.generate(works.length, (index) {
                 final w = works[index];
@@ -95,9 +112,10 @@ class WorkReportGenerator {
                     ? '${w.title}\n${w.description}'
                     : w.title;
 
+                final localizedStatus = AppTranslations.getStatus(w.status, lang);
                 final statusWithDate = dateStr.isNotEmpty
-                    ? '${w.status}\n$dateStr'
-                    : w.status;
+                    ? '$localizedStatus\n$dateStr'
+                    : localizedStatus;
 
                 return [
                   '${index + 1}',

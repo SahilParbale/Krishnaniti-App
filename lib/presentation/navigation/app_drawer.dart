@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/user_model.dart';
+import '../../core/localization/app_translations.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/custom_navigation_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/language_provider.dart';
 import '../screens/landing/landing_screen.dart';
 
 bool _groupHasPermittedItem(UserModel? user, List<String> moduleKeys) {
@@ -216,6 +218,29 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
                     ],
                   ),
                 ),
+              ],
+            ),
+          ),
+
+          // 3-Language Selector Bar (EN | MR | HI)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: const BoxDecoration(
+              color: Color(0xFFF8FAFC),
+              border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.translate_rounded, size: 16, color: Color(0xFF64748B)),
+                const SizedBox(width: 8),
+                Text(
+                  ref.watch(appLanguageProvider) == 'mr'
+                      ? 'भाषा'
+                      : (ref.watch(appLanguageProvider) == 'hi' ? 'भाषा' : 'Language'),
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                ),
+                const Spacer(),
+                const AppLanguageSegmentedSelector(isCompact: true),
               ],
             ),
           ),

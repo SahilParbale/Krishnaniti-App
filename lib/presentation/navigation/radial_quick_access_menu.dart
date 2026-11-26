@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/auth_provider.dart';
 import '../providers/custom_navigation_provider.dart';
+import '../providers/language_provider.dart';
+import '../../core/localization/app_translations.dart';
 
 class RadialMenuItem {
   final String id;
@@ -303,7 +305,8 @@ class _RadialQuickAccessMenuState extends ConsumerState<RadialQuickAccessMenu>
 
   @override
   Widget build(BuildContext context) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
+    final isMr = lang == 'mr';
     final cx = widget.centerOffset.dx;
     final cy = widget.centerOffset.dy;
 
@@ -539,7 +542,7 @@ class _RadialQuickAccessMenuState extends ConsumerState<RadialQuickAccessMenu>
                                         ],
                                       ),
                                       child: Text(
-                                        isMr ? item.titleMr : item.titleEn,
+                                        AppTranslations.getNavTitle(item.id, lang),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: TextStyle(

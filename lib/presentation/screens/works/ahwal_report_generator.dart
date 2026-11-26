@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import '../../../core/localization/app_translations.dart';
 import '../../../data/models/work_history_model.dart';
 import '../../widgets/app_pdf_report_theme.dart';
 import '../../widgets/app_report_preview_modal.dart';
@@ -17,11 +18,24 @@ class AhwalReportGenerator {
     required List<WorkHistoryModel> selectedWorks,
     String? nagarsevakName = 'Nagarsevak Office',
     String? wardName = 'Ward No. 12 (Prabhag 12)',
+    String lang = 'en',
   }) async {
     final pdf = pw.Document();
     final nowStr = DateFormat('dd MMMM yyyy').format(DateTime.now());
     final totalCount = selectedWorks.length;
     final totalAmount = selectedWorks.fold<double>(0, (sum, w) => sum + (w.amount ?? 0));
+
+    final reportTitle = lang == 'mr'
+        ? 'विकास कामे अहवाल (अहवाल)'
+        : (lang == 'hi' ? 'विकास कार्य रिपोर्ट (अहवाल)' : 'Political Work Report (Ahwal)');
+    final reportSubtitle = lang == 'mr'
+        ? 'विकासाची कामे आणि कामगिरीचा सारांश'
+        : (lang == 'hi' ? 'विकास कार्य और उपलब्धियों का सारांश' : 'Development Works & Achievements Summary');
+    final datePrefix = lang == 'mr' ? 'तारीख' : (lang == 'hi' ? 'दिनांक' : 'Date');
+    final totalWorksLabel = lang == 'mr' ? 'एकूण कामे' : (lang == 'hi' ? 'कुल कार्य' : 'Total Works');
+    final totalSpentLabel = lang == 'mr' ? 'एकूण अंदाजित रक्कम' : (lang == 'hi' ? 'कुल अनुमानित राशि' : 'TOTAL ESTIMATED AMOUNT');
+    final locationLabel = lang == 'mr' ? 'स्थान' : (lang == 'hi' ? 'स्थान' : 'Location');
+    final statusLabel = lang == 'mr' ? 'स्थिती' : (lang == 'hi' ? 'स्थिति' : 'Status');
 
     pdf.addPage(
       pw.MultiPage(
@@ -31,7 +45,8 @@ class AhwalReportGenerator {
           if (context.pageNumber > 1) {
             return WebReportTheme.buildContinuationHeader(
               context,
-              title: 'Political Work Report (Ahwal)',
+              title: reportTitle,
+              lang: lang,
             );
           }
           return pw.Container(
@@ -50,7 +65,7 @@ class AhwalReportGenerator {
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
                     pw.Text(
-                      'Political Work Report',
+                      reportTitle,
                       style: pw.TextStyle(
                         fontSize: 20,
                         fontWeight: pw.FontWeight.bold,
@@ -59,7 +74,7 @@ class AhwalReportGenerator {
                     ),
                     pw.SizedBox(height: 3),
                     pw.Text(
-                      'Development Works & Achievements Summary',
+                      reportSubtitle,
                       style: const pw.TextStyle(
                         fontSize: 9.5,
                         color: WebReportTheme.slate500,
@@ -71,7 +86,7 @@ class AhwalReportGenerator {
                   crossAxisAlignment: pw.CrossAxisAlignment.end,
                   children: [
                     pw.Text(
-                      'Date: $nowStr',
+                      '$datePrefix: $nowStr',
                       style: const pw.TextStyle(
                         fontSize: 8.5,
                         color: WebReportTheme.slate400,
@@ -79,7 +94,7 @@ class AhwalReportGenerator {
                     ),
                     pw.SizedBox(height: 2),
                     pw.Text(
-                      'Total Works: $totalCount',
+                      '$totalWorksLabel: $totalCount',
                       style: const pw.TextStyle(
                         fontSize: 8.5,
                         color: WebReportTheme.slate400,
@@ -91,7 +106,7 @@ class AhwalReportGenerator {
             ),
           );
         },
-        footer: (pw.Context context) => WebReportTheme.buildFooter(context),
+        footer: (pw.Context context) => WebReportTheme.buildFooter(context, lang: lang),
         build: (pw.Context context) {
           return [
             // Report Summary Box (matching web AhwalReportGenerator.tsx)
@@ -110,7 +125,7 @@ class AhwalReportGenerator {
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
                       pw.Text(
-                        'TOTAL WORKS',
+                        totalWorksLabel.toUpperCase(),
                         style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: WebReportTheme.brand700),
                       ),
                       pw.SizedBox(height: 2),
@@ -125,7 +140,7 @@ class AhwalReportGenerator {
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
                         pw.Text(
-                          'TOTAL ESTIMATED AMOUNT',
+                          totalSpentLabel,
                           style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: WebReportTheme.brand700),
                         ),
                         pw.SizedBox(height: 2),
@@ -187,7 +202,7 @@ class AhwalReportGenerator {
                     ),
                     pw.SizedBox(height: 6),
                     pw.Text(
-                      'Location: ${work.location}${work.area.isNotEmpty ? " (${work.area})" : ""}',
+                      '$locationLabel: ${work.location}${work.area.isNotEmpty ? " (${work.area})" : ""}',
                       style: const pw.TextStyle(fontSize: 8.5, color: WebReportTheme.slate700),
                     ),
                     if (work.description.isNotEmpty) ...[
@@ -202,7 +217,7 @@ class AhwalReportGenerator {
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
                         pw.Text(
-                          'Status: ${work.status}',
+                          '$statusLabel: ${AppTranslations.getStatus(work.status, lang)}',
                           style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: WebReportTheme.brand700),
                         ),
                         if (amountStr != null)

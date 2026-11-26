@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/localization/app_translations.dart';
+import '../../../../core/services/translation_service.dart';
+import '../../../providers/language_provider.dart';
 import '../../../../data/models/ward_budget_model.dart';
 import '../../../../data/repositories/ward_budget_repository.dart';
 import '../../common/desktop_modal_dialog.dart';
@@ -281,6 +284,7 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(appLanguageProvider);
     final filtered = _filteredBudgets;
 
     return SingleChildScrollView(
@@ -289,47 +293,51 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
-          _buildHeader(),
+          _buildHeader(lang),
           const SizedBox(height: 24),
 
           // 4 Stat Cards
-          _buildStatCards(),
+          _buildStatCards(lang),
           const SizedBox(height: 24),
 
           // Filters Row
-          _buildFilterRow(),
+          _buildFilterRow(lang),
           const SizedBox(height: 24),
 
           // Content Grid
           if (_loading)
             _buildLoadingGrid()
           else
-            _buildCardGrid(filtered),
+            _buildCardGrid(filtered, lang),
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(String lang) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
+          children: [
             Text(
-              'Ward Budget',
-              style: TextStyle(
+              AppTranslations.getNavTitle('budget', lang),
+              style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF0F172A),
                 letterSpacing: -0.5,
               ),
             ),
-            SizedBox(height: 4),
+            const SizedBox(height: 4),
             Text(
-              'Municipal budget allocation, expenditure and remaining fund tracking',
-              style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+              lang == 'mr'
+                  ? 'प्रभाग विकास निधी वाटप, खर्च आणि शिल्लक निधी व्यवस्थापन'
+                  : (lang == 'hi'
+                      ? 'वार्ड विकास निधि आवंटन, व्यय और शेष निधि प्रबंधन'
+                      : 'Municipal budget allocation, expenditure and remaining fund tracking'),
+              style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
             ),
           ],
         ),
@@ -365,10 +373,14 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
                   context: context,
                   budgets: _budgets,
                   year: _year,
+                  lang: lang,
                 );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
-              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+              label: Text(
+                lang == 'mr' ? 'अहवाल डाउनलोड करा' : (lang == 'hi' ? 'रिपोर्ट डाउनलोड करें' : 'Download Report'),
+                style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
+              ),
               style: OutlinedButton.styleFrom(
                 backgroundColor: const Color(0xFFF0F9FF),
                 side: const BorderSide(color: Color(0xFFBAE6FD)),
@@ -382,22 +394,22 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
             ElevatedButton(
               onPressed: _showAddBudgetModal,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0284C7), // bg-brand-600
+                backgroundColor: const Color(0xFF0284C7),
                 foregroundColor: Colors.white,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), // rounded-xl
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.add, size: 16, color: Colors.white), // Plus w-4 h-4
-                  SizedBox(width: 8), // gap-2
+                  const Icon(Icons.add, size: 16, color: Colors.white),
+                  const SizedBox(width: 8),
                   Text(
-                    'Add Budget Provision',
-                    style: TextStyle(
-                      fontSize: 14, // text-sm
-                      fontWeight: FontWeight.w600, // font-semibold
+                    lang == 'mr' ? 'नवीन तरतूद जोडा' : (lang == 'hi' ? 'नई निधि जोड़ें' : 'Add Budget Provision'),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
                       color: Colors.white,
                       letterSpacing: -0.1,
                     ),
@@ -411,7 +423,7 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
     );
   }
 
-  Widget _buildStatCards() {
+  Widget _buildStatCards(String lang) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final crossAxisCount = constraints.maxWidth > 900 ? 4 : 2;
@@ -426,9 +438,9 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
           children: [
             // Card 1: Total Allocated
             _statCard(
-              title: 'Total Budget Allocation',
+              title: AppTranslations.t('budget.allocated', lang: lang),
               amount: _formatCurrency(_totalAllocated),
-              subtitle: 'Ward No 12',
+              subtitle: lang == 'mr' ? 'प्रभाग क्र. १२' : (lang == 'hi' ? 'वार्ड नं. १२' : 'Ward No 12'),
               icon: Icons.account_balance_wallet_outlined,
               iconColor: const Color(0xFF0284C7),
               iconBgColor: const Color(0xFFF0F9FF),
@@ -436,9 +448,9 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
 
             // Card 2: Total Utilized
             _statCard(
-              title: 'Utilized Expenditure',
+              title: AppTranslations.t('budget.utilized', lang: lang),
               amount: _formatCurrency(_totalUtilized),
-              subtitle: 'Ongoing and completed works',
+              subtitle: lang == 'mr' ? 'प्रगतीपथावर आणि पूर्ण झालेली कामे' : (lang == 'hi' ? 'जारी और पूर्ण हुए कार्य' : 'Ongoing and completed works'),
               icon: Icons.trending_up,
               iconColor: const Color(0xFF16A34A),
               iconBgColor: const Color(0xFFF0FDF4),
@@ -446,9 +458,9 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
 
             // Card 3: Remaining Balance
             _statCard(
-              title: 'Remaining Balance',
+              title: AppTranslations.t('budget.remaining', lang: lang),
               amount: _formatCurrency(_totalRemaining),
-              subtitle: 'Available for planned works',
+              subtitle: lang == 'mr' ? 'नियोजित कामांसाठी उपलब्ध' : (lang == 'hi' ? 'योजनाबद्ध कार्यों के लिए उपलब्ध' : 'Available for planned works'),
               icon: Icons.currency_rupee,
               iconColor: const Color(0xFFD97706),
               iconBgColor: const Color(0xFFFFFBEB),
@@ -470,7 +482,10 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Utilization Rate', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+                      Text(
+                        lang == 'mr' ? 'वापर दर' : (lang == 'hi' ? 'उपयोग दर' : 'Utilization Rate'),
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                      ),
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(color: const Color(0xFFF3E8FF), borderRadius: BorderRadius.circular(8)),
@@ -540,7 +555,7 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
     );
   }
 
-  Widget _buildFilterRow() {
+  Widget _buildFilterRow(String lang) {
     return Row(
       children: [
         // Category Search (Col 8)
@@ -554,12 +569,12 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
             ),
             child: TextField(
               onChanged: (val) => setState(() => _searchTerm = val),
-              decoration: const InputDecoration(
-                hintText: 'Search budget category or title...',
-                hintStyle: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                prefixIcon: Icon(Icons.search, size: 18, color: Color(0xFF94A3B8)),
+              decoration: InputDecoration(
+                hintText: AppTranslations.t('budget.search_placeholder', lang: lang),
+                hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF94A3B8)),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               ),
             ),
           ),
@@ -576,9 +591,12 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
             backgroundColor: Colors.white,
             borderColor: const Color(0xFFE2E8F0),
             items: _uniqueAreas.map((area) {
+              final label = area == 'All'
+                  ? (lang == 'mr' ? 'सर्व क्षेत्रे' : (lang == 'hi' ? 'सभी क्षेत्र' : 'All Areas'))
+                  : area;
               return DropdownMenuItem(
                 value: area,
-                child: Text(area == 'All' ? 'All Areas' : area, overflow: TextOverflow.ellipsis),
+                child: Text(label, overflow: TextOverflow.ellipsis),
               );
             }).toList(),
             onChanged: (val) {
@@ -590,7 +608,7 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
     );
   }
 
-  Widget _buildCardGrid(List<WardBudgetModel> items) {
+  Widget _buildCardGrid(List<WardBudgetModel> items, String lang) {
     if (items.isEmpty) {
       return Container(
         width: double.infinity,
@@ -601,10 +619,15 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
           border: Border.all(color: const Color(0xFFE2E8F0)),
         ),
         child: Column(
-          children: const [
-            Icon(Icons.account_balance_outlined, size: 48, color: Color(0xFFCBD5E1)),
-            SizedBox(height: 12),
-            const Text('No budget allocations found', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500)),
+          children: [
+            const Icon(Icons.account_balance_outlined, size: 48, color: Color(0xFFCBD5E1)),
+            const SizedBox(height: 12),
+            Text(
+              lang == 'mr'
+                  ? 'कोणतीही तरतूद सापडली नाही'
+                  : (lang == 'hi' ? 'कोई बजट आवंटन नहीं मिला' : 'No budget allocations found'),
+              style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+            ),
           ],
         ),
       );
@@ -644,8 +667,8 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
-                        child: Text(
-                          item.category,
+                        child: AppTranslatedText(item.category,
+                          targetLanguage: lang,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
@@ -654,7 +677,10 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(4)),
-                        child: Text(item.area, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+                        child: AppTranslatedText(item.area,
+                          targetLanguage: lang,
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+                        ),
                       ),
                     ],
                   ),
@@ -667,7 +693,7 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Allocation', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                          Text(AppTranslations.t('budget.allocated', lang: lang), style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
                           const SizedBox(height: 2),
                           Text(_formatCurrency(item.totalAllocation), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
                         ],
@@ -675,7 +701,7 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Utilized', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                          Text(AppTranslations.t('budget.utilized', lang: lang), style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
                           const SizedBox(height: 2),
                           Text(_formatCurrency(item.utilizedAmount), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
                         ],
@@ -683,7 +709,7 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          const Text('Balance', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                          Text(AppTranslations.t('budget.remaining', lang: lang), style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
                           const SizedBox(height: 2),
                           Text(_formatCurrency(item.remainingAmount), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFFD97706))),
                         ],
@@ -696,7 +722,10 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Usage', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                      Text(
+                        lang == 'mr' ? 'वापर' : (lang == 'hi' ? 'उपयोग' : 'Usage'),
+                        style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                      ),
                       Text('${pct.toStringAsFixed(1)}%', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: item.progressColor)),
                     ],
                   ),
@@ -724,7 +753,10 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
                         OutlinedButton.icon(
                           onPressed: () => _showUpdateUtilizationModal(item),
                           icon: const Icon(Icons.edit_outlined, size: 14, color: Color(0xFF0284C7)),
-                          label: const Text('Update Utilized', style: TextStyle(fontSize: 12, color: Color(0xFF0284C7), fontWeight: FontWeight.w600)),
+                          label: Text(
+                            lang == 'mr' ? 'खर्च अद्ययावत करा' : (lang == 'hi' ? 'व्यय अपडेट करें' : 'Update Utilized'),
+                            style: const TextStyle(fontSize: 12, color: Color(0xFF0284C7), fontWeight: FontWeight.w600),
+                          ),
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: Color(0xFFBAE6FD)),
                             backgroundColor: const Color(0xFFF0F9FF),
@@ -735,7 +767,7 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
                         IconButton(
                           icon: const Icon(Icons.delete_outline, size: 18, color: Color(0xFFDC2626)),
                           onPressed: () => _showDeleteConfirm(item),
-                          tooltip: 'Delete',
+                          tooltip: AppTranslations.getCommon('delete', lang),
                         ),
                       ],
                     ),

@@ -8,6 +8,9 @@ import 'package:nagarsevak_mobile/presentation/screens/letters/new_letter_bottom
 import 'package:nagarsevak_mobile/presentation/screens/letters/letter_type_manager_sheet.dart';
 import 'package:nagarsevak_mobile/presentation/screens/letters/letter_report_generator.dart';
 import 'package:nagarsevak_mobile/presentation/widgets/app_dropdown.dart';
+import 'package:nagarsevak_mobile/core/localization/app_translations.dart';
+import 'package:nagarsevak_mobile/core/services/translation_service.dart';
+import 'package:nagarsevak_mobile/presentation/providers/language_provider.dart';
 
 /// Desktop Letters Dashboard View matching LetterDashboard.tsx verbatim:
 /// - Sticky Header: Icon + Title + Found counter + Help + Manage Types + New Request / Upload
@@ -157,18 +160,18 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Header Row (matching LetterDashboard.tsx lines 557-601)
-            _buildHeader(isMr, items.length),
+            // 1. Header Row
+            _buildHeader(lang, items.length),
 
             const SizedBox(height: 16),
 
-            // 2. Tabs & View Toggle (matching LetterDashboard.tsx lines 604-669)
-            _buildTabsAndViewToggle(isMr),
+            // 2. Tabs & View Toggle
+            _buildTabsAndViewToggle(lang),
 
             const SizedBox(height: 16),
 
-            // 3. Search & Filter Bar (matching LetterDashboard.tsx lines 671-747)
-            _buildFilterBar(isMr),
+            // 3. Search & Filter Bar
+            _buildFilterBar(lang),
 
             const SizedBox(height: 20),
 
@@ -176,9 +179,9 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
             if (_loading)
               _buildLoadingState()
             else if (_viewMode == 'table')
-              _buildLettersTable(items, isMr)
+              _buildLettersTable(items, lang)
             else
-              _buildMainGrid(items, isMr),
+              _buildMainGrid(items, lang),
           ],
         ),
       ),
@@ -186,16 +189,20 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
   }
 
   // --- Header Row ---
-  Widget _buildHeader(bool isMr, int foundCount) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildHeader(String lang, int foundCount) {
+    return Wrap(
+      spacing: 16,
+      runSpacing: 12,
+      alignment: WrapAlignment.spaceBetween,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(Icons.description_rounded, size: 28, color: Color(0xFF0369A1)),
             const SizedBox(width: 10),
             Text(
-              'Letters Dashboard',
+              AppTranslations.t('letters.title', lang: lang),
               style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
@@ -207,12 +214,12 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: const Color(0xFFF0F9FF), // bg-brand-50
+                color: const Color(0xFFF0F9FF),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFBAE6FD)), // border-brand-200
+                border: Border.all(color: const Color(0xFFBAE6FD)),
               ),
               child: Text(
-                'Found: $foundCount',
+                '${lang == "mr" ? "सापडले" : (lang == "hi" ? "मिले" : "Found")}: $foundCount',
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -225,17 +232,28 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
 
         // Action Buttons: Download Report + Manage Types + New Request / Upload
         Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             OutlinedButton.icon(
               onPressed: () {
                 LetterReportGenerator.generateAndPrintLetterReport(
                   context: context,
                   letters: _activeTab == 'outgoing' ? _outgoingLetters : _incomingLetters,
-                  title: _activeTab == 'outgoing' ? 'Outgoing Letters Report' : 'Incoming Letters Report',
+                  title: _activeTab == 'outgoing'
+                      ? (lang == 'mr'
+                          ? 'जावक पत्र अधिकृत नोंदवही'
+                          : (lang == 'hi' ? 'जावक पत्र आधिकारिक रजिस्टर' : 'Outgoing Letters Report'))
+                      : (lang == 'mr'
+                          ? 'आवक पत्र अधिकृत नोंदवही'
+                          : (lang == 'hi' ? 'आवक पत्र आधिकारिक रजिस्टर' : 'Incoming Letters Report')),
+                  lang: lang,
                 );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
-              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+              label: Text(
+                lang == 'mr' ? 'अहवाल डाउनलोड करा' : (lang == 'hi' ? 'रिपोर्ट डाउनलोड करें' : 'Download Report'),
+                style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
+              ),
               style: OutlinedButton.styleFrom(
                 backgroundColor: const Color(0xFFF0F9FF),
                 side: const BorderSide(color: Color(0xFFBAE6FD)),
@@ -254,14 +272,14 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.settings_outlined, size: 16, color: Color(0xFF475569)),
-                    SizedBox(width: 8),
+                    const Icon(Icons.settings_outlined, size: 16, color: Color(0xFF475569)),
+                    const SizedBox(width: 8),
                     Text(
-                      'Manage Types',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                      AppTranslations.t('letters.manage_types', lang: lang),
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
                     ),
                   ],
                 ),
@@ -276,14 +294,14 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.add, size: 16, color: Colors.white),
-                    SizedBox(width: 8),
+                    const Icon(Icons.add, size: 16, color: Colors.white),
+                    const SizedBox(width: 8),
                     Text(
-                      'New Request',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white, letterSpacing: -0.1),
+                      AppTranslations.t('letters.create_letter', lang: lang),
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white, letterSpacing: -0.1),
                     ),
                   ],
                 ),
@@ -298,14 +316,14 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.upload_file_rounded, size: 16, color: Colors.white),
-                    SizedBox(width: 8),
+                    const Icon(Icons.upload_file_rounded, size: 16, color: Colors.white),
+                    const SizedBox(width: 8),
                     Text(
-                      'Upload Incoming',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white, letterSpacing: -0.1),
+                      lang == 'mr' ? 'आवक पत्र जोडा' : (lang == 'hi' ? 'आवक पत्र अपलोड करें' : 'Upload Incoming'),
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white, letterSpacing: -0.1),
                     ),
                   ],
                 ),
@@ -318,7 +336,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
   }
 
   // --- Tabs & View Toggle Row ---
-  Widget _buildTabsAndViewToggle(bool isMr) {
+  Widget _buildTabsAndViewToggle(String lang) {
     return Container(
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
@@ -329,7 +347,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
           Row(
             children: [
               _buildTabButton(
-                title: 'Outgoing (${_outgoingLetters.length})',
+                title: '${AppTranslations.t("letters.outward_register", lang: lang)} (${_outgoingLetters.length})',
                 isActive: _activeTab == 'outgoing',
                 onTap: () {
                   setState(() {
@@ -340,7 +358,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
               ),
               const SizedBox(width: 24),
               _buildTabButton(
-                title: 'Incoming (${_incomingLetters.length})',
+                title: '${AppTranslations.t("letters.inward_register", lang: lang)} (${_incomingLetters.length})',
                 isActive: _activeTab == 'incoming',
                 onTap: () {
                   setState(() {
@@ -361,14 +379,14 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
               children: [
                 _buildViewToggleButton(
                   icon: Icons.grid_view_rounded,
-                  label: 'Grid',
+                  label: lang == 'mr' ? 'ग्रिड' : (lang == 'hi' ? 'ग्रिड' : 'Grid'),
                   isActive: _viewMode == 'grid',
                   onTap: () => setState(() => _viewMode = 'grid'),
                 ),
                 const SizedBox(width: 4),
                 _buildViewToggleButton(
                   icon: Icons.table_rows_rounded,
-                  label: 'Table',
+                  label: lang == 'mr' ? 'तक्ता' : (lang == 'hi' ? 'तालिका' : 'Table'),
                   isActive: _viewMode == 'table',
                   onTap: () => setState(() => _viewMode = 'table'),
                 ),
@@ -380,7 +398,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
     );
   }
 
-  Widget _buildLettersTable(List<LetterModel> items, bool isMr) {
+  Widget _buildLettersTable(List<LetterModel> items, String lang) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -391,14 +409,14 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: DataTable(
-          columns: const [
-            DataColumn(label: Text('Ref / Outward No.', style: TextStyle(fontWeight: FontWeight.w700))),
-            DataColumn(label: Text('Subject', style: TextStyle(fontWeight: FontWeight.w700))),
-            DataColumn(label: Text('Recipient / Citizen', style: TextStyle(fontWeight: FontWeight.w700))),
-            DataColumn(label: Text('Department / Type', style: TextStyle(fontWeight: FontWeight.w700))),
-            DataColumn(label: Text('Date', style: TextStyle(fontWeight: FontWeight.w700))),
-            DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.w700))),
-            DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.w700))),
+          columns: [
+            DataColumn(label: Text(lang == 'mr' ? 'संदर्भ / जावक क्र.' : (lang == 'hi' ? 'संदर्भ / जावक क्र.' : 'Ref / Outward No.'), style: const TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text(AppTranslations.getReportColumn('subject', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text(AppTranslations.getReportColumn('citizen', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text(AppTranslations.getReportColumn('category', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text(AppTranslations.getReportColumn('date', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text(AppTranslations.getReportColumn('status', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text(lang == 'mr' ? 'कृती' : (lang == 'hi' ? 'कार्रवाई' : 'Actions'), style: const TextStyle(fontWeight: FontWeight.w700))),
           ],
           rows: items.map((l) {
             final dateStr = DateFormat('dd MMM yyyy').format(l.createdAt);
@@ -408,7 +426,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                 DataCell(
                   ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 240),
-                    child: Text(
+                    child: AppTranslatedText(
                       l.subject,
                       style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
                       overflow: TextOverflow.ellipsis,
@@ -427,7 +445,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                       border: Border.all(color: const Color(0xFFBBF7D0)),
                     ),
                     child: Text(
-                      l.status,
+                      AppTranslations.getStatus(l.status, lang),
                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
                     ),
                   ),
@@ -520,7 +538,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
   }
 
   // --- Filter Bar ---
-  Widget _buildFilterBar(bool isMr) {
+  Widget _buildFilterBar(String lang) {
     return Row(
       children: [
         // Main Search (6 cols)
@@ -529,7 +547,11 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
           child: TextField(
             onChanged: (v) => setState(() => _searchQuery = v),
             decoration: InputDecoration(
-              hintText: 'Search letters by subject, citizen name...',
+              hintText: lang == 'mr'
+                  ? 'विषय किंवा नागरिकाच्या नावाने पत्र शोधा...'
+                  : (lang == 'hi'
+                      ? 'विषय या नागरिक के नाम से पत्र खोजें...'
+                      : 'Search letters by subject, citizen name...'),
               hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
               prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFF94A3B8)),
               contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -558,10 +580,13 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
             backgroundColor: Colors.white,
             borderColor: const Color(0xFFE2E8F0),
             items: _uniqueAreas.map((area) {
+              final label = area == 'All'
+                  ? (lang == 'mr' ? 'सर्व परिसर' : (lang == 'hi' ? 'सभी क्षेत्र' : 'All Areas'))
+                  : area;
               return DropdownMenuItem(
                 value: area,
                 child: Text(
-                  area == 'All' ? 'All Areas' : area,
+                  label,
                   overflow: TextOverflow.ellipsis,
                 ),
               );
@@ -583,10 +608,13 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
             backgroundColor: Colors.white,
             borderColor: const Color(0xFFE2E8F0),
             items: _uniqueDates.map((date) {
+              final label = date == 'All'
+                  ? (lang == 'mr' ? 'सर्व तारखा' : (lang == 'hi' ? 'सभी तिथियां' : 'All Dates'))
+                  : date;
               return DropdownMenuItem(
                 value: date,
                 child: Text(
-                  date == 'All' ? 'All Dates' : date,
+                  label,
                   overflow: TextOverflow.ellipsis,
                 ),
               );
@@ -601,9 +629,9 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
   }
 
   // --- Main 3-Column Layout: 1/3 List + 2/3 Live Preview ---
-  Widget _buildMainGrid(List<LetterModel> items, bool isMr) {
+  Widget _buildMainGrid(List<LetterModel> items, String lang) {
     if (items.isEmpty) {
-      return _buildEmptyState(isMr);
+      return _buildEmptyState(lang == 'mr');
     }
 
     return Row(
@@ -635,9 +663,9 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                 final isSelected = _selectedLetter?.id == letter.id;
 
                 if (_activeTab == 'outgoing') {
-                  return _buildOutgoingListItem(letter, isSelected, isMr);
+                  return _buildOutgoingListItem(letter, isSelected, lang);
                 } else {
-                  return _buildIncomingListItem(letter, isSelected, isMr);
+                  return _buildIncomingListItem(letter, isSelected, lang);
                 }
               },
             ),
@@ -650,15 +678,15 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
         Expanded(
           flex: 2,
           child: _selectedLetter != null
-              ? _buildPreviewPane(_selectedLetter!, isMr)
-              : _buildSelectLetterPlaceholder(isMr),
+              ? _buildPreviewPane(_selectedLetter!, lang == 'mr')
+              : _buildSelectLetterPlaceholder(lang == 'mr'),
         ),
       ],
     );
   }
 
   // Outgoing List Item (matching LetterDashboard.tsx lines 880-930)
-  Widget _buildOutgoingListItem(LetterModel letter, bool isSelected, bool isMr) {
+  Widget _buildOutgoingListItem(LetterModel letter, bool isSelected, String lang) {
     Color borderLeftColor = Colors.transparent;
     Color bgColor = isSelected ? const Color(0xFFF0F9FF) : Colors.white;
 
@@ -690,7 +718,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: Text(
+                  child: AppTranslatedText(
                     letter.letterType ?? letter.title,
                     style: const TextStyle(
                       fontSize: 13,
@@ -700,7 +728,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                _buildStatusPill(letter.status),
+                _buildStatusPill(letter.status, lang),
               ],
             ),
             const SizedBox(height: 4),
@@ -710,7 +738,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
             ),
             if (letter.subject.isNotEmpty && letter.subject != letter.title) ...[
               const SizedBox(height: 2),
-              Text(
+              AppTranslatedText(
                 letter.subject,
                 style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                 maxLines: 1,
@@ -736,7 +764,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
   }
 
   // Incoming List Item (matching LetterDashboard.tsx lines 950-980)
-  Widget _buildIncomingListItem(LetterModel letter, bool isSelected, bool isMr) {
+  Widget _buildIncomingListItem(LetterModel letter, bool isSelected, String lang) {
     final dateStr = letter.receivedDate != null
         ? DateFormat('dd/MM/yyyy').format(letter.receivedDate!)
         : DateFormat('dd/MM/yyyy').format(letter.createdAt);
@@ -758,7 +786,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: Text(
+                  child: AppTranslatedText(
                     letter.title,
                     style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
                     overflow: TextOverflow.ellipsis,
@@ -779,7 +807,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
             ),
             if (letter.description != null && letter.description!.isNotEmpty) ...[
               const SizedBox(height: 4),
-              Text(
+              AppTranslatedText(
                 letter.description!,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -1109,7 +1137,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
     );
   }
 
-  Widget _buildStatusPill(String status) {
+  Widget _buildStatusPill(String status, [String lang = 'en']) {
     Color bg = const Color(0xFFF1F5F9);
     Color fg = const Color(0xFF475569);
     final lower = status.toLowerCase();
@@ -1126,7 +1154,10 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(4)),
-      child: Text(status, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: fg)),
+      child: Text(
+        AppTranslations.getStatus(status, lang),
+        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: fg),
+      ),
     );
   }
 

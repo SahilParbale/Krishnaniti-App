@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import '../../../core/localization/app_translations.dart';
 import '../../../data/models/visitor_model.dart';
 import '../../widgets/app_pdf_report_theme.dart';
 import '../../widgets/app_report_preview_modal.dart';
@@ -18,11 +19,23 @@ class VisitorReportGenerator {
     String? filterTitle,
     String title = 'Visitor Log Report',
     String subtitle = 'Visitor Records Report',
+    String lang = 'en',
   }) async {
     final pdf = pw.Document();
     final now = DateTime.now();
     final formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(now);
     final total = visitors.length;
+
+    final resolvedTitle = (title == 'Visitor Log Report')
+        ? (lang == 'mr'
+            ? 'कार्यालय भेट नोंदवही अहवाल'
+            : (lang == 'hi' ? 'कार्यालय आगंतुक लॉग रिपोर्ट' : title))
+        : title;
+    final resolvedSubtitle = (subtitle == 'Visitor Records Report')
+        ? (lang == 'mr'
+            ? 'प्रभाग कार्यालय नागरिक व शिष्टमंडळ भेट नोंद'
+            : (lang == 'hi' ? 'वार्ड कार्यालय नागरिक एवं शिष्टमंडल भेंट रिकॉर्ड' : subtitle))
+        : subtitle;
 
     pdf.addPage(
       pw.MultiPage(
@@ -32,18 +45,19 @@ class VisitorReportGenerator {
           if (context.pageNumber > 1) {
             return WebReportTheme.buildContinuationHeader(
               context,
-              title: title,
+              title: resolvedTitle,
+              lang: lang,
             );
           }
           return WebReportTheme.buildHeader(
-            title: title,
-            subtitle: subtitle,
+            title: resolvedTitle,
+            subtitle: resolvedSubtitle,
             dateFormatted: formattedDate,
             totalCount: total,
-            foundLabel: 'Total Records',
+            lang: lang,
           );
         },
-        footer: (pw.Context context) => WebReportTheme.buildFooter(context),
+        footer: (pw.Context context) => WebReportTheme.buildFooter(context, lang: lang),
         build: (pw.Context context) {
           return [
             pw.TableHelper.fromTextArray(
@@ -64,12 +78,12 @@ class VisitorReportGenerator {
                 5: pw.FlexColumnWidth(1.5), // Reference (15%)
               },
               headers: [
-                'Date & Time',
-                'Full Name',
-                'Mobile',
-                'Area',
-                'Purpose',
-                'Reference',
+                AppTranslations.getReportColumn('date_time', lang),
+                AppTranslations.getReportColumn('name', lang),
+                AppTranslations.getReportColumn('mobile', lang),
+                AppTranslations.getReportColumn('area', lang),
+                lang == 'mr' ? 'उद्दिष्ट' : (lang == 'hi' ? 'उद्देश्य' : 'Purpose'),
+                lang == 'mr' ? 'संदर्भ' : (lang == 'hi' ? 'संदर्भ' : 'Reference'),
               ],
               data: visitors.map((v) {
                 final dateStr = DateFormat('dd/MM/yyyy').format(v.visitDate);

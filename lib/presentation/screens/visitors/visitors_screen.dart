@@ -15,6 +15,9 @@ import '../../widgets/app_shimmer_card.dart';
 import 'visitor_detail_screen.dart';
 import 'visitor_report_generator.dart';
 import '../../widgets/app_dropdown.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
+import '../../providers/language_provider.dart';
 
 class VisitorsScreen extends ConsumerStatefulWidget {
   const VisitorsScreen({super.key});
@@ -620,7 +623,8 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
+    final isMr = lang == 'mr';
     final filtered = _filteredVisitors;
 
     final todayCount = _allVisitors.where((v) => v.isToday).length;
@@ -823,11 +827,12 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                   ],
                   const SizedBox(width: 8),
                   AppPdfButton.icon(
-                    tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Report',
+                    tooltip: lang == 'mr' ? 'अहवाल डाउनलोड करा' : (lang == 'hi' ? 'रिपोर्ट डाउनलोड करें' : 'Download Report'),
                     onPressed: () {
                       VisitorReportGenerator.generateAndPrintListReport(
                         visitors: filtered,
                         filterTitle: 'Tab: $_activeTab | Purpose: $_selectedPurpose',
+                        lang: lang,
                       );
                     },
                   ),
@@ -1035,7 +1040,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
 
               if (visitor.remarks != null && visitor.remarks!.isNotEmpty) ...[
                 const SizedBox(height: 8),
-                Text(
+                AppTranslatedText(
                   visitor.remarks!,
                   style: const TextStyle(fontSize: 12.5, color: Color(0xFF475569), height: 1.3),
                   maxLines: 2,
