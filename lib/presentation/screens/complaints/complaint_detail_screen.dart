@@ -246,22 +246,63 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
     }
   }
 
-  // 2. Add / Update Status Modal
+  // 2. Add / Update Status Modal (Responsive: Dialog on Desktop matching StatusUpdateModal.tsx, Sheet on Mobile)
   void _openStatusModal({required String mode, bool showStatusSelector = false}) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => _StatusUpdateBottomSheet(
-        initialMode: mode,
-        showStatusSelector: showStatusSelector,
-        complaintTitle: _complaint.title,
-        onSubmit: (note, status, images) async {
-          Navigator.pop(ctx);
-          await _handleSaveProgressLog(note, status, images);
-        },
-      ),
-    );
+    final isDesktop = MediaQuery.of(context).size.width >= 768;
+    if (isDesktop) {
+      showDialog(
+        context: context,
+        barrierColor: Colors.black.withValues(alpha: 0.45),
+        builder: (ctx) => Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+          child: Container(
+            width: 520,
+            constraints: const BoxConstraints(maxHeight: 740),
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.16),
+                  blurRadius: 36,
+                  offset: const Offset(0, 16),
+                ),
+              ],
+            ),
+            child: _StatusUpdateBottomSheet(
+              initialMode: mode,
+              showStatusSelector: showStatusSelector,
+              complaintTitle: _complaint.title,
+              isDesktop: true,
+              onSubmit: (note, status, images) async {
+                Navigator.pop(ctx);
+                await _handleSaveProgressLog(note, status, images);
+              },
+            ),
+          ),
+        ),
+      );
+    } else {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (ctx) => _StatusUpdateBottomSheet(
+          initialMode: mode,
+          showStatusSelector: showStatusSelector,
+          complaintTitle: _complaint.title,
+          isDesktop: false,
+          onSubmit: (note, status, images) async {
+            Navigator.pop(ctx);
+            await _handleSaveProgressLog(note, status, images);
+          },
+        ),
+      );
+    }
   }
 
   Future<void> _handleSaveProgressLog(String note, String status, List<ComplaintAttachment> images) async {
@@ -313,54 +354,222 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
     }
   }
 
-  // 3. Edit Existing Progress Log
+  // 3. Edit Existing Progress Log (Responsive: Dialog on Desktop matching EditLogModal.tsx, Sheet on Mobile)
   void _openEditLogModal(int index, ComplaintProgressUpdate update) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => _EditLogBottomSheet(
-        logIndex: index,
-        initialStatus: update.status,
-        initialNote: update.note,
-        initialImages: update.images,
-        onSubmit: (note, status, images) async {
-          Navigator.pop(ctx);
-          final user = ref.read(currentUserProvider);
-          final updaterName = user?.name ?? user?.email ?? update.updatedBy ?? 'Staff';
+    final isDesktop = MediaQuery.of(context).size.width >= 768;
+    if (isDesktop) {
+      showDialog(
+        context: context,
+        barrierColor: Colors.black.withValues(alpha: 0.45),
+        builder: (ctx) => Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+          child: Container(
+            width: 520,
+            constraints: const BoxConstraints(maxHeight: 740),
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.16),
+                  blurRadius: 36,
+                  offset: const Offset(0, 16),
+                ),
+              ],
+            ),
+            child: _EditLogBottomSheet(
+              logIndex: index,
+              initialStatus: update.status,
+              initialNote: update.note,
+              initialImages: update.images,
+              isDesktop: true,
+              onSubmit: (note, status, images) async {
+                Navigator.pop(ctx);
+                final user = ref.read(currentUserProvider);
+                final updaterName = user?.name ?? user?.email ?? update.updatedBy ?? 'Staff';
 
-          setState(() {
-            final list = List<ComplaintProgressUpdate>.from(_complaint.progressUpdates);
-            if (index >= 0 && index < list.length) {
-              list[index] = ComplaintProgressUpdate(
-                note: note,
-                status: status,
-                timestamp: list[index].timestamp,
-                updatedBy: updaterName,
-                images: images,
-              );
-            }
-            _complaint = _complaint.copyWith(progressUpdates: list);
-          });
+                setState(() {
+                  final list = List<ComplaintProgressUpdate>.from(_complaint.progressUpdates);
+                  if (index >= 0 && index < list.length) {
+                    list[index] = ComplaintProgressUpdate(
+                      note: note,
+                      status: status,
+                      timestamp: list[index].timestamp,
+                      updatedBy: updaterName,
+                      images: images,
+                    );
+                  }
+                  _complaint = _complaint.copyWith(progressUpdates: list);
+                });
 
-          try {
-            await ref.read(complaintsRepoProvider).editProgressLog(
-                  complaintId: _complaint.id,
-                  logIndex: index,
+                try {
+                  await ref.read(complaintsRepoProvider).editProgressLog(
+                        complaintId: _complaint.id,
+                        logIndex: index,
+                        note: note,
+                        status: status,
+                        updatedBy: updaterName,
+                        images: images,
+                      );
+                } catch (_) {}
+              },
+            ),
+          ),
+        ),
+      );
+    } else {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (ctx) => _EditLogBottomSheet(
+          logIndex: index,
+          initialStatus: update.status,
+          initialNote: update.note,
+          initialImages: update.images,
+          isDesktop: false,
+          onSubmit: (note, status, images) async {
+            Navigator.pop(ctx);
+            final user = ref.read(currentUserProvider);
+            final updaterName = user?.name ?? user?.email ?? update.updatedBy ?? 'Staff';
+
+            setState(() {
+              final list = List<ComplaintProgressUpdate>.from(_complaint.progressUpdates);
+              if (index >= 0 && index < list.length) {
+                list[index] = ComplaintProgressUpdate(
                   note: note,
                   status: status,
+                  timestamp: list[index].timestamp,
                   updatedBy: updaterName,
                   images: images,
                 );
-          } catch (_) {}
-        },
-      ),
-    );
+              }
+              _complaint = _complaint.copyWith(progressUpdates: list);
+            });
+
+            try {
+              await ref.read(complaintsRepoProvider).editProgressLog(
+                    complaintId: _complaint.id,
+                    logIndex: index,
+                    note: note,
+                    status: status,
+                    updatedBy: updaterName,
+                    images: images,
+                  );
+            } catch (_) {}
+          },
+        ),
+      );
+    }
   }
 
-  // 4. Delete Log Confirmation
+  // 4. Delete Log Confirmation (Desktop Dialog matching web vs Mobile AlertDialog)
   void _openDeleteLogDialog(int index) {
     final isMr = ref.read(isMarathiProvider);
+    final isDesktop = MediaQuery.of(context).size.width >= 768;
+
+    if (isDesktop) {
+      showDialog(
+        context: context,
+        barrierColor: Colors.black.withValues(alpha: 0.45),
+        builder: (ctx) => Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: Container(
+            width: 380,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.16),
+                  blurRadius: 28,
+                  offset: const Offset(0, 12),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFEE2E2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 26),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  isMr ? AppStrings.deleteLogConfirmTitleMr : AppStrings.deleteLogConfirmTitle,
+                  style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  isMr ? AppStrings.deleteLogConfirmDescMr : AppStrings.deleteLogConfirmDesc,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B), height: 1.4),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFFCBD5E1)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          padding: const EdgeInsets.symmetric(vertical: 11),
+                        ),
+                        child: Text(isMr ? AppStrings.cancelMr : AppStrings.cancel, style: const TextStyle(color: Color(0xFF475569))),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFDC2626),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          padding: const EdgeInsets.symmetric(vertical: 11),
+                          elevation: 0,
+                        ),
+                        onPressed: () async {
+                          Navigator.pop(ctx);
+                          setState(() {
+                            final list = List<ComplaintProgressUpdate>.from(_complaint.progressUpdates);
+                            if (index >= 0 && index < list.length) {
+                              list.removeAt(index);
+                            }
+                            _complaint = _complaint.copyWith(progressUpdates: list);
+                          });
+                          try {
+                            await ref.read(complaintsRepoProvider).deleteProgressLog(
+                                  complaintId: _complaint.id,
+                                  logIndex: index,
+                                );
+                          } catch (_) {}
+                        },
+                        child: Text(isMr ? AppStrings.deleteComplaintMr : AppStrings.deleteComplaint, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      return;
+    }
+
+    // Mobile fallback
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -420,9 +629,10 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
     );
   }
 
-  // 5. Edit Ticket Modal
+  // 5. Edit Ticket Modal (Desktop modal dialog matching web vs Mobile AlertDialog)
   void _openEditTicketModal() {
     final isMr = ref.read(isMarathiProvider);
+    final isDesktop = MediaQuery.of(context).size.width >= 768;
     final descController = TextEditingController(text: _complaint.description.isNotEmpty ? _complaint.description : _complaint.title);
     String selectedCategory = _complaint.category;
 
@@ -431,6 +641,173 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
       categories.insert(0, selectedCategory);
     }
 
+    if (isDesktop) {
+      showDialog(
+        context: context,
+        barrierColor: Colors.black.withValues(alpha: 0.45),
+        builder: (dialogCtx) => StatefulBuilder(
+          builder: (ctx, setModalState) => Dialog(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+            child: Container(
+              width: 540,
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.16),
+                    blurRadius: 36,
+                    offset: const Offset(0, 16),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFF8FAFC),
+                      border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(7),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE0F2FE),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(Icons.edit_outlined, color: Color(0xFF0284C7), size: 18),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              isMr ? AppStrings.editModalTitleMr : AppStrings.editModalTitle,
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                            ),
+                          ],
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded, size: 20, color: Color(0xFF64748B)),
+                          onPressed: () => Navigator.pop(dialogCtx),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(22),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isMr ? AppStrings.editDescriptionLabelMr : AppStrings.editDescriptionLabel,
+                          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                        ),
+                        const SizedBox(height: 6),
+                        TextField(
+                          controller: descController,
+                          maxLines: 4,
+                          style: const TextStyle(fontSize: 13),
+                          decoration: InputDecoration(
+                            hintText: 'Enter complaint description...',
+                            hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                            filled: true,
+                            fillColor: const Color(0xFFF8FAFC),
+                            contentPadding: const EdgeInsets.all(12),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5)),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          isMr ? AppStrings.editCategoryLabelMr : AppStrings.editCategoryLabel,
+                          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                        ),
+                        const SizedBox(height: 6),
+                        AppDropdown<String>(
+                          title: isMr ? 'वर्गवारी निवडा' : 'Select Category',
+                          value: selectedCategory,
+                          items: categories
+                              .map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 13))))
+                              .toList(),
+                          onChanged: (val) {
+                            if (val != null) setModalState(() => selectedCategory = val);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFF8FAFC),
+                      border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        OutlinedButton(
+                          onPressed: () => Navigator.pop(dialogCtx),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFFCBD5E1)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+                          ),
+                          child: Text(isMr ? AppStrings.cancelMr : AppStrings.cancel, style: const TextStyle(fontSize: 13, color: Color(0xFF475569))),
+                        ),
+                        const SizedBox(width: 10),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0284C7),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
+                            elevation: 0,
+                          ),
+                          onPressed: () async {
+                            final newText = descController.text.trim();
+                            Navigator.pop(dialogCtx);
+                            if (newText.isNotEmpty) {
+                              setState(() {
+                                _complaint = _complaint.copyWith(
+                                  description: newText,
+                                  title: newText.split('\n').first,
+                                  category: selectedCategory,
+                                );
+                              });
+                              try {
+                                await ref.read(complaintsRepoProvider).updateComplaint(
+                                      complaintId: _complaint.id,
+                                      problem: newText,
+                                      category: selectedCategory,
+                                    );
+                              } catch (_) {}
+                            }
+                          },
+                          child: Text(isMr ? AppStrings.saveChangesMr : AppStrings.saveChanges, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      return;
+    }
+
+    // Mobile view AlertDialog
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
@@ -521,9 +898,106 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
     );
   }
 
-  // 6. Delete Ticket Confirmation
+  // 6. Delete Ticket Confirmation (Desktop Dialog matching web vs Mobile AlertDialog)
   void _openDeleteTicketDialog() {
     final isMr = ref.read(isMarathiProvider);
+    final isDesktop = MediaQuery.of(context).size.width >= 768;
+
+    if (isDesktop) {
+      showDialog(
+        context: context,
+        barrierColor: Colors.black.withValues(alpha: 0.45),
+        builder: (ctx) => Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: Container(
+            width: 380,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.16),
+                  blurRadius: 28,
+                  offset: const Offset(0, 12),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFEE2E2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 26),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  isMr ? AppStrings.deleteTicketConfirmTitleMr : AppStrings.deleteTicketConfirmTitle,
+                  style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  isMr ? AppStrings.deleteTicketConfirmDescMr : AppStrings.deleteTicketConfirmDesc,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B), height: 1.4),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFFCBD5E1)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          padding: const EdgeInsets.symmetric(vertical: 11),
+                        ),
+                        child: Text(isMr ? AppStrings.cancelMr : AppStrings.cancel, style: const TextStyle(color: Color(0xFF475569))),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFDC2626),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          padding: const EdgeInsets.symmetric(vertical: 11),
+                          elevation: 0,
+                        ),
+                        onPressed: () async {
+                          Navigator.pop(ctx);
+                          try {
+                            await ref.read(complaintsRepoProvider).deleteComplaint(_complaint.id);
+                          } catch (_) {}
+                          if (mounted) {
+                            if (widget.onBack != null) {
+                              widget.onBack!();
+                            } else {
+                              Navigator.pop(context, true);
+                            }
+                          }
+                        },
+                        child: Text(isMr ? AppStrings.deleteComplaintMr : AppStrings.deleteComplaint, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      return;
+    }
+
+    // Mobile view AlertDialog
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -1367,43 +1841,71 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section Header: Title & Add Log Button
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.access_time_rounded, size: 18, color: Color(0xFF0284C7)),
-                  const SizedBox(width: 8),
-                  Text(
-                    isMr ? AppStrings.progressHistoryMr : AppStrings.progressHistory,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF0F172A),
+          // Section Header: Title & Add Log Button (matching ComplaintDetail.tsx lines 1115-1132)
+          Container(
+            padding: const EdgeInsets.only(bottom: 14),
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.access_time_rounded, size: 19, color: Color(0xFF0284C7)),
+                    const SizedBox(width: 8),
+                    Text(
+                      isMr ? AppStrings.progressHistoryMr : AppStrings.progressHistory,
+                      style: const TextStyle(
+                        fontSize: 16.5,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                  ],
+                ),
+                if (isAdminOrStaff)
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => _openStatusModal(mode: 'InProgress', showStatusSelector: true),
+                      borderRadius: BorderRadius.circular(8),
+                      hoverColor: const Color(0xFF0369A1),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0284C7),
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF0284C7).withValues(alpha: 0.28),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1.5),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.add_rounded, size: 15, color: Colors.white),
+                            const SizedBox(width: 5),
+                            Text(
+                              isMr ? AppStrings.addLogMr : AppStrings.addLog,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                                letterSpacing: -0.1,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                ],
-              ),
-              if (isAdminOrStaff)
-                ElevatedButton.icon(
-                  onPressed: () => _openStatusModal(mode: 'InProgress', showStatusSelector: true),
-                  icon: const Icon(Icons.add_rounded, size: 14),
-                  label: Text(
-                    isMr ? AppStrings.addLogMr : AppStrings.addLog,
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0284C7),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                ),
-            ],
+              ],
+            ),
           ),
 
           const SizedBox(height: 18),
@@ -2165,18 +2667,20 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
 }
 
 // -----------------------------------------------------------------------------
-// STATUS UPDATE BOTTOM SHEET (matching StatusUpdateModal.tsx)
+// STATUS UPDATE MODAL / BOTTOM SHEET (matching StatusUpdateModal.tsx)
 // -----------------------------------------------------------------------------
 class _StatusUpdateBottomSheet extends StatefulWidget {
   final String initialMode; // 'InProgress' or 'Resolved'
   final bool showStatusSelector;
   final String complaintTitle;
+  final bool isDesktop;
   final Function(String note, String status, List<ComplaintAttachment> images) onSubmit;
 
   const _StatusUpdateBottomSheet({
     required this.initialMode,
     required this.showStatusSelector,
     required this.complaintTitle,
+    this.isDesktop = false,
     required this.onSubmit,
   });
 
@@ -2188,7 +2692,7 @@ class _StatusUpdateBottomSheetState extends State<_StatusUpdateBottomSheet> {
   late String _status;
   final TextEditingController _noteController = TextEditingController();
   List<XFile> _selectedFiles = [];
-  bool _isSaving = false;
+  final bool _isSaving = false;
 
   @override
   void initState() {
@@ -2206,16 +2710,17 @@ class _StatusUpdateBottomSheetState extends State<_StatusUpdateBottomSheet> {
   Widget build(BuildContext context) {
     final isInProgress = _status == 'InProgress';
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final isDesktop = widget.isDesktop;
 
     return Container(
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.85,
+        maxHeight: MediaQuery.of(context).size.height * 0.88,
       ),
-      padding: EdgeInsets.only(bottom: bottomInset),
-      decoration: const BoxDecoration(
+      padding: EdgeInsets.only(bottom: isDesktop ? 0 : bottomInset),
+      decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        boxShadow: [
+        borderRadius: isDesktop ? BorderRadius.circular(16) : const BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: const [
           BoxShadow(
             color: Colors.black26,
             blurRadius: 20,
@@ -2225,17 +2730,77 @@ class _StatusUpdateBottomSheetState extends State<_StatusUpdateBottomSheet> {
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          AppModalHeader(
-            icon: Icons.published_with_changes_rounded,
-            title: isInProgress ? 'Update Work In Progress' : 'Mark Complaint Resolved',
-            subtitle: widget.complaintTitle,
-            onClose: () => Navigator.pop(context),
-          ),
+          // Header (Desktop clean styling vs Mobile drag handle header)
+          if (isDesktop)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+              decoration: const BoxDecoration(
+                color: Color(0xFFF8FAFC),
+                border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: isInProgress ? const Color(0xFFEFF6FF) : const Color(0xFFECFDF5),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: isInProgress ? const Color(0xFFBFDBFE) : const Color(0xFFA7F3D0),
+                          ),
+                        ),
+                        child: Icon(
+                          isInProgress ? Icons.access_time_rounded : Icons.check_circle_outline_rounded,
+                          color: isInProgress ? const Color(0xFF1D4ED8) : const Color(0xFF047857),
+                          size: 18,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isInProgress ? 'Add Progress Log' : 'Add Resolution Log',
+                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: Color(0xFF0F172A)),
+                          ),
+                          if (widget.complaintTitle.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              widget.complaintTitle,
+                              style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B), size: 20),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            )
+          else
+            AppModalHeader(
+              icon: Icons.published_with_changes_rounded,
+              title: isInProgress ? 'Update Work In Progress' : 'Mark Complaint Resolved',
+              subtitle: widget.complaintTitle,
+              onClose: () => Navigator.pop(context),
+            ),
+
+          // Scrollable Body
           Flexible(
             child: ListView(
               shrinkWrap: true,
-              padding: const EdgeInsets.all(18),
+              padding: const EdgeInsets.all(20),
               children: [
                 if (widget.showStatusSelector) ...[
                   Container(
@@ -2303,7 +2868,7 @@ class _StatusUpdateBottomSheetState extends State<_StatusUpdateBottomSheet> {
                 ],
 
                 AppFieldLabel(
-                  label: isInProgress ? 'Work Progress Note' : 'Resolution Details & Completion Remarks',
+                  label: isInProgress ? 'Work Progress Note' : 'Resolution Details & Remarks',
                   isRequired: true,
                 ),
                 TextField(
@@ -2312,9 +2877,11 @@ class _StatusUpdateBottomSheetState extends State<_StatusUpdateBottomSheet> {
                   style: const TextStyle(fontSize: 13),
                   decoration: InputDecoration(
                     hintText: isInProgress
-                        ? 'Describe ongoing work, materials used, estimated completion...'
-                        : 'Describe how the issue was resolved, inspection done, verified...',
+                        ? 'Describe ongoing work, actions taken, materials used...'
+                        : 'Describe how the issue was completely resolved, inspection done...',
                     hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                       borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
@@ -2333,65 +2900,126 @@ class _StatusUpdateBottomSheetState extends State<_StatusUpdateBottomSheet> {
                 const SizedBox(height: 14),
 
                 AppImagePickerField(
-                  label: 'Attach Site Evidence Photos',
+                  label: 'Attach Photos / Videos (Optional)',
                   allowMultiple: true,
                   initialFiles: _selectedFiles,
                   onFilesChanged: (files) {
                     setState(() => _selectedFiles = files);
                   },
                 ),
-                const SizedBox(height: 22),
 
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          side: const BorderSide(color: Color(0xFFCBD5E1)),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                        child: const Text('Cancel', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w700)),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: _isSaving
-                            ? null
-                            : () {
-                                final note = _noteController.text.trim();
-                                if (note.isEmpty) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Please enter progress remarks.')),
-                                  );
-                                  return;
-                                }
-                                final attachments = _selectedFiles.map((f) => ComplaintAttachment(
-                                  url: f.path,
-                                  type: 'image/jpeg',
-                                  name: f.name,
-                                )).toList();
-                                widget.onSubmit(note, _status, attachments);
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: isInProgress ? const Color(0xFF0284C7) : const Color(0xFF16A34A),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                        child: Text(
-                          isInProgress ? 'Save Progress' : 'Mark Resolved',
-                          style: const TextStyle(fontWeight: FontWeight.w800),
+                if (!isDesktop) ...[
+                  const SizedBox(height: 22),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            side: const BorderSide(color: Color(0xFFCBD5E1)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          child: const Text('Cancel', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w700)),
                         ),
                       ),
-                    ),
-                  ],
-                ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: _isSaving
+                              ? null
+                              : () {
+                                  final note = _noteController.text.trim();
+                                  if (note.isEmpty) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Please enter progress remarks.')),
+                                    );
+                                    return;
+                                  }
+                                  final attachments = _selectedFiles.map((f) => ComplaintAttachment(
+                                    url: f.path,
+                                    type: 'image/jpeg',
+                                    name: f.name,
+                                  )).toList();
+                                  widget.onSubmit(note, _status, attachments);
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: isInProgress ? const Color(0xFF0284C7) : const Color(0xFF16A34A),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          child: Text(
+                            isInProgress ? 'Save Progress' : 'Mark Resolved',
+                            style: const TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
+
+          // Desktop Footer (matching StatusUpdateModal.tsx lines 452-484)
+          if (isDesktop)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+              decoration: const BoxDecoration(
+                color: Color(0xFFF8FAFC),
+                border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFFCBD5E1)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    ),
+                    child: const Text('Cancel', style: TextStyle(fontSize: 13, color: Color(0xFF475569))),
+                  ),
+                  const SizedBox(width: 10),
+                  ElevatedButton.icon(
+                    onPressed: _isSaving
+                        ? null
+                        : () {
+                            final note = _noteController.text.trim();
+                            if (note.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Please enter progress remarks.')),
+                              );
+                              return;
+                            }
+                            final attachments = _selectedFiles.map((f) => ComplaintAttachment(
+                              url: f.path,
+                              type: 'image/jpeg',
+                              name: f.name,
+                            )).toList();
+                            widget.onSubmit(note, _status, attachments);
+                          },
+                    icon: Icon(
+                      isInProgress ? Icons.access_time_rounded : Icons.check_circle_outline_rounded,
+                      size: 16,
+                    ),
+                    label: Text(
+                      isInProgress ? 'Save Progress' : 'Save Resolution',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isInProgress ? const Color(0xFF0284C7) : const Color(0xFF16A34A),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      elevation: 0,
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );
@@ -2399,13 +3027,14 @@ class _StatusUpdateBottomSheetState extends State<_StatusUpdateBottomSheet> {
 }
 
 // -----------------------------------------------------------------------------
-// EDIT LOG BOTTOM SHEET (matching EditLogModal.tsx)
+// EDIT LOG MODAL / BOTTOM SHEET (matching EditLogModal.tsx)
 // -----------------------------------------------------------------------------
 class _EditLogBottomSheet extends StatefulWidget {
   final int logIndex;
   final String initialStatus;
   final String initialNote;
   final List<ComplaintAttachment> initialImages;
+  final bool isDesktop;
   final Function(String note, String status, List<ComplaintAttachment> images) onSubmit;
 
   const _EditLogBottomSheet({
@@ -2413,6 +3042,7 @@ class _EditLogBottomSheet extends StatefulWidget {
     required this.initialStatus,
     required this.initialNote,
     required this.initialImages,
+    this.isDesktop = false,
     required this.onSubmit,
   });
 
@@ -2444,16 +3074,17 @@ class _EditLogBottomSheetState extends State<_EditLogBottomSheet> {
   Widget build(BuildContext context) {
     final isInProgress = _status == 'InProgress';
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final isDesktop = widget.isDesktop;
 
     return Container(
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.85,
+        maxHeight: MediaQuery.of(context).size.height * 0.88,
       ),
-      padding: EdgeInsets.only(bottom: bottomInset),
-      decoration: const BoxDecoration(
+      padding: EdgeInsets.only(bottom: isDesktop ? 0 : bottomInset),
+      decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        boxShadow: [
+        borderRadius: isDesktop ? BorderRadius.circular(16) : const BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: const [
           BoxShadow(
             color: Colors.black26,
             blurRadius: 20,
@@ -2463,163 +3094,264 @@ class _EditLogBottomSheetState extends State<_EditLogBottomSheet> {
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          AppModalHeader(
-            icon: Icons.edit_note_rounded,
-            title: 'Edit Progress Log',
-            subtitle: isInProgress ? 'Status: In Progress' : 'Status: Resolved',
-            onClose: () => Navigator.pop(context),
-          ),
-          Flexible(
-            child: ListView(
-              shrinkWrap: true,
-              padding: const EdgeInsets.all(18),
-              children: [
-                // Status Selector Tabs
+          if (isDesktop)
             Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(10)),
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+              decoration: const BoxDecoration(
+                color: Color(0xFFF8FAFC),
+                border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+              ),
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(
-                    child: InkWell(
-                      onTap: () => setState(() => _status = 'InProgress'),
-                      borderRadius: BorderRadius.circular(8),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: isInProgress ? Colors.white : Colors.transparent,
-                          borderRadius: BorderRadius.circular(8),
-                          boxShadow: isInProgress ? const [BoxShadow(color: Color(0x0A000000), blurRadius: 4, offset: Offset(0, 1))] : null,
+                          color: const Color(0xFFEFF6FF),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFBFDBFE)),
                         ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          'In Progress',
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w700,
-                            color: isInProgress ? const Color(0xFF0284C7) : const Color(0xFF64748B),
-                          ),
-                        ),
+                        child: const Icon(Icons.edit_note_rounded, color: Color(0xFF1D4ED8), size: 18),
                       ),
-                    ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Edit Progress Log',
+                            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: Color(0xFF0F172A)),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            isInProgress ? 'Status: In Progress' : 'Status: Resolved',
+                            style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  Expanded(
-                    child: InkWell(
-                      onTap: () => setState(() => _status = 'Resolved'),
-                      borderRadius: BorderRadius.circular(8),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        decoration: BoxDecoration(
-                          color: !isInProgress ? Colors.white : Colors.transparent,
-                          borderRadius: BorderRadius.circular(8),
-                          boxShadow: !isInProgress ? const [BoxShadow(color: Color(0x0A000000), blurRadius: 4, offset: Offset(0, 1))] : null,
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          'Resolved',
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w700,
-                            color: !isInProgress ? const Color(0xFF16A34A) : const Color(0xFF64748B),
-                          ),
-                        ),
-                      ),
-                    ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B), size: 20),
+                    onPressed: () => Navigator.pop(context),
                   ),
                 ],
               ),
+            )
+          else
+            AppModalHeader(
+              icon: Icons.edit_note_rounded,
+              title: 'Edit Progress Log',
+              subtitle: isInProgress ? 'Status: In Progress' : 'Status: Resolved',
+              onClose: () => Navigator.pop(context),
             ),
 
-            const SizedBox(height: 14),
-            AppFieldLabel(label: 'Log Note', isRequired: true),
-            TextField(
-              controller: _noteController,
-              maxLines: 4,
-              style: const TextStyle(fontSize: 13),
-              decoration: InputDecoration(
-                hintText: 'Enter log description...',
-                hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5)),
-                contentPadding: const EdgeInsets.all(12),
-              ),
-            ),
-
-            const SizedBox(height: 14),
-
-            if (_images.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              SizedBox(
-                height: 70,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _images.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 8),
-                  itemBuilder: (ctx, idx) {
-                    final img = _images[idx];
-                    return Stack(
-                      children: [
-                        Container(
-                          width: 70,
-                          height: 70,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFFCBD5E1)),
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: img.url.startsWith('/')
-                              ? Image.file(File(img.url), fit: BoxFit.cover)
-                              : Image.network(img.url, fit: BoxFit.cover),
-                        ),
-                        Positioned(
-                          top: 2,
-                          right: 2,
-                          child: InkWell(
-                            onTap: () => setState(() => _images.removeAt(idx)),
-                            child: Container(
-                              padding: const EdgeInsets.all(2),
-                              decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
-                              child: const Icon(Icons.close, color: Colors.white, size: 12),
+          Flexible(
+            child: ListView(
+              shrinkWrap: true,
+              padding: const EdgeInsets.all(20),
+              children: [
+                // Status Selector Tabs
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(10)),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => setState(() => _status = 'InProgress'),
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            decoration: BoxDecoration(
+                              color: isInProgress ? Colors.white : Colors.transparent,
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: isInProgress ? const [BoxShadow(color: Color(0x0A000000), blurRadius: 4, offset: Offset(0, 1))] : null,
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              'In Progress',
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w700,
+                                color: isInProgress ? const Color(0xFF0284C7) : const Color(0xFF64748B),
+                              ),
                             ),
                           ),
                         ),
-                      ],
-                    );
-                  },
-                ),
-              ),
-            ],
-
-            const SizedBox(height: 14),
-
-            AppImagePickerField(
-              label: 'Add More Photos',
-              allowMultiple: true,
-              initialFiles: _newFiles,
-              onFilesChanged: (files) {
-                setState(() => _newFiles = files);
-              },
-            ),
-            const SizedBox(height: 22),
-
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      side: const BorderSide(color: Color(0xFFCBD5E1)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                    child: const Text('Cancel', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w700)),
+                      ),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => setState(() => _status = 'Resolved'),
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            decoration: BoxDecoration(
+                              color: !isInProgress ? Colors.white : Colors.transparent,
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: !isInProgress ? const [BoxShadow(color: Color(0x0A000000), blurRadius: 4, offset: Offset(0, 1))] : null,
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              'Resolved',
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w700,
+                                color: !isInProgress ? const Color(0xFF16A34A) : const Color(0xFF64748B),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton(
+
+                const SizedBox(height: 14),
+                const AppFieldLabel(label: 'Log Note', isRequired: true),
+                TextField(
+                  controller: _noteController,
+                  maxLines: 4,
+                  style: const TextStyle(fontSize: 13),
+                  decoration: InputDecoration(
+                    hintText: 'Enter log description...',
+                    hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF0284C7), width: 1.5)),
+                    contentPadding: const EdgeInsets.all(12),
+                  ),
+                ),
+
+                const SizedBox(height: 14),
+
+                if (_images.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: 70,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _images.length,
+                      separatorBuilder: (_, _) => const SizedBox(width: 8),
+                      itemBuilder: (ctx, idx) {
+                        final img = _images[idx];
+                        return Stack(
+                          children: [
+                            Container(
+                              width: 70,
+                              height: 70,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: const Color(0xFFCBD5E1)),
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: img.url.startsWith('/')
+                                  ? Image.file(File(img.url), fit: BoxFit.cover)
+                                  : Image.network(img.url, fit: BoxFit.cover),
+                            ),
+                            Positioned(
+                              top: 2,
+                              right: 2,
+                              child: InkWell(
+                                onTap: () => setState(() => _images.removeAt(idx)),
+                                child: Container(
+                                  padding: const EdgeInsets.all(2),
+                                  decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                                  child: const Icon(Icons.close, color: Colors.white, size: 12),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: 14),
+
+                AppImagePickerField(
+                  label: 'Add More Photos',
+                  allowMultiple: true,
+                  initialFiles: _newFiles,
+                  onFilesChanged: (files) {
+                    setState(() => _newFiles = files);
+                  },
+                ),
+
+                if (!isDesktop) ...[
+                  const SizedBox(height: 22),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            side: const BorderSide(color: Color(0xFFCBD5E1)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          child: const Text('Cancel', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w700)),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            final note = _noteController.text.trim();
+                            if (note.isEmpty) return;
+                            final allAttachments = List<ComplaintAttachment>.from(_images);
+                            for (final f in _newFiles) {
+                              allAttachments.add(ComplaintAttachment(
+                                url: f.path,
+                                type: 'image/jpeg',
+                                name: f.name,
+                              ));
+                            }
+                            widget.onSubmit(note, _status, allAttachments);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0284C7),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          child: const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.w800)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          if (isDesktop)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+              decoration: const BoxDecoration(
+                color: Color(0xFFF8FAFC),
+                border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFFCBD5E1)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    ),
+                    child: const Text('Cancel', style: TextStyle(fontSize: 13, color: Color(0xFF475569))),
+                  ),
+                  const SizedBox(width: 10),
+                  ElevatedButton.icon(
                     onPressed: () {
                       final note = _noteController.text.trim();
                       if (note.isEmpty) return;
@@ -2633,23 +3365,22 @@ class _EditLogBottomSheetState extends State<_EditLogBottomSheet> {
                       }
                       widget.onSubmit(note, _status, allAttachments);
                     },
+                    icon: const Icon(Icons.check_rounded, size: 16),
+                    label: const Text('Save Changes', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF0284C7),
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      elevation: 0,
                     ),
-                    child: const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.w800)),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ],
-        ),
+        ],
       ),
-    ],
-  ),
-);
+    );
   }
 }
 

@@ -37,6 +37,42 @@ class NewComplaintBottomSheet extends ConsumerStatefulWidget {
     String? prefillVoterId,
     String? prefillVoterName,
   }) {
+    final isDesktop = MediaQuery.of(context).size.width >= 768;
+    if (isDesktop) {
+      return showDialog<bool>(
+        context: context,
+        barrierDismissible: true,
+        barrierColor: Colors.black.withValues(alpha: 0.45),
+        builder: (_) => Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+          child: Container(
+            width: 720,
+            constraints: const BoxConstraints(maxHeight: 820),
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.16),
+                  blurRadius: 36,
+                  offset: const Offset(0, 16),
+                ),
+              ],
+            ),
+            child: NewComplaintBottomSheet(
+              initialTab: initialTab,
+              hidePersonalHelp: hidePersonalHelp,
+              prefillVoterId: prefillVoterId,
+              prefillVoterName: prefillVoterName,
+            ),
+          ),
+        ),
+      );
+    }
     return showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -380,22 +416,59 @@ class _NewComplaintBottomSheetState
   }
 
   void _openVoterSearchSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _VoterSearchModalSheet(
-        onSelect: (voter) {
-          _handleVoterSelected(voter);
-          Navigator.pop(context);
-        },
-      ),
-    );
+    final isDesktop = MediaQuery.of(context).size.width >= 768;
+    if (isDesktop) {
+      showDialog(
+        context: context,
+        barrierColor: Colors.black.withValues(alpha: 0.45),
+        builder: (ctx) => Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+          child: Container(
+            width: 650,
+            constraints: const BoxConstraints(maxHeight: 740),
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.16),
+                  blurRadius: 36,
+                  offset: const Offset(0, 16),
+                ),
+              ],
+            ),
+            child: _VoterSearchModalSheet(
+              onSelect: (voter) {
+                _handleVoterSelected(voter);
+                Navigator.pop(ctx);
+              },
+            ),
+          ),
+        ),
+      );
+    } else {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => _VoterSearchModalSheet(
+          onSelect: (voter) {
+            _handleVoterSelected(voter);
+            Navigator.pop(context);
+          },
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final isMr = ref.watch(isMarathiProvider);
+    final isDesktop = MediaQuery.of(context).size.width >= 768;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final societies = kSocietiesByWard[_selectedWard] ?? [];
 
@@ -417,16 +490,20 @@ class _NewComplaintBottomSheetState
         constraints: BoxConstraints(
           maxHeight: MediaQuery.of(context).size.height * 0.90,
         ),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black26,
-              blurRadius: 20,
-              offset: Offset(0, -4),
-            ),
-          ],
+          borderRadius: isDesktop
+              ? BorderRadius.circular(20)
+              : const BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: isDesktop
+              ? null
+              : const [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 20,
+                    offset: Offset(0, -4),
+                  ),
+                ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1231,14 +1308,17 @@ class _VoterSearchModalSheetState
   @override
   Widget build(BuildContext context) {
     final isMr = ref.watch(isMarathiProvider);
+    final isDesktop = MediaQuery.of(context).size.width >= 768;
 
     return Container(
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.85,
+        maxHeight: isDesktop ? 700 : MediaQuery.of(context).size.height * 0.85,
       ),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: isDesktop
+            ? BorderRadius.circular(20)
+            : const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

@@ -37,6 +37,41 @@ class NewLetterBottomSheet extends ConsumerStatefulWidget {
     String? prefillVoterId,
     String? prefillVoterName,
   }) {
+    final isDesktop = MediaQuery.of(context).size.width >= 768;
+    if (isDesktop) {
+      return showDialog<bool>(
+        context: context,
+        barrierDismissible: true,
+        barrierColor: Colors.black.withValues(alpha: 0.45),
+        builder: (_) => Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+          child: Container(
+            width: 720,
+            constraints: const BoxConstraints(maxHeight: 820),
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.16),
+                  blurRadius: 36,
+                  offset: const Offset(0, 16),
+                ),
+              ],
+            ),
+            child: NewLetterBottomSheet(
+              initialTab: initialTab,
+              prefillVoterId: prefillVoterId,
+              prefillVoterName: prefillVoterName,
+            ),
+          ),
+        ),
+      );
+    }
     return showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -453,142 +488,195 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
         .where((k) => !_activeDynamicFieldKeys.contains(k))
         .toList();
     final customFieldCtrl = TextEditingController();
+    final isDesktop = MediaQuery.of(context).size.width >= 768;
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-            return Container(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.85,
-              ),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                boxShadow: [
+    Widget buildSheetContent(BuildContext ctx, StateSetter setModalState) {
+      final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
+      return Container(
+        constraints: BoxConstraints(
+          maxHeight: isDesktop ? 600 : MediaQuery.of(ctx).size.height * 0.85,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: isDesktop
+              ? BorderRadius.circular(20)
+              : const BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: isDesktop
+              ? null
+              : const [
                   BoxShadow(color: Colors.black26, blurRadius: 20, offset: Offset(0, -4)),
                 ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 1. FIXED STANDARDIZED HEADER
+            AppModalHeader(
+              icon: Icons.add_circle_outline_rounded,
+              title: isMr ? 'अतिरिक्त माहितीचे फील्ड जोडा' : 'Add Additional Field',
+              subtitle: isMr ? 'पत्रासाठी आवश्यक फील्ड निवडा' : 'Select field for certificate or letter',
+              onClose: () => Navigator.pop(ctx),
+            ),
+
+            // 2. SCROLLABLE BODY
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                padding: EdgeInsets.fromLTRB(16, 12, 16, 16 + bottomInset),
                 children: [
-                  // 1. FIXED STANDARDIZED HEADER
-                  AppModalHeader(
-                    icon: Icons.add_circle_outline_rounded,
-                    title: isMr ? 'अतिरिक्त माहितीचे फील्ड जोडा' : 'Add Additional Field',
-                    subtitle: isMr ? 'पत्रासाठी आवश्यक फील्ड निवडा' : 'Select field for certificate or letter',
-                    onClose: () => Navigator.pop(ctx),
+                  // Custom field input
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: customFieldCtrl,
+                          decoration: appInputDecoration(
+                            hint: isMr ? 'किंवा नवीन फील्डचे नाव टाका...' : 'Or enter custom field name...',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: () {
+                          final customName = customFieldCtrl.text.trim();
+                          if (customName.isNotEmpty) {
+                            final key = customName.toLowerCase().replaceAll(RegExp(r'\s+'), '_');
+                            if (!_activeDynamicFieldKeys.contains(key)) {
+                              Navigator.pop(ctx);
+                              setState(() {
+                                _activeDynamicFieldKeys.add(key);
+                                _dynamicControllers.putIfAbsent(key, () => TextEditingController());
+                              });
+                            }
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0284C7),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: Text(isMr ? 'जोडा' : 'Add', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ],
                   ),
 
-                  // 2. SCROLLABLE BODY
-                  Flexible(
-                    child: ListView(
-                      shrinkWrap: true,
-                      padding: EdgeInsets.fromLTRB(16, 12, 16, 16 + bottomInset),
-                      children: [
-                        // Custom field input
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: customFieldCtrl,
-                                decoration: appInputDecoration(
-                                  hint: isMr ? 'किंवा नवीन फील्डचे नाव टाका...' : 'Or enter custom field name...',
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            ElevatedButton(
-                              onPressed: () {
-                                final customName = customFieldCtrl.text.trim();
-                                if (customName.isNotEmpty) {
-                                  final key = customName.toLowerCase().replaceAll(RegExp(r'\s+'), '_');
-                                  if (!_activeDynamicFieldKeys.contains(key)) {
-                                    Navigator.pop(ctx);
-                                    setState(() {
-                                      _activeDynamicFieldKeys.add(key);
-                                      _dynamicControllers.putIfAbsent(key, () => TextEditingController());
-                                    });
-                                  }
-                                }
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF0284C7),
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              ),
-                              child: Text(isMr ? 'जोडा' : 'Add', style: const TextStyle(fontWeight: FontWeight.bold)),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 16),
-                        Text(
-                          isMr ? 'किंवा यादीतून निवडा:' : 'Or choose from standard fields:',
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
-                        ),
-                        const SizedBox(height: 8),
-
-                        ...available.map((key) {
-                          final meta = kDynamicFieldDefinitions[key]!;
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 6),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF8FAFC),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
-                            ),
-                            child: ListTile(
-                              dense: true,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                              leading: const Icon(Icons.add_circle_outline_rounded, color: Color(0xFF0284C7), size: 20),
-                              title: Text(
-                                isMr ? meta.mrLabel : meta.enLabel,
-                                style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
-                              ),
-                              subtitle: Text(
-                                isMr ? meta.enLabel : meta.mrLabel,
-                                style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
-                              ),
-                              onTap: () {
-                                Navigator.pop(ctx);
-                                setState(() {
-                                  _activeDynamicFieldKeys.add(key);
-                                  _dynamicControllers.putIfAbsent(key, () => TextEditingController());
-                                });
-                              },
-                            ),
-                          );
-                        }),
-                      ],
-                    ),
+                  const SizedBox(height: 16),
+                  Text(
+                    isMr ? 'किंवा यादीतून निवडा:' : 'Or choose from standard fields:',
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
                   ),
+                  const SizedBox(height: 8),
+
+                  ...available.map((key) {
+                    final meta = kDynamicFieldDefinitions[key]!;
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: ListTile(
+                        dense: true,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                        leading: const Icon(Icons.add_circle_outline_rounded, color: Color(0xFF0284C7), size: 20),
+                        title: Text(
+                          isMr ? meta.mrLabel : meta.enLabel,
+                          style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                        ),
+                        subtitle: Text(
+                          isMr ? meta.enLabel : meta.mrLabel,
+                          style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                        ),
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          setState(() {
+                            _activeDynamicFieldKeys.add(key);
+                            _dynamicControllers.putIfAbsent(key, () => TextEditingController());
+                          });
+                        },
+                      ),
+                    );
+                  }),
                 ],
               ),
-            );
-          },
-        );
-      },
-    );
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (isDesktop) {
+      showDialog(
+        context: context,
+        barrierDismissible: true,
+        barrierColor: Colors.black.withValues(alpha: 0.45),
+        builder: (ctx) => Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520, maxHeight: 600),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: StatefulBuilder(
+                builder: (context, setModalState) => buildSheetContent(context, setModalState),
+              ),
+            ),
+          ),
+        ),
+      );
+    } else {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (ctx) => StatefulBuilder(
+          builder: (context, setModalState) => buildSheetContent(context, setModalState),
+        ),
+      );
+    }
   }
 
   void _openVoterSearchSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _VoterSearchModalSheet(
-        onSelect: (voter) {
-          _handleVoterSelected(voter);
-          Navigator.pop(context);
-        },
-      ),
-    );
+    final isDesktop = MediaQuery.of(context).size.width >= 768;
+    if (isDesktop) {
+      showDialog(
+        context: context,
+        barrierDismissible: true,
+        barrierColor: Colors.black.withValues(alpha: 0.45),
+        builder: (_) => Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 650, maxHeight: 740),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: _VoterSearchModalSheet(
+                onSelect: (voter) {
+                  _handleVoterSelected(voter);
+                  Navigator.pop(context);
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+    } else {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => _VoterSearchModalSheet(
+          onSelect: (voter) {
+            _handleVoterSelected(voter);
+            Navigator.pop(context);
+          },
+        ),
+      );
+    }
   }
 
   Future<void> _pickReceivedDate() async {
@@ -606,6 +694,7 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
   @override
   Widget build(BuildContext context) {
     final isMr = ref.watch(isMarathiProvider);
+    final isDesktop = MediaQuery.of(context).size.width >= 768;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     final titleText = _activeTab == 'outgoing'
@@ -622,16 +711,20 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
         constraints: BoxConstraints(
           maxHeight: MediaQuery.of(context).size.height * 0.90,
         ),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black26,
-              blurRadius: 20,
-              offset: Offset(0, -4),
-            ),
-          ],
+          borderRadius: isDesktop
+              ? BorderRadius.circular(20)
+              : const BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: isDesktop
+              ? null
+              : const [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 20,
+                    offset: Offset(0, -4),
+                  ),
+                ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1637,14 +1730,17 @@ class _VoterSearchModalSheetState extends ConsumerState<_VoterSearchModalSheet> 
   @override
   Widget build(BuildContext context) {
     final isMr = ref.watch(isMarathiProvider);
+    final isDesktop = MediaQuery.of(context).size.width >= 768;
 
     return Container(
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.85,
+        maxHeight: isDesktop ? 700 : MediaQuery.of(context).size.height * 0.85,
       ),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: isDesktop
+            ? BorderRadius.circular(20)
+            : const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

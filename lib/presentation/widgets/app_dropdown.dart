@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 
@@ -90,6 +91,97 @@ bool _isGenericOption(String text) {
       lower == 'पर्याय निवडा';
 }
 
+/// Wrapper to differentiate between tapping a null option and tapping outside to dismiss
+class _DropdownValueWrapper<T> {
+  final T? value;
+  const _DropdownValueWrapper(this.value);
+}
+
+/// Opens an anchored desktop dropdown menu positioned directly below the trigger field
+/// matching CustomSelect.tsx from Nagarsevak-Managment with no extra modals or search bars.
+Future<void> _openAnchoredDesktopDropdown<T>({
+  required BuildContext context,
+  required List<DropdownMenuItem<T>> items,
+  required T? currentValue,
+  required ValueChanged<T?> onSelected,
+}) async {
+  final RenderBox? button = context.findRenderObject() as RenderBox?;
+  if (button == null || !button.hasSize) return;
+
+  final RenderBox? overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
+  if (overlay == null) return;
+
+  final double buttonWidth = button.size.width;
+  final double buttonHeight = button.size.height;
+  final Offset buttonTopLeft = button.localToGlobal(Offset.zero, ancestor: overlay);
+
+  // Position directly below the dropdown field with 4px gap
+  final RelativeRect position = RelativeRect.fromRect(
+    Rect.fromLTWH(
+      buttonTopLeft.dx,
+      buttonTopLeft.dy + buttonHeight + 4,
+      buttonWidth,
+      buttonHeight,
+    ),
+    Offset.zero & overlay.size,
+  );
+
+  final selected = await showMenu<_DropdownValueWrapper<T>>(
+    context: context,
+    position: position,
+    elevation: 8,
+    shadowColor: Colors.black.withValues(alpha: 0.14),
+    color: Colors.white,
+    surfaceTintColor: Colors.transparent,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+      side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
+    ),
+    constraints: BoxConstraints(
+      minWidth: math.max(buttonWidth, 180),
+      maxWidth: math.max(buttonWidth, 240),
+      maxHeight: 280,
+    ),
+    items: items.map((item) {
+      final isSelected = item.value == currentValue;
+      return PopupMenuItem<_DropdownValueWrapper<T>>(
+        value: _DropdownValueWrapper<T>(item.value),
+        height: 38,
+        padding: EdgeInsets.zero,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          color: isSelected ? const Color(0xFFF0F9FF) : Colors.transparent,
+          child: Row(
+            children: [
+              if (isSelected)
+                const Icon(Icons.check_rounded, size: 16, color: Color(0xFF0284C7))
+              else
+                const SizedBox(width: 16),
+              const SizedBox(width: 8),
+              Expanded(
+                child: DefaultTextStyle(
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    color: isSelected ? const Color(0xFF0284C7) : const Color(0xFF334155),
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  child: item.child,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }).toList(),
+  );
+
+  if (selected != null) {
+    onSelected(selected.value);
+  }
+}
+
 /// Unified, themed dropdown component matching the Krishnaniti civic application theme.
 /// Replaces clunky default Flutter dropdowns with an elegant bottom-sheet picker.
 class AppDropdown<T> extends StatelessWidget {
@@ -130,6 +222,17 @@ class AppDropdown<T> extends StatelessWidget {
   void _openPicker(BuildContext context) {
     if (onChanged == null) return;
     FocusScope.of(context).unfocus();
+
+    final isDesktop = MediaQuery.of(context).size.width >= 768;
+    if (isDesktop) {
+      _openAnchoredDesktopDropdown<T>(
+        context: context,
+        items: items,
+        currentValue: value,
+        onSelected: (val) => onChanged?.call(val),
+      );
+      return;
+    }
 
     final modalTitle = _resolveDropdownTitle(
       explicitTitle: title,
@@ -228,10 +331,12 @@ class AppDropdown<T> extends StatelessWidget {
           ),
         );
 
-        return InkWell(
-          onTap: onChanged != null ? () => _openPicker(context) : null,
-          borderRadius: BorderRadius.circular(10),
-          child: content,
+        return Builder(
+          builder: (itemCtx) => InkWell(
+            onTap: onChanged != null ? () => _openPicker(itemCtx) : null,
+            borderRadius: BorderRadius.circular(10),
+            child: content,
+          ),
         );
       },
     );
@@ -278,6 +383,20 @@ class AppDropdownFormField<T> extends FormField<T> {
             void openPicker(BuildContext context) {
               if (onChanged == null) return;
               FocusScope.of(context).unfocus();
+
+              final isDesktop = MediaQuery.of(context).size.width >= 768;
+              if (isDesktop) {
+                _openAnchoredDesktopDropdown<T>(
+                  context: context,
+                  items: items,
+                  currentValue: effectiveValue,
+                  onSelected: (val) {
+                    state.didChange(val);
+                    onChanged(val);
+                  },
+                );
+                return;
+              }
 
               final modalTitle = _resolveDropdownTitle(
                 explicitTitle: title,
@@ -339,8 +458,6 @@ class AppDropdownFormField<T> extends FormField<T> {
               );
             }
 
-            final context = state.context;
-
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -371,10 +488,11 @@ class AppDropdownFormField<T> extends FormField<T> {
                       ],
                     ),
                   ),
-                InkWell(
-                  onTap: onChanged != null ? () => openPicker(context) : null,
-                  borderRadius: BorderRadius.circular(10),
-                  child: Container(
+                Builder(
+                  builder: (btnCtx) => InkWell(
+                    onTap: onChanged != null ? () => openPicker(btnCtx) : null,
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
                     padding: padding ?? const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
                     decoration: BoxDecoration(
                       color: fillColor ?? Colors.white,
@@ -402,6 +520,7 @@ class AppDropdownFormField<T> extends FormField<T> {
                     ),
                   ),
                 ),
+              ),
                 if (state.hasError && state.errorText != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 4, left: 4),
@@ -477,39 +596,45 @@ class _AppDropdownModalSheetState<T> extends State<_AppDropdownModalSheet<T>> {
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
+    final isDesktop = mediaQuery.size.width >= 768;
     final isSearchable = widget.items.length > 5;
-    final maxSheetHeight = mediaQuery.size.height * 0.75;
+    final maxSheetHeight = isDesktop ? 560.0 : mediaQuery.size.height * 0.75;
 
     return Container(
       constraints: BoxConstraints(
         maxHeight: maxSheetHeight,
       ),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 20,
-            offset: Offset(0, -4),
-          ),
-        ],
+        borderRadius: isDesktop
+            ? BorderRadius.circular(20)
+            : const BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: isDesktop
+            ? null
+            : const [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 20,
+                  offset: Offset(0, -4),
+                ),
+              ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Centered Drag Handle
-          Center(
-            child: Container(
-              width: 44,
-              height: 5,
-              margin: const EdgeInsets.only(top: 10, bottom: 6),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(3),
+          // Centered Drag Handle (Mobile only)
+          if (!isDesktop)
+            Center(
+              child: Container(
+                width: 44,
+                height: 5,
+                margin: const EdgeInsets.only(top: 10, bottom: 6),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(3),
+                ),
               ),
             ),
-          ),
 
           // Standardized Themed Header
           Padding(

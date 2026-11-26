@@ -124,33 +124,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
   }
 
   void _openManageTypesModal() {
-    showDialog(
-      context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.45),
-      builder: (ctx) => Dialog(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
-        child: Container(
-          width: 680,
-          constraints: const BoxConstraints(maxHeight: 720),
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.16),
-                blurRadius: 36,
-                offset: const Offset(0, 16),
-              ),
-            ],
-          ),
-          child: const LetterTypeManagerSheet(),
-        ),
-      ),
-    );
+    LetterTypeManagerSheet.show(context);
   }
 
   @override
@@ -625,7 +599,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
             child: ListView.separated(
               shrinkWrap: true,
               itemCount: items.length,
-              separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
+              separatorBuilder: (_, _) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
               itemBuilder: (context, index) {
                 final letter = items[index];
                 final isSelected = _selectedLetter?.id == letter.id;

@@ -9,6 +9,27 @@ class QuickActionSheet extends ConsumerWidget {
   const QuickActionSheet({super.key});
 
   static void show(BuildContext context) {
+    final isDesktop = MediaQuery.of(context).size.width >= 768;
+    if (isDesktop) {
+      showDialog(
+        context: context,
+        barrierDismissible: true,
+        barrierColor: Colors.black.withValues(alpha: 0.45),
+        builder: (ctx) => Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 580, maxHeight: 680),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: const QuickActionSheet(),
+            ),
+          ),
+        ),
+      );
+      return;
+    }
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -20,6 +41,7 @@ class QuickActionSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isMr = ref.watch(isMarathiProvider);
+    final isDesktop = MediaQuery.of(context).size.width >= 768;
 
     final actions = [
       _QuickActionItem(
@@ -85,32 +107,36 @@ class QuickActionSheet extends ConsumerWidget {
     ];
 
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: isDesktop
+            ? BorderRadius.circular(20)
+            : const BorderRadius.vertical(top: Radius.circular(28)),
       ),
       padding: EdgeInsets.fromLTRB(
         20,
-        12,
+        isDesktop ? 18 : 12,
         20,
-        MediaQuery.of(context).padding.bottom + 16,
+        isDesktop ? 20 : MediaQuery.of(context).padding.bottom + 16,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Drag handle
-          Center(
-            child: Container(
-              width: 44,
-              height: 4.5,
-              decoration: BoxDecoration(
-                color: const Color(0xFFCBD5E1),
-                borderRadius: BorderRadius.circular(10),
+          // Drag handle (Mobile only)
+          if (!isDesktop) ...[
+            Center(
+              child: Container(
+                width: 44,
+                height: 4.5,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFCBD5E1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
+          ],
 
           // Header
           Row(
@@ -127,7 +153,7 @@ class QuickActionSheet extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF0284C7).withOpacity(0.3),
+                      color: const Color(0xFF0284C7).withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 3),
                     ),
@@ -181,7 +207,7 @@ class QuickActionSheet extends ConsumerWidget {
               shrinkWrap: true,
               physics: const BouncingScrollPhysics(),
               itemCount: actions.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
               itemBuilder: (ctx, i) {
                 final item = actions[i];
                 return Material(
@@ -190,8 +216,8 @@ class QuickActionSheet extends ConsumerWidget {
                   child: InkWell(
                     onTap: item.onTap,
                     borderRadius: BorderRadius.circular(16),
-                    splashColor: const Color(0xFF0284C7).withOpacity(0.08),
-                    highlightColor: const Color(0xFF0284C7).withOpacity(0.04),
+                    splashColor: const Color(0xFF0284C7).withValues(alpha: 0.08),
+                    highlightColor: const Color(0xFF0284C7).withValues(alpha: 0.04),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
                       decoration: BoxDecoration(
@@ -213,7 +239,7 @@ class QuickActionSheet extends ConsumerWidget {
                               borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
-                                  color: item.gradient.first.withOpacity(0.25),
+                                  color: item.gradient.first.withValues(alpha: 0.25),
                                   blurRadius: 6,
                                   offset: const Offset(0, 2),
                                 ),
