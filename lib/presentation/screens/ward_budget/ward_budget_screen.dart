@@ -833,7 +833,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                             const SizedBox(width: 8),
                             // Download PDF
                             AppPdfButton.icon(
-                              tooltip: isMr ? 'बजेट अहवाल डाउनलोड करा' : 'Download Budget PDF',
+                              tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Report',
                               onPressed: () {
                                 WardBudgetReportGenerator.generateAndPrintBudgetReport(
                                   budgets: displayed,

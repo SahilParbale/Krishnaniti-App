@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../data/models/ai_content_model.dart';
 import '../../../../data/repositories/ai_content_repository.dart';
+import '../../../screens/content_studio/ai_content_report_generator.dart';
 
 class DesktopAiContentView extends ConsumerStatefulWidget {
   const DesktopAiContentView({super.key});
@@ -190,6 +191,34 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
               ],
             ),
           ],
+        ),
+
+        // Download Report matching SalesProposalGenerator / Content Studio
+        OutlinedButton.icon(
+          onPressed: () {
+            final items = _history.map<AiContentHistoryItem>((h) => AiContentHistoryItem(
+              id: 'ai-${DateTime.now().millisecondsSinceEpoch}',
+              title: h['title'] ?? 'Civic Content',
+              contentType: AiContentType.speech,
+              tone: AiToneType.formal,
+              language: AiLanguageType.marathi,
+              generatedContent: h['content'] ?? '',
+              createdAt: DateTime.tryParse(h['date'] ?? '') ?? DateTime.now(),
+            )).toList();
+            AiContentReportGenerator.generateDossier(
+              context: context,
+              items: items,
+              categoryFilter: _contentType,
+            );
+          },
+          icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
+          label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+          style: OutlinedButton.styleFrom(
+            backgroundColor: const Color(0xFFF0F9FF),
+            side: const BorderSide(color: Color(0xFFBAE6FD)),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
         ),
       ],
     );

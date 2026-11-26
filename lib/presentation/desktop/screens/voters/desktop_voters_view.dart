@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../data/models/voter_model.dart';
 import '../../../../data/repositories/voters_repository.dart';
+import '../../../screens/voters/voter_slip_generator.dart';
 import '../../common/desktop_modal_dialog.dart';
 
 class DesktopVotersView extends ConsumerStatefulWidget {
@@ -366,36 +367,53 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
           ],
         ),
 
-        // Actions
+        // Actions: Download Report + Add Voter
         Row(
           children: [
-            // View toggle
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: Row(
-                children: [
-                  _viewModeButton('Grid', Icons.grid_view_rounded, _viewMode == 'grid', () => setState(() => _viewMode = 'grid')),
-                  _viewModeButton('Table', Icons.table_chart_outlined, _viewMode == 'table', () => setState(() => _viewMode = 'table')),
-                ],
+            OutlinedButton.icon(
+              onPressed: () {
+                VoterSlipGenerator.downloadVotersListReport(
+                  context: context,
+                  voters: _voters,
+                  totalCount: _totalCount,
+                );
+              },
+              icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
+              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+              style: OutlinedButton.styleFrom(
+                backgroundColor: const Color(0xFFF0F9FF),
+                side: const BorderSide(color: Color(0xFFBAE6FD)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
 
             // Add Voter
-            ElevatedButton.icon(
+            ElevatedButton(
               onPressed: _showAddVoterModal,
-              icon: const Icon(Icons.person_add_alt_1_rounded, size: 18, color: Colors.white),
-              label: const Text('+ Add Voter', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0284C7),
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                foregroundColor: Colors.white,
                 elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.add, size: 16, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text(
+                    'Add Voter',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      letterSpacing: -0.1,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -404,21 +422,28 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
     );
   }
 
-  Widget _viewModeButton(String label, IconData icon, bool isActive, VoidCallback onTap) {
+  Widget _buildViewToggleButton({
+    required IconData icon,
+    required String label,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(6),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFFF0F9FF) : Colors.transparent,
+          color: isActive ? Colors.white : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
+          boxShadow: isActive ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 2, offset: const Offset(0, 1))] : null,
         ),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B)),
-            const SizedBox(width: 6),
-            Text(label, style: TextStyle(fontSize: 12, fontWeight: isActive ? FontWeight.bold : FontWeight.w500, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B))),
+            Icon(icon, size: 14, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B)),
+            const SizedBox(width: 5),
+            Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B))),
           ],
         ),
       ),
@@ -526,6 +551,33 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
               },
             ),
           ),
+          const SizedBox(width: 14),
+
+          // View Mode Toggle
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                _buildViewToggleButton(
+                  icon: Icons.grid_view_rounded,
+                  label: 'Grid',
+                  isActive: _viewMode == 'grid',
+                  onTap: () => setState(() => _viewMode = 'grid'),
+                ),
+                const SizedBox(width: 4),
+                _buildViewToggleButton(
+                  icon: Icons.table_rows_rounded,
+                  label: 'Table',
+                  isActive: _viewMode == 'table',
+                  onTap: () => setState(() => _viewMode = 'table'),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -553,7 +605,7 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
 
         return GridView.builder(
           shrinkWrap: true,
@@ -793,7 +845,7 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
   Widget _buildLoadingGrid() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),

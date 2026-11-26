@@ -715,7 +715,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                         Container(width: 1, height: 20, color: const Color(0xFFE2E8F0)),
                         const SizedBox(width: 4),
                         AppPdfButton.icon(
-                          tooltip: 'Download PDF Report',
+                          tooltip: 'Download Report',
                           onPressed: () {
                             OppositionReportGenerator.generateAndPrintReport(
                               members: _members,

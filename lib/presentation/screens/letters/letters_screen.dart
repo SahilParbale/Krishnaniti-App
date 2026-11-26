@@ -63,8 +63,8 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
     super.dispose();
   }
 
-  Future<void> _fetchLetters() async {
-    setState(() => _isLoading = true);
+  Future<void> _fetchLetters({bool showLoading = true}) async {
+    if (showLoading) setState(() => _isLoading = true);
     try {
       final repo = ref.read(lettersRepoProvider);
       final outRes = await repo.getLetters(isIncoming: false);
@@ -161,12 +161,14 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
       _filteredLetters.take(_displayedLimit).toList();
 
   void _openDetailScreen(LetterModel letter) {
-    Navigator.push(
+    Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (_) => LetterDetailScreen(letter: letter),
       ),
-    ).then((_) => _fetchLetters());
+    ).then((res) {
+      if (res == true) _fetchLetters(showLoading: false);
+    });
   }
 
   void _shareOnWhatsApp(LetterModel letter) async {
@@ -466,7 +468,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
 
                       // Download Letters Register PDF Button
                       AppPdfButton.icon(
-                        tooltip: isMr ? 'पत्र नोंदवही अहवाल डाउनलोड करा' : 'Download Letter Register PDF',
+                        tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Report',
                         onPressed: () {
                           LetterReportGenerator.generateAndPrintLetterReport(
                             letters: _filteredLetters,

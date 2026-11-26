@@ -1381,7 +1381,7 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                 ),
                 const SizedBox(width: 8),
                 AppPdfButton.icon(
-                  tooltip: isMr ? 'बैठक अहवाल डाउनलोड करा' : 'Download Meetings PDF Report',
+                  tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Report',
                   onPressed: () => ConferenceMeetingReportGenerator.generateAndPrintMeetingReport(meetings: displayMeetings),
                 ),
               ],

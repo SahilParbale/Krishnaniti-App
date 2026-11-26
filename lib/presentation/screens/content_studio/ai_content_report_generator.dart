@@ -1,15 +1,20 @@
+import 'package:flutter/material.dart' show BuildContext;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../data/models/ai_content_model.dart';
 import '../../widgets/app_pdf_report_theme.dart';
+import '../../widgets/app_report_preview_modal.dart';
 
 class AiContentReportGenerator {
   AiContentReportGenerator._();
 
   /// Generates a single official letterhead document (Speech, Press Release, Letter, etc.)
-  static Future<void> printDocument(AiContentHistoryItem item) async {
+  static Future<void> printDocument(
+    AiContentHistoryItem item, {
+    BuildContext? context,
+  }) async {
     final pdf = pw.Document();
     final dateStr = DateFormat('dd MMMM yyyy').format(item.createdAt);
 
@@ -211,14 +216,26 @@ class AiContentReportGenerator {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Content_${item.contentType.id}_${item.id}.pdf',
-    );
+    final fileName = 'Content_${item.contentType.id}_${item.id}';
+    if (context != null) {
+      await AppReportPreviewModal.show(
+        context: context,
+        title: item.contentType.titleEn,
+        subtitle: item.title,
+        fileName: fileName,
+        onBuildPdf: () async => pdf.save(),
+      );
+    } else {
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: '$fileName.pdf',
+      );
+    }
   }
 
   /// Generates a comprehensive summary dossier of all generated AI content
   static Future<void> generateDossier({
+    BuildContext? context,
     required List<AiContentHistoryItem> items,
     String? categoryFilter,
   }) async {
@@ -325,10 +342,21 @@ class AiContentReportGenerator {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'AI_Content_Dossier_Ward12_${DateFormat('yyyyMMdd').format(DateTime.now())}.pdf',
-    );
+    final fileName = 'AI_Content_Dossier_Ward12_${DateFormat('yyyyMMdd').format(DateTime.now())}';
+    if (context != null) {
+      await AppReportPreviewModal.show(
+        context: context,
+        title: 'AI Content Dossier',
+        subtitle: 'Official Archive of Speeches, Press Releases & Social Media Content',
+        fileName: fileName,
+        onBuildPdf: () async => pdf.save(),
+      );
+    } else {
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: '$fileName.pdf',
+      );
+    }
   }
 
   static pw.Widget _buildLetterhead(AiContentHistoryItem item) {

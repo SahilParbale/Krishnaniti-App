@@ -5,6 +5,7 @@ import 'package:nagarsevak_mobile/data/models/scheme_model.dart';
 import 'package:nagarsevak_mobile/data/repositories/schemes_repository.dart';
 import 'package:nagarsevak_mobile/presentation/desktop/common/desktop_modal_dialog.dart';
 import 'package:nagarsevak_mobile/presentation/desktop/shell/desktop_sidebar.dart';
+import 'package:nagarsevak_mobile/presentation/screens/schemes/scheme_report_generator.dart';
 
 /// Desktop Government Schemes View matching SchemeList.tsx verbatim:
 /// - Sticky Header: Title + Subtitle + Help + Find Schemes (AI) + Add Scheme
@@ -23,7 +24,7 @@ class DesktopSchemesView extends ConsumerStatefulWidget {
 class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
   String _activeTab = 'schemes'; // 'schemes' | 'applications'
   String _activeCategory = 'All';
-  String _viewMode = 'grid'; // 'grid' | 'report'
+  String _viewMode = 'grid'; // 'grid' | 'table'
   String _searchQuery = '';
   int? _expandedSchemeId;
 
@@ -210,8 +211,6 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
               const SizedBox(height: 16),
               _buildSearchBar(isMr),
               const SizedBox(height: 16),
-              _buildViewModeToggle(isMr),
-              const SizedBox(height: 16),
             ],
 
             // 4. Content Area
@@ -270,38 +269,67 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
           ],
         ),
 
-        // Actions: Help + AI Matcher + Add Scheme
+        // Actions: Download Report + Find Schemes (AI) + Add Scheme
         Row(
           children: [
+            OutlinedButton.icon(
+              onPressed: () {
+                SchemeReportGenerator.generateAndPrintListReport(
+                  context: context,
+                  schemes: _filteredSchemes,
+                  isMarathi: isMr,
+                );
+              },
+              icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
+              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+              style: OutlinedButton.styleFrom(
+                backgroundColor: const Color(0xFFF0F9FF),
+                side: const BorderSide(color: Color(0xFFBAE6FD)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(width: 8),
 
             OutlinedButton.icon(
               onPressed: () {},
-              icon: const Icon(Icons.auto_awesome_rounded, size: 18, color: Color(0xFF0284C7)),
-              label: Text(
+              icon: const Icon(Icons.auto_awesome_rounded, size: 16, color: Color(0xFF0284C7)),
+              label: const Text(
                 'Find Schemes (AI)',
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0369A1)),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0369A1)),
               ),
               style: OutlinedButton.styleFrom(
                 backgroundColor: const Color(0xFFF0F9FF),
                 side: const BorderSide(color: Color(0xFFBAE6FD)),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
-            const SizedBox(width: 10),
-            ElevatedButton.icon(
+            const SizedBox(width: 8),
+            ElevatedButton(
               onPressed: _openAddSchemeDialog,
-              icon: const Icon(Icons.add_rounded, size: 18),
-              label: Text(
-                'Add Scheme',
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0284C7),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                elevation: 1,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.add, size: 16, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text(
+                    'Add Scheme',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      letterSpacing: -0.1,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -317,19 +345,76 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
         border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _buildTabButton(
-            title: 'Schemes',
-            isActive: _activeTab == 'schemes',
-            onTap: () => setState(() => _activeTab = 'schemes'),
+          Row(
+            children: [
+              _buildTabButton(
+                title: 'Schemes',
+                isActive: _activeTab == 'schemes',
+                onTap: () => setState(() => _activeTab = 'schemes'),
+              ),
+              const SizedBox(width: 24),
+              _buildTabButton(
+                title: 'Applications',
+                isActive: _activeTab == 'applications',
+                onTap: () => setState(() => _activeTab = 'applications'),
+              ),
+            ],
           ),
-          const SizedBox(width: 24),
-          _buildTabButton(
-            title: 'Applications',
-            isActive: _activeTab == 'applications',
-            onTap: () => setState(() => _activeTab = 'applications'),
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                _buildViewToggleButton(
+                  icon: Icons.grid_view_rounded,
+                  label: 'Grid',
+                  isActive: _viewMode == 'grid',
+                  onTap: () => setState(() => _viewMode = 'grid'),
+                ),
+                const SizedBox(width: 4),
+                _buildViewToggleButton(
+                  icon: Icons.table_rows_rounded,
+                  label: 'Table',
+                  isActive: _viewMode == 'table',
+                  onTap: () => setState(() => _viewMode = 'table'),
+                ),
+              ],
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildViewToggleButton({
+    required IconData icon,
+    required String label,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: isActive ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+          boxShadow: isActive ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 2, offset: const Offset(0, 1))] : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B)),
+            const SizedBox(width: 5),
+            Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B))),
+          ],
+        ),
       ),
     );
   }
@@ -411,66 +496,6 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
         fillColor: Colors.white,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-      ),
-    );
-  }
-
-  // --- View Mode Toggle ---
-  Widget _buildViewModeToggle(bool isMr) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(3),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-          ),
-          child: Row(
-            children: [
-              _buildViewToggleButton(
-                icon: Icons.grid_view_rounded,
-                label: 'Grid',
-                isActive: _viewMode == 'grid',
-                onTap: () => setState(() => _viewMode = 'grid'),
-              ),
-              _buildViewToggleButton(
-                icon: Icons.table_chart_outlined,
-                label: 'Report',
-                isActive: _viewMode == 'report',
-                onTap: () => setState(() => _viewMode = 'report'),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildViewToggleButton({
-    required IconData icon,
-    required String label,
-    required bool isActive,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: isActive ? const Color(0xFFF0F9FF) : Colors.transparent,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 14, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B)),
-            const SizedBox(width: 5),
-            Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B))),
-          ],
-        ),
       ),
     );
   }

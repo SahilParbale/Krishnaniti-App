@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../data/models/election_result_model.dart';
 import '../../../../data/repositories/election_results_repository.dart';
+import '../../../screens/results/result_analysis_report_generator.dart';
 
 class DesktopResultAnalysisView extends ConsumerStatefulWidget {
   const DesktopResultAnalysisView({super.key});
@@ -332,17 +333,20 @@ class _DesktopResultAnalysisViewState extends ConsumerState<DesktopResultAnalysi
                 ),
                 OutlinedButton.icon(
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Downloading report...')),
+                    ResultAnalysisReportGenerator.generateAndPrintReport(
+                      context: context,
+                      ward: _selectedWard,
+                      selectedCandidate: _selectedCandidate,
+                      results: _results,
                     );
                   },
-                  icon: const Icon(Icons.file_download_outlined, size: 16, color: Color(0xFF0284C7)),
-                  label: const Text('Download PDF', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.bold, fontSize: 13)),
+                  icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
+                  label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
                   style: OutlinedButton.styleFrom(
                     backgroundColor: const Color(0xFFF0F9FF),
                     side: const BorderSide(color: Color(0xFFBAE6FD)),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
               ],

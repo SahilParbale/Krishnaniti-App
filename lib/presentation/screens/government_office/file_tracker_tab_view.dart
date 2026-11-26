@@ -726,7 +726,7 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
                   ),
                   const SizedBox(width: 8),
                   IconButton(
-                    tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Export File Register PDF',
+                    tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Report',
                     icon: const Icon(Icons.picture_as_pdf_rounded, color: Color(0xFF0284C7)),
                     onPressed: _trackers.isEmpty
                         ? null

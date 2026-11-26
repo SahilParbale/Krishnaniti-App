@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../shell/desktop_sidebar.dart';
+import '../../../screens/analysis_strategy/analysis_strategy_screen.dart';
+import '../../../screens/analysis_strategy/analysis_strategy_report_generator.dart';
 
 class DesktopAnalysisStrategyView extends ConsumerStatefulWidget {
   const DesktopAnalysisStrategyView({super.key});
@@ -62,6 +64,42 @@ class _DesktopAnalysisStrategyViewState extends ConsumerState<DesktopAnalysisStr
     }
   }
 
+  AreaMetrics _getMetricsForArea(String area) {
+    return AreaMetrics(
+      areaName: area,
+      totalVoters: 2480,
+      staffCount: 8,
+      supportersCount: 1120,
+      mobileReach: 82,
+      genderMale: 1280,
+      genderFemale: 1180,
+      genderOther: 20,
+      age18_35: 980,
+      age36_60: 1040,
+      age61Plus: 460,
+      casteDistribution: const {'General': 820, 'OBC': 740, 'SC/ST': 420, 'Maratha': 500},
+      totalComplaints: 64,
+      solvedComplaints: 52,
+      ongoingComplaints: 8,
+      assignedComplaints: 4,
+      totalRequests: 38,
+      solvedRequests: 30,
+      pendingRequests: 8,
+      totalElectionVotes: 1980,
+      winnerName: 'BJP (Sitting)',
+      winningMargin: 340,
+      partyPerformance: const {'BJP': 980, 'NCP': 640, 'INC': 260, 'SS': 100},
+      conductedEventsCount: 12,
+      avgRsvpAttendance: 85,
+      positiveArticlesCount: 8,
+      negativeArticlesCount: 2,
+      allocatedBudget: 5000000,
+      utilizedBudget: 3800000,
+      requestedProvisionsCount: 6,
+      provisionsAmount: 2200000,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -103,6 +141,24 @@ class _DesktopAnalysisStrategyViewState extends ConsumerState<DesktopAnalysisStr
                   ],
                 ),
 
+                // Download Report matching AnalysisStrategy.tsx
+                OutlinedButton.icon(
+                  onPressed: () {
+                    AnalysisStrategyReportGenerator.generateAndPrintReport(
+                      context: context,
+                      reportData: _getMetricsForArea(_selectedArea),
+                      generatedBrief: _aiBrief,
+                    );
+                  },
+                  icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
+                  label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF0F9FF),
+                    side: const BorderSide(color: Color(0xFFBAE6FD)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 24),

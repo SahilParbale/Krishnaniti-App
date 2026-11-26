@@ -261,7 +261,7 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
                       ),
                       const SizedBox(width: 4),
                       AppPdfButton.outlined(
-                        label: 'PDF Report',
+                        label: 'Download Report',
                         onPressed: () => DuplicateVotersReportGenerator.generateAndPrintReport(
                           duplicateGroups: _duplicateGroups,
                           totalAffectedVoters: totalAffected,

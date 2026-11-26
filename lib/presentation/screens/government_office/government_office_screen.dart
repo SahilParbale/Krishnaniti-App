@@ -898,7 +898,7 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                               ),
                               const SizedBox(width: 6),
                               AppPdfButton.icon(
-                                tooltip: isMr ? 'कार्यालय अहवाल डाउनलोड करा' : 'Download Office Report PDF',
+                                tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Report',
                                 onPressed: () {
                                   GovOfficeReportGenerator.generateAndPrintOfficeReport(
                                     offices: displayedOffices,

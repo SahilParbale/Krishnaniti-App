@@ -1,9 +1,11 @@
+import 'package:flutter/material.dart' show BuildContext;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../data/models/diary_task_model.dart';
 import '../../widgets/app_pdf_report_theme.dart';
+import '../../widgets/app_report_preview_modal.dart';
 
 /// Official Tasks & Daily Work Diary Report Generator matching Nagarsevak-Managment
 /// (TaskReportGenerator.tsx).
@@ -11,6 +13,7 @@ class DiaryReportGenerator {
   DiaryReportGenerator._();
 
   static Future<void> generateAndPrintTasksReport({
+    BuildContext? context,
     required List<DiaryTaskModel> tasks,
     String? filterTitle,
     String title = 'Daily Work Diary & Tasks Report',
@@ -108,14 +111,28 @@ class DiaryReportGenerator {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Diary_Tasks_Report_${DateFormat('yyyyMMdd').format(now)}.pdf',
-    );
+    final fileName = 'Task_Report_${DateFormat('yyyy-MM-dd').format(now)}';
+    if (context != null) {
+      await AppReportPreviewModal.show(
+        context: context,
+        title: title,
+        subtitle: subtitle,
+        fileName: fileName,
+        onBuildPdf: () async => pdf.save(),
+      );
+    } else {
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: '$fileName.pdf',
+      );
+    }
   }
 
   /// Generates a single Task / Diary docket
-  static Future<void> generateAndPrintSingleTask(DiaryTaskModel task) async {
+  static Future<void> generateAndPrintSingleTask(
+    DiaryTaskModel task, {
+    BuildContext? context,
+  }) async {
     final pdf = pw.Document();
     final now = DateTime.now();
     final formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(now);
@@ -296,10 +313,21 @@ class DiaryReportGenerator {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Task_Docket_${task.id}.pdf',
-    );
+    final fileName = 'Task_Docket_${task.id}';
+    if (context != null) {
+      await AppReportPreviewModal.show(
+        context: context,
+        title: 'Task Docket',
+        subtitle: 'ID: ${task.id}',
+        fileName: fileName,
+        onBuildPdf: () async => pdf.save(),
+      );
+    } else {
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: '$fileName.pdf',
+      );
+    }
   }
 
   static pw.TableRow _buildTableRow(String l1, String v1, String l2, String v2) {

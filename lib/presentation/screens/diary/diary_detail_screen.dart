@@ -592,7 +592,7 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
               child: Padding(
                 padding: const EdgeInsets.only(right: 4),
                 child: AppPdfButton.icon(
-                  tooltip: 'Export Task Slip PDF',
+                  tooltip: 'Download Report',
                   onPressed: () {
                     DiaryReportGenerator.generateAndPrintSingleTask(_task);
                   },

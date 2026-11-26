@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:nagarsevak_mobile/data/models/ward_map_point_model.dart';
 import 'package:nagarsevak_mobile/data/repositories/ward_map_repository.dart';
 import 'package:nagarsevak_mobile/presentation/desktop/shell/desktop_sidebar.dart';
+import 'package:nagarsevak_mobile/presentation/screens/ward_map/ward_map_report_generator.dart';
 
 /// Desktop Ward Map View matching WardMap.tsx verbatim:
 /// - Sticky Header: Title + Subtitle + Help + Tag New Spot
@@ -160,19 +161,22 @@ class _DesktopWardMapViewState extends ConsumerState<DesktopWardMapView> {
           ],
         ),
 
-        // Help button
+        // Download Report matching WardMap.tsx
         OutlinedButton.icon(
-          onPressed: () {},
-          icon: const Icon(Icons.help_outline_rounded, size: 18, color: Color(0xFF0284C7)),
-          label: Text(
-            'Help',
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0369A1)),
-          ),
+          onPressed: () {
+            WardMapReportGenerator.generateAndPrintWardMapReport(
+              context: context,
+              points: _allPoints,
+              categoryFilter: _activeCategory,
+            );
+          },
+          icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
+          label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
           style: OutlinedButton.styleFrom(
-            backgroundColor: Colors.white,
+            backgroundColor: const Color(0xFFF0F9FF),
             side: const BorderSide(color: Color(0xFFBAE6FD)),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
       ],

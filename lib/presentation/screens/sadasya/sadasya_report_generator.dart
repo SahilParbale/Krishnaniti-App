@@ -1,14 +1,17 @@
+import 'package:flutter/material.dart' show BuildContext;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../data/models/sadasya_model.dart';
 import '../../widgets/app_pdf_report_theme.dart';
+import '../../widgets/app_report_preview_modal.dart';
 
 class SadasyaReportGenerator {
   SadasyaReportGenerator._();
 
   static Future<void> generateAndPrintReport({
+    BuildContext? context,
     required List<SadasyaModel> members,
     String? areaFilter,
     String? typeFilter,
@@ -119,10 +122,21 @@ class SadasyaReportGenerator {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Party_Members_Report_${DateFormat('yyyy-MM-dd').format(DateTime.now())}.pdf',
-    );
+    final fileName = 'Party_Members_Report_${DateFormat('yyyy-MM-dd').format(DateTime.now())}';
+    if (context != null) {
+      await AppReportPreviewModal.show(
+        context: context,
+        title: 'Party Members Directory',
+        subtitle: 'Registered party members, volunteers and booth level workers',
+        fileName: fileName,
+        onBuildPdf: () async => pdf.save(),
+      );
+    } else {
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: '$fileName.pdf',
+      );
+    }
   }
 
   static pw.Widget _buildSummaryItem(String label, String value, {PdfColor? highlightColor}) {

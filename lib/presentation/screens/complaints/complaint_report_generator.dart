@@ -1,9 +1,11 @@
+import 'package:flutter/material.dart' show BuildContext;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../data/models/complaint_model.dart';
 import '../../widgets/app_pdf_report_theme.dart';
+import '../../widgets/app_report_preview_modal.dart';
 
 /// Official Complaints Report Generator matching Nagarsevak-Managment (ComplaintReportGenerator.tsx)
 class ComplaintReportGenerator {
@@ -11,6 +13,7 @@ class ComplaintReportGenerator {
 
   /// Generates and prints multi-complaint ledger report matching web ComplaintReportGenerator.tsx
   static Future<void> generateAndPrintReport({
+    BuildContext? context,
     required List<ComplaintModel> complaints,
     String? categoryFilter,
     String? statusFilter,
@@ -116,14 +119,28 @@ class ComplaintReportGenerator {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Complaints_Report_${DateFormat('yyyy-MM-dd').format(now)}.pdf',
-    );
+    final fileName = 'Complaints_Report_${DateFormat('yyyy-MM-dd').format(now)}';
+    if (context != null) {
+      await AppReportPreviewModal.show(
+        context: context,
+        title: title,
+        subtitle: subtitle,
+        fileName: fileName,
+        onBuildPdf: () async => pdf.save(),
+      );
+    } else {
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: '$fileName.pdf',
+      );
+    }
   }
 
   /// Generates and prints a single grievance docket (Portrait A4)
-  static Future<void> generateAndPrintSingleComplaintDocket(ComplaintModel complaint) async {
+  static Future<void> generateAndPrintSingleComplaintDocket(
+    ComplaintModel complaint, {
+    BuildContext? context,
+  }) async {
     final pdf = pw.Document();
     final now = DateTime.now();
     final formattedDate = DateFormat('dd/MM/yyyy, hh:mm a').format(now);
@@ -303,9 +320,20 @@ class ComplaintReportGenerator {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Complaint_Docket_${complaint.id}.pdf',
-    );
+    final fileName = 'Complaint_Docket_${complaint.id}';
+    if (context != null) {
+      await AppReportPreviewModal.show(
+        context: context,
+        title: 'Grievance Docket',
+        subtitle: ticketId,
+        fileName: fileName,
+        onBuildPdf: () async => pdf.save(),
+      );
+    } else {
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: '$fileName.pdf',
+      );
+    }
   }
 }

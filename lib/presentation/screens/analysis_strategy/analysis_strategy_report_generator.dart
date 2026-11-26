@@ -1,14 +1,17 @@
+import 'package:flutter/material.dart' show BuildContext;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../widgets/app_pdf_report_theme.dart';
+import '../../widgets/app_report_preview_modal.dart';
 import 'analysis_strategy_screen.dart';
 
 class AnalysisStrategyReportGenerator {
   AnalysisStrategyReportGenerator._();
 
   static Future<void> generateAndPrintReport({
+    BuildContext? context,
     required AreaMetrics reportData,
     required String generatedBrief,
   }) async {
@@ -261,10 +264,21 @@ class AnalysisStrategyReportGenerator {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Area_Intelligence_${reportData.areaName.replaceAll(' ', '_')}.pdf',
-    );
+    final fileName = 'Area_Intelligence_${reportData.areaName.replaceAll(' ', '_')}';
+    if (context != null) {
+      await AppReportPreviewModal.show(
+        context: context,
+        title: 'Area Intelligence & Strategy Docket',
+        subtitle: 'Area: ${reportData.areaName} - Field Strategy & Analytics',
+        fileName: fileName,
+        onBuildPdf: () async => pdf.save(),
+      );
+    } else {
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: '$fileName.pdf',
+      );
+    }
   }
 
   static pw.Widget _buildSummaryItem(String label, String value, {PdfColor? highlightColor}) {

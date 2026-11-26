@@ -6,6 +6,7 @@ import 'package:nagarsevak_mobile/data/repositories/complaints_repository.dart';
 import 'package:nagarsevak_mobile/presentation/desktop/shell/desktop_sidebar.dart';
 import 'package:nagarsevak_mobile/presentation/screens/complaints/new_complaint_screen.dart';
 import 'package:nagarsevak_mobile/presentation/screens/complaints/complaint_detail_screen.dart';
+import 'package:nagarsevak_mobile/presentation/screens/complaints/complaint_report_generator.dart';
 
 /// Desktop Complaints & Requests View matching ComplaintList.tsx 1:1:
 /// - Sticky Header with Title, Found badge, Help button, and + New Request button
@@ -24,7 +25,7 @@ class DesktopComplaintsView extends ConsumerStatefulWidget {
 class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
   String _activeTab = 'Complaints'; // 'Complaints' | 'Personal Help'
   String _filterStatus = 'All'; // 'All', 'Pending', 'Assigned', 'InProgress', 'Resolved'
-  String _viewMode = 'grid'; // 'grid' | 'report'
+  String _viewMode = 'grid'; // 'grid' | 'table'
   String _searchQuery = '';
   String _selectedArea = 'All';
 
@@ -37,8 +38,8 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
     _loadComplaints();
   }
 
-  Future<void> _loadComplaints() async {
-    setState(() => _loading = true);
+  Future<void> _loadComplaints({bool showLoading = true}) async {
+    if (showLoading) setState(() => _loading = true);
     try {
       final repo = ref.read(complaintsRepoProvider);
       final data = await repo.getComplaints(limit: 100);
@@ -107,7 +108,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
   }
 
   void _openNewComplaintModal() {
-    showDialog(
+    showDialog<bool>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.45),
       builder: (ctx) => Dialog(
@@ -124,15 +125,19 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
           child: const NewComplaintScreen(),
         ),
       ),
-    ).then((_) => _loadComplaints());
+    ).then((res) {
+      if (res == true) _loadComplaints(showLoading: false);
+    });
   }
 
   void _openComplaintDetail(ComplaintModel complaint) {
-    Navigator.of(context).push(
+    Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => ComplaintDetailScreen(complaint: complaint),
       ),
-    ).then((_) => _loadComplaints());
+    ).then((res) {
+      if (res == true) _loadComplaints(showLoading: false);
+    });
   }
 
   @override
@@ -163,11 +168,13 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
 
             const SizedBox(height: 24),
 
-            // 4. Content: Loading / Empty / Grid (matching ComplaintList.tsx lines 681-750)
+            // 4. Content: Loading / Empty / Grid or Table
             if (_loading)
               _buildLoadingGrid()
             else if (items.isEmpty)
               _buildEmptyState(isMr)
+            else if (_viewMode == 'table')
+              _buildComplaintTable(items, isMr)
             else
               _buildComplaintGrid(items, isMr),
           ],
@@ -224,25 +231,53 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
           ),
         ),
 
-        // Action Buttons: Help & + New Request
+        // Action Buttons: Download Report + New Request / New Complaint matching ns-btn-primary
         Row(
           children: [
-
-            ElevatedButton.icon(
-              onPressed: _openNewComplaintModal,
-              icon: const Icon(Icons.add_rounded, size: 18),
-              label: Text(
-                _activeTab == 'Personal Help'
-                    ? ('New Personal Request')
-                    : ('New Complaint'),
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+            OutlinedButton.icon(
+              onPressed: () {
+                ComplaintReportGenerator.generateAndPrintReport(
+                  context: context,
+                  complaints: _filteredComplaints,
+                  statusFilter: _filterStatus,
+                  areaFilter: _selectedArea,
+                  title: _activeTab == 'Personal Help' ? 'Personal Requests Report' : 'Area Complaints Report',
+                );
+              },
+              icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
+              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+              style: OutlinedButton.styleFrom(
+                backgroundColor: const Color(0xFFF0F9FF),
+                side: const BorderSide(color: Color(0xFFBAE6FD)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton(
+              onPressed: _openNewComplaintModal,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0284C7), // bg-brand-600
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                elevation: 1,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), // rounded-xl
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.add, size: 16, color: Colors.white), // Plus w-4 h-4
+                  const SizedBox(width: 8), // gap-2
+                  Text(
+                    _activeTab == 'Personal Help' ? 'New Request' : 'New Complaint',
+                    style: const TextStyle(
+                      fontSize: 14, // text-sm
+                      fontWeight: FontWeight.w600, // font-semibold
+                      color: Colors.white,
+                      letterSpacing: -0.1,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -276,14 +311,11 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
               ),
             ],
           ),
-
-          // View Mode Toggle (matching ComplaintList.tsx lines 516-537)
           Container(
-            padding: const EdgeInsets.all(3),
+            padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: const Color(0xFFF1F5F9),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
             child: Row(
               children: [
@@ -293,16 +325,99 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
                   isActive: _viewMode == 'grid',
                   onTap: () => setState(() => _viewMode = 'grid'),
                 ),
+                const SizedBox(width: 4),
                 _buildViewToggleButton(
-                  icon: Icons.description_outlined,
-                  label: 'Report',
-                  isActive: _viewMode == 'report',
-                  onTap: () => setState(() => _viewMode = 'report'),
+                  icon: Icons.table_rows_rounded,
+                  label: 'Table',
+                  isActive: _viewMode == 'table',
+                  onTap: () => setState(() => _viewMode = 'table'),
                 ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildViewToggleButton({
+    required IconData icon,
+    required String label,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: isActive ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+          boxShadow: isActive ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 2, offset: const Offset(0, 1))] : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B)),
+            const SizedBox(width: 5),
+            Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B))),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildComplaintTable(List<ComplaintModel> items, bool isMr) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          columns: const [
+            DataColumn(label: Text('Complaint / Title', style: TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text('Citizen', style: TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text('Category', style: TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text('Area', style: TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text('Date', style: TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.w700))),
+          ],
+          rows: items.map((c) {
+            final dateStr = DateFormat('dd MMM yyyy, hh:mm a').format(c.createdAt);
+            return DataRow(
+              cells: [
+                DataCell(
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 240),
+                    child: Text(
+                      c.title,
+                      style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+                DataCell(Text(c.citizenName ?? '-')),
+                DataCell(_buildCategoryBadge(c.category)),
+                DataCell(Text(c.area ?? '-')),
+                DataCell(_buildStatusBadge(c.status, isMr)),
+                DataCell(Text(dateStr, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)))),
+                DataCell(
+                  IconButton(
+                    icon: const Icon(Icons.arrow_forward_rounded, size: 16, color: Color(0xFF0284C7)),
+                    tooltip: 'View Details',
+                    onPressed: () => _openComplaintDetail(c),
+                  ),
+                ),
+              ],
+            );
+          }).toList(),
+        ),
       ),
     );
   }
@@ -331,44 +446,6 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
             fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
             color: isActive ? const Color(0xFF0284C7) : const Color(0xFF64748B),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildViewToggleButton({
-    required IconData icon,
-    required String label,
-    required bool isActive,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: isActive ? const Color(0xFFF0F9FF) : Colors.transparent,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 15,
-              color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B),
-              ),
-            ),
-          ],
         ),
       ),
     );
@@ -509,8 +586,8 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
   Widget _buildComplaintGrid(List<ComplaintModel> items, bool isMr) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // 3 columns on wide desktop, 2 columns on medium desktop
-        final crossAxisCount = constraints.maxWidth > 1100 ? 3 : 2;
+        // Standard 3-by-3 format across desktop screens
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
 
         return GridView.builder(
           shrinkWrap: true,
@@ -519,7 +596,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
             crossAxisCount: crossAxisCount,
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
-            childAspectRatio: 1.55,
+            childAspectRatio: 1.35,
           ),
           itemCount: items.length,
           itemBuilder: (context, index) {

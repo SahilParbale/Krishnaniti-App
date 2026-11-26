@@ -58,8 +58,8 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
     super.dispose();
   }
 
-  Future<void> _fetchComplaints() async {
-    setState(() => _loading = true);
+  Future<void> _fetchComplaints({bool showLoading = true}) async {
+    if (showLoading) setState(() => _loading = true);
     try {
       final repo = ref.read(complaintsRepoProvider);
       final list = await repo.getWardProblems();
@@ -630,7 +630,7 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                               const SizedBox(width: 8),
                               // PDF Export Button (Themed Component)
                               AppPdfButton(
-                                label: isMr ? 'PDF अहवाल' : 'PDF Report',
+                                label: isMr ? 'अहवाल' : 'Download Report',
                                 style: AppPdfButtonStyle.outlined,
                                 onPressed: () {
                                   WardProblemsReportGenerator.generateAndPrintReport(
@@ -759,12 +759,14 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
           final c = items[idx];
           return InkWell(
             onTap: () {
-              Navigator.push(
+              Navigator.push<bool>(
                 context,
                 MaterialPageRoute(
                   builder: (_) => ComplaintDetailScreen(complaint: c),
                 ),
-              ).then((_) => _fetchComplaints());
+              ).then((res) {
+                if (res == true) _fetchComplaints(showLoading: false);
+              });
             },
             borderRadius: BorderRadius.circular(12),
             child: Container(
@@ -1003,7 +1005,7 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                   ),
                   icon: const Icon(Icons.download_rounded, size: 16),
                   label: Text(
-                    isMr ? 'PDF अहवाल' : 'Download PDF',
+                    isMr ? 'अहवाल' : 'Download Report',
                     style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -1031,12 +1033,14 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                 final c = entry.value;
                 return DataRow(
                   onSelectChanged: (_) {
-                    Navigator.push(
+                    Navigator.push<bool>(
                       context,
                       MaterialPageRoute(
                         builder: (_) => ComplaintDetailScreen(complaint: c),
                       ),
-                    ).then((_) => _fetchComplaints());
+                    ).then((res) {
+                      if (res == true) _fetchComplaints(showLoading: false);
+                    });
                   },
                   cells: [
                     DataCell(Text('${idx + 1}', style: const TextStyle(fontSize: 12))),

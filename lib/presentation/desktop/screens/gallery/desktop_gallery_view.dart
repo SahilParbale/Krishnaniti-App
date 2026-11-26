@@ -353,29 +353,47 @@ class _DesktopGalleryViewState extends ConsumerState<DesktopGalleryView> {
             // Download Report
             OutlinedButton.icon(
               onPressed: () {
-                GalleryReportGenerator.generateAndPrintReport(items: _filteredItems);
+                GalleryReportGenerator.generateAndPrintReport(
+                  context: context,
+                  items: _filteredItems,
+                );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
-              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 13)),
+              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
               style: OutlinedButton.styleFrom(
                 backgroundColor: const Color(0xFFF0F9FF),
                 side: const BorderSide(color: Color(0xFFBAE6FD)),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
 
             // Add Photo
-            ElevatedButton.icon(
+            ElevatedButton(
               onPressed: () => _showAddModal(),
-              icon: const Icon(Icons.add_a_photo_outlined, size: 18, color: Colors.white),
-              label: const Text('+ Add Photo', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0284C7),
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                foregroundColor: Colors.white,
                 elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.add, size: 16, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text(
+                    'Add Photo',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      letterSpacing: -0.1,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -473,7 +491,7 @@ class _DesktopGalleryViewState extends ConsumerState<DesktopGalleryView> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
 
         return GridView.builder(
           shrinkWrap: true,
@@ -626,7 +644,7 @@ class _DesktopGalleryViewState extends ConsumerState<DesktopGalleryView> {
   Widget _buildLoadingGrid() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),

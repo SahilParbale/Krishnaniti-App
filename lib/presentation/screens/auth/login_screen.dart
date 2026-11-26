@@ -109,6 +109,35 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  Future<void> _signInDemo() async {
+    setState(() => _isSigningIn = true);
+    try {
+      await ref.read(authStateProvider.notifier).signIn(
+        'demo_nagarsevak@demo.com',
+        'Password@123',
+        role: _activeRole,
+        isStaff: _subRole == 'staff',
+      );
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const AdaptiveScaffold()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSigningIn = false);
+        final rawMsg = e.toString().replaceFirst('Exception: ', '');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Demo sign-in failed: $rawMsg'),
+            backgroundColor: const Color(0xFFDC2626),
+          ),
+        );
+      }
+    }
+  }
+
   void _showForgotPasswordSheet(BuildContext context, bool isMr) {
     showModalBottomSheet(
       context: context,
@@ -583,6 +612,33 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               const Icon(Icons.arrow_forward_rounded, size: 18),
                             ],
                           ),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // Instant Demo Access
+                SizedBox(
+                  width: double.infinity,
+                  height: 44,
+                  child: OutlinedButton.icon(
+                    onPressed: isLoading ? null : _signInDemo,
+                    icon: const Icon(Icons.flash_on_rounded, size: 18, color: Color(0xFF0284C7)),
+                    label: Text(
+                      isMr ? 'डेमो लॉगिन (सर्व वैशिष्ट्ये पहा)' : 'Instant Demo Login (demo_nagarsevak@demo.com)',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF0284C7),
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFFBAE6FD), width: 1.5),
+                      backgroundColor: const Color(0xFFF0F9FF),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
                   ),
                 ),
 

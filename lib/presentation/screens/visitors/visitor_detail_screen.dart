@@ -458,7 +458,7 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
               child: Padding(
                 padding: const EdgeInsets.only(right: 4),
                 child: AppPdfButton.icon(
-                  tooltip: 'Export Visitor Pass PDF',
+                  tooltip: 'Download Report',
                   onPressed: () {
                     VisitorReportGenerator.generateAndPrintVisitorSlip(_visitor);
                   },

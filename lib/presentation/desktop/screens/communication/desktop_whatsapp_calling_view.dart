@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../data/models/voter_model.dart';
+import '../../../../data/models/whatsapp_broadcast_model.dart';
 import '../../../../data/repositories/whatsapp_repository.dart';
 import '../../shell/desktop_sidebar.dart';
+import '../../../screens/whatsapp/whatsapp_history_report_generator.dart';
 
 class DesktopWhatsappCallingView extends ConsumerStatefulWidget {
   const DesktopWhatsappCallingView({super.key});
@@ -130,6 +132,37 @@ class _DesktopWhatsappCallingViewState extends ConsumerState<DesktopWhatsappCall
                     ),
                     const SizedBox(width: 12),
 
+                    // Download Report matching WhatsAppCalling.tsx
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        final logs = _voters.map((v) => WhatsAppBroadcastModel(
+                          id: 'wacall-${v.id}',
+                          title: 'WhatsApp Call: ${v.nameEnglish.isNotEmpty ? v.nameEnglish : v.nameMarathi}',
+                          message: 'WhatsApp voice call outreach record for Ward 12 constituency.',
+                          sentAt: DateTime.now(),
+                          channel: 'whatsapp',
+                          recipients: 1,
+                          sentCount: 1,
+                          deliveredCount: 1,
+                          failedCount: 0,
+                          status: 'COMPLETED',
+                          targetCriteria: v.address,
+                          category: 'WhatsApp Voice Call',
+                        )).toList();
+                        WhatsAppHistoryReportGenerator.generateAndPrintReport(
+                          context: context,
+                          broadcasts: logs,
+                        );
+                      },
+                      icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
+                      label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: const Color(0xFFF0F9FF),
+                        side: const BorderSide(color: Color(0xFFBAE6FD)),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
                   ],
                 ),
               ],

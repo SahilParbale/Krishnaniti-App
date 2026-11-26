@@ -272,7 +272,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
               _generatePdfReport();
             },
             icon: const Icon(Icons.print_outlined, size: 18),
-            label: const Text('Download / Print PDF'),
+            label: const Text('Download Report'),
           ),
         ],
       ),
@@ -424,7 +424,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                     ],
                   ),
                   AppPdfButton.outlined(
-                    label: 'Download PDF',
+                    label: 'Download Report',
                     onPressed: _generatePdfReport,
                   ),
                 ],

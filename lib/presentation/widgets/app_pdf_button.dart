@@ -21,45 +21,45 @@ class AppPdfButton extends StatelessWidget {
 
   const AppPdfButton({
     super.key,
-    this.label = 'Reports',
+    this.label = 'Download Report',
     required this.onPressed,
     this.style = AppPdfButtonStyle.outlined,
     this.isCompact = true,
     this.isLoading = false,
-    this.tooltip = 'Reports',
-    this.icon = Icons.picture_as_pdf_rounded,
+    this.tooltip = 'Download Report',
+    this.icon = Icons.download_rounded,
   });
 
   /// Convenient constructor for primary filled button (e.g. at the bottom of sheets)
   const AppPdfButton.primary({
     super.key,
-    this.label = 'Reports',
+    this.label = 'Download Report',
     required this.onPressed,
     this.isCompact = false,
     this.isLoading = false,
-    this.tooltip = 'Reports',
-    this.icon = Icons.picture_as_pdf_rounded,
+    this.tooltip = 'Download Report',
+    this.icon = Icons.download_rounded,
   }) : style = AppPdfButtonStyle.primary;
 
   /// Convenient constructor for compact outlined pill button (e.g. in filter rows)
   const AppPdfButton.outlined({
     super.key,
-    this.label = 'Reports',
+    this.label = 'Download Report',
     required this.onPressed,
     this.isCompact = true,
     this.isLoading = false,
-    this.tooltip = 'Reports',
-    this.icon = Icons.picture_as_pdf_rounded,
+    this.tooltip = 'Download Report',
+    this.icon = Icons.download_rounded,
   }) : style = AppPdfButtonStyle.outlined;
 
   /// Convenient constructor for icon-only export button (e.g. in AppBar actions)
   const AppPdfButton.icon({
     super.key,
     required this.onPressed,
-    this.tooltip = 'Reports',
+    this.tooltip = 'Download Report',
     this.isLoading = false,
-    this.icon = Icons.picture_as_pdf_rounded,
-  })  : label = 'Reports',
+    this.icon = Icons.download_rounded,
+  })  : label = 'Download Report',
         style = AppPdfButtonStyle.iconOnly,
         isCompact = true;
 

@@ -6,6 +6,7 @@ import 'package:nagarsevak_mobile/data/models/diary_task_model.dart';
 import 'package:nagarsevak_mobile/data/repositories/diary_tasks_repository.dart';
 import 'package:nagarsevak_mobile/presentation/desktop/common/desktop_modal_dialog.dart';
 import 'package:nagarsevak_mobile/presentation/desktop/shell/desktop_sidebar.dart';
+import 'package:nagarsevak_mobile/presentation/screens/diary/diary_report_generator.dart';
 
 /// Desktop Tasks View matching Tasks.tsx verbatim:
 /// - Sticky Header: Title + Found Counter + Help + Scan Doc + New Task
@@ -22,7 +23,7 @@ class DesktopTasksView extends ConsumerStatefulWidget {
 }
 
 class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
-  String _viewMode = 'grid'; // 'timeline' | 'grid' | 'report'
+  String _viewMode = 'grid'; // 'timeline' | 'grid' | 'table'
   DateTime _selectedDate = DateTime.now();
   String _searchQuery = '';
   String _selectedArea = 'All';
@@ -281,38 +282,66 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
           ],
         ),
 
-        // Actions: Help + Scan Doc + New Task
+        // Actions: Download Report + Scan Doc + New Task
         Row(
           children: [
+            OutlinedButton.icon(
+              onPressed: () {
+                DiaryReportGenerator.generateAndPrintTasksReport(
+                  context: context,
+                  tasks: _filteredTasks,
+                );
+              },
+              icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
+              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+              style: OutlinedButton.styleFrom(
+                backgroundColor: const Color(0xFFF0F9FF),
+                side: const BorderSide(color: Color(0xFFBAE6FD)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(width: 8),
 
             OutlinedButton.icon(
               onPressed: () {},
-              icon: const Icon(Icons.document_scanner_outlined, size: 18, color: Color(0xFF475569)),
-              label: Text(
+              icon: const Icon(Icons.document_scanner_outlined, size: 16, color: Color(0xFF475569)),
+              label: const Text(
                 'Scan Doc',
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
               ),
               style: OutlinedButton.styleFrom(
                 backgroundColor: Colors.white,
                 side: const BorderSide(color: Color(0xFFE2E8F0)),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
-            const SizedBox(width: 10),
-            ElevatedButton.icon(
+            const SizedBox(width: 8),
+            ElevatedButton(
               onPressed: _openNewTaskDialog,
-              icon: const Icon(Icons.add_rounded, size: 18),
-              label: Text(
-                'New Task',
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0284C7),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                elevation: 1,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.add, size: 16, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text(
+                    'New Task',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      letterSpacing: -0.1,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -430,10 +459,10 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
                   onTap: () => setState(() => _viewMode = 'grid'),
                 ),
                 _buildViewToggleButton(
-                  icon: Icons.table_chart_outlined,
-                  label: 'Report',
-                  isActive: _viewMode == 'report',
-                  onTap: () => setState(() => _viewMode = 'report'),
+                  icon: Icons.table_rows_rounded,
+                  label: 'Table',
+                  isActive: _viewMode == 'table',
+                  onTap: () => setState(() => _viewMode = 'table'),
                 ),
               ],
             ),
@@ -544,8 +573,8 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
   Widget _build3x3TaskGrid(List<DiaryTaskModel> items, bool isMr) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Exact 3 columns on standard/large desktop (3x3 grid)
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        // Standard 3-by-3 format across desktop screens
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
 
         return GridView.builder(
           shrinkWrap: true,
@@ -554,7 +583,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
             crossAxisCount: crossAxisCount,
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
-            childAspectRatio: 1.45,
+            childAspectRatio: 1.35,
           ),
           itemCount: items.length,
           itemBuilder: (context, index) {

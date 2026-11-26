@@ -4,6 +4,8 @@ import '../../../core/theme/app_colors.dart';
 import '../common/desktop_modal_dialog.dart';
 import '../../providers/navigation_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/tenant_provider.dart';
+import '../../../data/models/user_model.dart';
 import '../../../core/services/supabase_service.dart';
 
 /// Language state notifier for desktop UI
@@ -21,12 +23,14 @@ class NavItemData {
   final String label;
   final String labelMr;
   final IconData icon;
+  final String? permission;
 
   const NavItemData({
     required this.key,
     required this.label,
     required this.labelMr,
     required this.icon,
+    this.permission,
   });
 }
 
@@ -78,11 +82,11 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
     labelMr: 'Daily Work',
     icon: Icons.work_outline_rounded,
     items: [
-      NavItemData(key: 'complaints', label: 'Requests & Complaints', labelMr: 'Requests & Complaints', icon: Icons.newspaper_rounded),
-      NavItemData(key: 'letters', label: 'Letters', labelMr: 'Letters', icon: Icons.description_outlined),
-      NavItemData(key: 'diary', label: 'Task Management', labelMr: 'Task Management', icon: Icons.check_box_outlined),
-      NavItemData(key: 'visitors', label: 'Visitor Log', labelMr: 'Visitor Log', icon: Icons.people_outline_rounded),
-      NavItemData(key: 'schemes', label: 'Govt Schemes', labelMr: 'Govt Schemes', icon: Icons.assignment_turned_in_outlined),
+      NavItemData(key: 'complaints', label: 'Requests & Complaints', labelMr: 'Requests & Complaints', icon: Icons.newspaper_rounded, permission: 'complaints'),
+      NavItemData(key: 'letters', label: 'Letters', labelMr: 'Letters', icon: Icons.description_outlined, permission: 'letters'),
+      NavItemData(key: 'diary', label: 'Task Management', labelMr: 'Task Management', icon: Icons.check_box_outlined, permission: 'tasks'),
+      NavItemData(key: 'visitors', label: 'Visitor Log', labelMr: 'Visitor Log', icon: Icons.people_outline_rounded, permission: 'visitors'),
+      NavItemData(key: 'schemes', label: 'Govt Schemes', labelMr: 'Govt Schemes', icon: Icons.assignment_turned_in_outlined, permission: 'schemes'),
     ],
   );
 
@@ -93,11 +97,11 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
     labelMr: 'Ward Information',
     icon: Icons.info_outline_rounded,
     items: [
-      NavItemData(key: 'ward_problems', label: 'Ward Problems', labelMr: 'Ward Problems', icon: Icons.warning_amber_rounded),
-      NavItemData(key: 'ward_map', label: 'Ward Map', labelMr: 'Ward Map', icon: Icons.map_outlined),
-      NavItemData(key: 'work_history', label: 'Work History', labelMr: 'Work History', icon: Icons.history_rounded),
-      NavItemData(key: 'improvements', label: 'Possible Improvements', labelMr: 'Possible Improvements', icon: Icons.trending_up_rounded),
-      NavItemData(key: 'provisions', label: 'Ward Wise Provision', labelMr: 'Ward Wise Provision', icon: Icons.currency_rupee_rounded),
+      NavItemData(key: 'ward_problems', label: 'Ward Problems', labelMr: 'Ward Problems', icon: Icons.warning_amber_rounded, permission: 'ward_problems'),
+      NavItemData(key: 'ward_map', label: 'Ward Map', labelMr: 'Ward Map', icon: Icons.map_outlined, permission: 'ward_info'),
+      NavItemData(key: 'work_history', label: 'Work History', labelMr: 'Work History', icon: Icons.history_rounded, permission: 'work_history'),
+      NavItemData(key: 'improvements', label: 'Possible Improvements', labelMr: 'Possible Improvements', icon: Icons.trending_up_rounded, permission: 'improvements'),
+      NavItemData(key: 'provisions', label: 'Ward Wise Provision', labelMr: 'Ward Wise Provision', icon: Icons.currency_rupee_rounded, permission: 'provision'),
     ],
   );
 
@@ -108,8 +112,8 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
     labelMr: 'Municipal Work',
     icon: Icons.apartment_rounded,
     items: [
-      NavItemData(key: 'gb_register', label: 'GB Register', labelMr: 'GB Register', icon: Icons.menu_book_rounded),
-      NavItemData(key: 'ward_budget', label: 'Ward Budget', labelMr: 'Ward Budget', icon: Icons.account_balance_wallet_outlined),
+      NavItemData(key: 'gb_register', label: 'GB Register', labelMr: 'GB Register', icon: Icons.menu_book_rounded, permission: 'gb_register'),
+      NavItemData(key: 'ward_budget', label: 'Ward Budget', labelMr: 'Ward Budget', icon: Icons.account_balance_wallet_outlined, permission: 'budget'),
     ],
   );
 
@@ -120,10 +124,10 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
     labelMr: 'Media & Promotion',
     icon: Icons.campaign_outlined,
     items: [
-      NavItemData(key: 'social_analytics', label: 'Social Analytics', labelMr: 'Social Analytics', icon: Icons.insights_rounded),
-      NavItemData(key: 'newspaper', label: 'Newspaper Clipping', labelMr: 'Newspaper Clipping', icon: Icons.feed_outlined),
-      NavItemData(key: 'media_tracking', label: 'Media Tracking', labelMr: 'Media Tracking', icon: Icons.public_rounded),
-      NavItemData(key: 'ai_content', label: 'AI Content Studio', labelMr: 'AI Content Studio', icon: Icons.auto_awesome_rounded),
+      NavItemData(key: 'social_analytics', label: 'Social Analytics', labelMr: 'Social Analytics', icon: Icons.insights_rounded, permission: 'social'),
+      NavItemData(key: 'newspaper', label: 'Newspaper Clipping', labelMr: 'Newspaper Clipping', icon: Icons.feed_outlined, permission: 'newspaper'),
+      NavItemData(key: 'media_tracking', label: 'Media Tracking', labelMr: 'Media Tracking', icon: Icons.public_rounded, permission: 'media_tracking'),
+      NavItemData(key: 'ai_content', label: 'AI Content Studio', labelMr: 'AI Content Studio', icon: Icons.auto_awesome_rounded, permission: 'ai_content'),
     ],
   );
 
@@ -134,8 +138,8 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
     labelMr: 'Programs & Activities',
     icon: Icons.event_note_rounded,
     items: [
-      NavItemData(key: 'events', label: 'Events & Invites', labelMr: 'Events & Invites', icon: Icons.calendar_today_rounded),
-      NavItemData(key: 'gallery', label: 'Gallery & Media', labelMr: 'Gallery & Media', icon: Icons.collections_outlined),
+      NavItemData(key: 'events', label: 'Events & Invites', labelMr: 'Events & Invites', icon: Icons.calendar_today_rounded, permission: 'events'),
+      NavItemData(key: 'gallery', label: 'Gallery & Media', labelMr: 'Gallery & Media', icon: Icons.collections_outlined, permission: 'gallery'),
     ],
   );
 
@@ -146,17 +150,17 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
     labelMr: 'Political',
     icon: Icons.flag_outlined,
     items: [
-      NavItemData(key: 'result_analysis', label: 'Result Analysis', labelMr: 'Result Analysis', icon: Icons.bar_chart_rounded),
-      NavItemData(key: 'sadasya', label: 'Sadasya (Members)', labelMr: 'Sadasya (Members)', icon: Icons.group_add_rounded),
-      NavItemData(key: 'surveys', label: 'Sample Surveys', labelMr: 'Sample Surveys', icon: Icons.ballot_outlined),
-      NavItemData(key: 'voters', label: 'Voter Search', labelMr: 'Voter Search', icon: Icons.person_search_rounded),
-      NavItemData(key: 'team', label: 'My Team', labelMr: 'My Team', icon: Icons.supervised_user_circle_outlined),
-      NavItemData(key: 'opposition', label: 'Opposition Info', labelMr: 'Opposition Info', icon: Icons.visibility_outlined),
-      NavItemData(key: 'ngo_mandals', label: 'NGO & Mandals Info', labelMr: 'NGO & Mandals Info', icon: Icons.corporate_fare_rounded),
-      NavItemData(key: 'housing_societies', label: 'Housing Societies', labelMr: 'Housing Societies', icon: Icons.home_work_outlined),
-      NavItemData(key: 'duplicate_voters', label: 'Duplicate Voters', labelMr: 'Duplicate Voters', icon: Icons.copy_all_rounded),
-      NavItemData(key: 'voter_forms', label: 'Voter Forms', labelMr: 'Voter Forms', icon: Icons.description_outlined),
-      NavItemData(key: 'karyakarta_work', label: 'Karyakarta Work Management', labelMr: 'Karyakarta Work Management', icon: Icons.assignment_ind_outlined),
+      NavItemData(key: 'result_analysis', label: 'Result Analysis', labelMr: 'Result Analysis', icon: Icons.bar_chart_rounded, permission: 'results'),
+      NavItemData(key: 'sadasya', label: 'Sadasya (Members)', labelMr: 'Sadasya (Members)', icon: Icons.group_add_rounded, permission: 'sadasya'),
+      NavItemData(key: 'surveys', label: 'Sample Surveys', labelMr: 'Sample Surveys', icon: Icons.ballot_outlined, permission: 'surveys'),
+      NavItemData(key: 'voters', label: 'Voter Search', labelMr: 'Voter Search', icon: Icons.person_search_rounded, permission: 'voters'),
+      NavItemData(key: 'team', label: 'My Team', labelMr: 'My Team', icon: Icons.supervised_user_circle_outlined, permission: 'staff'),
+      NavItemData(key: 'opposition', label: 'Opposition Info', labelMr: 'Opposition Info', icon: Icons.visibility_outlined, permission: 'opposition'),
+      NavItemData(key: 'ngo_mandals', label: 'NGO & Mandals Info', labelMr: 'NGO & Mandals Info', icon: Icons.corporate_fare_rounded, permission: 'social_organizations'),
+      NavItemData(key: 'housing_societies', label: 'Housing Societies', labelMr: 'Housing Societies', icon: Icons.home_work_outlined, permission: 'housing_societies'),
+      NavItemData(key: 'duplicate_voters', label: 'Duplicate Voters', labelMr: 'Duplicate Voters', icon: Icons.copy_all_rounded, permission: 'voters'),
+      NavItemData(key: 'voter_forms', label: 'Voter Forms', labelMr: 'Voter Forms', icon: Icons.description_outlined, permission: 'voter_forms'),
+      NavItemData(key: 'karyakarta_work', label: 'Karyakarta Work Management', labelMr: 'Karyakarta Work Management', icon: Icons.assignment_ind_outlined, permission: 'karyakarta_work'),
     ],
   );
 
@@ -167,19 +171,44 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
     labelMr: 'Public Communication',
     icon: Icons.forum_outlined,
     items: [
-      NavItemData(key: 'sms', label: 'Send SMS', labelMr: 'Send SMS', icon: Icons.sms_outlined),
-      NavItemData(key: 'whatsapp_message', label: 'WhatsApp Message', labelMr: 'WhatsApp Message', icon: Icons.chat_bubble_outline_rounded),
-      NavItemData(key: 'voice_call', label: 'Voice Call', labelMr: 'Voice Call', icon: Icons.phone_in_talk_rounded),
-      NavItemData(key: 'ai_voice_call', label: 'AI Voice Call', labelMr: 'AI Voice Call', icon: Icons.support_agent_rounded),
-      NavItemData(key: 'conference_room', label: 'Conference Room', labelMr: 'Conference Room', icon: Icons.video_call_rounded),
-      NavItemData(key: 'whatsapp_call', label: 'WhatsApp Call', labelMr: 'WhatsApp Call', icon: Icons.phone_forwarded_rounded),
+      NavItemData(key: 'sms', label: 'Send SMS', labelMr: 'Send SMS', icon: Icons.sms_outlined, permission: 'sms'),
+      NavItemData(key: 'whatsapp_message', label: 'WhatsApp Message', labelMr: 'WhatsApp Message', icon: Icons.chat_bubble_outline_rounded, permission: 'whatsapp'),
+      NavItemData(key: 'voice_call', label: 'Voice Call', labelMr: 'Voice Call', icon: Icons.phone_in_talk_rounded, permission: 'voice_call'),
+      NavItemData(key: 'ai_voice_call', label: 'AI Voice Call', labelMr: 'AI Voice Call', icon: Icons.support_agent_rounded, permission: 'ai_voice_call'),
+      NavItemData(key: 'conference_room', label: 'Conference Room', labelMr: 'Conference Room', icon: Icons.video_call_rounded, permission: 'conference_room'),
+      NavItemData(key: 'whatsapp_call', label: 'WhatsApp Call', labelMr: 'WhatsApp Call', icon: Icons.phone_forwarded_rounded, permission: 'whatsapp_call'),
     ],
   );
+
+  bool _checkPermission(UserModel? user, TenantState tenantState, String? perm) {
+    if (perm == null || perm.isEmpty) return true;
+    if (!tenantState.hasFeature(perm)) return false;
+    if (user != null && (user.isStaff || user.role == 'staff')) {
+      final perms = user.permissions;
+      if (perms.isEmpty) return false;
+      const publicCommPerms = [
+        'sms',
+        'whatsapp',
+        'voice_call',
+        'ai_voice_call',
+        'conference_room',
+        'whatsapp_call'
+      ];
+      if (publicCommPerms.contains(perm) && perms.contains('public_comm')) {
+        return true;
+      }
+      return perms.contains(perm);
+    }
+    return true;
+  }
 
   @override
   Widget build(BuildContext context) {
     final activeKey = ref.watch(activeScreenProvider);
     final user = ref.watch(authStateProvider).value;
+    final tenantState = ref.watch(tenantProvider);
+    final currentLang = ref.watch(desktopLanguageProvider);
+    final isMr = currentLang == 'mr';
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 260),
@@ -194,7 +223,7 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
       child: Column(
         children: [
           // Branding Header
-          _buildHeader(),
+          _buildHeader(tenantState, isMr),
 
           // Scrollable Navigation Menu in exact AppLayout.tsx sequence
           Expanded(
@@ -207,56 +236,60 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
                 // 1. Dashboard (Always on top)
                 _buildNavItem(
                   key: 'dashboard',
-                  label: 'Dashboard',
+                  label: isMr ? 'डॅशबोर्ड' : 'Dashboard',
                   icon: Icons.dashboard_rounded,
                   isActive: activeKey == 'dashboard',
                 ),
                 const SizedBox(height: 4),
 
                 // 2. Daily Work
-                _buildNavGroup(_dailyWorkGroup, activeKey, false),
+                _buildNavGroup(_dailyWorkGroup, activeKey, isMr, user, tenantState),
                 const SizedBox(height: 4),
 
                 // 3. Ward Information
-                _buildNavGroup(_wardInfoGroup, activeKey, false),
+                _buildNavGroup(_wardInfoGroup, activeKey, isMr, user, tenantState),
                 const SizedBox(height: 4),
 
                 // 4. Municipal Work
-                _buildNavGroup(_municipalGroup, activeKey, false),
+                _buildNavGroup(_municipalGroup, activeKey, isMr, user, tenantState),
                 const SizedBox(height: 4),
 
                 // 5. Government Office (Exactly between Municipal Work and Media)
-                _buildNavItem(
-                  key: 'gov_office',
-                  label: 'Government Office',
-                  icon: Icons.account_balance_rounded,
-                  isActive: activeKey == 'gov_office',
-                ),
-                const SizedBox(height: 4),
+                if (_checkPermission(user, tenantState, 'gov_office')) ...[
+                  _buildNavItem(
+                    key: 'gov_office',
+                    label: isMr ? 'सरकारी कार्यालये' : 'Government Office',
+                    icon: Icons.account_balance_rounded,
+                    isActive: activeKey == 'gov_office',
+                  ),
+                  const SizedBox(height: 4),
+                ],
 
                 // 6. Media & Promotion
-                _buildNavGroup(_mediaGroup, activeKey, false),
+                _buildNavGroup(_mediaGroup, activeKey, isMr, user, tenantState),
                 const SizedBox(height: 4),
 
                 // 7. Programs & Activities
-                _buildNavGroup(_programsGroup, activeKey, false),
+                _buildNavGroup(_programsGroup, activeKey, isMr, user, tenantState),
                 const SizedBox(height: 4),
 
                 // 8. Political
-                _buildNavGroup(_politicalGroup, activeKey, false),
+                _buildNavGroup(_politicalGroup, activeKey, isMr, user, tenantState),
                 const SizedBox(height: 4),
 
                 // 9. Public Communication
-                _buildNavGroup(_communicationGroup, activeKey, false),
+                _buildNavGroup(_communicationGroup, activeKey, isMr, user, tenantState),
                 const SizedBox(height: 4),
 
                 // 10. Analysis & Strategy (Immediately following Public Communication)
-                _buildNavItem(
-                  key: 'analysis_strategy',
-                  label: 'Analysis Strategy',
-                  icon: Icons.query_stats_rounded,
-                  isActive: activeKey == 'analysis_strategy',
-                ),
+                if (_checkPermission(user, tenantState, 'analysis')) ...[
+                  _buildNavItem(
+                    key: 'analysis_strategy',
+                    label: isMr ? 'विश्लेषण व रणनीती' : 'Analysis Strategy',
+                    icon: Icons.query_stats_rounded,
+                    isActive: activeKey == 'analysis_strategy',
+                  ),
+                ],
               ],
             ),
           ),
@@ -268,7 +301,15 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(TenantState tenantState, bool isMr) {
+    final tenant = tenantState.tenant;
+    final headerTitle = isMr
+        ? (tenant?.displayNameMarathi ?? 'नगरसेवक कार्यालय')
+        : (tenant?.displayNameEnglish ?? 'Nagar Sevak');
+    final headerSubtitle = tenant != null && tenant.partyName.isNotEmpty
+        ? '${tenant.partyName} | ${tenant.wardName.isNotEmpty ? tenant.wardName : 'Operations & Staff'}'
+        : (tenant?.wardName.isNotEmpty == true ? tenant!.wardName : 'Operations & Staff');
+
     return Container(
       height: 72,
       padding: EdgeInsets.symmetric(horizontal: widget.isCollapsed ? 12 : 16),
@@ -299,10 +340,10 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
                           ),
                         ],
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Text(
-                          'N',
-                          style: TextStyle(
+                          headerTitle.isNotEmpty ? headerTitle[0].toUpperCase() : 'N',
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 18,
                             fontWeight: FontWeight.w900,
@@ -311,14 +352,14 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
                       ),
                     ),
                     const SizedBox(width: 10),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Nagar Sevak',
-                            style: TextStyle(
+                            headerTitle,
+                            style: const TextStyle(
                               fontSize: 13.5,
                               fontWeight: FontWeight.w800,
                               color: AppColors.slate900,
@@ -328,8 +369,8 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
                             overflow: TextOverflow.ellipsis,
                           ),
                           Text(
-                            'Operations & Staff',
-                            style: TextStyle(
+                            headerSubtitle,
+                            style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
                               color: AppColors.slate500,
@@ -361,10 +402,10 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
                   gradient: AppColors.brandGradient,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Center(
+                child: Center(
                   child: Text(
-                    'N',
-                    style: TextStyle(
+                    headerTitle.isNotEmpty ? headerTitle[0].toUpperCase() : 'N',
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.w900,
@@ -449,13 +490,16 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
     return content;
   }
 
-  Widget _buildNavGroup(NavGroupData group, String activeKey, bool isMr) {
+  Widget _buildNavGroup(NavGroupData group, String activeKey, bool isMr, UserModel? user, TenantState tenantState) {
+    final visibleItems = group.items.where((item) => _checkPermission(user, tenantState, item.permission)).toList();
+    if (visibleItems.isEmpty) return const SizedBox.shrink();
+
     final isOpen = _openGroups[group.id] ?? false;
-    final hasActiveChild = group.items.any((item) => item.key == activeKey);
+    final hasActiveChild = visibleItems.any((item) => item.key == activeKey);
 
     if (widget.isCollapsed) {
       // In collapsed mode, render primary items directly or with hover popup
-      final activeChild = group.items.cast<NavItemData?>().firstWhere(
+      final activeChild = visibleItems.cast<NavItemData?>().firstWhere(
             (i) => i?.key == activeKey,
             orElse: () => null,
           );
@@ -545,7 +589,7 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
               ),
               padding: const EdgeInsets.only(left: 8),
               child: Column(
-                children: group.items.map((item) {
+                children: visibleItems.map((item) {
                   final isActive = item.key == activeKey;
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 1.5),

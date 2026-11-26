@@ -367,7 +367,7 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
                               },
                             ),
                             AppPdfButton.icon(
-                              tooltip: 'Download PDF Report',
+                              tooltip: 'Download Report',
                               onPressed: () {
                                 MediaTrackingReportGenerator.generateAndPrintReport(
                                   articles: filtered,

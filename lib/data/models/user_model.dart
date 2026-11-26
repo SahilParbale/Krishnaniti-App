@@ -27,6 +27,28 @@ class UserModel {
     return false;
   }
 
+  UserModel copyWith({
+    String? id,
+    String? name,
+    String? email,
+    String? role,
+    bool? isStaff,
+    List<String>? permissions,
+    String? tenantId,
+    String? assignedWard,
+  }) {
+    return UserModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      role: role ?? this.role,
+      isStaff: isStaff ?? this.isStaff,
+      permissions: permissions ?? this.permissions,
+      tenantId: tenantId ?? this.tenantId,
+      assignedWard: assignedWard ?? this.assignedWard,
+    );
+  }
+
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       id: json['id'] as String? ?? '',

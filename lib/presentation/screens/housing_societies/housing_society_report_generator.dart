@@ -1,14 +1,17 @@
+import 'package:flutter/material.dart' show BuildContext;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../data/models/housing_society_model.dart';
 import '../../widgets/app_pdf_report_theme.dart';
+import '../../widgets/app_report_preview_modal.dart';
 
 class HousingSocietyReportGenerator {
   HousingSocietyReportGenerator._();
 
   static Future<void> generateAndPrintReport({
+    BuildContext? context,
     required List<HousingSocietyModel> societies,
   }) async {
     final pdf = pw.Document();
@@ -125,10 +128,21 @@ class HousingSocietyReportGenerator {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Housing_Societies_Report_${DateFormat('yyyyMMdd').format(now)}.pdf',
-    );
+    final fileName = 'Housing_Societies_Report_${DateFormat('yyyyMMdd').format(now)}';
+    if (context != null) {
+      await AppReportPreviewModal.show(
+        context: context,
+        title: 'Housing Societies Registry',
+        subtitle: 'List of Co-operative Housing Societies & Executive Contacts',
+        fileName: fileName,
+        onBuildPdf: () async => pdf.save(),
+      );
+    } else {
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: '$fileName.pdf',
+      );
+    }
   }
 
   static pw.Widget _buildSummaryItem(String label, String value, {PdfColor? highlightColor}) {

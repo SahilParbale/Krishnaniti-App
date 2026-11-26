@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:nagarsevak_mobile/core/theme/app_colors.dart';
 import 'package:nagarsevak_mobile/presentation/widgets/krishnaniti_logo.dart';
 import 'package:nagarsevak_mobile/presentation/providers/auth_provider.dart';
 import 'package:nagarsevak_mobile/presentation/navigation/adaptive_scaffold.dart';
-import 'package:nagarsevak_mobile/presentation/desktop/shell/desktop_sidebar.dart';
 
 /// Desktop Login Screen matching Nagarsevak-Managment/src/pages/Login.tsx exactly 1:1
 class DesktopLoginScreen extends ConsumerStatefulWidget {
@@ -67,6 +65,35 @@ class _DesktopLoginScreenState extends ConsumerState<DesktopLoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Sign in failed: $rawMsg'),
+            backgroundColor: const Color(0xFFDC2626),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _signInDemo(String role) async {
+    setState(() => _loading = true);
+    try {
+      await ref.read(authStateProvider.notifier).signIn(
+        'demo_nagarsevak@demo.com',
+        'Password@123',
+        role: role,
+        isStaff: false,
+      );
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const AdaptiveScaffold()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _loading = false);
+        final rawMsg = e.toString().replaceFirst('Exception: ', '');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Demo sign-in failed: $rawMsg'),
             backgroundColor: const Color(0xFFDC2626),
           ),
         );
@@ -207,6 +234,25 @@ class _DesktopLoginScreenState extends ConsumerState<DesktopLoginScreen> {
                                         _buildRoleButton('minister', 'Minister'),
                                       ],
                                     ),
+                                    const SizedBox(height: 16),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      height: 44,
+                                      child: ElevatedButton.icon(
+                                        onPressed: _loading ? null : () => _signInDemo('nagarsevak'),
+                                        icon: const Icon(Icons.flash_on_rounded, size: 18),
+                                        label: const Text(
+                                          'Instant Demo Login (demo_nagarsevak@demo.com)',
+                                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                                        ),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color(0xFF0284C7),
+                                          foregroundColor: Colors.white,
+                                          elevation: 1,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                        ),
+                                      ),
+                                    ),
                                   ] else ...[
                                     // STEP 2: Login Form (matching Login.tsx lines 240-340)
                                     _buildLoginForm(),
@@ -254,6 +300,10 @@ class _DesktopLoginScreenState extends ConsumerState<DesktopLoginScreen> {
       onTap: () {
         setState(() {
           _activeTab = roleKey;
+          if (_emailController.text.trim().isEmpty) {
+            _emailController.text = 'demo_nagarsevak@demo.com';
+            _passwordController.text = 'Password@123';
+          }
         });
       },
       borderRadius: BorderRadius.circular(20),
@@ -503,6 +553,19 @@ class _DesktopLoginScreenState extends ConsumerState<DesktopLoginScreen> {
                       Icon(Icons.arrow_forward_rounded, size: 16),
                     ],
                   ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          width: double.infinity,
+          height: 38,
+          child: TextButton.icon(
+            onPressed: _loading ? null : () => _signInDemo(_activeTab ?? 'nagarsevak'),
+            icon: const Icon(Icons.flash_on_rounded, size: 16, color: Color(0xFF0284C7)),
+            label: const Text(
+              'One-Click Demo Access (Skip Server)',
+              style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF0284C7)),
+            ),
           ),
         ),
       ],

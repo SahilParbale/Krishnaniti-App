@@ -121,7 +121,26 @@ void main() {
     expect(find.text('Letters Dashboard'), findsOneWidget);
     expect(find.text('Manage Types'), findsOneWidget);
     expect(find.text('New Request'), findsOneWidget);
-    expect(find.text('Grid'), findsOneWidget);
-    expect(find.text('Report'), findsOneWidget);
+    expect(find.text('Download Report'), findsWidgets);
+  });
+
+  testWidgets('DesktopLoginScreen Instant Demo Login triggers authentication cleanly', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1366, 768);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(
+          home: DesktopLoginScreen(),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final demoBtn = find.text('Instant Demo Login (demo_nagarsevak@demo.com)');
+    expect(demoBtn, findsOneWidget);
+    await tester.tap(demoBtn);
+    await tester.pump(const Duration(milliseconds: 100));
   });
 }

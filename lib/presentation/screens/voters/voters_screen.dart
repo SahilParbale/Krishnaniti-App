@@ -56,8 +56,8 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
     super.dispose();
   }
 
-  Future<void> _loadVoters() async {
-    setState(() => _isLoading = true);
+  Future<void> _loadVoters({bool showLoading = true}) async {
+    if (showLoading) setState(() => _isLoading = true);
     final repo = ref.read(votersRepoProvider);
 
     final result = await repo.getPaginatedVoters(
@@ -1357,7 +1357,7 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => VoterProfileScreen(voter: voter)),
-          ).then((_) => _loadVoters());
+          ).then((res) { if (res == true) _loadVoters(showLoading: false); });
         },
         child: Padding(
           padding: const EdgeInsets.all(14),
@@ -1628,7 +1628,7 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => VoterProfileScreen(voter: m)),
-                    ).then((_) => _loadVoters());
+                    ).then((res) { if (res == true) _loadVoters(showLoading: false); });
                   },
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4),
@@ -1724,7 +1724,7 @@ class _VotersScreenState extends ConsumerState<VotersScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(builder: (_) => VoterProfileScreen(voter: v)),
-                        ).then((_) => _loadVoters());
+                        ).then((res) { if (res == true) _loadVoters(showLoading: false); });
                       },
                       child: Text(
                         v.displayName,

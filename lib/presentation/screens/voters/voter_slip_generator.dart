@@ -1,16 +1,21 @@
 
+import 'package:flutter/material.dart' show BuildContext;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../data/models/voter_model.dart';
 import '../../widgets/app_pdf_report_theme.dart';
+import '../../widgets/app_report_preview_modal.dart';
 
 class VoterSlipGenerator {
   VoterSlipGenerator._();
 
   /// Generate and print single official voter information slip
-  static Future<void> printVoterSlip(VoterModel voter) async {
+  static Future<void> printVoterSlip(
+    VoterModel voter, {
+    BuildContext? context,
+  }) async {
     final pdf = pw.Document();
     final nowStr = DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.now());
 
@@ -189,10 +194,21 @@ class VoterSlipGenerator {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Voter_Slip_${voter.epicNo.replaceAll('/', '_')}.pdf',
-    );
+    final fileName = 'Voter_Slip_${voter.epicNo.replaceAll('/', '_')}';
+    if (context != null) {
+      await AppReportPreviewModal.show(
+        context: context,
+        title: 'Voter Information Slip',
+        subtitle: voter.displayName,
+        fileName: fileName,
+        onBuildPdf: () async => pdf.save(),
+      );
+    } else {
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: '$fileName.pdf',
+      );
+    }
   }
 
   static pw.TableRow _buildTableRow(String label, String value) {
@@ -212,6 +228,7 @@ class VoterSlipGenerator {
 
   /// Generate and download complete filtered voter list matching web VoterReportGenerator.tsx
   static Future<void> downloadVotersListReport({
+    BuildContext? context,
     required List<VoterModel> voters,
     String? currentFilterSummary,
     int totalCount = 42560,
@@ -300,10 +317,23 @@ class VoterSlipGenerator {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Voter_List_${DateFormat('yyyy-MM-dd').format(DateTime.now())}.pdf',
-    );
+    final fileName = 'Voter_List_${DateFormat('yyyy-MM-dd').format(DateTime.now())}';
+    if (context != null) {
+      await AppReportPreviewModal.show(
+        context: context,
+        title: 'Voters List',
+        subtitle: currentFilterSummary?.isNotEmpty == true
+            ? 'Filtered: $currentFilterSummary'
+            : 'Detailed Electoral Roll Report',
+        fileName: fileName,
+        onBuildPdf: () async => pdf.save(),
+      );
+    } else {
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: '$fileName.pdf',
+      );
+    }
   }
 }
 

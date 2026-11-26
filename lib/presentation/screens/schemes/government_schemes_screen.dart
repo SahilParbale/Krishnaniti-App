@@ -1137,7 +1137,7 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                   ),
                   const SizedBox(width: 6),
                   AppPdfButton.icon(
-                    tooltip: isMr ? 'योजना अहवाल डाउनलोड करा' : 'Download Schemes Report PDF',
+                    tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Report',
                     onPressed: () {
                       SchemeReportGenerator.generateAndPrintListReport(
                         schemes: displayedSchemes,
@@ -1528,7 +1528,7 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                   ),
                   const SizedBox(width: 8),
                   AppPdfButton.icon(
-                    tooltip: isMr ? 'अर्ज अहवाल डाउनलोड करा' : 'Download Applications Report PDF',
+                    tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Report',
                     onPressed: () {
                       SchemeReportGenerator.generateAndPrintBeneficiaryReport(
                         applications: displayedApps,

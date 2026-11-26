@@ -492,7 +492,7 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
                             ),
                             const SizedBox(width: 6),
                             AppPdfButton.icon(
-                              tooltip: isMr ? 'प्रभाग नकाशा अहवाल डाउनलोड करा' : 'Download Ward Map Report PDF',
+                              tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Report',
                               onPressed: () {
                                 WardMapReportGenerator.generateAndPrintWardMapReport(
                                   points: displayed,

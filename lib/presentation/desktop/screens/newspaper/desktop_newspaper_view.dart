@@ -16,7 +16,7 @@ class DesktopNewspaperView extends ConsumerStatefulWidget {
 
 class _DesktopNewspaperViewState extends ConsumerState<DesktopNewspaperView> {
   String _activeSection = 'positive'; // 'positive' | 'negative'
-  String _viewMode = 'grid'; // 'grid' | 'report'
+  String _viewMode = 'grid'; // 'grid' | 'table'
   bool _loading = true;
   List<NewspaperClippingModel> _clippings = [];
   String _searchTerm = '';
@@ -382,7 +382,7 @@ class _DesktopNewspaperViewState extends ConsumerState<DesktopNewspaperView> {
           // Content
           if (_loading)
             _buildLoadingGrid()
-          else if (_viewMode == 'report')
+          else if (_viewMode == 'table')
             _buildReportTable(filtered)
           else
             _buildCardGrid(filtered),
@@ -410,52 +410,53 @@ class _DesktopNewspaperViewState extends ConsumerState<DesktopNewspaperView> {
           ],
         ),
 
-        // Actions
+        // Actions: Download Report + Upload Clipping
         Row(
           children: [
-            // View Mode
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: Row(
-                children: [
-                  _viewModeButton('Grid', Icons.grid_view_rounded, _viewMode == 'grid', () => setState(() => _viewMode = 'grid')),
-                  _viewModeButton('Report', Icons.table_chart_outlined, _viewMode == 'report', () => setState(() => _viewMode = 'report')),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-
             // Download Report
             OutlinedButton.icon(
               onPressed: () {
-                NewspaperReportGenerator.generateAndPrintReport(clippings: _filteredClippings);
+                NewspaperReportGenerator.generateAndPrintReport(
+                  context: context,
+                  clippings: _filteredClippings,
+                );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
-              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 13)),
+              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
               style: OutlinedButton.styleFrom(
                 backgroundColor: const Color(0xFFF0F9FF),
                 side: const BorderSide(color: Color(0xFFBAE6FD)),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
 
             // Add Clipping
-            ElevatedButton.icon(
+            ElevatedButton(
               onPressed: () => _showAddModal(),
-              icon: const Icon(Icons.add_rounded, size: 18, color: Colors.white),
-              label: const Text('+ Upload Clipping', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0284C7),
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                foregroundColor: Colors.white,
                 elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.add, size: 16, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text(
+                    'Upload Clipping',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      letterSpacing: -0.1,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -464,21 +465,28 @@ class _DesktopNewspaperViewState extends ConsumerState<DesktopNewspaperView> {
     );
   }
 
-  Widget _viewModeButton(String label, IconData icon, bool isActive, VoidCallback onTap) {
+  Widget _buildViewToggleButton({
+    required IconData icon,
+    required String label,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(6),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFFF0F9FF) : Colors.transparent,
+          color: isActive ? Colors.white : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
+          boxShadow: isActive ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 2, offset: const Offset(0, 1))] : null,
         ),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B)),
-            const SizedBox(width: 6),
-            Text(label, style: TextStyle(fontSize: 12, fontWeight: isActive ? FontWeight.bold : FontWeight.w500, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B))),
+            Icon(icon, size: 14, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B)),
+            const SizedBox(width: 5),
+            Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B))),
           ],
         ),
       ),
@@ -615,6 +623,31 @@ class _DesktopNewspaperViewState extends ConsumerState<DesktopNewspaperView> {
             ),
           ),
         ),
+        const SizedBox(width: 14),
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              _buildViewToggleButton(
+                icon: Icons.grid_view_rounded,
+                label: 'Grid',
+                isActive: _viewMode == 'grid',
+                onTap: () => setState(() => _viewMode = 'grid'),
+              ),
+              const SizedBox(width: 4),
+              _buildViewToggleButton(
+                icon: Icons.table_rows_rounded,
+                label: 'Table',
+                isActive: _viewMode == 'table',
+                onTap: () => setState(() => _viewMode = 'table'),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -641,7 +674,7 @@ class _DesktopNewspaperViewState extends ConsumerState<DesktopNewspaperView> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
 
         return GridView.builder(
           shrinkWrap: true,
@@ -862,7 +895,7 @@ class _DesktopNewspaperViewState extends ConsumerState<DesktopNewspaperView> {
   Widget _buildLoadingGrid() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),

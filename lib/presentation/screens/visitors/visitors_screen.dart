@@ -823,7 +823,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                   ],
                   const SizedBox(width: 8),
                   AppPdfButton.icon(
-                    tooltip: isMr ? 'भेट नोंद अहवाल डाउनलोड करा' : 'Download Visitors Report PDF',
+                    tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Report',
                     onPressed: () {
                       VisitorReportGenerator.generateAndPrintListReport(
                         visitors: filtered,

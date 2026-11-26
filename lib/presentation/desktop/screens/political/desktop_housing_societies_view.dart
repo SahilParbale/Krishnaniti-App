@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../data/models/housing_society_model.dart';
 import '../../../../data/repositories/housing_society_repository.dart';
+import '../../../screens/housing_societies/housing_society_report_generator.dart';
 
 class DesktopHousingSocietiesView extends ConsumerStatefulWidget {
   const DesktopHousingSocietiesView({super.key});
@@ -436,17 +437,56 @@ class _DesktopHousingSocietiesViewState extends ConsumerState<DesktopHousingSoci
           ],
         ),
 
-        // Add Button
-        ElevatedButton.icon(
-          onPressed: () => _showAddEditModal(),
-          icon: const Icon(Icons.add_home_work_rounded, size: 18, color: Colors.white),
-          label: const Text('+ Register Society', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF0284C7),
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            elevation: 0,
-          ),
+        // Actions Row matching HousingSocieties.tsx
+        Row(
+          children: [
+            // Download Report
+            OutlinedButton.icon(
+              onPressed: () {
+                HousingSocietyReportGenerator.generateAndPrintReport(
+                  context: context,
+                  societies: _filteredSocieties,
+                );
+              },
+              icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
+              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+              style: OutlinedButton.styleFrom(
+                backgroundColor: const Color(0xFFF0F9FF),
+                side: const BorderSide(color: Color(0xFFBAE6FD)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(width: 8),
+
+            // Add Button
+            ElevatedButton(
+              onPressed: () => _showAddEditModal(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0284C7),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.add, size: 16, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text(
+                    'Register Society',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      letterSpacing: -0.1,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -573,7 +613,7 @@ class _DesktopHousingSocietiesViewState extends ConsumerState<DesktopHousingSoci
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
 
         return GridView.builder(
           shrinkWrap: true,
@@ -703,7 +743,7 @@ class _DesktopHousingSocietiesViewState extends ConsumerState<DesktopHousingSoci
   Widget _buildLoadingGrid() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),

@@ -141,7 +141,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
               child: Padding(
                 padding: const EdgeInsets.only(right: 4),
                 child: AppPdfButton.icon(
-                  tooltip: 'Official PDF Report',
+                  tooltip: 'Download Report',
                   onPressed: () => EventReportGenerator.generateAndPrintReport(events: [_event]),
                 ),
               ),

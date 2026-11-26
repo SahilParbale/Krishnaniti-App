@@ -6,6 +6,7 @@ import 'package:nagarsevak_mobile/data/repositories/letters_repository.dart';
 import 'package:nagarsevak_mobile/presentation/desktop/shell/desktop_sidebar.dart';
 import 'package:nagarsevak_mobile/presentation/screens/letters/new_letter_bottom_sheet.dart';
 import 'package:nagarsevak_mobile/presentation/screens/letters/letter_type_manager_sheet.dart';
+import 'package:nagarsevak_mobile/presentation/screens/letters/letter_report_generator.dart';
 
 /// Desktop Letters Dashboard View matching LetterDashboard.tsx verbatim:
 /// - Sticky Header: Icon + Title + Found counter + Help + Manage Types + New Request / Upload
@@ -21,7 +22,7 @@ class DesktopLettersView extends ConsumerStatefulWidget {
 
 class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
   String _activeTab = 'outgoing'; // 'outgoing' | 'incoming'
-  String _viewMode = 'grid'; // 'grid' | 'report'
+  String _viewMode = 'grid'; // 'grid' | 'table'
   String _searchQuery = '';
   String _selectedArea = 'All';
   String _previewLang = 'mr'; // 'mr' | 'en'
@@ -37,8 +38,8 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
     _loadLetters();
   }
 
-  Future<void> _loadLetters() async {
-    setState(() => _loading = true);
+  Future<void> _loadLetters({bool showLoading = true}) async {
+    if (showLoading) setState(() => _loading = true);
     try {
       final repo = ref.read(lettersRepoProvider);
       final outgoing = await repo.getLetters(isIncoming: false, limit: 100);
@@ -118,7 +119,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
         ),
       ),
     ).then((res) {
-      if (res == true) _loadLetters();
+      if (res == true) _loadLetters(showLoading: false);
     });
   }
 
@@ -180,9 +181,11 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
 
             const SizedBox(height: 20),
 
-            // 4. Main 3-Column Layout: 1/3 List + 2/3 Live Preview (matching lines 860-1280)
+            // 4. Main Content: Grid vs Table
             if (_loading)
               _buildLoadingState()
+            else if (_viewMode == 'table')
+              _buildLettersTable(items, isMr)
             else
               _buildMainGrid(items, isMr),
           ],
@@ -229,56 +232,91 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
           ],
         ),
 
-        // Action Buttons: Help + Manage Types + New Request / Upload
+        // Action Buttons: Download Report + Manage Types + New Request / Upload
         Row(
           children: [
-
+            OutlinedButton.icon(
+              onPressed: () {
+                LetterReportGenerator.generateAndPrintLetterReport(
+                  context: context,
+                  letters: _activeTab == 'outgoing' ? _outgoingLetters : _incomingLetters,
+                  title: _activeTab == 'outgoing' ? 'Outgoing Letters Report' : 'Incoming Letters Report',
+                );
+              },
+              icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
+              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+              style: OutlinedButton.styleFrom(
+                backgroundColor: const Color(0xFFF0F9FF),
+                side: const BorderSide(color: Color(0xFFBAE6FD)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(width: 10),
 
             if (_activeTab == 'outgoing') ...[
-              OutlinedButton.icon(
+              OutlinedButton(
                 onPressed: _openManageTypesModal,
-                icon: const Icon(Icons.settings_outlined, size: 18, color: Color(0xFF475569)),
-                label: Text(
-                  'Manage Types',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-                ),
                 style: OutlinedButton.styleFrom(
                   backgroundColor: Colors.white,
                   side: const BorderSide(color: Color(0xFFE2E8F0)),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.settings_outlined, size: 16, color: Color(0xFF475569)),
+                    SizedBox(width: 8),
+                    Text(
+                      'Manage Types',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(width: 10),
-              ElevatedButton.icon(
+              ElevatedButton(
                 onPressed: () => _openNewLetterModal('outgoing'),
-                icon: const Icon(Icons.add_rounded, size: 18),
-                label: Text(
-                  'New Request',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0284C7),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  elevation: 1,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.add, size: 16, color: Colors.white),
+                    SizedBox(width: 8),
+                    Text(
+                      'New Request',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white, letterSpacing: -0.1),
+                    ),
+                  ],
                 ),
               ),
             ] else ...[
-              ElevatedButton.icon(
+              ElevatedButton(
                 onPressed: () => _openNewLetterModal('incoming'),
-                icon: const Icon(Icons.upload_file_rounded, size: 18),
-                label: Text(
-                  'Upload Incoming',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0284C7),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  elevation: 1,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.upload_file_rounded, size: 16, color: Colors.white),
+                    SizedBox(width: 8),
+                    Text(
+                      'Upload Incoming',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white, letterSpacing: -0.1),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -322,14 +360,11 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
               ),
             ],
           ),
-
-          // View Toggle
           Container(
-            padding: const EdgeInsets.all(3),
+            padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: const Color(0xFFF1F5F9),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
             child: Row(
               children: [
@@ -339,16 +374,89 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                   isActive: _viewMode == 'grid',
                   onTap: () => setState(() => _viewMode = 'grid'),
                 ),
+                const SizedBox(width: 4),
                 _buildViewToggleButton(
-                  icon: Icons.table_chart_outlined,
-                  label: 'Report',
-                  isActive: _viewMode == 'report',
-                  onTap: () => setState(() => _viewMode = 'report'),
+                  icon: Icons.table_rows_rounded,
+                  label: 'Table',
+                  isActive: _viewMode == 'table',
+                  onTap: () => setState(() => _viewMode = 'table'),
                 ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLettersTable(List<LetterModel> items, bool isMr) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          columns: const [
+            DataColumn(label: Text('Ref / Outward No.', style: TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text('Subject', style: TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text('Recipient / Citizen', style: TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text('Department / Type', style: TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text('Date', style: TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.w700))),
+          ],
+          rows: items.map((l) {
+            final dateStr = DateFormat('dd MMM yyyy').format(l.createdAt);
+            return DataRow(
+              cells: [
+                DataCell(Text(l.id, style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0369A1)))),
+                DataCell(
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 240),
+                    child: Text(
+                      l.subject,
+                      style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+                DataCell(Text(l.recipient ?? l.citizenName)),
+                DataCell(Text(l.letterType ?? l.department ?? '-')),
+                DataCell(Text(dateStr, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)))),
+                DataCell(
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF0FDF4),
+                      borderRadius: BorderRadius.circular(100),
+                      border: Border.all(color: const Color(0xFFBBF7D0)),
+                    ),
+                    child: Text(
+                      l.status,
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
+                    ),
+                  ),
+                ),
+                DataCell(
+                  IconButton(
+                    icon: const Icon(Icons.remove_red_eye_outlined, size: 16, color: Color(0xFF0284C7)),
+                    tooltip: 'Preview Letter',
+                    onPressed: () {
+                      setState(() {
+                        _selectedLetter = l;
+                        _viewMode = 'grid';
+                      });
+                    },
+                  ),
+                ),
+              ],
+            );
+          }).toList(),
+        ),
       ),
     );
   }
@@ -897,14 +1005,19 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                     ),
                     const SizedBox(width: 8),
                     OutlinedButton.icon(
-                      onPressed: () {},
-                      icon: const Icon(Icons.download_rounded, size: 16),
-                      label: const Text('Download PDF'),
+                      onPressed: () {
+                        LetterReportGenerator.generateAndPrintSingleLetter(
+                          context: context,
+                          letter: letter,
+                        );
+                      },
+                      icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
+                      label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 13)),
                       style: OutlinedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        side: const BorderSide(color: Color(0xFFCBD5E1)),
+                        backgroundColor: const Color(0xFFF0F9FF),
+                        side: const BorderSide(color: Color(0xFFBAE6FD)),
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                     ),
                   ],

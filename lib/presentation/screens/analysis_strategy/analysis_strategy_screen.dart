@@ -557,7 +557,7 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
             children: [
               Expanded(
                 child: AppPdfButton(
-                  label: 'Download PDF Report',
+                  label: 'Download Report',
                   style: AppPdfButtonStyle.primary,
                   onPressed: _exportPdfReport,
                 ),
