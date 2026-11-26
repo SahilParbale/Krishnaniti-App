@@ -8,6 +8,8 @@ import 'package:nagarsevak_mobile/presentation/desktop/screens/dashboard/desktop
 import 'package:nagarsevak_mobile/presentation/desktop/screens/complaints/desktop_complaints_view.dart';
 import 'package:nagarsevak_mobile/presentation/desktop/screens/letters/desktop_letters_view.dart';
 import 'package:nagarsevak_mobile/presentation/desktop/screens/auth/desktop_login_screen.dart';
+import 'package:nagarsevak_mobile/presentation/screens/complaints/complaint_detail_screen.dart';
+import 'package:nagarsevak_mobile/data/models/complaint_model.dart';
 import 'package:nagarsevak_mobile/presentation/providers/auth_provider.dart';
 
 class FakeLoggedInAuthNotifier extends AuthNotifier {
@@ -142,5 +144,52 @@ void main() {
     expect(demoBtn, findsOneWidget);
     await tester.tap(demoBtn);
     await tester.pump(const Duration(milliseconds: 100));
+  });
+
+  testWidgets('ComplaintDetailScreen renders responsive layout matching web version', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1366, 768);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    final complaint = ComplaintModel(
+      id: 'pr-101',
+      title: 'Need Medical Assistance for Senior Citizen',
+      description: 'Request for medical wheelchair and monthly checkup assistance.',
+      category: 'Personal Help',
+      status: 'InProgress',
+      citizenName: 'Sunita Patil',
+      citizenMobile: '9876543210',
+      createdAt: DateTime.now(),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authStateProvider.overrideWith(FakeLoggedInAuthNotifier.new),
+        ],
+        child: MaterialApp(
+          home: ComplaintDetailScreen(
+            complaint: complaint,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify dynamic back label for pr- ID
+    expect(find.text('Back to Personal Requests'), findsOneWidget);
+
+    // Verify title and description
+    expect(find.text('Need Medical Assistance for Senior Citizen'), findsOneWidget);
+    expect(find.text('Request for medical wheelchair and monthly checkup assistance.'), findsOneWidget);
+
+    // Verify Personal Help badge
+    expect(find.text('Personal Help'), findsOneWidget);
+
+    // Verify Manage Ticket & Ticket Details sections
+    expect(find.text('Manage Ticket'), findsOneWidget);
+    expect(find.text('Ticket Details'), findsOneWidget);
+    expect(find.text('#pr-101'), findsOneWidget);
+    expect(find.text('Sunita Patil'), findsOneWidget);
   });
 }

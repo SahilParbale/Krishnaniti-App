@@ -26,6 +26,7 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
   String _filterStatus = 'All'; // 'All', 'Pending', 'Assigned', 'InProgress', 'Resolved'
   String _searchQuery = '';
   String _selectedArea = 'All';
+  ComplaintModel? _selectedProblem;
 
   bool _loading = true;
   List<ComplaintModel> _problems = [];
@@ -115,17 +116,23 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
   }
 
   void _openDetail(ComplaintModel problem) {
-    Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (_) => ComplaintDetailScreen(complaint: problem),
-      ),
-    ).then((res) {
-      if (res == true) _loadWardProblems(showLoading: false);
+    setState(() {
+      _selectedProblem = problem;
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_selectedProblem != null) {
+      return ComplaintDetailScreen(
+        complaint: _selectedProblem!,
+        onBack: () {
+          setState(() => _selectedProblem = null);
+          _loadWardProblems(showLoading: false);
+        },
+      );
+    }
+
     final lang = ref.watch(desktopLanguageProvider);
     final isMr = lang == 'mr';
     final items = _filteredProblems;

@@ -28,6 +28,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
   String _viewMode = 'grid'; // 'grid' | 'table'
   String _searchQuery = '';
   String _selectedArea = 'All';
+  ComplaintModel? _selectedComplaint;
 
   bool _loading = true;
   List<ComplaintModel> _complaints = [];
@@ -131,17 +132,23 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
   }
 
   void _openComplaintDetail(ComplaintModel complaint) {
-    Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (_) => ComplaintDetailScreen(complaint: complaint),
-      ),
-    ).then((res) {
-      if (res == true) _loadComplaints(showLoading: false);
+    setState(() {
+      _selectedComplaint = complaint;
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_selectedComplaint != null) {
+      return ComplaintDetailScreen(
+        complaint: _selectedComplaint!,
+        onBack: () {
+          setState(() => _selectedComplaint = null);
+          _loadComplaints(showLoading: false);
+        },
+      );
+    }
+
     final lang = ref.watch(desktopLanguageProvider);
     final isMr = lang == 'mr';
     final items = _filteredComplaints;
@@ -856,7 +863,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
         childAspectRatio: 1.55,
       ),
       itemCount: 6,
-      itemBuilder: (_, __) => Container(
+      itemBuilder: (_, _) => Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,

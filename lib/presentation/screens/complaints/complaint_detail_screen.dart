@@ -25,10 +25,12 @@ import 'complaint_report_generator.dart';
 
 class ComplaintDetailScreen extends ConsumerStatefulWidget {
   final ComplaintModel complaint;
+  final VoidCallback? onBack;
 
   const ComplaintDetailScreen({
     super.key,
     required this.complaint,
+    this.onBack,
   });
 
   @override
@@ -566,7 +568,11 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                 await ref.read(complaintsRepoProvider).deleteComplaint(_complaint.id);
               } catch (_) {}
               if (mounted) {
-                Navigator.pop(context, true); // Pop back to list with refresh signal
+                if (widget.onBack != null) {
+                  widget.onBack!();
+                } else {
+                  Navigator.pop(context, true); // Pop back to list with refresh signal
+                }
               }
             },
             child: Text(isMr ? AppStrings.deleteComplaintMr : AppStrings.deleteComplaint),
@@ -588,7 +594,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
 
     showDialog(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.92),
+      barrierColor: Colors.black.withValues(alpha: 0.92),
       builder: (ctx) {
         final size = MediaQuery.of(ctx).size;
 
@@ -643,7 +649,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.75),
+                    color: Colors.black.withValues(alpha: 0.75),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: Colors.white24),
                   ),
@@ -682,6 +688,16 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
     return const Color(0xFFE2E8F0);
   }
 
+  String _backButtonText(bool isMr) {
+    if (_complaint.id.startsWith('ap-')) {
+      return isMr ? 'प्रभाग समस्यांकडे परत' : 'Back to Ward Problems';
+    } else if (_complaint.id.startsWith('pr-')) {
+      return isMr ? 'वैयक्तिक विनंत्यांकडे परत' : 'Back to Personal Requests';
+    } else {
+      return isMr ? AppStrings.backToComplaintsMr : AppStrings.backToComplaints;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMr = ref.watch(isMarathiProvider);
@@ -701,134 +717,219 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
         body: SafeArea(
           child: Column(
             children: [
-              // Enhanced Header Bar with Back, Edit, and Delete (Responsive, no overflow)
+              // Enhanced Header Bar with Back, Edit, and Delete (Responsive, matching web)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 decoration: const BoxDecoration(
                   color: Color(0xFFF8FAFC),
                   border: Border(
                     bottom: BorderSide(color: Color(0xFFE2E8F0), width: 1),
                   ),
                 ),
-                child: Row(
-                  children: [
-                    // Back Button with circular icon
-                    InkWell(
-                      onTap: () => Navigator.pop(context),
-                      borderRadius: BorderRadius.circular(20),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                                border: Border.all(color: const Color(0xFFCBD5E1)),
-                                boxShadow: const [
-                                  BoxShadow(
-                                    color: Color(0x0A000000),
-                                    blurRadius: 4,
-                                    offset: Offset(0, 1),
+                child: LayoutBuilder(
+                  builder: (context, headerConstraints) {
+                    final isWide = headerConstraints.maxWidth >= 600;
+
+                    return Row(
+                      children: [
+                        // Back Button with circular icon
+                        InkWell(
+                          onTap: () {
+                            if (widget.onBack != null) {
+                              widget.onBack!();
+                            } else {
+                              Navigator.maybePop(context);
+                            }
+                          },
+                          borderRadius: BorderRadius.circular(20),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: const Color(0xFFCBD5E1)),
+                                    boxShadow: const [
+                                      BoxShadow(
+                                        color: Color(0x0A000000),
+                                        blurRadius: 4,
+                                        offset: Offset(0, 1),
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
-                              child: const Icon(Icons.arrow_back_rounded, size: 16, color: Color(0xFF475569)),
+                                  child: const Icon(Icons.arrow_back_rounded, size: 16, color: Color(0xFF475569)),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  _backButtonText(isMr),
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF475569),
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              isMr ? AppStrings.backToComplaintsMr : AppStrings.backToComplaints,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF475569),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
-                    ),
 
-                    const Spacer(),
+                        const Spacer(),
 
-                    // Edit, PDF Docket & Delete Actions
-                    if (isAdminOrStaff)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          AppPdfButton.outlined(
-                            label: 'Reports',
-                            tooltip: 'Reports',
-                            onPressed: () => ComplaintReportGenerator.generateAndPrintSingleComplaintDocket(_complaint),
+                        // Edit, PDF Docket & Delete Actions
+                        if (isAdminOrStaff)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              AppPdfButton.outlined(
+                                label: 'Reports',
+                                tooltip: 'Reports',
+                                onPressed: () => ComplaintReportGenerator.generateAndPrintSingleComplaintDocket(_complaint),
+                              ),
+                              const SizedBox(width: 8),
+                              if (isWide) ...[
+                                OutlinedButton.icon(
+                                  onPressed: _openEditTicketModal,
+                                  icon: const Icon(Icons.edit_outlined, size: 15, color: Color(0xFF475569)),
+                                  label: Text(
+                                    isMr ? AppStrings.editComplaintMr : AppStrings.editComplaint,
+                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    side: const BorderSide(color: Color(0xFFCBD5E1)),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                OutlinedButton.icon(
+                                  onPressed: _openDeleteTicketDialog,
+                                  icon: const Icon(Icons.delete_outline_rounded, size: 15, color: Color(0xFFDC2626)),
+                                  label: Text(
+                                    isMr ? AppStrings.deleteComplaintMr : AppStrings.deleteComplaint,
+                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFFDC2626)),
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    backgroundColor: const Color(0xFFFEF2F2),
+                                    side: const BorderSide(color: Color(0xFFFECACA)),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                ),
+                              ] else ...[
+                                IconButton(
+                                  onPressed: _openEditTicketModal,
+                                  icon: const Icon(Icons.edit_outlined, size: 16, color: Color(0xFF475569)),
+                                  tooltip: isMr ? AppStrings.editComplaintMr : AppStrings.editComplaint,
+                                  style: IconButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    side: const BorderSide(color: Color(0xFFCBD5E1)),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    padding: const EdgeInsets.all(7),
+                                    minimumSize: const Size(32, 32),
+                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                IconButton(
+                                  onPressed: _openDeleteTicketDialog,
+                                  icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFDC2626)),
+                                  tooltip: isMr ? AppStrings.deleteComplaintMr : AppStrings.deleteComplaint,
+                                  style: IconButton.styleFrom(
+                                    backgroundColor: const Color(0xFFFEF2F2),
+                                    side: const BorderSide(color: Color(0xFFFECACA)),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    padding: const EdgeInsets.all(7),
+                                    minimumSize: const Size(32, 32),
+                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
-                          const SizedBox(width: 6),
-                          IconButton(
-                            onPressed: _openEditTicketModal,
-                            icon: const Icon(Icons.edit_outlined, size: 16, color: Color(0xFF475569)),
-                            tooltip: isMr ? AppStrings.editComplaintMr : AppStrings.editComplaint,
-                            style: IconButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              side: const BorderSide(color: Color(0xFFCBD5E1)),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                              padding: const EdgeInsets.all(7),
-                              minimumSize: const Size(32, 32),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          IconButton(
-                            onPressed: _openDeleteTicketDialog,
-                            icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFDC2626)),
-                            tooltip: isMr ? AppStrings.deleteComplaintMr : AppStrings.deleteComplaint,
-                            style: IconButton.styleFrom(
-                              backgroundColor: const Color(0xFFFEF2F2),
-                              side: const BorderSide(color: Color(0xFFFECACA)),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                              padding: const EdgeInsets.all(7),
-                              minimumSize: const Size(32, 32),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                          ),
-                        ],
-                      ),
-                  ],
+                      ],
+                    );
+                  },
                 ),
               ),
 
-              // Main Scrollable Content
+              // Main Scrollable Content (Matching ComplaintDetail.tsx responsive 2-column layout)
               Expanded(
                 child: RefreshIndicator(
                   onRefresh: _refreshComplaint,
                   color: const Color(0xFF0284C7),
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // 1. Top Ticket Overview Card (Dynamic Colored Card matching ComplaintDetail.tsx)
-                        _buildTicketOverviewCard(isMr),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 1200),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final isDesktop = constraints.maxWidth >= 850;
 
-                        const SizedBox(height: 16),
+                            if (isDesktop) {
+                              return Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Left Column (2/3 width): Ticket Overview + Progress History
+                                  Expanded(
+                                    flex: 2,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                                      children: [
+                                        _buildTicketOverviewCard(isMr),
+                                        const SizedBox(height: 20),
+                                        _buildProgressHistorySection(isMr, isAdminOrStaff),
+                                        const SizedBox(height: 32),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 24),
+                                  // Right Column (1/3 width): Manage Ticket Actions + Ticket Details
+                                  Expanded(
+                                    flex: 1,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                                      children: [
+                                        if (isAdminOrStaff) ...[
+                                          _buildManageTicketCard(isMr),
+                                          const SizedBox(height: 20),
+                                        ],
+                                        _buildTicketDetailsCard(isMr),
+                                        const SizedBox(height: 32),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }
 
-                        // 2. Progress History Section (Timeline matching ComplaintDetail.tsx)
-                        _buildProgressHistorySection(isMr, isAdminOrStaff),
-
-                        const SizedBox(height: 16),
-
-                        // 3. Manage Ticket Actions Card (Status toggles & Assign Staff)
-                        if (isAdminOrStaff) ...[
-                          _buildManageTicketCard(isMr),
-                          const SizedBox(height: 16),
-                        ],
-
-                        // 4. Ticket Details / Citizen Card (Monochrome box matching ComplaintDetail.tsx)
-                        _buildTicketDetailsCard(isMr),
-
-                        const SizedBox(height: 32),
-                      ],
+                            // Mobile / Compact Layout: Single column stacked
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _buildTicketOverviewCard(isMr),
+                                const SizedBox(height: 16),
+                                _buildProgressHistorySection(isMr, isAdminOrStaff),
+                                const SizedBox(height: 16),
+                                if (isAdminOrStaff) ...[
+                                  _buildManageTicketCard(isMr),
+                                  const SizedBox(height: 16),
+                                ],
+                                _buildTicketDetailsCard(isMr),
+                                const SizedBox(height: 32),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -843,7 +944,18 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
   // 1. Top Ticket Overview Card
   Widget _buildTicketOverviewCard(bool isMr) {
     final categoryText = _complaint.category;
-    final isHelp = categoryText.toLowerCase().contains('help') || categoryText.toLowerCase().contains('personal');
+    final isPr = _complaint.id.startsWith('pr-');
+    final isAp = _complaint.id.startsWith('ap-');
+    final isHelp = isPr || categoryText.toLowerCase().contains('help') || categoryText.toLowerCase().contains('personal');
+
+    String typeLabel = categoryText;
+    if (isPr || isHelp) {
+      typeLabel = isMr ? 'वैयक्तिक मदत' : 'Personal Help';
+    } else if (isAp) {
+      typeLabel = isMr ? 'प्रभाग समस्या' : 'Ward Problem';
+    } else if (categoryText.toLowerCase() == 'complaint') {
+      typeLabel = isMr ? 'तक्रार' : 'Complaint';
+    }
 
     return Container(
       decoration: BoxDecoration(
@@ -858,7 +970,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
           ),
         ],
       ),
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -872,17 +984,25 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                   runSpacing: 6,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                       decoration: BoxDecoration(
-                        color: isHelp ? const Color(0xFFF3E8FF) : const Color(0xFFE0F2FE),
+                        color: isHelp
+                            ? const Color(0xFFF3E8FF)
+                            : isAp
+                                ? const Color(0xFFFEF3C7)
+                                : const Color(0xFFE0F2FE),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        categoryText,
+                        typeLabel,
                         style: TextStyle(
-                          fontSize: 11.5,
+                          fontSize: 12,
                           fontWeight: FontWeight.w700,
-                          color: isHelp ? const Color(0xFF7E22CE) : const Color(0xFF0369A1),
+                          color: isHelp
+                              ? const Color(0xFF7E22CE)
+                              : isAp
+                                  ? const Color(0xFFD97706)
+                                  : const Color(0xFF0369A1),
                         ),
                       ),
                     ),
@@ -893,29 +1013,29 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
             ],
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
           // Title
           Text(
             _complaint.title,
             style: const TextStyle(
-              fontSize: 20,
+              fontSize: 22,
               fontWeight: FontWeight.w800,
               color: Color(0xFF0F172A),
               height: 1.3,
             ),
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
           // Description Box
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Colors.white.withValues(alpha: 0.85),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.6)),
               boxShadow: const [
                 BoxShadow(
                   color: Color(0x05000000),
@@ -927,10 +1047,10 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
             child: Text(
               _complaint.description.isNotEmpty ? _complaint.description : _complaint.title,
               style: const TextStyle(
-                fontSize: 13.5,
+                fontSize: 14,
                 fontWeight: FontWeight.w500,
                 color: Color(0xFF334155),
-                height: 1.45,
+                height: 1.5,
               ),
             ),
           ),
@@ -1142,7 +1262,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.6),
+                    color: Colors.black.withValues(alpha: 0.6),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -2436,7 +2556,7 @@ class _EditLogBottomSheetState extends State<_EditLogBottomSheet> {
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: _images.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  separatorBuilder: (_, _) => const SizedBox(width: 8),
                   itemBuilder: (ctx, idx) {
                     final img = _images[idx];
                     return Stack(
