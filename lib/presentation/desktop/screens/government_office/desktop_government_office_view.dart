@@ -357,7 +357,10 @@ class _DesktopGovernmentOfficeViewState extends ConsumerState<DesktopGovernmentO
             // Download Report
             OutlinedButton.icon(
               onPressed: () {
-                GovOfficeReportGenerator.generateAndPrintOfficeReport(offices: _filteredOffices);
+                GovOfficeReportGenerator.generateAndPrintOfficeReport(
+                  context: context,
+                  offices: _filteredOffices,
+                );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
               label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
@@ -448,7 +451,7 @@ class _DesktopGovernmentOfficeViewState extends ConsumerState<DesktopGovernmentO
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
 
         return GridView.builder(
           shrinkWrap: true,
@@ -602,7 +605,7 @@ class _DesktopGovernmentOfficeViewState extends ConsumerState<DesktopGovernmentO
   Widget _buildLoadingGrid() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),

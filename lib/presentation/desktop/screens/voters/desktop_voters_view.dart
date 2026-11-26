@@ -373,6 +373,7 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
             OutlinedButton.icon(
               onPressed: () {
                 VoterSlipGenerator.downloadVotersListReport(
+                  context: context,
                   voters: _voters,
                   totalCount: _totalCount,
                 );
@@ -421,21 +422,28 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
     );
   }
 
-  Widget _viewModeButton(String label, IconData icon, bool isActive, VoidCallback onTap) {
+  Widget _buildViewToggleButton({
+    required IconData icon,
+    required String label,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(6),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFFF0F9FF) : Colors.transparent,
+          color: isActive ? Colors.white : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
+          boxShadow: isActive ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 2, offset: const Offset(0, 1))] : null,
         ),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B)),
-            const SizedBox(width: 6),
-            Text(label, style: TextStyle(fontSize: 12, fontWeight: isActive ? FontWeight.bold : FontWeight.w500, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B))),
+            Icon(icon, size: 14, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B)),
+            const SizedBox(width: 5),
+            Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B))),
           ],
         ),
       ),
@@ -543,6 +551,33 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
               },
             ),
           ),
+          const SizedBox(width: 14),
+
+          // View Mode Toggle
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                _buildViewToggleButton(
+                  icon: Icons.grid_view_rounded,
+                  label: 'Grid',
+                  isActive: _viewMode == 'grid',
+                  onTap: () => setState(() => _viewMode = 'grid'),
+                ),
+                const SizedBox(width: 4),
+                _buildViewToggleButton(
+                  icon: Icons.table_rows_rounded,
+                  label: 'Table',
+                  isActive: _viewMode == 'table',
+                  onTap: () => setState(() => _viewMode = 'table'),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -570,7 +605,7 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
 
         return GridView.builder(
           shrinkWrap: true,
@@ -810,7 +845,7 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
   Widget _buildLoadingGrid() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),

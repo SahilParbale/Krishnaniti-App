@@ -22,7 +22,7 @@ class DesktopWardProblemsView extends ConsumerStatefulWidget {
 }
 
 class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsView> {
-  String _viewMode = 'grid'; // 'grid' | 'report'
+  String _viewMode = 'grid'; // 'grid' | 'table'
   String _filterStatus = 'All'; // 'All', 'Pending', 'Assigned', 'InProgress', 'Resolved'
   String _searchQuery = '';
   String _selectedArea = 'All';
@@ -208,7 +208,10 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
           children: [
             OutlinedButton.icon(
               onPressed: () {
-                WardProblemsReportGenerator.generateAndPrintReport(problems: _filteredProblems);
+                WardProblemsReportGenerator.generateAndPrintReport(
+                  context: context,
+                  problems: _filteredProblems,
+                );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
               label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
@@ -314,17 +317,77 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
 
           const SizedBox(height: 12),
 
-          // Row 2: Status Pills
+          // Row 2: Status Pills & View Toggle
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildStatusPill('All', 'All'),
-              _buildStatusPill('Pending', 'Pending'),
-              _buildStatusPill('Assigned', 'Assigned'),
-              _buildStatusPill('InProgress', 'In Progress'),
-              _buildStatusPill('Resolved', 'Resolved'),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildStatusPill('All', 'All'),
+                    _buildStatusPill('Pending', 'Pending'),
+                    _buildStatusPill('Assigned', 'Assigned'),
+                    _buildStatusPill('InProgress', 'In Progress'),
+                    _buildStatusPill('Resolved', 'Resolved'),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    _buildViewToggleButton(
+                      icon: Icons.grid_view_rounded,
+                      label: 'Grid',
+                      isActive: _viewMode == 'grid',
+                      onTap: () => setState(() => _viewMode = 'grid'),
+                    ),
+                    const SizedBox(width: 4),
+                    _buildViewToggleButton(
+                      icon: Icons.table_rows_rounded,
+                      label: 'Table',
+                      isActive: _viewMode == 'table',
+                      onTap: () => setState(() => _viewMode = 'table'),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildViewToggleButton({
+    required IconData icon,
+    required String label,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: isActive ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+          boxShadow: isActive ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 2, offset: const Offset(0, 1))] : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B)),
+            const SizedBox(width: 5),
+            Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B))),
+          ],
+        ),
       ),
     );
   }
@@ -360,7 +423,8 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
   Widget _build3x3Grid(List<ComplaintModel> items, bool isMr) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1100 ? 3 : 2;
+        // Standard 3-by-3 format across desktop screens
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
 
         return GridView.builder(
           shrinkWrap: true,
@@ -369,7 +433,7 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
             crossAxisCount: crossAxisCount,
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
-            childAspectRatio: 1.5,
+            childAspectRatio: 1.35,
           ),
           itemCount: items.length,
           itemBuilder: (context, index) {
@@ -558,32 +622,7 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
     );
   }
 
-  Widget _buildViewToggleButton({
-    required IconData icon,
-    required String label,
-    required bool isActive,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: isActive ? const Color(0xFFF0F9FF) : Colors.transparent,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 14, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B)),
-            const SizedBox(width: 5),
-            Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B))),
-          ],
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildLoadingGrid() {
     return const Center(child: Padding(padding: EdgeInsets.symmetric(vertical: 40), child: CircularProgressIndicator(strokeWidth: 2)));

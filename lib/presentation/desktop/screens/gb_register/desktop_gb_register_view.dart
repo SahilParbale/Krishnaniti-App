@@ -22,7 +22,7 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
   String _areaSearch = '';
   String _meetingType = 'All'; // 'All' | 'GB' | 'Standing Committee' | 'Ward Committee' | 'Special GB' | 'Other'
   String _statusFilter = 'All'; // 'All' | 'Raised' | 'In Discussion' | 'Resolved' | 'Action Taken'
-  String _viewMode = 'grid'; // 'grid' | 'report'
+  String _viewMode = 'grid'; // 'grid' | 'table'
   String? _expandedId;
 
   @override
@@ -423,7 +423,7 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
           // Content
           if (_loading)
             _buildLoadingGrid()
-          else if (_viewMode == 'report')
+          else if (_viewMode == 'table')
             _buildReportTable(filtered)
           else
             _buildCardGrid(filtered),
@@ -480,6 +480,7 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
             OutlinedButton.icon(
               onPressed: () {
                 GbRegisterReportGenerator.generateAndPrintGbReport(
+                  context: context,
                   entries: _filteredEntries.map((e) => GbRegisterEntryModel(
                     id: e.id,
                     meetingType: e.meetingType,
@@ -539,21 +540,28 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
     );
   }
 
-  Widget _viewModeButton(String label, IconData icon, bool isActive, VoidCallback onTap) {
+  Widget _buildViewToggleButton({
+    required IconData icon,
+    required String label,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(6),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFFF0F9FF) : Colors.transparent,
+          color: isActive ? Colors.white : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
+          boxShadow: isActive ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 2, offset: const Offset(0, 1))] : null,
         ),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B)),
-            const SizedBox(width: 6),
-            Text(label, style: TextStyle(fontSize: 12, fontWeight: isActive ? FontWeight.bold : FontWeight.w500, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B))),
+            Icon(icon, size: 14, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B)),
+            const SizedBox(width: 5),
+            Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B))),
           ],
         ),
       ),
@@ -653,35 +661,64 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
       {'key': 'Action Taken', 'label': 'Action Taken'},
     ];
 
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: statuses.map((s) {
-        final key = s['key']!;
-        final label = s['label']!;
-        final isSelected = _statusFilter == key;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: statuses.map((s) {
+            final key = s['key']!;
+            final label = s['label']!;
+            final isSelected = _statusFilter == key;
 
-        return InkWell(
-          onTap: () => setState(() => _statusFilter = key),
-          borderRadius: BorderRadius.circular(100),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFF0284C7) : Colors.white,
+            return InkWell(
+              onTap: () => setState(() => _statusFilter = key),
               borderRadius: BorderRadius.circular(100),
-              border: Border.all(color: isSelected ? const Color(0xFF0284C7) : const Color(0xFFE2E8F0)),
-            ),
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : const Color(0xFF475569),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isSelected ? const Color(0xFF0284C7) : Colors.white,
+                  borderRadius: BorderRadius.circular(100),
+                  border: Border.all(color: isSelected ? const Color(0xFF0284C7) : const Color(0xFFE2E8F0)),
+                ),
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: isSelected ? Colors.white : const Color(0xFF475569),
+                  ),
+                ),
               ),
-            ),
+            );
+          }).toList(),
+        ),
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(8),
           ),
-        );
-      }).toList(),
+          child: Row(
+            children: [
+              _buildViewToggleButton(
+                icon: Icons.grid_view_rounded,
+                label: 'Grid',
+                isActive: _viewMode == 'grid',
+                onTap: () => setState(() => _viewMode = 'grid'),
+              ),
+              const SizedBox(width: 4),
+              _buildViewToggleButton(
+                icon: Icons.table_rows_rounded,
+                label: 'Table',
+                isActive: _viewMode == 'table',
+                onTap: () => setState(() => _viewMode = 'table'),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -707,7 +744,7 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
 
         return GridView.builder(
           shrinkWrap: true,
@@ -920,7 +957,7 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
   Widget _buildLoadingGrid() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),

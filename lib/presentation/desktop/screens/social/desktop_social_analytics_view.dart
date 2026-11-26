@@ -426,7 +426,7 @@ class _DesktopSocialAnalyticsViewState extends ConsumerState<DesktopSocialAnalyt
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
 
         return GridView.builder(
           shrinkWrap: true,
@@ -558,7 +558,7 @@ class _DesktopSocialAnalyticsViewState extends ConsumerState<DesktopSocialAnalyt
   Widget _buildLoadingGrid() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),

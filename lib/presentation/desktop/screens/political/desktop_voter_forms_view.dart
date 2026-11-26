@@ -323,6 +323,7 @@ class _DesktopVoterFormsViewState extends ConsumerState<DesktopVoterFormsView> {
             OutlinedButton.icon(
               onPressed: () {
                 VoterFormsReportGenerator.generateAndPrintReport(
+                  context: context,
                   applications: _applications,
                 );
               },

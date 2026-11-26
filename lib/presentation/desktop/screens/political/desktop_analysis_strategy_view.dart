@@ -145,6 +145,7 @@ class _DesktopAnalysisStrategyViewState extends ConsumerState<DesktopAnalysisStr
                 OutlinedButton.icon(
                   onPressed: () {
                     AnalysisStrategyReportGenerator.generateAndPrintReport(
+                      context: context,
                       reportData: _getMetricsForArea(_selectedArea),
                       generatedBrief: _aiBrief,
                     );

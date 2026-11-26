@@ -276,6 +276,7 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
                     OutlinedButton.icon(
                       onPressed: () {
                         WhatsAppHistoryReportGenerator.generateAndPrintReport(
+                          context: context,
                           broadcasts: _broadcastHistory,
                         );
                       },

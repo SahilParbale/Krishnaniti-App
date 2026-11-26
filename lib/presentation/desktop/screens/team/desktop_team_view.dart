@@ -359,6 +359,7 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
             OutlinedButton.icon(
               onPressed: () {
                 TeamReportGenerator.generateAndPrintReport(
+                  context: context,
                   staffList: _filteredMembers,
                   activeCategory: _activeTab,
                 );
@@ -492,7 +493,7 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
 
         return GridView.builder(
           shrinkWrap: true,
@@ -600,7 +601,7 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
   Widget _buildLoadingGrid() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),

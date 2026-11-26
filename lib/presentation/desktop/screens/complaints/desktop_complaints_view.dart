@@ -25,7 +25,7 @@ class DesktopComplaintsView extends ConsumerStatefulWidget {
 class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
   String _activeTab = 'Complaints'; // 'Complaints' | 'Personal Help'
   String _filterStatus = 'All'; // 'All', 'Pending', 'Assigned', 'InProgress', 'Resolved'
-  String _viewMode = 'grid'; // 'grid' | 'report'
+  String _viewMode = 'grid'; // 'grid' | 'table'
   String _searchQuery = '';
   String _selectedArea = 'All';
 
@@ -168,11 +168,13 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
 
             const SizedBox(height: 24),
 
-            // 4. Content: Loading / Empty / Grid (matching ComplaintList.tsx lines 681-750)
+            // 4. Content: Loading / Empty / Grid or Table
             if (_loading)
               _buildLoadingGrid()
             else if (items.isEmpty)
               _buildEmptyState(isMr)
+            else if (_viewMode == 'table')
+              _buildComplaintTable(items, isMr)
             else
               _buildComplaintGrid(items, isMr),
           ],
@@ -235,6 +237,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
             OutlinedButton.icon(
               onPressed: () {
                 ComplaintReportGenerator.generateAndPrintReport(
+                  context: context,
                   complaints: _filteredComplaints,
                   statusFilter: _filterStatus,
                   areaFilter: _selectedArea,
@@ -308,7 +311,113 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
               ),
             ],
           ),
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                _buildViewToggleButton(
+                  icon: Icons.grid_view_rounded,
+                  label: 'Grid',
+                  isActive: _viewMode == 'grid',
+                  onTap: () => setState(() => _viewMode = 'grid'),
+                ),
+                const SizedBox(width: 4),
+                _buildViewToggleButton(
+                  icon: Icons.table_rows_rounded,
+                  label: 'Table',
+                  isActive: _viewMode == 'table',
+                  onTap: () => setState(() => _viewMode = 'table'),
+                ),
+              ],
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildViewToggleButton({
+    required IconData icon,
+    required String label,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: isActive ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+          boxShadow: isActive ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 2, offset: const Offset(0, 1))] : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B)),
+            const SizedBox(width: 5),
+            Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B))),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildComplaintTable(List<ComplaintModel> items, bool isMr) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          columns: const [
+            DataColumn(label: Text('Complaint / Title', style: TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text('Citizen', style: TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text('Category', style: TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text('Area', style: TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text('Date', style: TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.w700))),
+          ],
+          rows: items.map((c) {
+            final dateStr = DateFormat('dd MMM yyyy, hh:mm a').format(c.createdAt);
+            return DataRow(
+              cells: [
+                DataCell(
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 240),
+                    child: Text(
+                      c.title,
+                      style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+                DataCell(Text(c.citizenName ?? '-')),
+                DataCell(_buildCategoryBadge(c.category)),
+                DataCell(Text(c.area ?? '-')),
+                DataCell(_buildStatusBadge(c.status, isMr)),
+                DataCell(Text(dateStr, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)))),
+                DataCell(
+                  IconButton(
+                    icon: const Icon(Icons.arrow_forward_rounded, size: 16, color: Color(0xFF0284C7)),
+                    tooltip: 'View Details',
+                    onPressed: () => _openComplaintDetail(c),
+                  ),
+                ),
+              ],
+            );
+          }).toList(),
+        ),
       ),
     );
   }
@@ -337,44 +446,6 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
             fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
             color: isActive ? const Color(0xFF0284C7) : const Color(0xFF64748B),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildViewToggleButton({
-    required IconData icon,
-    required String label,
-    required bool isActive,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: isActive ? const Color(0xFFF0F9FF) : Colors.transparent,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 15,
-              color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B),
-              ),
-            ),
-          ],
         ),
       ),
     );
@@ -515,8 +586,8 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
   Widget _buildComplaintGrid(List<ComplaintModel> items, bool isMr) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // 3 columns on wide desktop, 2 columns on medium desktop
-        final crossAxisCount = constraints.maxWidth > 1100 ? 3 : 2;
+        // Standard 3-by-3 format across desktop screens
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
 
         return GridView.builder(
           shrinkWrap: true,
@@ -525,7 +596,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
             crossAxisCount: crossAxisCount,
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
-            childAspectRatio: 1.55,
+            childAspectRatio: 1.35,
           ),
           itemCount: items.length,
           itemBuilder: (context, index) {

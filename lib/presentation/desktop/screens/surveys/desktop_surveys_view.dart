@@ -309,6 +309,7 @@ class _DesktopSurveysViewState extends ConsumerState<DesktopSurveysView> {
             OutlinedButton.icon(
               onPressed: () {
                 SurveyReportGenerator.generateAndPrintReport(
+                  context: context,
                   surveys: _filteredSurveys,
                   responseCounts: {for (var s in _filteredSurveys) s.id: s.targetSampleSize ?? 100},
                 );

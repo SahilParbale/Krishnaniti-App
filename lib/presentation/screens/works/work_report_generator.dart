@@ -1,9 +1,11 @@
+import 'package:flutter/material.dart' show BuildContext;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../data/models/work_history_model.dart';
 import '../../widgets/app_pdf_report_theme.dart';
+import '../../widgets/app_report_preview_modal.dart';
 
 /// Official Work History Report Generator matching Nagarsevak-Managment
 /// (WorkReportGenerator.tsx).
@@ -11,6 +13,7 @@ class WorkReportGenerator {
   WorkReportGenerator._();
 
   static Future<void> generateAndPrintWorkReport({
+    BuildContext? context,
     required List<WorkHistoryModel> works,
     String? statusFilter,
     String? areaFilter,
@@ -117,9 +120,20 @@ class WorkReportGenerator {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Work_History_Report_${DateFormat('yyyy-MM-dd').format(now)}.pdf',
-    );
+    final fileName = 'Work_History_Report_${DateFormat('yyyy-MM-dd').format(now)}';
+    if (context != null) {
+      await AppReportPreviewModal.show(
+        context: context,
+        title: title,
+        subtitle: subtitle,
+        fileName: fileName,
+        onBuildPdf: () async => pdf.save(),
+      );
+    } else {
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: '$fileName.pdf',
+      );
+    }
   }
 }

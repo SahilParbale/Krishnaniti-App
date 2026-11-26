@@ -165,6 +165,7 @@ class _DesktopWardMapViewState extends ConsumerState<DesktopWardMapView> {
         OutlinedButton.icon(
           onPressed: () {
             WardMapReportGenerator.generateAndPrintWardMapReport(
+              context: context,
               points: _allPoints,
               categoryFilter: _activeCategory,
             );

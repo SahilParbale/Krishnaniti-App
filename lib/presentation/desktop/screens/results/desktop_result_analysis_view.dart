@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../data/models/election_result_model.dart';
 import '../../../../data/repositories/election_results_repository.dart';
+import '../../../screens/results/result_analysis_report_generator.dart';
 
 class DesktopResultAnalysisView extends ConsumerStatefulWidget {
   const DesktopResultAnalysisView({super.key});
@@ -332,8 +333,11 @@ class _DesktopResultAnalysisViewState extends ConsumerState<DesktopResultAnalysi
                 ),
                 OutlinedButton.icon(
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Downloading report...')),
+                    ResultAnalysisReportGenerator.generateAndPrintReport(
+                      context: context,
+                      ward: _selectedWard,
+                      selectedCandidate: _selectedCandidate,
+                      results: _results,
                     );
                   },
                   icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),

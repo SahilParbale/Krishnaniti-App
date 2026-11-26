@@ -19,7 +19,7 @@ class _DesktopSadasyaViewState extends ConsumerState<DesktopSadasyaView> {
   String _searchTerm = '';
   String _areaFilter = 'All';
   String _voterFilter = 'all'; // 'all', 'voter', 'non-voter'
-  String _viewMode = 'grid'; // 'grid' | 'report'
+  String _viewMode = 'grid'; // 'grid' | 'table'
   List<String> _availableAreas = [];
 
   @override
@@ -346,10 +346,10 @@ class _DesktopSadasyaViewState extends ConsumerState<DesktopSadasyaView> {
           _buildFiltersBar(),
           const SizedBox(height: 24),
 
-          // Content Grid or Report
+          // Content Grid or Table
           if (_loading)
             _buildLoadingGrid()
-          else if (_viewMode == 'report')
+          else if (_viewMode == 'table')
             _buildReportTable(filtered)
           else
             _buildCardGrid(filtered),
@@ -396,7 +396,10 @@ class _DesktopSadasyaViewState extends ConsumerState<DesktopSadasyaView> {
           children: [
             OutlinedButton.icon(
               onPressed: () {
-                SadasyaReportGenerator.generateAndPrintReport(members: _filteredSadasyas);
+                SadasyaReportGenerator.generateAndPrintReport(
+                  context: context,
+                  members: _filteredSadasyas,
+                );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
               label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
@@ -442,21 +445,28 @@ class _DesktopSadasyaViewState extends ConsumerState<DesktopSadasyaView> {
     );
   }
 
-  Widget _viewModeButton(String label, IconData icon, bool isActive, VoidCallback onTap) {
+  Widget _buildViewToggleButton({
+    required IconData icon,
+    required String label,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(6),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFFF0F9FF) : Colors.transparent,
+          color: isActive ? Colors.white : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
+          boxShadow: isActive ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 2, offset: const Offset(0, 1))] : null,
         ),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B)),
-            const SizedBox(width: 6),
-            Text(label, style: TextStyle(fontSize: 12, fontWeight: isActive ? FontWeight.bold : FontWeight.w500, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B))),
+            Icon(icon, size: 14, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B)),
+            const SizedBox(width: 5),
+            Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B))),
           ],
         ),
       ),
@@ -529,6 +539,31 @@ class _DesktopSadasyaViewState extends ConsumerState<DesktopSadasyaView> {
               },
             ),
           ),
+          const SizedBox(width: 14),
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                _buildViewToggleButton(
+                  icon: Icons.grid_view_rounded,
+                  label: 'Grid',
+                  isActive: _viewMode == 'grid',
+                  onTap: () => setState(() => _viewMode = 'grid'),
+                ),
+                const SizedBox(width: 4),
+                _buildViewToggleButton(
+                  icon: Icons.table_rows_rounded,
+                  label: 'Table',
+                  isActive: _viewMode == 'table',
+                  onTap: () => setState(() => _viewMode = 'table'),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -556,7 +591,7 @@ class _DesktopSadasyaViewState extends ConsumerState<DesktopSadasyaView> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
 
         return GridView.builder(
           shrinkWrap: true,
@@ -763,7 +798,7 @@ class _DesktopSadasyaViewState extends ConsumerState<DesktopSadasyaView> {
   Widget _buildLoadingGrid() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),

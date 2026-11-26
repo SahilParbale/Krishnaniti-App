@@ -173,6 +173,7 @@ class _DesktopAiVoiceViewState extends ConsumerState<DesktopAiVoiceView> {
                       category: 'AI Voice Broadcast',
                     )).toList();
                     CommunicationHistoryReportGenerator.generateAndPrintReport(
+                      context: context,
                       logs: logs,
                       title: 'AI Voice Campaign Report',
                       subtitle: 'Synthesized voice broadcast logs and recipient delivery status',

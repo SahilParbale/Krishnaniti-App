@@ -353,7 +353,10 @@ class _DesktopGalleryViewState extends ConsumerState<DesktopGalleryView> {
             // Download Report
             OutlinedButton.icon(
               onPressed: () {
-                GalleryReportGenerator.generateAndPrintReport(items: _filteredItems);
+                GalleryReportGenerator.generateAndPrintReport(
+                  context: context,
+                  items: _filteredItems,
+                );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
               label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
@@ -488,7 +491,7 @@ class _DesktopGalleryViewState extends ConsumerState<DesktopGalleryView> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
 
         return GridView.builder(
           shrinkWrap: true,
@@ -641,7 +644,7 @@ class _DesktopGalleryViewState extends ConsumerState<DesktopGalleryView> {
   Widget _buildLoadingGrid() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),

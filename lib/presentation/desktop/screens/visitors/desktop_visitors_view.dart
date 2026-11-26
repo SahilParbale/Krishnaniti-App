@@ -403,7 +403,10 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
             // Download Report
             OutlinedButton.icon(
               onPressed: () {
-                VisitorReportGenerator.generateAndPrintListReport(visitors: _filteredVisitors);
+                VisitorReportGenerator.generateAndPrintListReport(
+                  context: context,
+                  visitors: _filteredVisitors,
+                );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
               label: const Text(
@@ -628,13 +631,12 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
     );
   }
 
-  // --- Grid View (Responsive 1-4 columns) ---
+  // --- Grid View (3-by-3 format on desktop) ---
   Widget _buildVisitorGrid(List<VisitorModel> items, bool isMr) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1200
-            ? 3
-            : (constraints.maxWidth > 800 ? 2 : 1);
+        // Standard 3-by-3 format across desktop screens
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
 
         return GridView.builder(
           shrinkWrap: true,
@@ -643,7 +645,7 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
             crossAxisCount: crossAxisCount,
             crossAxisSpacing: 14,
             mainAxisSpacing: 14,
-            childAspectRatio: 1.6,
+            childAspectRatio: 1.38,
           ),
           itemCount: items.length,
           itemBuilder: (context, index) {

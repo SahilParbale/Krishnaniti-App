@@ -1,14 +1,17 @@
+import 'package:flutter/material.dart' show BuildContext;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../widgets/app_pdf_report_theme.dart';
+import '../../widgets/app_report_preview_modal.dart';
 import 'conference_room_screen.dart';
 
 class ConferenceMeetingReportGenerator {
   ConferenceMeetingReportGenerator._();
 
   static Future<void> generateAndPrintMeetingReport({
+    BuildContext? context,
     required List<ConferenceMeetingModel> meetings,
     String? statusFilter,
   }) async {
@@ -118,10 +121,21 @@ class ConferenceMeetingReportGenerator {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Conference_Meetings_Report_${DateFormat('yyyyMMdd').format(now)}.pdf',
-    );
+    final fileName = 'Conference_Meetings_Report_${DateFormat('yyyyMMdd').format(now)}';
+    if (context != null) {
+      await AppReportPreviewModal.show(
+        context: context,
+        title: 'Virtual Meetings Report',
+        subtitle: 'Online Consultations & Deliberation Records',
+        fileName: fileName,
+        onBuildPdf: () async => pdf.save(),
+      );
+    } else {
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: '$fileName.pdf',
+      );
+    }
   }
 
   static pw.Widget _buildSummaryItem(String label, String value, {PdfColor? highlightColor}) {

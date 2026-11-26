@@ -444,6 +444,7 @@ class _DesktopHousingSocietiesViewState extends ConsumerState<DesktopHousingSoci
             OutlinedButton.icon(
               onPressed: () {
                 HousingSocietyReportGenerator.generateAndPrintReport(
+                  context: context,
                   societies: _filteredSocieties,
                 );
               },
@@ -612,7 +613,7 @@ class _DesktopHousingSocietiesViewState extends ConsumerState<DesktopHousingSoci
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
 
         return GridView.builder(
           shrinkWrap: true,
@@ -742,7 +743,7 @@ class _DesktopHousingSocietiesViewState extends ConsumerState<DesktopHousingSoci
   Widget _buildLoadingGrid() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),

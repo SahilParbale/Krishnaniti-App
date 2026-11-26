@@ -22,7 +22,7 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
   String _areaSearch = '';
   String _dateSearch = '';
   String _statusFilter = 'All'; // 'All' | 'Pending' | 'Planned' | 'In Progress' | 'Complete'
-  String _viewMode = 'grid'; // 'grid' | 'report'
+  String _viewMode = 'grid'; // 'grid' | 'table'
 
   @override
   void initState() {
@@ -355,7 +355,7 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
           // Content
           if (_loading)
             _buildLoadingGrid()
-          else if (_viewMode == 'report')
+          else if (_viewMode == 'table')
             _buildReportTable(filtered)
           else
             _buildCardGrid(filtered),
@@ -393,7 +393,10 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
           children: [
             OutlinedButton.icon(
               onPressed: () {
-                ImprovementReportGenerator.generateAndPrintImprovementReport(improvements: _filteredImprovements);
+                ImprovementReportGenerator.generateAndPrintImprovementReport(
+                  context: context,
+                  improvements: _filteredImprovements,
+                );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
               label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
@@ -439,9 +442,9 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
     );
   }
 
-  Widget _viewModeButton({
-    required String label,
+  Widget _buildViewToggleButton({
     required IconData icon,
+    required String label,
     required bool isActive,
     required VoidCallback onTap,
   }) {
@@ -449,23 +452,18 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
       onTap: onTap,
       borderRadius: BorderRadius.circular(6),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFFF0F9FF) : Colors.transparent,
+          color: isActive ? Colors.white : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
+          boxShadow: isActive ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 2, offset: const Offset(0, 1))] : null,
         ),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B)),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-                color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B),
-              ),
-            ),
+            Icon(icon, size: 14, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B)),
+            const SizedBox(width: 5),
+            Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B))),
           ],
         ),
       ),
@@ -561,62 +559,91 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
       {'key': 'Complete', 'label': 'Complete'},
     ];
 
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: tabs.map((tab) {
-        final key = tab['key']!;
-        final label = tab['label']!;
-        final isSelected = _statusFilter == key;
-        final count = _countForStatus(key);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: tabs.map((tab) {
+            final key = tab['key']!;
+            final label = tab['label']!;
+            final isSelected = _statusFilter == key;
+            final count = _countForStatus(key);
 
-        return InkWell(
-          onTap: () => setState(() => _statusFilter = key),
-          borderRadius: BorderRadius.circular(100),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFF0284C7) : Colors.white,
+            return InkWell(
+              onTap: () => setState(() => _statusFilter = key),
               borderRadius: BorderRadius.circular(100),
-              border: Border.all(
-                color: isSelected ? const Color(0xFF0284C7) : const Color(0xFFE2E8F0),
-              ),
-              boxShadow: isSelected
-                  ? const [BoxShadow(color: Color(0x200284C7), blurRadius: 4, offset: Offset(0, 2))]
-                  : null,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: isSelected ? Colors.white : const Color(0xFF475569),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected ? const Color(0xFF0284C7) : Colors.white,
+                  borderRadius: BorderRadius.circular(100),
+                  border: Border.all(
+                    color: isSelected ? const Color(0xFF0284C7) : const Color(0xFFE2E8F0),
                   ),
+                  boxShadow: isSelected
+                      ? const [BoxShadow(color: Color(0x200284C7), blurRadius: 4, offset: Offset(0, 2))]
+                      : null,
                 ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: isSelected ? Colors.white.withOpacity(0.2) : const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(100),
-                  ),
-                  child: Text(
-                    '$count',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: isSelected ? Colors.white : const Color(0xFF64748B),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: isSelected ? Colors.white : const Color(0xFF475569),
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: isSelected ? Colors.white.withOpacity(0.2) : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(100),
+                      ),
+                      child: Text(
+                        '$count',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: isSelected ? Colors.white : const Color(0xFF64748B),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            );
+          }).toList(),
+        ),
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(8),
           ),
-        );
-      }).toList(),
+          child: Row(
+            children: [
+              _buildViewToggleButton(
+                icon: Icons.grid_view_rounded,
+                label: 'Grid',
+                isActive: _viewMode == 'grid',
+                onTap: () => setState(() => _viewMode = 'grid'),
+              ),
+              const SizedBox(width: 4),
+              _buildViewToggleButton(
+                icon: Icons.table_rows_rounded,
+                label: 'Table',
+                isActive: _viewMode == 'table',
+                onTap: () => setState(() => _viewMode = 'table'),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -642,7 +669,7 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
 
         return GridView.builder(
           shrinkWrap: true,
@@ -907,7 +934,7 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
   Widget _buildLoadingGrid() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),

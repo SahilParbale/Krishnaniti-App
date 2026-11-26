@@ -1,9 +1,11 @@
+import 'package:flutter/material.dart' show BuildContext;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../data/models/gb_register_entry_model.dart';
 import '../../widgets/app_pdf_report_theme.dart';
+import '../../widgets/app_report_preview_modal.dart';
 
 /// Official General Body (GB) Register Report Generator matching Nagarsevak-Managment
 /// (pages/diary/DiaryReportGenerator.tsx).
@@ -11,6 +13,7 @@ class GbRegisterReportGenerator {
   GbRegisterReportGenerator._();
 
   static Future<void> generateAndPrintGbReport({
+    BuildContext? context,
     required List<GbRegisterEntryModel> entries,
     String? meetingTypeFilter,
     String? statusFilter,
@@ -102,9 +105,20 @@ class GbRegisterReportGenerator {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'GB_Register_Report_${DateFormat('yyyyMMdd').format(now)}.pdf',
-    );
+    final fileName = 'GB_Register_Report_${DateFormat('yyyyMMdd').format(now)}';
+    if (context != null) {
+      await AppReportPreviewModal.show(
+        context: context,
+        title: title,
+        subtitle: subtitle,
+        fileName: fileName,
+        onBuildPdf: () async => pdf.save(),
+      );
+    } else {
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: '$fileName.pdf',
+      );
+    }
   }
 }

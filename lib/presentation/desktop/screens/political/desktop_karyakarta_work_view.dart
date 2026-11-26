@@ -242,6 +242,7 @@ class _DesktopKaryakartaWorkViewState extends ConsumerState<DesktopKaryakartaWor
             final allTasks = _workloads.expand((w) => w.tasks).toList();
             final allComplaints = _workloads.expand((w) => w.complaints).toList();
             KaryakartaWorkReportGenerator.generateAndPrintReport(
+              context: context,
               staffList: allStaff,
               tasks: allTasks,
               complaints: allComplaints,
@@ -401,7 +402,7 @@ class _DesktopKaryakartaWorkViewState extends ConsumerState<DesktopKaryakartaWor
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
 
         return GridView.builder(
           shrinkWrap: true,
@@ -537,7 +538,7 @@ class _DesktopKaryakartaWorkViewState extends ConsumerState<DesktopKaryakartaWor
   Widget _buildLoadingGrid() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),

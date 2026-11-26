@@ -241,6 +241,7 @@ class _DesktopConferenceViewState extends ConsumerState<DesktopConferenceView> {
                           createdAt: DateTime.now(),
                         )).toList();
                         ConferenceMeetingReportGenerator.generateAndPrintMeetingReport(
+                          context: context,
                           meetings: mapped,
                         );
                       },

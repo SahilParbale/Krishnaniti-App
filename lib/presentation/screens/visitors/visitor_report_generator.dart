@@ -1,9 +1,11 @@
+import 'package:flutter/material.dart' show BuildContext;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../data/models/visitor_model.dart';
 import '../../widgets/app_pdf_report_theme.dart';
+import '../../widgets/app_report_preview_modal.dart';
 
 /// Official Visitor Log Report Generator matching Nagarsevak-Managment
 /// (VisitorReportGenerator.tsx).
@@ -11,6 +13,7 @@ class VisitorReportGenerator {
   VisitorReportGenerator._();
 
   static Future<void> generateAndPrintListReport({
+    BuildContext? context,
     required List<VisitorModel> visitors,
     String? filterTitle,
     String title = 'Visitor Log Report',
@@ -95,14 +98,28 @@ class VisitorReportGenerator {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Visitor_Log_Report_${DateFormat('yyyy-MM-dd').format(now)}.pdf',
-    );
+    final fileName = 'Visitor_Log_Report_${DateFormat('yyyy-MM-dd').format(now)}';
+    if (context != null) {
+      await AppReportPreviewModal.show(
+        context: context,
+        title: title,
+        subtitle: subtitle,
+        fileName: fileName,
+        onBuildPdf: () async => pdf.save(),
+      );
+    } else {
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: '$fileName.pdf',
+      );
+    }
   }
 
   /// Generates and prints single visitor pass / gate slip
-  static Future<void> generateAndPrintVisitorSlip(VisitorModel visitor) async {
+  static Future<void> generateAndPrintVisitorSlip(
+    VisitorModel visitor, {
+    BuildContext? context,
+  }) async {
     final pdf = pw.Document();
     final now = DateTime.now();
     final formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(now);
@@ -265,9 +282,20 @@ class VisitorReportGenerator {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Visitor_Pass_${visitor.id}.pdf',
-    );
+    final fileName = 'Visitor_Pass_${visitor.id}';
+    if (context != null) {
+      await AppReportPreviewModal.show(
+        context: context,
+        title: 'Visitor Entry Pass',
+        subtitle: 'Pass #${visitor.id.length >= 6 ? visitor.id.substring(0, 6).toUpperCase() : visitor.id}',
+        fileName: fileName,
+        onBuildPdf: () async => pdf.save(),
+      );
+    } else {
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: '$fileName.pdf',
+      );
+    }
   }
 }

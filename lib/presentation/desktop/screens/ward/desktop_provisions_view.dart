@@ -520,7 +520,11 @@ class _DesktopProvisionsViewState extends ConsumerState<DesktopProvisionsView> {
             // Download Report
             OutlinedButton.icon(
               onPressed: () {
-                WardProvisionReportGenerator.generateAndPrintProvisionReport(provisions: _provisions, year: _year);
+                WardProvisionReportGenerator.generateAndPrintProvisionReport(
+                  context: context,
+                  provisions: _provisions,
+                  year: _year,
+                );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
               label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),

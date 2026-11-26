@@ -122,6 +122,7 @@ class _DesktopVoiceCallViewState extends ConsumerState<DesktopVoiceCallView> {
                       category: 'Voice Communication',
                     )).toList();
                     CommunicationHistoryReportGenerator.generateAndPrintReport(
+                      context: context,
                       logs: logs,
                       title: 'Voice Call History & Log Report',
                       subtitle: 'Constituent telephone outreach and communication records',

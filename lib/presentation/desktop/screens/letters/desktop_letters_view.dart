@@ -22,7 +22,7 @@ class DesktopLettersView extends ConsumerStatefulWidget {
 
 class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
   String _activeTab = 'outgoing'; // 'outgoing' | 'incoming'
-  String _viewMode = 'grid'; // 'grid' | 'report'
+  String _viewMode = 'grid'; // 'grid' | 'table'
   String _searchQuery = '';
   String _selectedArea = 'All';
   String _previewLang = 'mr'; // 'mr' | 'en'
@@ -181,9 +181,11 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
 
             const SizedBox(height: 20),
 
-            // 4. Main 3-Column Layout: 1/3 List + 2/3 Live Preview (matching lines 860-1280)
+            // 4. Main Content: Grid vs Table
             if (_loading)
               _buildLoadingState()
+            else if (_viewMode == 'table')
+              _buildLettersTable(items, isMr)
             else
               _buildMainGrid(items, isMr),
           ],
@@ -236,6 +238,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
             OutlinedButton.icon(
               onPressed: () {
                 LetterReportGenerator.generateAndPrintLetterReport(
+                  context: context,
                   letters: _activeTab == 'outgoing' ? _outgoingLetters : _incomingLetters,
                   title: _activeTab == 'outgoing' ? 'Outgoing Letters Report' : 'Incoming Letters Report',
                 );
@@ -357,7 +360,103 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
               ),
             ],
           ),
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                _buildViewToggleButton(
+                  icon: Icons.grid_view_rounded,
+                  label: 'Grid',
+                  isActive: _viewMode == 'grid',
+                  onTap: () => setState(() => _viewMode = 'grid'),
+                ),
+                const SizedBox(width: 4),
+                _buildViewToggleButton(
+                  icon: Icons.table_rows_rounded,
+                  label: 'Table',
+                  isActive: _viewMode == 'table',
+                  onTap: () => setState(() => _viewMode = 'table'),
+                ),
+              ],
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLettersTable(List<LetterModel> items, bool isMr) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          columns: const [
+            DataColumn(label: Text('Ref / Outward No.', style: TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text('Subject', style: TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text('Recipient / Citizen', style: TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text('Department / Type', style: TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text('Date', style: TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.w700))),
+          ],
+          rows: items.map((l) {
+            final dateStr = DateFormat('dd MMM yyyy').format(l.createdAt);
+            return DataRow(
+              cells: [
+                DataCell(Text(l.id, style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0369A1)))),
+                DataCell(
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 240),
+                    child: Text(
+                      l.subject,
+                      style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+                DataCell(Text(l.recipient ?? l.citizenName)),
+                DataCell(Text(l.letterType ?? l.department ?? '-')),
+                DataCell(Text(dateStr, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)))),
+                DataCell(
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF0FDF4),
+                      borderRadius: BorderRadius.circular(100),
+                      border: Border.all(color: const Color(0xFFBBF7D0)),
+                    ),
+                    child: Text(
+                      l.status,
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
+                    ),
+                  ),
+                ),
+                DataCell(
+                  IconButton(
+                    icon: const Icon(Icons.remove_red_eye_outlined, size: 16, color: Color(0xFF0284C7)),
+                    tooltip: 'Preview Letter',
+                    onPressed: () {
+                      setState(() {
+                        _selectedLetter = l;
+                        _viewMode = 'grid';
+                      });
+                    },
+                  ),
+                ),
+              ],
+            );
+          }).toList(),
+        ),
       ),
     );
   }
@@ -907,7 +1006,10 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                     const SizedBox(width: 8),
                     OutlinedButton.icon(
                       onPressed: () {
-                        LetterReportGenerator.generateAndPrintSingleLetter(letter: letter);
+                        LetterReportGenerator.generateAndPrintSingleLetter(
+                          context: context,
+                          letter: letter,
+                        );
                       },
                       icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
                       label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 13)),

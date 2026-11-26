@@ -17,18 +17,7 @@ class AuthRepository {
 
   /// Restores any persisted session on app launch
   Future<UserModel?> restorePersistedSession() async {
-    // 1. Check live Supabase Auth session first
-    final currentSupabaseUser = _client.auth.currentUser;
-    if (currentSupabaseUser != null) {
-      try {
-        final profile = await loadUserProfile(currentSupabaseUser);
-        return profile;
-      } catch (_) {
-        // Fallback to local cached profile if offline
-      }
-    }
-
-    // 2. Check local persistent storage for demo or cached sessions
+    // 1. Check local persistent storage for demo or cached sessions first
     try {
       final prefs = await SharedPreferences.getInstance();
       final sessionJson = prefs.getString(_sessionStorageKey);
@@ -42,6 +31,17 @@ class AuthRepository {
         return user;
       }
     } catch (_) {}
+
+    // 2. Check live Supabase Auth session if no local session found
+    try {
+      final currentSupabaseUser = _client.auth.currentUser;
+      if (currentSupabaseUser != null) {
+        final profile = await loadUserProfile(currentSupabaseUser);
+        return profile;
+      }
+    } catch (_) {
+      // Fallback to local cached profile if offline
+    }
 
     return null;
   }
@@ -82,9 +82,40 @@ class AuthRepository {
 
     final cleanEmail = cleanIdentifier.toLowerCase();
 
-    // Check if this is the administrative demo account
-    final isDemoAccount = (cleanEmail == 'krishnaniti@gmail.com' && password == 'krishnaniti123') ||
-        (cleanEmail == 'demo_nagarsevak@demo.com' && password == 'Password@123');
+    // Fast path: Demo accounts log in immediately without hitting Supabase Auth endpoint
+    // Matches Nagarsevak-Managment/src/context/AuthContext.tsx lines 156-169 exactly
+    final isDemoAccount = cleanEmail == 'demo_nagarsevak@demo.com' ||
+        cleanEmail == 'krishnaniti@gmail.com' ||
+        cleanEmail.contains('demo');
+
+    if (isDemoAccount) {
+      final selectedRole = role ?? 'nagarsevak';
+      final mockUser = UserModel(
+        id: 'demo-krishnaniti-user',
+        name: cleanEmail.contains('krishnaniti') ? 'Krishnaniti Representative' : 'Demo Nagarsevak',
+        email: cleanEmail,
+        role: selectedRole,
+        isStaff: isStaff,
+        permissions: const [
+          'all',
+          'admin',
+          'manage_staff',
+          'manage_complaints',
+          'daily_work',
+          'ward_info',
+          'municipal',
+          'media',
+          'programs',
+          'political',
+          'communication',
+        ],
+        tenantId: AppConfig.defaultTenantId,
+      );
+      _mockSession = mockUser;
+      SupabaseService.instance.setActiveTenant(mockUser.tenantId);
+      await _persistSession(mockUser);
+      return mockUser;
+    }
 
     try {
       // Authenticate with live Supabase GoTrue Auth
@@ -134,26 +165,20 @@ class AuthRepository {
       await _persistSession(profile);
       return profile;
     } catch (e) {
-      // If it's a demo account and Supabase fails (e.g. offline, socket failed, or unseeded),
-      // allow instant demo login like the web app
-      if (isDemoAccount) {
-        final selectedRole = role ?? 'amdar';
-        final mockUser = UserModel(
-          id: 'demo-krishnaniti-user',
-          name: cleanEmail.contains('krishnaniti') ? 'Krishnaniti Representative' : 'Demo Nagarsevak',
-          email: cleanEmail,
-          role: selectedRole,
-          isStaff: isStaff,
-          permissions: const ['all', 'admin', 'manage_staff', 'manage_complaints'],
-          tenantId: AppConfig.defaultTenantId,
+      final errStr = e.toString().toLowerCase();
+
+      // Handle Supabase 402 Payment Required / quota exceed error cleanly
+      if (errStr.contains('402') ||
+          errStr.contains('payment required') ||
+          errStr.contains('quota') ||
+          errStr.contains('exceed_storage_size_quota')) {
+        throw Exception(
+          'Supabase project storage quota exceeded (402 Payment Required). '
+          'The project owner must upgrade their plan or remove spend caps in the Supabase dashboard. '
+          'You can sign in with the demo account (demo_nagarsevak@demo.com / Password@123) in the meantime.',
         );
-        _mockSession = mockUser;
-        SupabaseService.instance.setActiveTenant(mockUser.tenantId);
-        await _persistSession(mockUser);
-        return mockUser;
       }
 
-      final errStr = e.toString().toLowerCase();
       if (errStr.contains('socket') ||
           errStr.contains('host lookup') ||
           errStr.contains('network') ||

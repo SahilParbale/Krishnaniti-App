@@ -355,7 +355,11 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
             // Download Report
             OutlinedButton.icon(
               onPressed: () {
-                WardBudgetReportGenerator.generateAndPrintBudgetReport(budgets: _budgets, year: _year);
+                WardBudgetReportGenerator.generateAndPrintBudgetReport(
+                  context: context,
+                  budgets: _budgets,
+                  year: _year,
+                );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
               label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
@@ -606,7 +610,7 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
 
         return GridView.builder(
           shrinkWrap: true,
@@ -746,7 +750,7 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
   Widget _buildLoadingGrid() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),

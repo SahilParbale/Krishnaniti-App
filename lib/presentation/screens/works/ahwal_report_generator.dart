@@ -1,9 +1,11 @@
+import 'package:flutter/material.dart' show BuildContext;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../data/models/work_history_model.dart';
 import '../../widgets/app_pdf_report_theme.dart';
+import '../../widgets/app_report_preview_modal.dart';
 
 /// Official Political Work Report (Ahwal) Generator matching Nagarsevak-Managment
 /// (AhwalReportGenerator.tsx).
@@ -11,6 +13,7 @@ class AhwalReportGenerator {
   AhwalReportGenerator._();
 
   static Future<void> generateAndPrintAhwal({
+    BuildContext? context,
     required List<WorkHistoryModel> selectedWorks,
     String? nagarsevakName = 'Nagarsevak Office',
     String? wardName = 'Ward No. 12 (Prabhag 12)',
@@ -251,9 +254,20 @@ class AhwalReportGenerator {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Ahwal_Report_${DateFormat('yyyyMMdd').format(DateTime.now())}.pdf',
-    );
+    final fileName = 'Ahwal_Report_${DateFormat('yyyyMMdd').format(DateTime.now())}';
+    if (context != null) {
+      await AppReportPreviewModal.show(
+        context: context,
+        title: 'Political Work Report (Ahwal)',
+        subtitle: 'Development Works & Achievements Summary',
+        fileName: fileName,
+        onBuildPdf: () async => pdf.save(),
+      );
+    } else {
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: '$fileName.pdf',
+      );
+    }
   }
 }

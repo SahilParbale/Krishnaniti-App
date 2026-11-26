@@ -23,7 +23,7 @@ class DesktopTasksView extends ConsumerStatefulWidget {
 }
 
 class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
-  String _viewMode = 'grid'; // 'timeline' | 'grid' | 'report'
+  String _viewMode = 'grid'; // 'timeline' | 'grid' | 'table'
   DateTime _selectedDate = DateTime.now();
   String _searchQuery = '';
   String _selectedArea = 'All';
@@ -287,7 +287,10 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
           children: [
             OutlinedButton.icon(
               onPressed: () {
-                DiaryReportGenerator.generateAndPrintTasksReport(tasks: _filteredTasks);
+                DiaryReportGenerator.generateAndPrintTasksReport(
+                  context: context,
+                  tasks: _filteredTasks,
+                );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
               label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
@@ -455,6 +458,12 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
                   isActive: _viewMode == 'grid',
                   onTap: () => setState(() => _viewMode = 'grid'),
                 ),
+                _buildViewToggleButton(
+                  icon: Icons.table_rows_rounded,
+                  label: 'Table',
+                  isActive: _viewMode == 'table',
+                  onTap: () => setState(() => _viewMode = 'table'),
+                ),
               ],
             ),
           ),
@@ -564,8 +573,8 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
   Widget _build3x3TaskGrid(List<DiaryTaskModel> items, bool isMr) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Exact 3 columns on standard/large desktop (3x3 grid)
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        // Standard 3-by-3 format across desktop screens
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
 
         return GridView.builder(
           shrinkWrap: true,
@@ -574,7 +583,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
             crossAxisCount: crossAxisCount,
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
-            childAspectRatio: 1.45,
+            childAspectRatio: 1.35,
           ),
           itemCount: items.length,
           itemBuilder: (context, index) {

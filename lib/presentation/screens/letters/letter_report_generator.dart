@@ -1,9 +1,11 @@
+import 'package:flutter/material.dart' show BuildContext;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../data/models/letter_model.dart';
 import '../../widgets/app_pdf_report_theme.dart';
+import '../../widgets/app_report_preview_modal.dart';
 
 /// Official Letter Registry & Documentation Report Generator matching Nagarsevak-Managment
 /// (LetterReportGenerator.tsx).
@@ -11,6 +13,7 @@ class LetterReportGenerator {
   LetterReportGenerator._();
 
   static Future<void> generateAndPrintLetterReport({
+    BuildContext? context,
     required List<LetterModel> letters,
     String? statusFilter,
     String? typeFilter,
@@ -105,14 +108,26 @@ class LetterReportGenerator {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Letters_Register_${DateFormat('yyyyMMdd').format(now)}.pdf',
-    );
+    final fileName = 'Letters_Register_${DateFormat('yyyyMMdd').format(now)}';
+    if (context != null) {
+      await AppReportPreviewModal.show(
+        context: context,
+        title: title,
+        subtitle: subtitle,
+        fileName: fileName,
+        onBuildPdf: () async => pdf.save(),
+      );
+    } else {
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: '$fileName.pdf',
+      );
+    }
   }
 
   /// Generates and prints a single official letter / request docket (Portrait A4)
   static Future<void> generateAndPrintSingleLetter({
+    BuildContext? context,
     required LetterModel letter,
     String? letterBody,
     String? nagarsevakName = 'Nagarsevak Office',
@@ -324,9 +339,20 @@ class LetterReportGenerator {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Letter_${letter.id}.pdf',
-    );
+    final fileName = 'Letter_${letter.id}';
+    if (context != null) {
+      await AppReportPreviewModal.show(
+        context: context,
+        title: letter.isIncoming ? 'Incoming Letter' : 'Outgoing Letter',
+        subtitle: 'Ref: ${letter.id.length >= 8 ? letter.id.substring(0, 8).toUpperCase() : letter.id}',
+        fileName: fileName,
+        onBuildPdf: () async => pdf.save(),
+      );
+    } else {
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: '$fileName.pdf',
+      );
+    }
   }
 }

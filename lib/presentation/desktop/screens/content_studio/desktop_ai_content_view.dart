@@ -206,6 +206,7 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
               createdAt: DateTime.tryParse(h['date'] ?? '') ?? DateTime.now(),
             )).toList();
             AiContentReportGenerator.generateDossier(
+              context: context,
               items: items,
               categoryFilter: _contentType,
             );

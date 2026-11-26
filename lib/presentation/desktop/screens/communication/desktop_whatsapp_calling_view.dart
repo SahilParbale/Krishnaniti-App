@@ -150,6 +150,7 @@ class _DesktopWhatsappCallingViewState extends ConsumerState<DesktopWhatsappCall
                           category: 'WhatsApp Voice Call',
                         )).toList();
                         WhatsAppHistoryReportGenerator.generateAndPrintReport(
+                          context: context,
                           broadcasts: logs,
                         );
                       },

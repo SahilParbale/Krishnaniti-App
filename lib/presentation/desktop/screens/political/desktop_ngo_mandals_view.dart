@@ -365,6 +365,7 @@ class _DesktopNgoMandalsViewState extends ConsumerState<DesktopNgoMandalsView> {
             OutlinedButton.icon(
               onPressed: () {
                 SocialOrgReportGenerator.generateAndPrintReport(
+                  context: context,
                   organizations: _filteredOrgs,
                 );
               },
@@ -497,7 +498,7 @@ class _DesktopNgoMandalsViewState extends ConsumerState<DesktopNgoMandalsView> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
 
         return GridView.builder(
           shrinkWrap: true,
@@ -602,7 +603,7 @@ class _DesktopNgoMandalsViewState extends ConsumerState<DesktopNgoMandalsView> {
   Widget _buildLoadingGrid() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),

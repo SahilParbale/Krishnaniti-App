@@ -378,6 +378,7 @@ class _DesktopOppositionViewState extends ConsumerState<DesktopOppositionView> {
               onPressed: () {
                 final repo = ref.read(oppositionRepoProvider);
                 OppositionReportGenerator.generateAndPrintReport(
+                  context: context,
                   members: _filteredMembers,
                   getCandidateName: repo.getCandidateName,
                 );
@@ -548,7 +549,7 @@ class _DesktopOppositionViewState extends ConsumerState<DesktopOppositionView> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
 
         return GridView.builder(
           shrinkWrap: true,
@@ -670,7 +671,7 @@ class _DesktopOppositionViewState extends ConsumerState<DesktopOppositionView> {
   Widget _buildLoadingGrid() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),

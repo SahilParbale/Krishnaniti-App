@@ -24,7 +24,7 @@ class DesktopSchemesView extends ConsumerStatefulWidget {
 class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
   String _activeTab = 'schemes'; // 'schemes' | 'applications'
   String _activeCategory = 'All';
-  String _viewMode = 'grid'; // 'grid' | 'report'
+  String _viewMode = 'grid'; // 'grid' | 'table'
   String _searchQuery = '';
   int? _expandedSchemeId;
 
@@ -274,7 +274,11 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
           children: [
             OutlinedButton.icon(
               onPressed: () {
-                SchemeReportGenerator.generateAndPrintListReport(schemes: _filteredSchemes, isMarathi: isMr);
+                SchemeReportGenerator.generateAndPrintListReport(
+                  context: context,
+                  schemes: _filteredSchemes,
+                  isMarathi: isMr,
+                );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
               label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
@@ -341,19 +345,76 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
         border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _buildTabButton(
-            title: 'Schemes',
-            isActive: _activeTab == 'schemes',
-            onTap: () => setState(() => _activeTab = 'schemes'),
+          Row(
+            children: [
+              _buildTabButton(
+                title: 'Schemes',
+                isActive: _activeTab == 'schemes',
+                onTap: () => setState(() => _activeTab = 'schemes'),
+              ),
+              const SizedBox(width: 24),
+              _buildTabButton(
+                title: 'Applications',
+                isActive: _activeTab == 'applications',
+                onTap: () => setState(() => _activeTab = 'applications'),
+              ),
+            ],
           ),
-          const SizedBox(width: 24),
-          _buildTabButton(
-            title: 'Applications',
-            isActive: _activeTab == 'applications',
-            onTap: () => setState(() => _activeTab = 'applications'),
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                _buildViewToggleButton(
+                  icon: Icons.grid_view_rounded,
+                  label: 'Grid',
+                  isActive: _viewMode == 'grid',
+                  onTap: () => setState(() => _viewMode = 'grid'),
+                ),
+                const SizedBox(width: 4),
+                _buildViewToggleButton(
+                  icon: Icons.table_rows_rounded,
+                  label: 'Table',
+                  isActive: _viewMode == 'table',
+                  onTap: () => setState(() => _viewMode = 'table'),
+                ),
+              ],
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildViewToggleButton({
+    required IconData icon,
+    required String label,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: isActive ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+          boxShadow: isActive ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 2, offset: const Offset(0, 1))] : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B)),
+            const SizedBox(width: 5),
+            Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B))),
+          ],
+        ),
       ),
     );
   }
@@ -435,33 +496,6 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
         fillColor: Colors.white,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-      ),
-    );
-  }
-
-  Widget _buildViewToggleButton({
-    required IconData icon,
-    required String label,
-    required bool isActive,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: isActive ? const Color(0xFFF0F9FF) : Colors.transparent,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 14, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B)),
-            const SizedBox(width: 5),
-            Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B))),
-          ],
-        ),
       ),
     );
   }

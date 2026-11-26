@@ -1,14 +1,17 @@
+import 'package:flutter/material.dart' show BuildContext;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../data/models/whatsapp_broadcast_model.dart';
 import '../../widgets/app_pdf_report_theme.dart';
+import '../../widgets/app_report_preview_modal.dart';
 
 class CommunicationHistoryReportGenerator {
   CommunicationHistoryReportGenerator._();
 
   static Future<void> generateAndPrintReport({
+    BuildContext? context,
     required List<WhatsAppBroadcastModel> logs,
     String title = 'Public Communication History',
     String subtitle = 'Report of all broadcasted campaigns and voice logs',
@@ -121,10 +124,21 @@ class CommunicationHistoryReportGenerator {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Communication_History_Report_${DateFormat('yyyyMMdd').format(now)}.pdf',
-    );
+    final fileName = 'Communication_History_Report_${DateFormat('yyyyMMdd').format(now)}';
+    if (context != null) {
+      await AppReportPreviewModal.show(
+        context: context,
+        title: title,
+        subtitle: subtitle,
+        fileName: fileName,
+        onBuildPdf: () async => pdf.save(),
+      );
+    } else {
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: '$fileName.pdf',
+      );
+    }
   }
 
   static pw.Widget _buildSummaryItem(String label, String value, {PdfColor? highlightColor}) {

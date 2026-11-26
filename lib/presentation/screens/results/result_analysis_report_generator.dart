@@ -1,14 +1,17 @@
+import 'package:flutter/material.dart' show BuildContext;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../data/models/election_result_model.dart';
 import '../../widgets/app_pdf_report_theme.dart';
+import '../../widgets/app_report_preview_modal.dart';
 
 class ResultAnalysisReportGenerator {
   ResultAnalysisReportGenerator._();
 
   static Future<void> generateAndPrintReport({
+    BuildContext? context,
     required String ward,
     required String selectedCandidate,
     required List<ElectionResultModel> results,
@@ -149,10 +152,21 @@ class ResultAnalysisReportGenerator {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Election_Results_${DateFormat('yyyyMMdd').format(DateTime.now())}.pdf',
-    );
+    final fileName = 'Election_Results_${DateFormat('yyyyMMdd').format(DateTime.now())}';
+    if (context != null) {
+      await AppReportPreviewModal.show(
+        context: context,
+        title: 'Election Results Analysis',
+        subtitle: 'Ward $ward • Candidate Performance & Booth Analysis',
+        fileName: fileName,
+        onBuildPdf: () async => pdf.save(),
+      );
+    } else {
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: '$fileName.pdf',
+      );
+    }
   }
 
   static pw.Widget _buildSummaryItem(String label, String value, {PdfColor? highlightColor}) {

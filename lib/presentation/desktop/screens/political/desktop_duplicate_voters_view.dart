@@ -178,6 +178,7 @@ class _DesktopDuplicateVotersViewState extends ConsumerState<DesktopDuplicateVot
         OutlinedButton.icon(
           onPressed: () {
             DuplicateVotersReportGenerator.generateAndPrintReport(
+              context: context,
               duplicateGroups: _groups,
               totalAffectedVoters: totalAffected,
             );
@@ -376,7 +377,7 @@ class _DesktopDuplicateVotersViewState extends ConsumerState<DesktopDuplicateVot
                       const SizedBox(height: 14),
                       LayoutBuilder(
                         builder: (context, constraints) {
-                          final crossAxisCount = constraints.maxWidth > 1000 ? 3 : 2;
+                          final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
 
                           return GridView.builder(
                             shrinkWrap: true,

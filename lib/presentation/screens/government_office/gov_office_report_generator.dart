@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart' show BuildContext;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -5,11 +6,13 @@ import 'package:printing/printing.dart';
 import '../../../data/models/government_office_model.dart';
 import '../../../data/models/work_tracker_model.dart';
 import '../../widgets/app_pdf_report_theme.dart';
+import '../../widgets/app_report_preview_modal.dart';
 
 class GovOfficeReportGenerator {
   GovOfficeReportGenerator._();
 
   static Future<void> generateAndPrintOfficeReport({
+    BuildContext? context,
     required List<GovernmentOfficeModel> offices,
     String? categoryFilter,
     String? areaFilter,
@@ -122,14 +125,26 @@ class GovOfficeReportGenerator {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Government_Offices_Directory_${DateFormat('yyyyMMdd').format(DateTime.now())}.pdf',
-    );
+    final fileName = 'Government_Offices_Directory_${DateFormat('yyyyMMdd').format(DateTime.now())}';
+    if (context != null) {
+      await AppReportPreviewModal.show(
+        context: context,
+        title: 'Government Offices',
+        subtitle: 'Directory of Key Government Departments & Administrative Officers',
+        fileName: fileName,
+        onBuildPdf: () async => pdf.save(),
+      );
+    } else {
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: '$fileName.pdf',
+      );
+    }
   }
 
   /// Official File Tracker & Departmental Work Movement Report
   static Future<void> generateAndPrintFileTrackerReport({
+    BuildContext? context,
     required List<WorkTrackerModel> trackers,
     String? statusFilter,
   }) async {
@@ -253,10 +268,21 @@ class GovOfficeReportGenerator {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Municipal_File_Tracker_Report_${DateFormat('yyyyMMdd').format(DateTime.now())}.pdf',
-    );
+    final fileName = 'Municipal_File_Tracker_Report_${DateFormat('yyyyMMdd').format(DateTime.now())}';
+    if (context != null) {
+      await AppReportPreviewModal.show(
+        context: context,
+        title: 'Municipal File Movement Tracker',
+        subtitle: 'Follow-up Docket for Administrative Files, Approvals & Letters',
+        fileName: fileName,
+        onBuildPdf: () async => pdf.save(),
+      );
+    } else {
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: '$fileName.pdf',
+      );
+    }
   }
 
   static pw.Widget _buildSummaryItem(String label, String value, {PdfColor? highlightColor}) {

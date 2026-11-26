@@ -1,14 +1,17 @@
+import 'package:flutter/material.dart' show BuildContext;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../data/models/voter_application_model.dart';
 import '../../widgets/app_pdf_report_theme.dart';
+import '../../widgets/app_report_preview_modal.dart';
 
 class VoterFormsReportGenerator {
   VoterFormsReportGenerator._();
 
   static Future<void> generateAndPrintReport({
+    BuildContext? context,
     required List<VoterApplicationModel> applications,
   }) async {
     final pdf = pw.Document();
@@ -118,10 +121,21 @@ class VoterFormsReportGenerator {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Voter_Forms_Report_${DateFormat('yyyyMMdd').format(now)}.pdf',
-    );
+    final fileName = 'Voter_Forms_Report_${DateFormat('yyyyMMdd').format(now)}';
+    if (context != null) {
+      await AppReportPreviewModal.show(
+        context: context,
+        title: 'Voter Applications History',
+        subtitle: 'List of all logged voter form applications (Form 6, 7, 8)',
+        fileName: fileName,
+        onBuildPdf: () async => pdf.save(),
+      );
+    } else {
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: '$fileName.pdf',
+      );
+    }
   }
 
   static pw.Widget _buildSummaryItem(String label, String value, {PdfColor? highlightColor}) {

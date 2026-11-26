@@ -1,15 +1,18 @@
+import 'package:flutter/material.dart' show BuildContext;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../data/models/scheme_model.dart';
 import '../../widgets/app_pdf_report_theme.dart';
+import '../../widgets/app_report_preview_modal.dart';
 
 class SchemeReportGenerator {
   SchemeReportGenerator._();
 
   /// Multi-page PDF directory of all government schemes
   static Future<void> generateAndPrintListReport({
+    BuildContext? context,
     required List<SchemeModel> schemes,
     required bool isMarathi,
     String? categoryFilter,
@@ -96,14 +99,26 @@ class SchemeReportGenerator {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Government_Schemes_${DateFormat('yyyyMMdd').format(DateTime.now())}.pdf',
-    );
+    final fileName = 'Government_Schemes_${DateFormat('yyyyMMdd').format(DateTime.now())}';
+    if (context != null) {
+      await AppReportPreviewModal.show(
+        context: context,
+        title: isMarathi ? 'शासकीय योजना' : 'Government Schemes',
+        subtitle: 'Official Directory of State & Central Welfare Schemes',
+        fileName: fileName,
+        onBuildPdf: () async => pdf.save(),
+      );
+    } else {
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: '$fileName.pdf',
+      );
+    }
   }
 
   /// Single Scheme Official Guideline Slip / Public Flyer
   static Future<void> generateAndPrintSingleSchemeFlyer({
+    BuildContext? context,
     required SchemeModel scheme,
     required bool isMarathi,
   }) async {
@@ -222,14 +237,26 @@ class SchemeReportGenerator {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Scheme_${scheme.id}_Flyer.pdf',
-    );
+    final fileName = 'Scheme_${scheme.id}_Flyer';
+    if (context != null) {
+      await AppReportPreviewModal.show(
+        context: context,
+        title: isMarathi ? (nameMr.isNotEmpty ? nameMr : nameEn) : nameEn,
+        subtitle: 'Scheme Guide & Eligibility Slip',
+        fileName: fileName,
+        onBuildPdf: () async => pdf.save(),
+      );
+    } else {
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: '$fileName.pdf',
+      );
+    }
   }
 
   /// Beneficiary / Applications List PDF Report
   static Future<void> generateAndPrintBeneficiaryReport({
+    BuildContext? context,
     required List<SchemeApplicationModel> applications,
     required bool isMarathi,
   }) async {
@@ -345,10 +372,21 @@ class SchemeReportGenerator {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Scheme_Applications_Report_${DateFormat('yyyyMMdd').format(DateTime.now())}.pdf',
-    );
+    final fileName = 'Scheme_Applications_Report_${DateFormat('yyyyMMdd').format(DateTime.now())}';
+    if (context != null) {
+      await AppReportPreviewModal.show(
+        context: context,
+        title: isMarathi ? 'योजना अर्ज व लाभार्थी अहवाल' : 'Scheme Applications Report',
+        subtitle: 'Beneficiary & Application Audit',
+        fileName: fileName,
+        onBuildPdf: () async => pdf.save(),
+      );
+    } else {
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: '$fileName.pdf',
+      );
+    }
   }
 
   static pw.Widget _buildFlyerSection({
