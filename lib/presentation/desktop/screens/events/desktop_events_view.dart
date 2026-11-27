@@ -10,6 +10,7 @@ import '../../common/desktop_modal_dialog.dart';
 import '../../../screens/events/event_invite_modal.dart';
 import '../../../screens/events/event_report_generator.dart';
 import '../../../widgets/app_dropdown.dart';
+import '../../../widgets/app_load_more_footer.dart';
 
 class DesktopEventsView extends ConsumerStatefulWidget {
   const DesktopEventsView({super.key});
@@ -26,6 +27,10 @@ class _DesktopEventsViewState extends ConsumerState<DesktopEventsView> {
   String _selectedArea = 'All';
   String _selectedDate = 'All';
   String _viewMode = 'grid'; // 'grid' | 'table'
+  int _displayedLimit = 20;
+
+  List<EventModel> get _visibleEvents =>
+      _filteredEvents.take(_displayedLimit).toList();
 
   List<String> get _uniqueAreas {
     final areas = _events
@@ -326,6 +331,7 @@ class _DesktopEventsViewState extends ConsumerState<DesktopEventsView> {
   @override
   Widget build(BuildContext context) {
     final filtered = _filteredEvents;
+    final visible = _visibleEvents;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
@@ -348,9 +354,21 @@ class _DesktopEventsViewState extends ConsumerState<DesktopEventsView> {
           if (_loading)
             _buildLoadingGrid()
           else if (_viewMode == 'table')
-            _buildReportTable(filtered)
+            _buildReportTable(visible)
           else
-            _buildCardGrid(filtered),
+            _buildCardGrid(visible),
+
+          if (!_loading && filtered.isNotEmpty)
+            AppLoadMoreFooter(
+              currentCount: visible.length,
+              totalCount: filtered.length,
+              pageSize: 20,
+              onLoadMore: () {
+                setState(() => _displayedLimit += 20);
+              },
+              label: 'कार्यक्रम',
+              isMarathi: true,
+            ),
         ],
       ),
     );
@@ -488,7 +506,10 @@ class _DesktopEventsViewState extends ConsumerState<DesktopEventsView> {
               border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
             child: TextField(
-              onChanged: (val) => setState(() => _searchTerm = val),
+              onChanged: (val) => setState(() {
+                _searchTerm = val;
+                _displayedLimit = 20;
+              }),
               decoration: InputDecoration(
                 hintText: 'Search event by title, venue or description...',
                 hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
@@ -520,7 +541,12 @@ class _DesktopEventsViewState extends ConsumerState<DesktopEventsView> {
               );
             }).toList(),
             onChanged: (val) {
-              if (val != null) setState(() => _selectedArea = val);
+              if (val != null) {
+                setState(() {
+                  _selectedArea = val;
+                  _displayedLimit = 20;
+                });
+              }
             },
           ),
         ),
@@ -542,7 +568,12 @@ class _DesktopEventsViewState extends ConsumerState<DesktopEventsView> {
               );
             }).toList(),
             onChanged: (val) {
-              if (val != null) setState(() => _selectedDate = val);
+              if (val != null) {
+                setState(() {
+                  _selectedDate = val;
+                  _displayedLimit = 20;
+                });
+              }
             },
           ),
         ),
@@ -597,7 +628,10 @@ class _DesktopEventsViewState extends ConsumerState<DesktopEventsView> {
         final isSelected = _selectedType == key;
 
         return InkWell(
-          onTap: () => setState(() => _selectedType = key),
+          onTap: () => setState(() {
+            _selectedType = key;
+            _displayedLimit = 20;
+          }),
           borderRadius: BorderRadius.circular(100),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),

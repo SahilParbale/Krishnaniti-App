@@ -9,6 +9,7 @@ import '../../../../data/repositories/ward_provisions_repository.dart';
 import '../../common/desktop_modal_dialog.dart';
 import '../../../screens/ward_provisions/ward_provision_report_generator.dart';
 import '../../../widgets/app_dropdown.dart';
+import '../../../widgets/app_load_more_footer.dart';
 
 class DesktopProvisionsView extends ConsumerStatefulWidget {
   const DesktopProvisionsView({super.key});
@@ -21,6 +22,10 @@ class _DesktopProvisionsViewState extends ConsumerState<DesktopProvisionsView> {
   String _year = '2024-2025';
   bool _loading = true;
   List<WardProvisionModel> _provisions = [];
+  int _displayedLimit = 20;
+
+  List<WardProvisionModel> get _visibleProvisions =>
+      _provisions.take(_displayedLimit).toList();
 
   @override
   void initState() {
@@ -455,6 +460,18 @@ class _DesktopProvisionsViewState extends ConsumerState<DesktopProvisionsView> {
 
           // Provisions Table Card
           _buildTableCard(),
+
+          if (!_loading && _provisions.isNotEmpty)
+            AppLoadMoreFooter(
+              currentCount: _visibleProvisions.length,
+              totalCount: _provisions.length,
+              pageSize: 20,
+              onLoadMore: () {
+                setState(() => _displayedLimit += 20);
+              },
+              label: 'तरतुदी',
+              isMarathi: true,
+            ),
         ],
       ),
     );
@@ -505,7 +522,10 @@ class _DesktopProvisionsViewState extends ConsumerState<DesktopProvisionsView> {
               ],
               onChanged: (val) {
                 if (val != null) {
-                  setState(() => _year = val);
+                  setState(() {
+                    _year = val;
+                    _displayedLimit = 20;
+                  });
                   _loadProvisions();
                 }
               },
@@ -612,7 +632,7 @@ class _DesktopProvisionsViewState extends ConsumerState<DesktopProvisionsView> {
                     const DataColumn(label: Text('Date', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
                     const DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
                   ],
-                  rows: _provisions.map((item) {
+                  rows: _visibleProvisions.map((item) {
                     final displayAmount = item.sanctionedAmount ?? item.requestedAmount;
                     return DataRow(
                       cells: [

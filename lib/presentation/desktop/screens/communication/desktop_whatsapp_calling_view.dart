@@ -9,6 +9,7 @@ import '../../../../data/models/whatsapp_broadcast_model.dart';
 import '../../../../data/repositories/whatsapp_repository.dart';
 import '../../shell/desktop_sidebar.dart';
 import '../../../screens/whatsapp/whatsapp_history_report_generator.dart';
+import '../../../widgets/app_load_more_footer.dart';
 
 class DesktopWhatsappCallingView extends ConsumerStatefulWidget {
   const DesktopWhatsappCallingView({super.key});
@@ -22,6 +23,9 @@ class _DesktopWhatsappCallingViewState extends ConsumerState<DesktopWhatsappCall
   final _searchController = TextEditingController();
   bool _isLoading = false;
   List<VoterModel> _voters = [];
+  int _displayedLimit = 20;
+  List<VoterModel> get _visibleVoters =>
+      _voters.take(_displayedLimit).toList();
 
   @override
   void initState() {
@@ -36,7 +40,10 @@ class _DesktopWhatsappCallingViewState extends ConsumerState<DesktopWhatsappCall
   }
 
   Future<void> _loadVoters() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _displayedLimit = 20;
+      _isLoading = true;
+    });
     try {
       final repo = ref.read(whatsAppRepoProvider);
       final voters = await repo.getVotersWithMobile(
@@ -224,7 +231,7 @@ class _DesktopWhatsappCallingViewState extends ConsumerState<DesktopWhatsappCall
                     child: const Text('No voters found', style: TextStyle(color: AppColors.slate400)),
                   ),
                 )
-              else
+              else ...[
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -234,9 +241,9 @@ class _DesktopWhatsappCallingViewState extends ConsumerState<DesktopWhatsappCall
                     mainAxisSpacing: 16,
                     mainAxisExtent: 170,
                   ),
-                  itemCount: _voters.length,
+                  itemCount: _visibleVoters.length,
                   itemBuilder: (ctx, i) {
-                    final v = _voters[i];
+                    final v = _visibleVoters[i];
                     return Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -308,6 +315,17 @@ class _DesktopWhatsappCallingViewState extends ConsumerState<DesktopWhatsappCall
                     );
                   },
                 ),
+                AppLoadMoreFooter(
+                  currentCount: _visibleVoters.length,
+                  totalCount: _voters.length,
+                  pageSize: 20,
+                  onLoadMore: () {
+                    setState(() => _displayedLimit += 20);
+                  },
+                  label: 'मतदार',
+                  isMarathi: isMr,
+                ),
+              ],
             ] else ...[
               // History Tab
               Container(

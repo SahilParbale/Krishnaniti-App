@@ -8,6 +8,7 @@ import '../../../../data/models/social_organization_model.dart';
 import '../../../../data/repositories/social_organization_repository.dart';
 import '../../../screens/social_organizations/social_org_report_generator.dart';
 import '../../../widgets/app_dropdown.dart';
+import '../../../widgets/app_load_more_footer.dart';
 
 class DesktopNgoMandalsView extends ConsumerStatefulWidget {
   const DesktopNgoMandalsView({super.key});
@@ -22,6 +23,10 @@ class _DesktopNgoMandalsViewState extends ConsumerState<DesktopNgoMandalsView> {
   String _selectedType = 'All';
   String _searchTerm = '';
   String _statusFilter = 'all';
+  int _displayedLimit = 20;
+
+  List<SocialOrganizationModel> get _visibleOrgs =>
+      _filteredOrgs.take(_displayedLimit).toList();
 
   @override
   void initState() {
@@ -299,6 +304,7 @@ class _DesktopNgoMandalsViewState extends ConsumerState<DesktopNgoMandalsView> {
   @override
   Widget build(BuildContext context) {
     final filtered = _filteredOrgs;
+    final visible = _visibleOrgs;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
@@ -321,7 +327,19 @@ class _DesktopNgoMandalsViewState extends ConsumerState<DesktopNgoMandalsView> {
           if (_loading)
             _buildLoadingGrid()
           else
-            _buildCardGrid(filtered),
+            _buildCardGrid(visible),
+
+          if (!_loading && filtered.isNotEmpty)
+            AppLoadMoreFooter(
+              currentCount: visible.length,
+              totalCount: filtered.length,
+              pageSize: 20,
+              onLoadMore: () {
+                setState(() => _displayedLimit += 20);
+              },
+              label: 'संघटना',
+              isMarathi: true,
+            ),
         ],
       ),
     );
@@ -436,7 +454,10 @@ class _DesktopNgoMandalsViewState extends ConsumerState<DesktopNgoMandalsView> {
 
         return InkWell(
           onTap: () {
-            setState(() => _selectedType = key);
+            setState(() {
+              _selectedType = key;
+              _displayedLimit = 20;
+            });
             _fetchOrganizations();
           },
           borderRadius: BorderRadius.circular(100),
@@ -472,7 +493,10 @@ class _DesktopNgoMandalsViewState extends ConsumerState<DesktopNgoMandalsView> {
               border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
             child: TextField(
-              onChanged: (val) => setState(() => _searchTerm = val),
+              onChanged: (val) => setState(() {
+                _searchTerm = val;
+                _displayedLimit = 20;
+              }),
               decoration: const InputDecoration(
                 hintText: 'Search organization by name, president or area...',
                 hintStyle: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
@@ -499,7 +523,12 @@ class _DesktopNgoMandalsViewState extends ConsumerState<DesktopNgoMandalsView> {
             DropdownMenuItem(value: 'Inactive', child: Text('Inactive')),
           ],
           onChanged: (val) {
-            if (val != null) setState(() => _statusFilter = val);
+            if (val != null) {
+              setState(() {
+                _statusFilter = val;
+                _displayedLimit = 20;
+              });
+            }
           },
         ),
       ],

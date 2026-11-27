@@ -303,151 +303,6 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
     });
   }
 
-  void _showDesktopDashboardHelp(String lang) {
-    showDialog(
-      context: context,
-      builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Container(
-          width: 580,
-          padding: const EdgeInsets.all(28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppColors.brand50,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.help_outline_rounded, color: AppColors.brand600, size: 24),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          lang == 'mr'
-                              ? 'डॅशबोर्ड मार्गदर्शन आणि माहिती'
-                              : (lang == 'hi' ? 'डैशबोर्ड मार्गदर्शन और जानकारी' : 'Dashboard Guide & Overview'),
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.slate900),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          lang == 'mr'
-                              ? 'प्रभाग कामकाजाची माहिती समजून घ्या'
-                              : (lang == 'hi' ? 'वार्ड कार्यप्रणाली को समझें' : 'Understand key ward management features'),
-                          style: const TextStyle(fontSize: 12.5, color: AppColors.slate500),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    icon: const Icon(Icons.close_rounded, color: AppColors.slate400),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              const Divider(height: 1, color: AppColors.slate100),
-              const SizedBox(height: 16),
-              _buildHelpRow(
-                Icons.dashboard_rounded,
-                lang == 'mr' ? '१. केंद्रीय नियंत्रण केंद्र' : (lang == 'hi' ? '१. केंद्रीय नियंत्रण केंद्र' : '1. Central Command Center'),
-                lang == 'mr'
-                    ? 'प्रभागातील सर्व नागरी समस्या, नागरिक संपर्क आणि विकास कामांची ताजी आकडेवारी एकाच ठिकाणी पहा.'
-                    : (lang == 'hi'
-                        ? 'वार्ड की सभी नागरिक समस्याओं, नागरिक संपर्कों और विकास कार्यों के नवीनतम आंकड़े एक ही स्थान पर देखें।'
-                        : 'View real-time statistics of all ward issues, citizen interactions, and developmental works.'),
-              ),
-              const SizedBox(height: 14),
-              _buildHelpRow(
-                Icons.add_circle_outline_rounded,
-                lang == 'mr' ? '२. नवीन तक्रार नोंदवा' : (lang == 'hi' ? '२. नई शिकायत दर्ज करें' : '2. Register New Complaint'),
-                lang == 'mr'
-                    ? '\'+ नवीन तक्रार\' बटणावर क्लिक करून नागरिकांची कोणतीही तक्रार किंवा विनंती त्वरित नोंदवा.'
-                    : (lang == 'hi'
-                        ? '\'+ नया अनुरोध\' बटन पर क्लिक करके किसी भी नागरिक की शिकायत या अनुरोध तुरंत दर्ज करें।'
-                        : 'Click \'+ New Request\' to immediately lodge any citizen complaint or personal request.'),
-              ),
-              const SizedBox(height: 14),
-              _buildHelpRow(
-                Icons.auto_awesome_rounded,
-                lang == 'mr' ? '३. AI दैनिक माहिती' : (lang == 'hi' ? '३. एआई दैनिक जानकारी' : '3. AI Daily Briefing'),
-                lang == 'mr'
-                    ? 'कृत्रिम बुद्धिमत्ता (AI) द्वारे प्रभागातील प्राधान्यक्रमाने सोडवायच्या कामांचा संक्षिप्त आढावा मिळवा.'
-                    : (lang == 'hi'
-                        ? 'कृत्रिम बुद्धिमत्ता (AI) द्वारा वार्ड में प्राथमिकता से हल किए जाने वाले कार्यों का संक्षिप्त विवरण प्राप्त करें।'
-                        : 'Get an intelligent briefing of high-priority issues that need urgent attention.'),
-              ),
-              const SizedBox(height: 14),
-              _buildHelpRow(
-                Icons.bar_chart_rounded,
-                lang == 'mr' ? '४. स्थिती आढावा आणि निकाल' : (lang == 'hi' ? '४. स्थिति समीक्षा और परिणाम' : '4. Status Overview & Resolution'),
-                lang == 'mr'
-                    ? 'प्रलंबित, काम चालू आणि सोडवलेल्या तक्रारींचे प्रमाण व टक्केवारी तपासा.'
-                    : (lang == 'hi'
-                        ? 'लंबित, प्रगतिरत और हल की गई शिकायतों का अनुपात और प्रतिशत जांचें।'
-                        : 'Monitor clearance rates and track work across pending, in-progress, and resolved stages.'),
-              ),
-              const SizedBox(height: 14),
-              _buildHelpRow(
-                Icons.notifications_active_outlined,
-                lang == 'mr' ? '५. थेट तक्रार नोंद' : (lang == 'hi' ? '५. लाइव शिकायत फ़ीड' : '5. Live Activity Stream'),
-                lang == 'mr'
-                    ? 'प्रभागात नव्याने दाखल होणाऱ्या समस्यांची रिअल-टाइम माहिती मिळवा व त्वरित कृती करा.'
-                    : (lang == 'hi'
-                        ? 'वार्ड में नई दर्ज समस्याओं की रीयल-टाइम जानकारी प्राप्त करें और तुरंत कार्रवाई करें।'
-                        : 'Stay updated on newly arriving complaints in real time with quick filters.'),
-              ),
-              const SizedBox(height: 24),
-              Align(
-                alignment: Alignment.centerRight,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.brand600,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  child: Text(
-                    lang == 'mr' ? 'समजले!' : (lang == 'hi' ? 'समझ गए!' : 'Got it!'),
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHelpRow(IconData icon, String title, String desc) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 20, color: AppColors.brand600),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: AppColors.slate900)),
-              const SizedBox(height: 2),
-              Text(desc, style: const TextStyle(fontSize: 12.5, color: AppColors.slate600, height: 1.35)),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
   void _showComplaintDetailsModal(ComplaintModel c, String lang) {
     showDialog(
       context: context,
@@ -771,75 +626,34 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
           ),
         ),
         const SizedBox(width: 16),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Refresh Button (Dashboard.tsx line 233)
-            OutlinedButton.icon(
-              onPressed: () => _fetchDashboardData(),
-              icon: const Icon(Icons.refresh_rounded, size: 16),
-              label: Text(
-                lang == 'mr' ? 'रिफ्रेश' : (lang == 'hi' ? 'रिफ्रेश' : 'Refresh'),
+        // New Request Button (Dashboard.tsx line 244)
+        ElevatedButton(
+          onPressed: _openNewRequestModal,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.brand600,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.add, size: 16, color: Colors.white),
+              const SizedBox(width: 8),
+              Text(
+                lang == 'mr'
+                    ? '+ नवीन तक्रार'
+                    : (lang == 'hi' ? '+ नई शिकायत' : '+ New Request'),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                  letterSpacing: -0.1,
+                ),
               ),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.slate700,
-                backgroundColor: Colors.white,
-                side: const BorderSide(color: AppColors.slate200),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-              ),
-            ),
-            const SizedBox(width: 10),
-
-            // Help Tutorial Button (Dashboard.tsx line 237)
-            OutlinedButton.icon(
-              onPressed: () => _showDesktopDashboardHelp(lang),
-              icon: const Icon(Icons.help_outline_rounded, size: 16, color: AppColors.brand600),
-              label: Text(
-                lang == 'mr' ? 'मदत' : (lang == 'hi' ? 'मदद' : 'Help'),
-              ),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.brand700,
-                backgroundColor: Colors.white,
-                side: const BorderSide(color: AppColors.brand200),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-              ),
-            ),
-            const SizedBox(width: 10),
-
-            // New Request Button (Dashboard.tsx line 244)
-            ElevatedButton(
-              onPressed: _openNewRequestModal,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brand600,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.add, size: 16, color: Colors.white),
-                  const SizedBox(width: 8),
-                  Text(
-                    lang == 'mr'
-                        ? '+ नवीन तक्रार'
-                        : (lang == 'hi' ? '+ नई शिकायत' : '+ New Request'),
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                      letterSpacing: -0.1,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );

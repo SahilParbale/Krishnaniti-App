@@ -9,6 +9,7 @@ import '../../../../data/models/gallery_model.dart';
 import '../../../../data/repositories/gallery_repository.dart';
 import '../../../screens/gallery/gallery_report_generator.dart';
 import '../../../widgets/app_dropdown.dart';
+import '../../../widgets/app_load_more_footer.dart';
 
 class DesktopGalleryView extends ConsumerStatefulWidget {
   const DesktopGalleryView({super.key});
@@ -22,6 +23,10 @@ class _DesktopGalleryViewState extends ConsumerState<DesktopGalleryView> {
   List<GalleryItemModel> _items = [];
   String _searchTerm = '';
   GalleryCategory? _selectedCategory;
+  int _displayedLimit = 20;
+
+  List<GalleryItemModel> get _visibleItems =>
+      _filteredItems.take(_displayedLimit).toList();
 
   @override
   void initState() {
@@ -288,6 +293,7 @@ class _DesktopGalleryViewState extends ConsumerState<DesktopGalleryView> {
   @override
   Widget build(BuildContext context) {
     final filtered = _filteredItems;
+    final visible = _visibleItems;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
@@ -306,7 +312,19 @@ class _DesktopGalleryViewState extends ConsumerState<DesktopGalleryView> {
           if (_loading)
             _buildLoadingGrid()
           else
-            _buildGalleryGrid(filtered),
+            _buildGalleryGrid(visible),
+
+          if (!_loading && filtered.isNotEmpty)
+            AppLoadMoreFooter(
+              currentCount: visible.length,
+              totalCount: filtered.length,
+              pageSize: 20,
+              onLoadMore: () {
+                setState(() => _displayedLimit += 20);
+              },
+              label: 'छायाचित्रे',
+              isMarathi: true,
+            ),
         ],
       ),
     );
@@ -428,7 +446,10 @@ class _DesktopGalleryViewState extends ConsumerState<DesktopGalleryView> {
             border: Border.all(color: const Color(0xFFE2E8F0)),
           ),
           child: TextField(
-            onChanged: (val) => setState(() => _searchTerm = val),
+            onChanged: (val) => setState(() {
+              _searchTerm = val;
+              _displayedLimit = 20;
+            }),
             decoration: const InputDecoration(
               hintText: 'Search photo or event...',
               hintStyle: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
@@ -447,7 +468,10 @@ class _DesktopGalleryViewState extends ConsumerState<DesktopGalleryView> {
 
     return InkWell(
       onTap: () {
-        setState(() => _selectedCategory = category);
+        setState(() {
+          _selectedCategory = category;
+          _displayedLimit = 20;
+        });
         _fetchGallery();
       },
       borderRadius: BorderRadius.circular(100),

@@ -7,6 +7,7 @@ import '../../../../data/models/duplicate_voter_group_model.dart';
 import '../../../../data/repositories/duplicate_voters_repository.dart';
 import '../../../screens/duplicate_voters/duplicate_voters_report_generator.dart';
 import '../../../widgets/app_dropdown.dart';
+import '../../../widgets/app_load_more_footer.dart';
 
 class DesktopDuplicateVotersView extends ConsumerStatefulWidget {
   const DesktopDuplicateVotersView({super.key});
@@ -18,6 +19,9 @@ class DesktopDuplicateVotersView extends ConsumerStatefulWidget {
 class _DesktopDuplicateVotersViewState extends ConsumerState<DesktopDuplicateVotersView> {
   bool _loading = true;
   List<DuplicateVoterGroupModel> _groups = [];
+  int _displayedLimit = 20;
+  List<DuplicateVoterGroupModel> get _visibleGroups =>
+      _groups.take(_displayedLimit).toList();
   String _searchTerm = '';
   String _matchType = 'name'; // 'name', 'epic', 'mobile'
   final Set<String> _expandedKeys = {};
@@ -29,7 +33,10 @@ class _DesktopDuplicateVotersViewState extends ConsumerState<DesktopDuplicateVot
   }
 
   Future<void> _fetchDuplicates() async {
-    setState(() => _loading = true);
+    setState(() {
+      _displayedLimit = 20;
+      _loading = true;
+    });
     try {
       final repo = ref.read(duplicateVotersRepoProvider);
       final list = await repo.getDuplicateGroups(
@@ -143,8 +150,19 @@ class _DesktopDuplicateVotersViewState extends ConsumerState<DesktopDuplicateVot
             _buildLoadingState()
           else if (_groups.isEmpty)
             _buildEmptyState()
-          else
+          else ...[
             _buildGroupsList(),
+            AppLoadMoreFooter(
+              currentCount: _visibleGroups.length,
+              totalCount: _groups.length,
+              pageSize: 20,
+              onLoadMore: () {
+                setState(() => _displayedLimit += 20);
+              },
+              label: 'नोंदी',
+              isMarathi: true,
+            ),
+          ],
         ],
       ),
     );
@@ -263,6 +281,7 @@ class _DesktopDuplicateVotersViewState extends ConsumerState<DesktopDuplicateVot
             ),
             child: TextField(
               onChanged: (val) {
+                _displayedLimit = 20;
                 _searchTerm = val;
                 _fetchDuplicates();
               },
@@ -293,7 +312,10 @@ class _DesktopDuplicateVotersViewState extends ConsumerState<DesktopDuplicateVot
           ],
           onChanged: (val) {
             if (val != null) {
-              setState(() => _matchType = val);
+              setState(() {
+                _displayedLimit = 20;
+                _matchType = val;
+              });
               _fetchDuplicates();
             }
           },
@@ -312,10 +334,10 @@ class _DesktopDuplicateVotersViewState extends ConsumerState<DesktopDuplicateVot
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: _groups.length,
+      itemCount: _visibleGroups.length,
       separatorBuilder: (_, __) => const SizedBox(height: 14),
       itemBuilder: (context, index) {
-        final group = _groups[index];
+        final group = _visibleGroups[index];
         final isExpanded = _expandedKeys.contains(group.normalizedKey);
 
         return Container(

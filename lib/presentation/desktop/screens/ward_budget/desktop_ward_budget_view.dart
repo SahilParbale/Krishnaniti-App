@@ -9,6 +9,7 @@ import '../../../../data/repositories/ward_budget_repository.dart';
 import '../../common/desktop_modal_dialog.dart';
 import '../../../screens/ward_budget/ward_budget_report_generator.dart';
 import '../../../widgets/app_dropdown.dart';
+import '../../../widgets/app_load_more_footer.dart';
 
 class DesktopWardBudgetView extends ConsumerStatefulWidget {
   const DesktopWardBudgetView({super.key});
@@ -23,6 +24,10 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
   List<WardBudgetModel> _budgets = [];
   String _searchTerm = '';
   String _selectedArea = 'All';
+  int _displayedLimit = 20;
+
+  List<WardBudgetModel> get _visibleBudgets =>
+      _filteredBudgets.take(_displayedLimit).toList();
 
   List<String> get _uniqueAreas {
     final areas = _budgets
@@ -286,6 +291,7 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
   Widget build(BuildContext context) {
     final lang = ref.watch(appLanguageProvider);
     final filtered = _filteredBudgets;
+    final visible = _visibleBudgets;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
@@ -308,7 +314,19 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
           if (_loading)
             _buildLoadingGrid()
           else
-            _buildCardGrid(filtered, lang),
+            _buildCardGrid(visible, lang),
+
+          if (!_loading && filtered.isNotEmpty)
+            AppLoadMoreFooter(
+              currentCount: visible.length,
+              totalCount: filtered.length,
+              pageSize: 20,
+              onLoadMore: () {
+                setState(() => _displayedLimit += 20);
+              },
+              label: lang == 'mr' ? 'तरतुदी' : (lang == 'hi' ? 'प्रावधान' : 'provisions'),
+              isMarathi: lang == 'mr',
+            ),
         ],
       ),
     );
@@ -568,7 +586,10 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
               border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
             child: TextField(
-              onChanged: (val) => setState(() => _searchTerm = val),
+              onChanged: (val) => setState(() {
+                _searchTerm = val;
+                _displayedLimit = 20;
+              }),
               decoration: InputDecoration(
                 hintText: AppTranslations.t('budget.search_placeholder', lang: lang),
                 hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
@@ -600,7 +621,12 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
               );
             }).toList(),
             onChanged: (val) {
-              if (val != null) setState(() => _selectedArea = val);
+              if (val != null) {
+                setState(() {
+                  _selectedArea = val;
+                  _displayedLimit = 20;
+                });
+              }
             },
           ),
         ),

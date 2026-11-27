@@ -9,6 +9,7 @@ import '../../../../data/models/survey_model.dart';
 import '../../../../data/repositories/surveys_repository.dart';
 import '../../../screens/surveys/survey_report_generator.dart';
 import '../../../widgets/app_dropdown.dart';
+import '../../../widgets/app_load_more_footer.dart';
 
 class DesktopSurveysView extends ConsumerStatefulWidget {
   const DesktopSurveysView({super.key});
@@ -24,6 +25,10 @@ class _DesktopSurveysViewState extends ConsumerState<DesktopSurveysView> {
   String _areaFilter = 'All';
   List<String> _availableAreas = [];
   int _totalResponses = 0;
+  int _displayedLimit = 20;
+
+  List<SurveyModel> get _visibleSurveys =>
+      _filteredSurveys.take(_displayedLimit).toList();
 
   @override
   void initState() {
@@ -243,6 +248,7 @@ class _DesktopSurveysViewState extends ConsumerState<DesktopSurveysView> {
   @override
   Widget build(BuildContext context) {
     final filtered = _filteredSurveys;
+    final visible = _visibleSurveys;
     final activeCount = _surveys.where((s) => s.status == 'Active').length;
 
     return SingleChildScrollView(
@@ -266,7 +272,19 @@ class _DesktopSurveysViewState extends ConsumerState<DesktopSurveysView> {
           if (_loading)
             _buildLoadingGrid()
           else
-            _buildSurveyTable(filtered),
+            _buildSurveyTable(visible),
+
+          if (!_loading && filtered.isNotEmpty)
+            AppLoadMoreFooter(
+              currentCount: visible.length,
+              totalCount: filtered.length,
+              pageSize: 20,
+              onLoadMore: () {
+                setState(() => _displayedLimit += 20);
+              },
+              label: 'सर्व्हे',
+              isMarathi: true,
+            ),
         ],
       ),
     );
@@ -314,7 +332,7 @@ class _DesktopSurveysViewState extends ConsumerState<DesktopSurveysView> {
                 SurveyReportGenerator.generateAndPrintReport(
                   context: context,
                   surveys: _filteredSurveys,
-                  responseCounts: {for (var s in _filteredSurveys) s.id: s.targetSampleSize ?? 100},
+                  responseCounts: {for (var s in _filteredSurveys) s.id: s.targetSampleSize},
                 );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
@@ -425,7 +443,10 @@ class _DesktopSurveysViewState extends ConsumerState<DesktopSurveysView> {
               border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
             child: TextField(
-              onChanged: (val) => setState(() => _searchTerm = val),
+              onChanged: (val) => setState(() {
+                _searchTerm = val;
+                _displayedLimit = 20;
+              }),
               decoration: const InputDecoration(
                 hintText: 'Search survey by title or topic...',
                 hintStyle: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
@@ -450,7 +471,12 @@ class _DesktopSurveysViewState extends ConsumerState<DesktopSurveysView> {
             return DropdownMenuItem(value: a, child: Text(a == 'All' ? 'All Areas' : a));
           }).toList(),
           onChanged: (val) {
-            if (val != null) setState(() => _areaFilter = val);
+            if (val != null) {
+              setState(() {
+                _areaFilter = val;
+                _displayedLimit = 20;
+              });
+            }
           },
         ),
       ],

@@ -4,10 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../data/models/ai_content_model.dart';
 import '../../../../core/localization/app_translations.dart';
-import '../../../../core/services/translation_service.dart';
 import '../../../providers/language_provider.dart';
 import '../../../screens/content_studio/ai_content_report_generator.dart';
 import '../../../widgets/app_dropdown.dart';
+import '../../../widgets/app_load_more_footer.dart';
 
 class DesktopAiContentView extends ConsumerStatefulWidget {
   const DesktopAiContentView({super.key});
@@ -27,6 +27,7 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
   String _generatedContent = '';
   bool _isGenerating = false;
   bool _copied = false;
+  int _historyLimit = 10;
 
   final List<Map<String, dynamic>> _history = [
     {
@@ -466,6 +467,7 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
   Widget _buildHistoryCard(String lang) {
     final search = _historySearchController.text.trim().toLowerCase();
     final items = _history.where((h) => search.isEmpty || h['title'].toString().toLowerCase().contains(search)).toList();
+    final visibleItems = items.take(_historyLimit).toList();
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -505,7 +507,7 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
             decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFE2E8F0))),
             child: TextField(
               controller: _historySearchController,
-              onChanged: (_) => setState(() {}),
+              onChanged: (_) => setState(() => _historyLimit = 10),
               decoration: InputDecoration(
                 hintText: lang == 'mr' ? 'इतिहास शोधा...' : (lang == 'hi' ? 'इतिहास खोजें...' : 'Search history...'),
                 hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
@@ -521,10 +523,10 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: items.length,
+            itemCount: visibleItems.length,
             separatorBuilder: (_, __) => const SizedBox(height: 10),
             itemBuilder: (context, index) {
-              final h = items[index];
+              final h = visibleItems[index];
 
               return InkWell(
                 onTap: () => _loadFromHistory(h),
@@ -570,6 +572,17 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
               );
             },
           ),
+          if (items.isNotEmpty)
+            AppLoadMoreFooter(
+              currentCount: visibleItems.length,
+              totalCount: items.length,
+              pageSize: 10,
+              label: 'drafts',
+              isMarathi: lang == 'mr',
+              onLoadMore: () {
+                setState(() => _historyLimit += 10);
+              },
+            ),
         ],
       ),
     );

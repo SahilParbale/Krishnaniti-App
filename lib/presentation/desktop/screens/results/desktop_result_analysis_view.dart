@@ -6,6 +6,7 @@ import '../../../../data/models/election_result_model.dart';
 import '../../../../data/repositories/election_results_repository.dart';
 import '../../../screens/results/result_analysis_report_generator.dart';
 import '../../../widgets/app_dropdown.dart';
+import '../../../widgets/app_load_more_footer.dart';
 
 class DesktopResultAnalysisView extends ConsumerStatefulWidget {
   const DesktopResultAnalysisView({super.key});
@@ -19,6 +20,9 @@ class _DesktopResultAnalysisViewState extends ConsumerState<DesktopResultAnalysi
   String _selectedWard = '';
   List<String> _availableWards = [];
   List<ElectionResultModel> _results = [];
+  int _displayedLimit = 20;
+  List<ElectionResultModel> get _visibleResults =>
+      _results.take(_displayedLimit).toList();
   String _selectedCandidate = '';
   List<String> _availableCandidates = [];
 
@@ -43,7 +47,10 @@ class _DesktopResultAnalysisViewState extends ConsumerState<DesktopResultAnalysi
   }
 
   Future<void> _loadResultsForWard(String ward) async {
-    setState(() => _loading = true);
+    setState(() {
+      _displayedLimit = 20;
+      _loading = true;
+    });
     try {
       final repo = ref.read(electionResultsRepoProvider);
       final data = await repo.getResults(ward: ward);
@@ -360,7 +367,7 @@ class _DesktopResultAnalysisViewState extends ConsumerState<DesktopResultAnalysi
                 const DataColumn(label: Text('Winning Candidate', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
                 const DataColumn(label: Text('Margin', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
               ],
-              rows: _results.map((r) {
+              rows: _visibleResults.map((r) {
                 return DataRow(
                   cells: [
                     DataCell(Text(r.boothNumber, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)))),
@@ -409,6 +416,17 @@ class _DesktopResultAnalysisViewState extends ConsumerState<DesktopResultAnalysi
               }).toList(),
             ),
           ),
+          if (!_loading && _results.isNotEmpty)
+            AppLoadMoreFooter(
+              currentCount: _visibleResults.length,
+              totalCount: _results.length,
+              pageSize: 20,
+              onLoadMore: () {
+                setState(() => _displayedLimit += 20);
+              },
+              label: 'बूथ',
+              isMarathi: true,
+            ),
         ],
       ),
     );

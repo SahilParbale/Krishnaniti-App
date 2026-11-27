@@ -8,6 +8,7 @@ import 'package:nagarsevak_mobile/presentation/screens/complaints/new_complaint_
 import 'package:nagarsevak_mobile/presentation/screens/complaints/complaint_detail_screen.dart';
 import 'package:nagarsevak_mobile/presentation/screens/complaints/complaint_report_generator.dart';
 import 'package:nagarsevak_mobile/presentation/widgets/app_dropdown.dart';
+import 'package:nagarsevak_mobile/presentation/widgets/app_load_more_footer.dart';
 import 'package:nagarsevak_mobile/core/localization/app_translations.dart';
 import 'package:nagarsevak_mobile/core/services/translation_service.dart';
 import 'package:nagarsevak_mobile/presentation/providers/language_provider.dart';
@@ -34,9 +35,13 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
   String _selectedArea = 'All';
   String _selectedDate = 'All';
   ComplaintModel? _selectedComplaint;
+  int _displayedLimit = 20;
 
   bool _loading = true;
   List<ComplaintModel> _complaints = [];
+
+  List<ComplaintModel> get _visibleComplaints =>
+      _filteredComplaints.take(_displayedLimit).toList();
 
   @override
   void initState() {
@@ -172,8 +177,8 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
     }
 
     final lang = ref.watch(desktopLanguageProvider);
-    final isMr = lang == 'mr';
     final items = _filteredComplaints;
+    final visibleItems = _visibleComplaints;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), // bg-slate-50
@@ -203,9 +208,22 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
             else if (items.isEmpty)
               _buildEmptyState(lang)
             else if (_viewMode == 'table')
-              _buildComplaintTable(items, lang)
+              _buildComplaintTable(visibleItems, lang)
             else
-              _buildComplaintGrid(items, lang),
+              _buildComplaintGrid(visibleItems, lang),
+
+            // 5. Pagination Load More Footer
+            if (!_loading && items.isNotEmpty)
+              AppLoadMoreFooter(
+                currentCount: visibleItems.length,
+                totalCount: items.length,
+                pageSize: 20,
+                onLoadMore: () {
+                  setState(() => _displayedLimit += 20);
+                },
+                label: lang == 'mr' ? 'तक्रारी' : (lang == 'hi' ? 'शिकायतें' : 'complaints'),
+                isMarathi: lang == 'mr',
+              ),
           ],
         ),
       ),
@@ -341,13 +359,19 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
               _buildTabButton(
                 title: AppTranslations.t('complaints.tabs.area', lang: lang),
                 isActive: _activeTab == 'Complaints',
-                onTap: () => setState(() => _activeTab = 'Complaints'),
+                onTap: () => setState(() {
+                  _activeTab = 'Complaints';
+                  _displayedLimit = 20;
+                }),
               ),
               const SizedBox(width: 24),
               _buildTabButton(
                 title: AppTranslations.t('complaints.tabs.personal', lang: lang),
                 isActive: _activeTab == 'Personal Help',
-                onTap: () => setState(() => _activeTab = 'Personal Help'),
+                onTap: () => setState(() {
+                  _activeTab = 'Personal Help';
+                  _displayedLimit = 20;
+                }),
               ),
             ],
           ),
@@ -442,7 +466,11 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
                     ),
                   ),
                 ),
-                DataCell(Text(c.citizenName ?? '-')),
+                DataCell(
+                  c.citizenName != null && c.citizenName!.isNotEmpty
+                      ? AppTranslatedText(c.citizenName!, isName: true)
+                      : const Text('-', style: TextStyle(color: Color(0xFF94A3B8))),
+                ),
                 DataCell(_buildCategoryBadge(c.category, lang)),
                 DataCell(Text(AppTranslations.getAreaName(c.area ?? '-', lang))),
                 DataCell(_buildStatusBadge(c.status, lang)),
@@ -450,7 +478,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
                 DataCell(
                   IconButton(
                     icon: const Icon(Icons.arrow_forward_rounded, size: 16, color: Color(0xFF0284C7)),
-                    tooltip: 'View Details',
+                    tooltip: lang == 'mr' ? 'तपशील पहा' : (lang == 'hi' ? 'विवरण देखें' : 'View Details'),
                     onPressed: () => _openComplaintDetail(c),
                   ),
                 ),
@@ -518,7 +546,10 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
               Expanded(
                 flex: 2,
                 child: TextField(
-                  onChanged: (v) => setState(() => _searchQuery = v),
+                  onChanged: (v) => setState(() {
+                    _searchQuery = v;
+                    _displayedLimit = 20;
+                  }),
                   decoration: InputDecoration(
                     hintText: lang == 'mr'
                         ? 'तक्रार, नागरिक किंवा फोन शोधा...'
@@ -562,7 +593,12 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
                     );
                   }).toList(),
                   onChanged: (val) {
-                    if (val != null) setState(() => _selectedArea = val);
+                    if (val != null) {
+                      setState(() {
+                        _selectedArea = val;
+                        _displayedLimit = 20;
+                      });
+                    }
                   },
                 ),
               ),
@@ -589,7 +625,12 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
                     );
                   }).toList(),
                   onChanged: (val) {
-                    if (val != null) setState(() => _selectedDate = val);
+                    if (val != null) {
+                      setState(() {
+                        _selectedDate = val;
+                        _displayedLimit = 20;
+                      });
+                    }
                   },
                 ),
               ),
@@ -618,7 +659,10 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: InkWell(
-        onTap: () => setState(() => _filterStatus = statusKey),
+        onTap: () => setState(() {
+        _filterStatus = statusKey;
+        _displayedLimit = 20;
+      }),
         borderRadius: BorderRadius.circular(20),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
@@ -732,10 +776,23 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
                     const Icon(Icons.person_outline_rounded, size: 12, color: Color(0xFF64748B)),
                     const SizedBox(width: 4),
                     Flexible(
-                      child: Text(
-                        '${complaint.citizenName}${complaint.citizenMobile != null ? ' | ${complaint.citizenMobile}' : ''}',
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
-                        overflow: TextOverflow.ellipsis,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: AppTranslatedText(
+                              complaint.citizenName!,
+                              isName: true,
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (complaint.citizenMobile != null)
+                            Text(
+                              ' | ${AppTranslations.formatDigits(complaint.citizenMobile!, lang)}',
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+                            ),
+                        ],
                       ),
                     ),
                   ],
@@ -758,9 +815,14 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
                   children: [
                     const Icon(Icons.badge_outlined, size: 12, color: Color(0xFF0284C7)),
                     const SizedBox(width: 4),
+                    Text(
+                      lang == "mr" ? "नियुक्त: " : (lang == "hi" ? "नियुक्त: " : "Assigned: "),
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF0369A1)),
+                    ),
                     Flexible(
-                      child: Text(
+                      child: AppTranslatedText(
                         complaint.assignedStaffName!,
+                        isName: true,
                         style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF0369A1)),
                         overflow: TextOverflow.ellipsis,
                       ),

@@ -8,6 +8,7 @@ import 'package:nagarsevak_mobile/presentation/screens/letters/new_letter_bottom
 import 'package:nagarsevak_mobile/presentation/screens/letters/letter_type_manager_sheet.dart';
 import 'package:nagarsevak_mobile/presentation/screens/letters/letter_report_generator.dart';
 import 'package:nagarsevak_mobile/presentation/widgets/app_dropdown.dart';
+import 'package:nagarsevak_mobile/presentation/widgets/app_load_more_footer.dart';
 import 'package:nagarsevak_mobile/core/localization/app_translations.dart';
 import 'package:nagarsevak_mobile/core/services/translation_service.dart';
 import 'package:nagarsevak_mobile/presentation/providers/language_provider.dart';
@@ -36,6 +37,10 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
   List<LetterModel> _outgoingLetters = [];
   List<LetterModel> _incomingLetters = [];
   LetterModel? _selectedLetter;
+  int _displayedLimit = 20;
+
+  List<LetterModel> get _visibleLetters =>
+      _filteredLetters.take(_displayedLimit).toList();
 
   @override
   void initState() {
@@ -152,6 +157,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
     final lang = ref.watch(desktopLanguageProvider);
     final isMr = lang == 'mr';
     final items = _filteredLetters;
+    final visibleItems = _visibleLetters;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), // bg-slate-50
@@ -179,9 +185,22 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
             if (_loading)
               _buildLoadingState()
             else if (_viewMode == 'table')
-              _buildLettersTable(items, lang)
+              _buildLettersTable(visibleItems, lang)
             else
-              _buildMainGrid(items, lang),
+              _buildMainGrid(visibleItems, lang),
+
+            // 5. Pagination Load More Footer
+            if (!_loading && items.isNotEmpty)
+              AppLoadMoreFooter(
+                currentCount: visibleItems.length,
+                totalCount: items.length,
+                pageSize: 20,
+                onLoadMore: () {
+                  setState(() => _displayedLimit += 20);
+                },
+                label: lang == 'mr' ? 'पत्रे' : (lang == 'hi' ? 'पत्र' : 'letters'),
+                isMarathi: isMr,
+              ),
           ],
         ),
       ),
@@ -353,6 +372,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                   setState(() {
                     _activeTab = 'outgoing';
                     _selectedLetter = _outgoingLetters.isNotEmpty ? _outgoingLetters.first : null;
+                    _displayedLimit = 20;
                   });
                 },
               ),
@@ -364,6 +384,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                   setState(() {
                     _activeTab = 'incoming';
                     _selectedLetter = _incomingLetters.isNotEmpty ? _incomingLetters.first : null;
+                    _displayedLimit = 20;
                   });
                 },
               ),
@@ -545,7 +566,10 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
         Expanded(
           flex: 6,
           child: TextField(
-            onChanged: (v) => setState(() => _searchQuery = v),
+            onChanged: (v) => setState(() {
+              _searchQuery = v;
+              _displayedLimit = 20;
+            }),
             decoration: InputDecoration(
               hintText: lang == 'mr'
                   ? 'विषय किंवा नागरिकाच्या नावाने पत्र शोधा...'
@@ -592,7 +616,12 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
               );
             }).toList(),
             onChanged: (val) {
-              if (val != null) setState(() => _selectedArea = val);
+              if (val != null) {
+                setState(() {
+                  _selectedArea = val;
+                  _displayedLimit = 20;
+                });
+              }
             },
           ),
         ),
@@ -620,7 +649,12 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
               );
             }).toList(),
             onChanged: (val) {
-              if (val != null) setState(() => _selectedDate = val);
+              if (val != null) {
+                setState(() {
+                  _selectedDate = val;
+                  _displayedLimit = 20;
+                });
+              }
             },
           ),
         ),

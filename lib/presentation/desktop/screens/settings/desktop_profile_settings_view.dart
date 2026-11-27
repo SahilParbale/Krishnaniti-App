@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/localization/app_translations.dart';
-import '../../../../core/services/translation_service.dart';
 import '../../../providers/language_provider.dart';
 import '../../../providers/navigation_provider.dart';
 import 'desktop_bot_dashboard_view.dart';

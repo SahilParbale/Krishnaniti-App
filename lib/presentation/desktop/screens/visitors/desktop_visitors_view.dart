@@ -4,9 +4,9 @@ import 'package:intl/intl.dart';
 import 'package:nagarsevak_mobile/data/models/visitor_model.dart';
 import 'package:nagarsevak_mobile/data/repositories/visitors_repository.dart';
 import 'package:nagarsevak_mobile/presentation/desktop/common/desktop_modal_dialog.dart';
-import 'package:nagarsevak_mobile/presentation/desktop/shell/desktop_sidebar.dart';
 import 'package:nagarsevak_mobile/presentation/screens/visitors/visitor_report_generator.dart';
 import 'package:nagarsevak_mobile/presentation/widgets/app_dropdown.dart';
+import 'package:nagarsevak_mobile/presentation/widgets/app_load_more_footer.dart';
 import 'package:nagarsevak_mobile/core/localization/app_translations.dart';
 import 'package:nagarsevak_mobile/core/services/translation_service.dart';
 import 'package:nagarsevak_mobile/presentation/providers/language_provider.dart';
@@ -30,9 +30,13 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
   String _selectedArea = 'All';
   String _selectedDate = 'All';
   String _purposeFilter = 'All';
+  int _displayedLimit = 20;
 
   bool _loading = true;
   List<VisitorModel> _visitors = [];
+
+  List<VisitorModel> get _visibleVisitors =>
+      _filteredVisitors.take(_displayedLimit).toList();
 
   @override
   void initState() {
@@ -354,7 +358,6 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
   @override
   Widget build(BuildContext context) {
     final lang = ref.watch(appLanguageProvider);
-    final isMr = lang == 'mr';
     final items = _filteredVisitors;
 
     return Scaffold(
@@ -551,7 +554,10 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
               Expanded(
                 flex: 6,
                 child: TextField(
-                  onChanged: (v) => setState(() => _searchQuery = v),
+                  onChanged: (v) => setState(() {
+                    _searchQuery = v;
+                    _displayedLimit = 20;
+                  }),
                   decoration: InputDecoration(
                     hintText: lang == 'mr'
                         ? 'नाव, मोबाईल, टिप्पणी द्वारे अभ्यागत शोधा...'
@@ -583,7 +589,12 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
                     );
                   }).toList(),
                   onChanged: (val) {
-                    if (val != null) setState(() => _selectedArea = val);
+                    if (val != null) {
+                      setState(() {
+                        _selectedArea = val;
+                        _displayedLimit = 20;
+                      });
+                    }
                   },
                 ),
               ),
@@ -608,7 +619,12 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
                     );
                   }).toList(),
                   onChanged: (val) {
-                    if (val != null) setState(() => _selectedDate = val);
+                    if (val != null) {
+                      setState(() {
+                        _selectedDate = val;
+                        _displayedLimit = 20;
+                      });
+                    }
                   },
                 ),
               ),
@@ -658,7 +674,10 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
                     ),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     onSelected: (_) {
-                      setState(() => _purposeFilter = purpose);
+                      setState(() {
+                        _purposeFilter = purpose;
+                        _displayedLimit = 20;
+                      });
                     },
                   ),
                 );
@@ -674,9 +693,21 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
           else if (items.isEmpty)
             _buildEmptyState(lang == 'mr')
           else if (_viewMode == 'grid')
-            _buildVisitorGrid(items, lang)
+            _buildVisitorGrid(_visibleVisitors, lang)
           else
-            _buildVisitorTable(items, lang),
+            _buildVisitorTable(_visibleVisitors, lang),
+
+          if (!_loading && items.isNotEmpty)
+            AppLoadMoreFooter(
+              currentCount: _visibleVisitors.length,
+              totalCount: items.length,
+              pageSize: 20,
+              onLoadMore: () {
+                setState(() => _displayedLimit += 20);
+              },
+              label: lang == 'mr' ? 'अभ्यागत' : (lang == 'hi' ? 'आगंतुक' : 'visitors'),
+              isMarathi: lang == 'mr',
+            ),
         ],
       ),
     );

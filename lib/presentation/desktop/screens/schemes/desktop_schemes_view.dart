@@ -6,9 +6,9 @@ import '../../../providers/language_provider.dart';
 import 'package:nagarsevak_mobile/data/models/scheme_model.dart';
 import 'package:nagarsevak_mobile/data/repositories/schemes_repository.dart';
 import 'package:nagarsevak_mobile/presentation/desktop/common/desktop_modal_dialog.dart';
-import 'package:nagarsevak_mobile/presentation/desktop/shell/desktop_sidebar.dart';
 import 'package:nagarsevak_mobile/presentation/screens/schemes/scheme_report_generator.dart';
 import 'package:nagarsevak_mobile/presentation/widgets/app_dropdown.dart';
+import 'package:nagarsevak_mobile/presentation/widgets/app_load_more_footer.dart';
 
 /// Desktop Government Schemes View matching SchemeList.tsx verbatim:
 /// - Sticky Header: Title + Subtitle + Help + Find Schemes (AI) + Add Scheme
@@ -30,9 +30,13 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
   String _viewMode = 'grid'; // 'grid' | 'table'
   String _searchQuery = '';
   int? _expandedSchemeId;
+  int _displayedLimit = 20;
 
   bool _loading = true;
   List<SchemeModel> _schemes = [];
+
+  List<SchemeModel> get _visibleSchemes =>
+      _filteredSchemes.take(_displayedLimit).toList();
 
   static const List<Map<String, String>> _categories = [
     {'id': 'All', 'en': 'All', 'mr': 'सर्व', 'hi': 'सभी'},
@@ -191,6 +195,7 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
   Widget build(BuildContext context) {
     final lang = ref.watch(appLanguageProvider);
     final items = _filteredSchemes;
+    final visibleItems = _visibleSchemes;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -223,9 +228,22 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
             else if (items.isEmpty)
               _buildEmptyState(lang)
             else if (_viewMode == 'grid')
-              _buildSchemesGrid(items, lang)
+              _buildSchemesGrid(visibleItems, lang)
             else
-              _buildReportTable(items, lang),
+              _buildReportTable(visibleItems, lang),
+
+            // 5. Pagination Load More Footer
+            if (!_loading && items.isNotEmpty)
+              AppLoadMoreFooter(
+                currentCount: visibleItems.length,
+                totalCount: items.length,
+                pageSize: 20,
+                onLoadMore: () {
+                  setState(() => _displayedLimit += 20);
+                },
+                label: lang == 'mr' ? 'योजना' : (lang == 'hi' ? 'योजनाएं' : 'schemes'),
+                isMarathi: lang == 'mr',
+              ),
           ],
         ),
       ),
@@ -236,7 +254,6 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
   Widget _buildHeader(String lang, int count) {
     final title = AppTranslations.t('schemes.title', lang: lang);
     final subtitle = AppTranslations.t('schemes.subtitle', lang: lang);
-    final totalLabel = lang == 'mr' ? 'एकूण' : (lang == 'hi' ? 'कुल' : 'Total');
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -361,13 +378,19 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
               _buildTabButton(
                 title: lang == 'mr' ? 'योजना' : (lang == 'hi' ? 'योजनाएं' : 'Schemes'),
                 isActive: _activeTab == 'schemes',
-                onTap: () => setState(() => _activeTab = 'schemes'),
+                onTap: () => setState(() {
+                  _activeTab = 'schemes';
+                  _displayedLimit = 20;
+                }),
               ),
               const SizedBox(width: 24),
               _buildTabButton(
                 title: lang == 'mr' ? 'अर्ज' : (lang == 'hi' ? 'आवेदन' : 'Applications'),
                 isActive: _activeTab == 'applications',
-                onTap: () => setState(() => _activeTab = 'applications'),
+                onTap: () => setState(() {
+                  _activeTab = 'applications';
+                  _displayedLimit = 20;
+                }),
               ),
             ],
           ),
@@ -468,7 +491,10 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
           return Padding(
             padding: const EdgeInsets.only(right: 8),
             child: InkWell(
-              onTap: () => setState(() => _activeCategory = c['id']!),
+              onTap: () => setState(() {
+                _activeCategory = c['id']!;
+                _displayedLimit = 20;
+              }),
               borderRadius: BorderRadius.circular(20),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
@@ -496,7 +522,10 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
   // --- Search Bar ---
   Widget _buildSearchBar(String lang) {
     return TextField(
-      onChanged: (v) => setState(() => _searchQuery = v),
+      onChanged: (v) => setState(() {
+        _searchQuery = v;
+        _displayedLimit = 20;
+      }),
       decoration: InputDecoration(
         hintText: lang == 'mr'
             ? 'शीर्षक, पात्रता, लाभांनुसार शोधा...'

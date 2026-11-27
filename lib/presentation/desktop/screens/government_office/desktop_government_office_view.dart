@@ -9,6 +9,7 @@ import '../../../../data/models/government_office_model.dart';
 import '../../../../data/repositories/government_office_repository.dart';
 import '../../../screens/government_office/gov_office_report_generator.dart';
 import '../../../widgets/app_dropdown.dart';
+import '../../../widgets/app_load_more_footer.dart';
 
 class DesktopGovernmentOfficeView extends ConsumerStatefulWidget {
   const DesktopGovernmentOfficeView({super.key});
@@ -18,10 +19,13 @@ class DesktopGovernmentOfficeView extends ConsumerStatefulWidget {
 }
 
 class _DesktopGovernmentOfficeViewState extends ConsumerState<DesktopGovernmentOfficeView> {
-  String _activeTab = 'Offices'; // 'Offices' | 'Cooperative'
   bool _loading = true;
   List<GovernmentOfficeModel> _offices = [];
   String _searchTerm = '';
+  int _displayedLimit = 20;
+
+  List<GovernmentOfficeModel> get _visibleOffices =>
+      _filteredOffices.take(_displayedLimit).toList();
 
   @override
   void initState() {
@@ -301,6 +305,7 @@ class _DesktopGovernmentOfficeViewState extends ConsumerState<DesktopGovernmentO
   @override
   Widget build(BuildContext context) {
     final filtered = _filteredOffices;
+    final visible = _visibleOffices;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
@@ -319,7 +324,19 @@ class _DesktopGovernmentOfficeViewState extends ConsumerState<DesktopGovernmentO
           if (_loading)
             _buildLoadingGrid()
           else
-            _buildOfficeGrid(filtered),
+            _buildOfficeGrid(visible),
+
+          if (!_loading && filtered.isNotEmpty)
+            AppLoadMoreFooter(
+              currentCount: visible.length,
+              totalCount: filtered.length,
+              pageSize: 20,
+              onLoadMore: () {
+                setState(() => _displayedLimit += 20);
+              },
+              label: 'कार्यालये',
+              isMarathi: true,
+            ),
         ],
       ),
     );
@@ -415,7 +432,10 @@ class _DesktopGovernmentOfficeViewState extends ConsumerState<DesktopGovernmentO
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: TextField(
-        onChanged: (val) => setState(() => _searchTerm = val),
+        onChanged: (val) => setState(() {
+          _searchTerm = val;
+          _displayedLimit = 20;
+        }),
         decoration: InputDecoration(
           hintText: 'Search office by name, department, officer or area...',
           hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),

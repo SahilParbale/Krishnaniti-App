@@ -10,6 +10,7 @@ import '../../../providers/language_provider.dart';
 import '../../shell/desktop_sidebar.dart';
 import '../../../screens/voice/conference_room_screen.dart';
 import '../../../screens/voice/conference_meeting_report_generator.dart';
+import '../../../widgets/app_load_more_footer.dart';
 
 class MeetingItem {
   final String id;
@@ -37,6 +38,10 @@ class DesktopConferenceView extends ConsumerStatefulWidget {
 }
 
 class _DesktopConferenceViewState extends ConsumerState<DesktopConferenceView> {
+  int _displayedLimit = 20;
+  List<MeetingItem> get _visibleMeetings =>
+      _meetings.take(_displayedLimit).toList();
+
   final List<MeetingItem> _meetings = [
     MeetingItem(
       id: 'm-1',
@@ -342,9 +347,9 @@ class _DesktopConferenceViewState extends ConsumerState<DesktopConferenceView> {
                 mainAxisSpacing: 16,
                 mainAxisExtent: 220,
               ),
-              itemCount: _meetings.length,
+              itemCount: _visibleMeetings.length,
               itemBuilder: (ctx, i) {
-                final m = _meetings[i];
+                final m = _visibleMeetings[i];
                 final isActive = m.status == 'active';
                 final isScheduled = m.status == 'scheduled';
 
@@ -457,6 +462,17 @@ class _DesktopConferenceViewState extends ConsumerState<DesktopConferenceView> {
                 );
               },
             ),
+            if (_meetings.isNotEmpty)
+              AppLoadMoreFooter(
+                currentCount: _visibleMeetings.length,
+                totalCount: _meetings.length,
+                pageSize: 20,
+                onLoadMore: () {
+                  setState(() => _displayedLimit += 20);
+                },
+                label: 'बैठका',
+                isMarathi: isMr,
+              ),
           ],
         ),
       ),

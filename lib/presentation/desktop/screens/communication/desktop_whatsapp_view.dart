@@ -12,6 +12,7 @@ import '../../../providers/navigation_provider.dart';
 import '../../shell/desktop_sidebar.dart';
 import '../../../screens/whatsapp/whatsapp_history_report_generator.dart';
 import '../../../widgets/app_dropdown.dart';
+import '../../../widgets/app_load_more_footer.dart';
 
 class DesktopWhatsappView extends ConsumerStatefulWidget {
   const DesktopWhatsappView({super.key});
@@ -36,7 +37,14 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
   final bool _isBotConnected = true;
 
   List<VoterModel> _voters = [];
+  int _displayedLimit = 20;
+  List<VoterModel> get _visibleVoters =>
+      _voters.take(_displayedLimit).toList();
+
   List<WhatsAppBroadcastModel> _broadcastHistory = [];
+  int _historyLimit = 20;
+  List<WhatsAppBroadcastModel> get _visibleHistory =>
+      _broadcastHistory.take(_historyLimit).toList();
 
   @override
   void initState() {
@@ -56,7 +64,10 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
   }
 
   Future<void> _loadVoters() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _displayedLimit = 20;
+      _isLoading = true;
+    });
     try {
       final repo = ref.read(whatsAppRepoProvider);
       final voters = await repo.getVotersWithMobile(
@@ -78,6 +89,7 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
   }
 
   Future<void> _loadHistory() async {
+    setState(() => _historyLimit = 20);
     try {
       final repo = ref.read(whatsAppRepoProvider);
       final history = await repo.getBroadcastHistory();
@@ -483,70 +495,86 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
                                     style: const TextStyle(color: AppColors.slate400),
                                   ),
                                 )
-                              : ListView.separated(
-                                  padding: const EdgeInsets.all(12),
-                                  itemCount: _voters.length,
-                                  separatorBuilder: (_, __) => const SizedBox(height: 8),
-                                  itemBuilder: (ctx, i) {
-                                    final v = _voters[i];
-                                    final isSelected = _selectedVoterIds.contains(v.id);
-                                    return InkWell(
-                                      onTap: () => _toggleSelectVoter(v.id),
-                                      borderRadius: BorderRadius.circular(10),
-                                      child: Container(
+                              : Column(
+                                  children: [
+                                    Expanded(
+                                      child: ListView.separated(
                                         padding: const EdgeInsets.all(12),
-                                        decoration: BoxDecoration(
-                                          color: isSelected ? AppColors.brand50 : Colors.white,
-                                          borderRadius: BorderRadius.circular(10),
-                                          border: Border.all(
-                                            color: isSelected ? AppColors.brand600 : AppColors.slate200,
-                                            width: isSelected ? 1.5 : 1,
-                                          ),
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              isSelected ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded,
-                                              color: isSelected ? AppColors.brand600 : AppColors.slate400,
-                                              size: 20,
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                        itemCount: _visibleVoters.length,
+                                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                                        itemBuilder: (ctx, i) {
+                                          final v = _visibleVoters[i];
+                                          final isSelected = _selectedVoterIds.contains(v.id);
+                                          return InkWell(
+                                            onTap: () => _toggleSelectVoter(v.id),
+                                            borderRadius: BorderRadius.circular(10),
+                                            child: Container(
+                                              padding: const EdgeInsets.all(12),
+                                              decoration: BoxDecoration(
+                                                color: isSelected ? AppColors.brand50 : Colors.white,
+                                                borderRadius: BorderRadius.circular(10),
+                                                border: Border.all(
+                                                  color: isSelected ? AppColors.brand600 : AppColors.slate200,
+                                                  width: isSelected ? 1.5 : 1,
+                                                ),
+                                              ),
+                                              child: Row(
                                                 children: [
-                                                  Text(
-                                                    isMr && v.nameMarathi.isNotEmpty
-                                                        ? v.nameMarathi
-                                                        : v.nameEnglish,
-                                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.slate800),
+                                                  Icon(
+                                                    isSelected ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded,
+                                                    color: isSelected ? AppColors.brand600 : AppColors.slate400,
+                                                    size: 20,
                                                   ),
-                                                  const SizedBox(height: 2),
-                                                  Text(
-                                                    '${v.mobile ?? '-'}  •  ${v.address}',
-                                                    style: const TextStyle(fontSize: 12, color: AppColors.slate500),
-                                                    maxLines: 1,
-                                                    overflow: TextOverflow.ellipsis,
+                                                  const SizedBox(width: 12),
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                        Text(
+                                                          isMr && v.nameMarathi.isNotEmpty
+                                                              ? v.nameMarathi
+                                                              : v.nameEnglish,
+                                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.slate800),
+                                                        ),
+                                                        const SizedBox(height: 2),
+                                                        Text(
+                                                          '${v.mobile ?? '-'}  •  ${v.address}',
+                                                          style: const TextStyle(fontSize: 12, color: AppColors.slate500),
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow.ellipsis,
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  Container(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                                    decoration: BoxDecoration(
+                                                      color: AppColors.slate100,
+                                                      borderRadius: BorderRadius.circular(6),
+                                                    ),
+                                                    child: Text(
+                                                      '${v.gender} / ${v.age}',
+                                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.slate600),
+                                                    ),
                                                   ),
                                                 ],
                                               ),
                                             ),
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                              decoration: BoxDecoration(
-                                                color: AppColors.slate100,
-                                                borderRadius: BorderRadius.circular(6),
-                                              ),
-                                              child: Text(
-                                                '${v.gender} / ${v.age}',
-                                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.slate600),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                                          );
+                                        },
                                       ),
-                                    );
-                                  },
+                                    ),
+                                    AppLoadMoreFooter(
+                                      currentCount: _visibleVoters.length,
+                                      totalCount: _voters.length,
+                                      pageSize: 20,
+                                      onLoadMore: () {
+                                        setState(() => _displayedLimit += 20);
+                                      },
+                                      label: 'मतदार',
+                                      isMarathi: isMr,
+                                    ),
+                                  ],
                                 ),
                     ),
                   ),
@@ -645,14 +673,14 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
                           ),
                         ),
                       )
-                    else
+                    else ...[
                       ListView.separated(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _broadcastHistory.length,
+                        itemCount: _visibleHistory.length,
                         separatorBuilder: (_, __) => const Divider(color: AppColors.slate100),
                         itemBuilder: (ctx, i) {
-                          final item = _broadcastHistory[i];
+                          final item = _visibleHistory[i];
                           return Padding(
                             padding: const EdgeInsets.symmetric(vertical: 10),
                             child: Row(
@@ -700,6 +728,17 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
                           );
                         },
                       ),
+                      AppLoadMoreFooter(
+                        currentCount: _visibleHistory.length,
+                        totalCount: _broadcastHistory.length,
+                        pageSize: 20,
+                        onLoadMore: () {
+                          setState(() => _historyLimit += 20);
+                        },
+                        label: 'मोहिमा',
+                        isMarathi: isMr,
+                      ),
+                    ],
                   ],
                 ),
               ),

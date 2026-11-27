@@ -29,6 +29,7 @@ class _CommandItem {
   const _CommandItem({
     required this.key,
     required this.title,
+    // ignore: unused_element_parameter
     this.titleMr = '',
     required this.category,
     required this.icon,
@@ -115,6 +116,7 @@ class _DesktopCommandPaletteState extends State<DesktopCommandPalette> {
         final q = query.toLowerCase();
         _filteredItems = _allItems.where((item) {
           return item.title.toLowerCase().contains(q) ||
+              item.titleMr.toLowerCase().contains(q) ||
               item.category.toLowerCase().contains(q);
         }).toList();
       }

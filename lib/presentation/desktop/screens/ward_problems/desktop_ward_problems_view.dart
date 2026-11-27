@@ -10,6 +10,7 @@ import 'package:nagarsevak_mobile/presentation/screens/complaints/new_complaint_
 import 'package:nagarsevak_mobile/presentation/screens/complaints/complaint_detail_screen.dart';
 import 'package:nagarsevak_mobile/presentation/screens/ward_problems/ward_problems_report_generator.dart';
 import 'package:nagarsevak_mobile/presentation/widgets/app_dropdown.dart';
+import 'package:nagarsevak_mobile/presentation/widgets/app_load_more_footer.dart';
 
 /// Desktop Ward Problems View matching WardWiseProblem.tsx verbatim:
 /// - Sticky Header: Title + Subtitle + Found Badge + Help + New Problem
@@ -31,9 +32,13 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
   String _selectedArea = 'All';
   String _selectedDate = 'All';
   ComplaintModel? _selectedProblem;
+  int _displayedLimit = 20;
 
   bool _loading = true;
   List<ComplaintModel> _problems = [];
+
+  List<ComplaintModel> get _visibleProblems =>
+      _filteredProblems.take(_displayedLimit).toList();
 
   @override
   void initState() {
@@ -155,6 +160,7 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
     final lang = ref.watch(desktopLanguageProvider);
     final isMr = lang == 'mr';
     final items = _filteredProblems;
+    final visibleItems = _visibleProblems;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -179,9 +185,22 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
             else if (items.isEmpty)
               _buildEmptyState(lang)
             else if (_viewMode == 'grid')
-              _build3x3Grid(items, lang)
+              _build3x3Grid(visibleItems, lang)
             else
-              _buildReportTable(items, lang),
+              _buildReportTable(visibleItems, lang),
+
+            // 4. Pagination Load More Footer
+            if (!_loading && items.isNotEmpty)
+              AppLoadMoreFooter(
+                currentCount: visibleItems.length,
+                totalCount: items.length,
+                pageSize: 20,
+                onLoadMore: () {
+                  setState(() => _displayedLimit += 20);
+                },
+                label: lang == 'mr' ? 'समस्या' : (lang == 'hi' ? 'समस्याएं' : 'problems'),
+                isMarathi: isMr,
+              ),
           ],
         ),
       ),
@@ -310,7 +329,10 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
               Expanded(
                 flex: 2,
                 child: TextField(
-                  onChanged: (v) => setState(() => _searchQuery = v),
+                  onChanged: (v) => setState(() {
+                    _searchQuery = v;
+                    _displayedLimit = 20;
+                  }),
                   decoration: InputDecoration(
                     hintText: lang == 'mr'
                         ? 'समस्या, वर्णन शोधा...'
@@ -342,7 +364,12 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
                     );
                   }).toList(),
                   onChanged: (val) {
-                    if (val != null) setState(() => _selectedArea = val);
+                    if (val != null) {
+                      setState(() {
+                        _selectedArea = val;
+                        _displayedLimit = 20;
+                      });
+                    }
                   },
                 ),
               ),
@@ -367,7 +394,12 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
                     );
                   }).toList(),
                   onChanged: (val) {
-                    if (val != null) setState(() => _selectedDate = val);
+                    if (val != null) {
+                      setState(() {
+                        _selectedDate = val;
+                        _displayedLimit = 20;
+                      });
+                    }
                   },
                 ),
               ),
@@ -456,7 +488,10 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: InkWell(
-        onTap: () => setState(() => _filterStatus = statusKey),
+        onTap: () => setState(() {
+          _filterStatus = statusKey;
+          _displayedLimit = 20;
+        }),
         borderRadius: BorderRadius.circular(20),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),

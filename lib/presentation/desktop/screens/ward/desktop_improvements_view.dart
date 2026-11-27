@@ -10,6 +10,7 @@ import '../../../../data/repositories/improvements_repository.dart';
 import '../../../screens/ward_improvements/improvement_detail_screen.dart';
 import '../../../screens/ward_improvements/improvement_report_generator.dart';
 import '../../../widgets/app_dropdown.dart';
+import '../../../widgets/app_load_more_footer.dart';
 
 class DesktopImprovementsView extends ConsumerStatefulWidget {
   const DesktopImprovementsView({super.key});
@@ -26,6 +27,10 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
   String _selectedDate = 'All';
   String _statusFilter = 'All'; // 'All' | 'Pending' | 'Planned' | 'In Progress' | 'Complete'
   String _viewMode = 'grid'; // 'grid' | 'table'
+  int _displayedLimit = 20;
+
+  List<ImprovementModel> get _visibleImprovements =>
+      _filteredImprovements.take(_displayedLimit).toList();
 
   List<String> get _uniqueAreas {
     final areas = _improvements
@@ -352,6 +357,7 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
   @override
   Widget build(BuildContext context) {
     final filtered = _filteredImprovements;
+    final visible = _visibleImprovements;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
@@ -374,9 +380,21 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
           if (_loading)
             _buildLoadingGrid()
           else if (_viewMode == 'table')
-            _buildReportTable(filtered)
+            _buildReportTable(visible)
           else
-            _buildCardGrid(filtered),
+            _buildCardGrid(visible),
+
+          if (!_loading && filtered.isNotEmpty)
+            AppLoadMoreFooter(
+              currentCount: visible.length,
+              totalCount: filtered.length,
+              pageSize: 20,
+              onLoadMore: () {
+                setState(() => _displayedLimit += 20);
+              },
+              label: 'सुधारणा',
+              isMarathi: true,
+            ),
         ],
       ),
     );
@@ -504,7 +522,10 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
               border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
             child: TextField(
-              onChanged: (val) => setState(() => _searchTerm = val),
+              onChanged: (val) => setState(() {
+                _searchTerm = val;
+                _displayedLimit = 20;
+              }),
               decoration: const InputDecoration(
                 hintText: 'Search improvement, location, topic...',
                 hintStyle: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
@@ -533,7 +554,12 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
               );
             }).toList(),
             onChanged: (val) {
-              if (val != null) setState(() => _selectedArea = val);
+              if (val != null) {
+                setState(() {
+                  _selectedArea = val;
+                  _displayedLimit = 20;
+                });
+              }
             },
           ),
         ),
@@ -555,7 +581,12 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
               );
             }).toList(),
             onChanged: (val) {
-              if (val != null) setState(() => _selectedDate = val);
+              if (val != null) {
+                setState(() {
+                  _selectedDate = val;
+                  _displayedLimit = 20;
+                });
+              }
             },
           ),
         ),
@@ -585,7 +616,10 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
             final count = _countForStatus(key);
 
             return InkWell(
-              onTap: () => setState(() => _statusFilter = key),
+              onTap: () => setState(() {
+                _statusFilter = key;
+                _displayedLimit = 20;
+              }),
               borderRadius: BorderRadius.circular(100),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

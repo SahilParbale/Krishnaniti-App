@@ -10,6 +10,7 @@ import '../../../../data/repositories/diary_repository.dart';
 import '../../common/desktop_modal_dialog.dart';
 import '../../../screens/gb_register/gb_register_report_generator.dart';
 import '../../../widgets/app_dropdown.dart';
+import '../../../widgets/app_load_more_footer.dart';
 
 class DesktopGbRegisterView extends ConsumerStatefulWidget {
   const DesktopGbRegisterView({super.key});
@@ -26,7 +27,10 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
   String _meetingType = 'All'; // 'All' | 'GB' | 'Standing Committee' | 'Ward Committee' | 'Special GB' | 'Other'
   String _statusFilter = 'All'; // 'All' | 'Raised' | 'In Discussion' | 'Resolved' | 'Action Taken'
   String _viewMode = 'grid'; // 'grid' | 'table'
-  String? _expandedId;
+  int _displayedLimit = 20;
+
+  List<DiaryEntryModel> get _visibleEntries =>
+      _filteredEntries.take(_displayedLimit).toList();
 
   @override
   void initState() {
@@ -395,6 +399,7 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
   @override
   Widget build(BuildContext context) {
     final filtered = _filteredEntries;
+    final visible = _visibleEntries;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
@@ -417,9 +422,21 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
           if (_loading)
             _buildLoadingGrid()
           else if (_viewMode == 'table')
-            _buildReportTable(filtered)
+            _buildReportTable(visible)
           else
-            _buildCardGrid(filtered),
+            _buildCardGrid(visible),
+
+          if (!_loading && filtered.isNotEmpty)
+            AppLoadMoreFooter(
+              currentCount: visible.length,
+              totalCount: filtered.length,
+              pageSize: 20,
+              onLoadMore: () {
+                setState(() => _displayedLimit += 20);
+              },
+              label: 'नोंदी',
+              isMarathi: true,
+            ),
         ],
       ),
     );
@@ -580,7 +597,10 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
               border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
             child: TextField(
-              onChanged: (val) => setState(() => _searchTerm = val),
+              onChanged: (val) => setState(() {
+                _searchTerm = val;
+                _displayedLimit = 20;
+              }),
               decoration: const InputDecoration(
                 hintText: 'Search subject, department or decision...',
                 hintStyle: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
@@ -603,7 +623,10 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
               border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
             child: TextField(
-              onChanged: (val) => setState(() => _areaSearch = val),
+              onChanged: (val) => setState(() {
+                _areaSearch = val;
+                _displayedLimit = 20;
+              }),
               decoration: InputDecoration(
                 hintText: 'Search Area...',
                 hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
@@ -637,7 +660,12 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
               DropdownMenuItem(value: 'Other', child: Text('Other')),
             ],
             onChanged: (val) {
-              if (val != null) setState(() => _meetingType = val);
+              if (val != null) {
+                setState(() {
+                  _meetingType = val;
+                  _displayedLimit = 20;
+                });
+              }
             },
           ),
         ),
@@ -666,7 +694,10 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
             final isSelected = _statusFilter == key;
 
             return InkWell(
-              onTap: () => setState(() => _statusFilter = key),
+              onTap: () => setState(() {
+                _statusFilter = key;
+                _displayedLimit = 20;
+              }),
               borderRadius: BorderRadius.circular(100),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),

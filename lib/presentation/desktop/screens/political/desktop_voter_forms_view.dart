@@ -9,6 +9,7 @@ import '../../../../data/models/voter_application_model.dart';
 import '../../../../data/repositories/voter_applications_repository.dart';
 import '../../../screens/voter_forms/voter_forms_report_generator.dart';
 import '../../../widgets/app_dropdown.dart';
+import '../../../widgets/app_load_more_footer.dart';
 
 class DesktopVoterFormsView extends ConsumerStatefulWidget {
   const DesktopVoterFormsView({super.key});
@@ -23,6 +24,10 @@ class _DesktopVoterFormsViewState extends ConsumerState<DesktopVoterFormsView> {
   String _searchTerm = '';
   String _selectedStatus = 'All';
   String _selectedFormType = 'All';
+  int _displayedLimit = 20;
+
+  List<VoterApplicationModel> get _visibleApplications =>
+      _applications.take(_displayedLimit).toList();
 
   @override
   void initState() {
@@ -270,7 +275,19 @@ class _DesktopVoterFormsViewState extends ConsumerState<DesktopVoterFormsView> {
           if (_loading)
             _buildLoadingState()
           else
-            _buildApplicationsTable(),
+            _buildApplicationsTable(_visibleApplications),
+
+          if (!_loading && _applications.isNotEmpty)
+            AppLoadMoreFooter(
+              currentCount: _visibleApplications.length,
+              totalCount: _applications.length,
+              pageSize: 20,
+              onLoadMore: () {
+                setState(() => _displayedLimit += 20);
+              },
+              label: 'अर्ज',
+              isMarathi: true,
+            ),
         ],
       ),
     );
@@ -459,6 +476,7 @@ class _DesktopVoterFormsViewState extends ConsumerState<DesktopVoterFormsView> {
             ),
             child: TextField(
               onChanged: (val) {
+                _displayedLimit = 20;
                 _searchTerm = val;
                 _fetchApplications();
               },
@@ -491,7 +509,10 @@ class _DesktopVoterFormsViewState extends ConsumerState<DesktopVoterFormsView> {
           ],
           onChanged: (val) {
             if (val != null) {
-              setState(() => _selectedStatus = val);
+              setState(() {
+                _displayedLimit = 20;
+                _selectedStatus = val;
+              });
               _fetchApplications();
             }
           },
@@ -500,8 +521,8 @@ class _DesktopVoterFormsViewState extends ConsumerState<DesktopVoterFormsView> {
     );
   }
 
-  Widget _buildApplicationsTable() {
-    if (_applications.isEmpty) {
+  Widget _buildApplicationsTable(List<VoterApplicationModel> items) {
+    if (items.isEmpty) {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.all(48),
@@ -541,7 +562,7 @@ class _DesktopVoterFormsViewState extends ConsumerState<DesktopVoterFormsView> {
             const DataColumn(label: Text('Date', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
             const DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
           ],
-          rows: _applications.map((app) {
+          rows: items.map((app) {
             final formattedDate = DateFormat('dd/MM/yyyy').format(app.createdAt);
 
             return DataRow(

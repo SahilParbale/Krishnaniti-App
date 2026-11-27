@@ -8,6 +8,7 @@ import '../../../../data/models/karyakarta_work_model.dart';
 import '../../../../data/repositories/karyakarta_work_repository.dart';
 import '../../../screens/karyakarta_work/karyakarta_work_report_generator.dart';
 import '../../../widgets/app_dropdown.dart';
+import '../../../widgets/app_load_more_footer.dart';
 
 class DesktopKaryakartaWorkView extends ConsumerStatefulWidget {
   const DesktopKaryakartaWorkView({super.key});
@@ -22,6 +23,10 @@ class _DesktopKaryakartaWorkViewState extends ConsumerState<DesktopKaryakartaWor
   KaryakartaWorkloadSummary _summary = KaryakartaWorkloadSummary.empty();
   String _activeTab = 'Office'; // 'Office', 'Cooperative', 'Party'
   String _searchTerm = '';
+  int _displayedLimit = 20;
+
+  List<KaryakartaStaffWorkload> get _visibleWorkloads =>
+      _workloads.take(_displayedLimit).toList();
 
   @override
   void initState() {
@@ -208,7 +213,19 @@ class _DesktopKaryakartaWorkViewState extends ConsumerState<DesktopKaryakartaWor
           if (_loading)
             _buildLoadingGrid()
           else
-            _buildWorkloadGrid(),
+            _buildWorkloadGrid(_visibleWorkloads),
+
+          if (!_loading && _workloads.isNotEmpty)
+            AppLoadMoreFooter(
+              currentCount: _visibleWorkloads.length,
+              totalCount: _workloads.length,
+              pageSize: 20,
+              onLoadMore: () {
+                setState(() => _displayedLimit += 20);
+              },
+              label: 'कार्यकर्ते',
+              isMarathi: true,
+            ),
         ],
       ),
     );
@@ -335,7 +352,10 @@ class _DesktopKaryakartaWorkViewState extends ConsumerState<DesktopKaryakartaWor
             padding: const EdgeInsets.only(right: 10),
             child: InkWell(
               onTap: () {
-                setState(() => _activeTab = key);
+                setState(() {
+                  _activeTab = key;
+                  _displayedLimit = 20;
+                });
                 _fetchWorkloads();
               },
               borderRadius: BorderRadius.circular(10),
@@ -364,7 +384,10 @@ class _DesktopKaryakartaWorkViewState extends ConsumerState<DesktopKaryakartaWor
             decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFE2E8F0))),
             child: TextField(
               onChanged: (val) {
-                _searchTerm = val;
+                setState(() {
+                  _searchTerm = val;
+                  _displayedLimit = 20;
+                });
                 _fetchWorkloads();
               },
               decoration: const InputDecoration(
@@ -381,8 +404,8 @@ class _DesktopKaryakartaWorkViewState extends ConsumerState<DesktopKaryakartaWor
     );
   }
 
-  Widget _buildWorkloadGrid() {
-    if (_workloads.isEmpty) {
+  Widget _buildWorkloadGrid(List<KaryakartaStaffWorkload> workloads) {
+    if (workloads.isEmpty) {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.all(48),
@@ -408,7 +431,7 @@ class _DesktopKaryakartaWorkViewState extends ConsumerState<DesktopKaryakartaWor
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          itemCount: _workloads.length,
+          itemCount: workloads.length,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
             crossAxisSpacing: 20,
@@ -416,7 +439,7 @@ class _DesktopKaryakartaWorkViewState extends ConsumerState<DesktopKaryakartaWor
             mainAxisExtent: 260,
           ),
           itemBuilder: (context, index) {
-            final w = _workloads[index];
+            final w = workloads[index];
             final staff = w.staff;
 
             return Container(
