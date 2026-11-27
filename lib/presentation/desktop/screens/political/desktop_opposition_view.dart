@@ -1,4 +1,6 @@
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/localization/app_translations.dart';
+import '../../../providers/language_provider.dart';
 import '../../common/desktop_modal_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +8,7 @@ import '../../../../data/models/opposition_model.dart';
 import '../../../../data/repositories/opposition_repository.dart';
 import '../../../screens/opposition/opposition_report_generator.dart';
 import '../../../widgets/app_dropdown.dart';
+import '../../../widgets/app_load_more_footer.dart';
 
 class DesktopOppositionView extends ConsumerStatefulWidget {
   const DesktopOppositionView({super.key});
@@ -21,6 +24,10 @@ class _DesktopOppositionViewState extends ConsumerState<DesktopOppositionView> {
   String _partyFilter = 'All';
   String _typeFilter = 'all'; // 'all', 'candidates', 'workers'
   String _areaFilter = 'All';
+  int _displayedLimit = 20;
+
+  List<OppositionMemberModel> get _visibleMembers =>
+      _filteredMembers.take(_displayedLimit).toList();
 
   List<String> get _uniqueAreas {
     final areas = _members
@@ -325,6 +332,7 @@ class _DesktopOppositionViewState extends ConsumerState<DesktopOppositionView> {
   @override
   Widget build(BuildContext context) {
     final filtered = _filteredMembers;
+    final visible = _visibleMembers;
     final candidateCount = _members.where((m) => m.isCandidate).length;
     final workerCount = _members.length - candidateCount;
 
@@ -349,7 +357,19 @@ class _DesktopOppositionViewState extends ConsumerState<DesktopOppositionView> {
           if (_loading)
             _buildLoadingGrid()
           else
-            _buildCardGrid(filtered),
+            _buildCardGrid(visible),
+
+          if (!_loading && filtered.isNotEmpty)
+            AppLoadMoreFooter(
+              currentCount: visible.length,
+              totalCount: filtered.length,
+              pageSize: 20,
+              onLoadMore: () {
+                setState(() => _displayedLimit += 20);
+              },
+              label: 'विरोधी सदस्य',
+              isMarathi: true,
+            ),
         ],
       ),
     );
@@ -402,7 +422,10 @@ class _DesktopOppositionViewState extends ConsumerState<DesktopOppositionView> {
                 );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
-              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+              label: Text(
+                AppTranslations.getDownloadReport(ref.watch(desktopLanguageProvider)),
+                style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
+              ),
               style: OutlinedButton.styleFrom(
                 backgroundColor: const Color(0xFFF0F9FF),
                 side: const BorderSide(color: Color(0xFFBAE6FD)),
@@ -506,7 +529,10 @@ class _DesktopOppositionViewState extends ConsumerState<DesktopOppositionView> {
               border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
             child: TextField(
-              onChanged: (val) => setState(() => _searchTerm = val),
+              onChanged: (val) => setState(() {
+                _searchTerm = val;
+                _displayedLimit = 20;
+              }),
               decoration: const InputDecoration(
                 hintText: 'Search leader by name, party, area...',
                 hintStyle: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
@@ -534,7 +560,12 @@ class _DesktopOppositionViewState extends ConsumerState<DesktopOppositionView> {
               DropdownMenuItem(value: 'workers', child: Text('Opposition Worker')),
             ],
             onChanged: (val) {
-              if (val != null) setState(() => _typeFilter = val);
+              if (val != null) {
+                setState(() {
+                  _typeFilter = val;
+                  _displayedLimit = 20;
+                });
+              }
             },
           ),
         ),
@@ -559,7 +590,12 @@ class _DesktopOppositionViewState extends ConsumerState<DesktopOppositionView> {
               DropdownMenuItem(value: 'Independent', child: Text('Independent')),
             ],
             onChanged: (val) {
-              if (val != null) setState(() => _partyFilter = val);
+              if (val != null) {
+                setState(() {
+                  _partyFilter = val;
+                  _displayedLimit = 20;
+                });
+              }
             },
           ),
         ),
@@ -581,7 +617,12 @@ class _DesktopOppositionViewState extends ConsumerState<DesktopOppositionView> {
               );
             }).toList(),
             onChanged: (val) {
-              if (val != null) setState(() => _areaFilter = val);
+              if (val != null) {
+                setState(() {
+                  _areaFilter = val;
+                  _displayedLimit = 20;
+                });
+              }
             },
           ),
         ),

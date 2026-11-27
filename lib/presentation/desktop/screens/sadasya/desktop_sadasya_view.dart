@@ -1,4 +1,6 @@
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/localization/app_translations.dart';
+import '../../shell/desktop_sidebar.dart';
 import '../../common/desktop_modal_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +8,7 @@ import '../../../../data/models/sadasya_model.dart';
 import '../../../../data/repositories/sadasya_repository.dart';
 import '../../../screens/sadasya/sadasya_report_generator.dart';
 import '../../../widgets/app_dropdown.dart';
+import '../../../widgets/app_load_more_footer.dart';
 
 class DesktopSadasyaView extends ConsumerStatefulWidget {
   const DesktopSadasyaView({super.key});
@@ -23,6 +26,10 @@ class _DesktopSadasyaViewState extends ConsumerState<DesktopSadasyaView> {
   String _voterFilter = 'all'; // 'all', 'voter', 'non-voter'
   String _viewMode = 'grid'; // 'grid' | 'table'
   List<String> _availableAreas = [];
+  int _displayedLimit = 20;
+
+  List<SadasyaModel> get _visibleSadasyas =>
+      _filteredSadasyas.take(_displayedLimit).toList();
 
   @override
   void initState() {
@@ -336,6 +343,7 @@ class _DesktopSadasyaViewState extends ConsumerState<DesktopSadasyaView> {
   @override
   Widget build(BuildContext context) {
     final filtered = _filteredSadasyas;
+    final visible = _visibleSadasyas;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
@@ -354,9 +362,21 @@ class _DesktopSadasyaViewState extends ConsumerState<DesktopSadasyaView> {
           if (_loading)
             _buildLoadingGrid()
           else if (_viewMode == 'table')
-            _buildReportTable(filtered)
+            _buildReportTable(visible)
           else
-            _buildCardGrid(filtered),
+            _buildCardGrid(visible),
+
+          if (!_loading && filtered.isNotEmpty)
+            AppLoadMoreFooter(
+              currentCount: visible.length,
+              totalCount: filtered.length,
+              pageSize: 20,
+              onLoadMore: () {
+                setState(() => _displayedLimit += 20);
+              },
+              label: 'सदस्य',
+              isMarathi: true,
+            ),
         ],
       ),
     );
@@ -406,7 +426,10 @@ class _DesktopSadasyaViewState extends ConsumerState<DesktopSadasyaView> {
                 );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
-              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+              label: Text(
+                AppTranslations.getDownloadReport(ref.watch(desktopLanguageProvider)),
+                style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
+              ),
               style: OutlinedButton.styleFrom(
                 backgroundColor: const Color(0xFFF0F9FF),
                 side: const BorderSide(color: Color(0xFFBAE6FD)),
@@ -491,7 +514,10 @@ class _DesktopSadasyaViewState extends ConsumerState<DesktopSadasyaView> {
           Expanded(
             flex: 3,
             child: TextField(
-              onChanged: (val) => setState(() => _searchTerm = val),
+              onChanged: (val) => setState(() {
+                _searchTerm = val;
+                _displayedLimit = 20;
+              }),
               decoration: const InputDecoration(
                 hintText: 'Search member by name, mobile, EPIC...',
                 hintStyle: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
@@ -515,7 +541,12 @@ class _DesktopSadasyaViewState extends ConsumerState<DesktopSadasyaView> {
               return DropdownMenuItem(value: a, child: Text(a == 'All' ? 'All Areas' : a));
             }).toList(),
             onChanged: (val) {
-              if (val != null) setState(() => _areaFilter = val);
+              if (val != null) {
+                setState(() {
+                  _areaFilter = val;
+                  _displayedLimit = 20;
+                });
+              }
             },
           ),
           const SizedBox(width: 12),
@@ -531,7 +562,10 @@ class _DesktopSadasyaViewState extends ConsumerState<DesktopSadasyaView> {
                 border: Border.all(color: const Color(0xFFE2E8F0)),
               ),
               child: TextField(
-                onChanged: (val) => setState(() => _addressSearch = val),
+                onChanged: (val) => setState(() {
+                  _addressSearch = val;
+                  _displayedLimit = 20;
+                }),
                 decoration: const InputDecoration(
                   hintText: 'Search Address...',
                   hintStyle: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
@@ -558,7 +592,12 @@ class _DesktopSadasyaViewState extends ConsumerState<DesktopSadasyaView> {
               DropdownMenuItem(value: 'non-voter', child: Text('Non-Voters')),
             ],
             onChanged: (val) {
-              if (val != null) setState(() => _voterFilter = val);
+              if (val != null) {
+                setState(() {
+                  _voterFilter = val;
+                  _displayedLimit = 20;
+                });
+              }
             },
           ),
           const SizedBox(width: 14),

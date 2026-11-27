@@ -199,13 +199,17 @@ class _AppTranslatedTextState extends ConsumerState<AppTranslatedText> {
     }
 
     // Direct synchronous fallback if already in dictionary for instant rendering
-    final currentLang = widget.targetLanguage ?? ref.watch(appLanguageProvider);
-    final instantHit = currentLang == 'en'
+    final String currentLang = widget.targetLanguage ?? ref.watch(appLanguageProvider);
+    final String instantHit = currentLang == 'en'
         ? widget.text
         : (AppTranslations.tr(widget.text, lang: currentLang) ?? _displayedText);
 
+    final String finalText = currentLang == 'en'
+        ? instantHit
+        : AppTranslations.formatDigits(instantHit, currentLang);
+
     return Text(
-      instantHit,
+      finalText,
       style: widget.style,
       textAlign: widget.textAlign,
       maxLines: widget.maxLines,
@@ -214,8 +218,15 @@ class _AppTranslatedTextState extends ConsumerState<AppTranslatedText> {
   }
 }
 
-/// Helpful String extension for synchronous or quick translations
+/// Helpful String extension for synchronous or quick translations and Devanagari numerals
 extension AppTranslateStringX on String {
   String tr(WidgetRef ref) => AppTranslations.translateDirect(this, lang: ref.watch(appLanguageProvider));
   String trLang(String lang) => AppTranslations.translateDirect(this, lang: lang);
+  String toDev(String lang) => AppTranslations.formatDigits(this, lang);
+  String trDev(String lang) => AppTranslations.formatDigits(AppTranslations.translateDirect(this, lang: lang), lang);
+}
+
+extension AppTranslateNumX on num {
+  String toDev(String lang) => AppTranslations.formatDigits(this, lang);
+  String toDevanagari(String lang) => AppTranslations.formatDigits(this, lang);
 }

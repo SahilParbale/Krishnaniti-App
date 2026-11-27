@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/localization/app_translations.dart';
+import '../../../providers/language_provider.dart';
 import '../../../../data/models/voter_model.dart';
 import '../../../../data/models/whatsapp_broadcast_model.dart';
 import '../../../../data/repositories/sms_repository.dart';
 import '../../shell/desktop_sidebar.dart';
 import '../../../screens/voice/communication_history_report_generator.dart';
 import '../../../widgets/app_dropdown.dart';
+import '../../../widgets/app_load_more_footer.dart';
 
 class DesktopAiVoiceView extends ConsumerStatefulWidget {
   const DesktopAiVoiceView({super.key});
@@ -27,6 +30,9 @@ class _DesktopAiVoiceViewState extends ConsumerState<DesktopAiVoiceView> {
   bool _isLoading = false;
   bool _isBroadcasting = false;
   List<VoterModel> _voters = [];
+  int _displayedLimit = 20;
+  List<VoterModel> get _visibleVoters =>
+      _voters.take(_displayedLimit).toList();
 
   @override
   void initState() {
@@ -43,7 +49,10 @@ class _DesktopAiVoiceViewState extends ConsumerState<DesktopAiVoiceView> {
   }
 
   Future<void> _loadVoters() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _displayedLimit = 20;
+      _isLoading = true;
+    });
     try {
       final repo = ref.read(smsRepoProvider);
       final voters = await repo.getVotersWithMobile(
@@ -181,7 +190,10 @@ class _DesktopAiVoiceViewState extends ConsumerState<DesktopAiVoiceView> {
                     );
                   },
                   icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
-                  label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+                  label: Text(
+                    AppTranslations.getDownloadReport(ref.watch(desktopLanguageProvider)),
+                    style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
+                  ),
                   style: OutlinedButton.styleFrom(
                     backgroundColor: const Color(0xFFF0F9FF),
                     side: const BorderSide(color: Color(0xFFBAE6FD)),
@@ -318,57 +330,73 @@ class _DesktopAiVoiceViewState extends ConsumerState<DesktopAiVoiceView> {
                                     style: const TextStyle(color: AppColors.slate400),
                                   ),
                                 )
-                              : ListView.separated(
-                                  padding: const EdgeInsets.all(12),
-                                  itemCount: _voters.length,
-                                  separatorBuilder: (_, __) => const SizedBox(height: 8),
-                                  itemBuilder: (ctx, i) {
-                                    final v = _voters[i];
-                                    final isSelected = _selectedVoterIds.contains(v.id);
-                                    return InkWell(
-                                      onTap: () => _toggleSelectVoter(v.id),
-                                      borderRadius: BorderRadius.circular(10),
-                                      child: Container(
+                              : Column(
+                                  children: [
+                                    Expanded(
+                                      child: ListView.separated(
                                         padding: const EdgeInsets.all(12),
-                                        decoration: BoxDecoration(
-                                          color: isSelected ? AppColors.brand50 : Colors.white,
-                                          borderRadius: BorderRadius.circular(10),
-                                          border: Border.all(
-                                            color: isSelected ? AppColors.brand600 : AppColors.slate200,
-                                            width: isSelected ? 1.5 : 1,
-                                          ),
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              isSelected ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded,
-                                              color: isSelected ? AppColors.brand600 : AppColors.slate400,
-                                              size: 20,
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                        itemCount: _visibleVoters.length,
+                                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                                        itemBuilder: (ctx, i) {
+                                          final v = _visibleVoters[i];
+                                          final isSelected = _selectedVoterIds.contains(v.id);
+                                          return InkWell(
+                                            onTap: () => _toggleSelectVoter(v.id),
+                                            borderRadius: BorderRadius.circular(10),
+                                            child: Container(
+                                              padding: const EdgeInsets.all(12),
+                                              decoration: BoxDecoration(
+                                                color: isSelected ? AppColors.brand50 : Colors.white,
+                                                borderRadius: BorderRadius.circular(10),
+                                                border: Border.all(
+                                                  color: isSelected ? AppColors.brand600 : AppColors.slate200,
+                                                  width: isSelected ? 1.5 : 1,
+                                                ),
+                                              ),
+                                              child: Row(
                                                 children: [
-                                                  Text(
-                                                    isMr && v.nameMarathi.isNotEmpty
-                                                        ? v.nameMarathi
-                                                        : v.nameEnglish,
-                                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.slate800),
+                                                  Icon(
+                                                    isSelected ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded,
+                                                    color: isSelected ? AppColors.brand600 : AppColors.slate400,
+                                                    size: 20,
                                                   ),
-                                                  const SizedBox(height: 2),
-                                                  Text(
-                                                    '${v.mobile ?? '-'}  •  ${v.address}',
-                                                    style: const TextStyle(fontSize: 12, color: AppColors.slate500),
+                                                  const SizedBox(width: 12),
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                        Text(
+                                                          isMr && v.nameMarathi.isNotEmpty
+                                                              ? v.nameMarathi
+                                                              : v.nameEnglish,
+                                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.slate800),
+                                                        ),
+                                                        const SizedBox(height: 2),
+                                                        Text(
+                                                          '${v.mobile ?? '-'}  •  ${v.address}',
+                                                          style: const TextStyle(fontSize: 12, color: AppColors.slate500),
+                                                        ),
+                                                      ],
+                                                    ),
                                                   ),
                                                 ],
                                               ),
                                             ),
-                                          ],
-                                        ),
+                                          );
+                                        },
                                       ),
-                                    );
-                                  },
+                                    ),
+                                    AppLoadMoreFooter(
+                                      currentCount: _visibleVoters.length,
+                                      totalCount: _voters.length,
+                                      pageSize: 20,
+                                      onLoadMore: () {
+                                        setState(() => _displayedLimit += 20);
+                                      },
+                                      label: 'मतदार',
+                                      isMarathi: isMr,
+                                    ),
+                                  ],
                                 ),
                     ),
                   ),

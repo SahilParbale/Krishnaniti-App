@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:nagarsevak_mobile/core/localization/app_translations.dart';
+import 'package:nagarsevak_mobile/presentation/desktop/shell/desktop_sidebar.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../data/models/social_post_model.dart';
 import '../../../../data/repositories/social_analytics_repository.dart';
 import '../../../screens/social/social_analytics_report_generator.dart';
+import '../../../../presentation/widgets/app_load_more_footer.dart';
 
 class DesktopSocialAnalyticsView extends ConsumerStatefulWidget {
   const DesktopSocialAnalyticsView({super.key});
@@ -15,6 +18,7 @@ class DesktopSocialAnalyticsView extends ConsumerStatefulWidget {
 class _DesktopSocialAnalyticsViewState extends ConsumerState<DesktopSocialAnalyticsView> {
   bool _loading = true;
   List<SocialPostModel> _posts = [];
+  int _displayedLimit = 20;
   String _searchTerm = '';
   String _platformFilter = 'All'; // 'All' | 'Facebook' | 'Instagram'
 
@@ -81,6 +85,7 @@ class _DesktopSocialAnalyticsViewState extends ConsumerState<DesktopSocialAnalyt
   @override
   Widget build(BuildContext context) {
     final filtered = _filteredPosts;
+    final visible = filtered.take(_displayedLimit).toList();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
@@ -106,8 +111,20 @@ class _DesktopSocialAnalyticsViewState extends ConsumerState<DesktopSocialAnalyt
           // Posts Feed Grid
           if (_loading)
             _buildLoadingGrid()
-          else
-            _buildPostGrid(filtered),
+          else ...[
+            _buildPostGrid(visible),
+            if (filtered.isNotEmpty)
+              AppLoadMoreFooter(
+                currentCount: visible.length,
+                totalCount: filtered.length,
+                pageSize: 20,
+                onLoadMore: () {
+                  setState(() => _displayedLimit += 20);
+                },
+                label: 'पोस्ट',
+                isMarathi: true,
+              ),
+          ],
         ],
       ),
     );
@@ -155,7 +172,10 @@ class _DesktopSocialAnalyticsViewState extends ConsumerState<DesktopSocialAnalyt
                 );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
-              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+              label: Text(
+                AppTranslations.getDownloadReport(ref.watch(desktopLanguageProvider)),
+                style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
+              ),
               style: OutlinedButton.styleFrom(
                 backgroundColor: const Color(0xFFF0F9FF),
                 side: const BorderSide(color: Color(0xFFBAE6FD)),
@@ -358,7 +378,10 @@ class _DesktopSocialAnalyticsViewState extends ConsumerState<DesktopSocialAnalyt
               border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
             child: TextField(
-              onChanged: (val) => setState(() => _searchTerm = val),
+              onChanged: (val) => setState(() {
+                _displayedLimit = 20;
+                _searchTerm = val;
+              }),
               decoration: const InputDecoration(
                 hintText: 'Search social media post content...',
                 hintStyle: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
@@ -378,7 +401,10 @@ class _DesktopSocialAnalyticsViewState extends ConsumerState<DesktopSocialAnalyt
             return Padding(
               padding: const EdgeInsets.only(right: 8),
               child: InkWell(
-                onTap: () => setState(() => _platformFilter = platform),
+                onTap: () => setState(() {
+                  _displayedLimit = 20;
+                  _platformFilter = platform;
+                }),
                 borderRadius: BorderRadius.circular(8),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

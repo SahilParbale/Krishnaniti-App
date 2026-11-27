@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../data/models/newspaper_clipping_model.dart';
 import '../../../data/repositories/newspaper_clippings_repository.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../providers/language_provider.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
@@ -554,7 +556,8 @@ class _NewspaperClippingsScreenState
 
   @override
   Widget build(BuildContext context) {
-    final isMarathi = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
+    final isMarathi = lang == 'mr';
     final filtered = _filteredClippings;
     final totalCount = _allClippings.length;
     final positiveCount = _allClippings.where((c) => c.isPositive).length;
@@ -586,12 +589,12 @@ class _NewspaperClippingsScreenState
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
-            children: const [
+            children: [
               Text(
-                'Newspaper Clipping',
+                AppTranslations.getNavTitle('newspaper_clippings', lang),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 16.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
@@ -599,10 +602,14 @@ class _NewspaperClippingsScreenState
                 ),
               ),
               Text(
-                'Print news media coverage archive and press releases',
+                lang == 'mr'
+                    ? 'मुद्रित बातम्या कव्हरेज आणि प्रेस नोट संग्रहण'
+                    : (lang == 'hi'
+                        ? 'मुद्रित समाचार कवरेज और प्रेस नोट संग्रह'
+                        : 'Print news media coverage archive and press releases'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w400,
                   color: Color(0xFFE0F2FE),
@@ -627,12 +634,13 @@ class _NewspaperClippingsScreenState
                       positiveCount: positiveCount,
                       negativeCount: negativeCount,
                       totalCount: totalCount,
+                      lang: lang,
                     ),
                     const SizedBox(height: 14),
 
 
                     // 3) SEARCH & FILTER BAR
-                    _buildFiltersBar(),
+                    _buildFiltersBar(lang),
                     const SizedBox(height: 12),
 
                     // 4) RESULTS BAR
@@ -641,7 +649,11 @@ class _NewspaperClippingsScreenState
                       children: [
                         Expanded(
                           child: Text(
-                            'Showing ${filtered.length} of $totalCount clippings',
+                            lang == 'mr'
+                                ? 'एकूण ${AppTranslations.formatDigits(totalCount, lang)} पैकी ${AppTranslations.formatDigits(filtered.length, lang)} बातम्या दाखवत आहे'
+                                : (lang == 'hi'
+                                    ? 'कुल ${AppTranslations.formatDigits(totalCount, lang)} में से ${AppTranslations.formatDigits(filtered.length, lang)} समाचार दिखाए जा रहे हैं'
+                                    : 'Showing ${filtered.length} of $totalCount clippings'),
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -661,7 +673,7 @@ class _NewspaperClippingsScreenState
                                   padding: const EdgeInsets.only(right: 6),
                                   child: Row(
                                     children: [
-                                      Text('Date: $_filterDate',
+                                      Text('${lang == 'mr' ? 'दिनांक' : (lang == 'hi' ? 'दिनांक' : 'Date')}: ${AppTranslations.formatDigits(_filterDate, lang)}',
                                           style: const TextStyle(
                                               fontSize: 11,
                                               color: Color(0xFF0284C7),
@@ -713,12 +725,12 @@ class _NewspaperClippingsScreenState
 
                     // 5) DUAL VIEW (GRID CARDS vs REPORT TABLE)
                     if (filtered.isEmpty)
-                      _buildEmptyState()
+                      _buildEmptyState(lang)
                     else ...[
                       if (_viewMode == 'grid')
-                        ..._visibleClippings.map((item) => _buildClippingCard(item))
+                        ..._visibleClippings.map((item) => _buildClippingCard(item, lang))
                       else
-                        _buildTableView(_visibleClippings),
+                        _buildTableView(_visibleClippings, lang),
                       AppLoadMoreFooter(
                         currentCount: _visibleClippings.length,
                         totalCount: filtered.length,
@@ -738,8 +750,10 @@ class _NewspaperClippingsScreenState
           foregroundColor: Colors.white,
           elevation: 3,
           icon: const Icon(Icons.add_photo_alternate_rounded),
-          label: const Text('Add Clipping',
-              style: TextStyle(fontWeight: FontWeight.bold)),
+          label: Text(
+            lang == 'mr' ? 'बातमी जोडा' : (lang == 'hi' ? 'समाचार जोड़ें' : 'Add Clipping'),
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
           onPressed: _showAddClippingModal,
         ),
       ),
@@ -751,6 +765,7 @@ class _NewspaperClippingsScreenState
     required int positiveCount,
     required int negativeCount,
     required int totalCount,
+    required String lang,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -764,28 +779,28 @@ class _NewspaperClippingsScreenState
           Expanded(
             child: _buildTabButton(
               id: 'all',
-              label: 'All News',
-              marathi: 'All News',
+              label: lang == 'mr' ? 'सर्व बातम्या' : (lang == 'hi' ? 'सभी समाचार' : 'All News'),
               count: totalCount,
               activeColor: const Color(0xFF0284C7),
+              lang: lang,
             ),
           ),
           Expanded(
             child: _buildTabButton(
               id: 'positive',
-              label: 'Positive',
-              marathi: 'Positive',
+              label: lang == 'mr' ? 'सकारात्मक' : (lang == 'hi' ? 'सकारात्मक' : 'Positive'),
               count: positiveCount,
               activeColor: const Color(0xFF16A34A),
+              lang: lang,
             ),
           ),
           Expanded(
             child: _buildTabButton(
               id: 'negative',
-              label: 'Negative',
-              marathi: 'Negative',
+              label: lang == 'mr' ? 'नकारात्मक' : (lang == 'hi' ? 'नकारात्मक' : 'Negative'),
               count: negativeCount,
               activeColor: const Color(0xFFDC2626),
+              lang: lang,
             ),
           ),
         ],
@@ -796,7 +811,7 @@ class _NewspaperClippingsScreenState
   Widget _buildTabButton({
     required String id,
     required String label,
-    required String marathi,
+    required String lang,
     required int count,
     required Color activeColor,
   }) {
@@ -814,47 +829,34 @@ class _NewspaperClippingsScreenState
           borderRadius: BorderRadius.circular(8),
         ),
         alignment: Alignment.center,
-        child: Column(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: isSelected ? Colors.white : const Color(0xFF475569),
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? Colors.white.withValues(alpha: 0.25)
-                        : const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    '$count',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: isSelected ? Colors.white : const Color(0xFF475569),
-                    ),
-                  ),
-                ),
-              ],
-            ),
             Text(
-              marathi,
+              label,
               style: TextStyle(
-                fontSize: 9.5,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: isSelected ? Colors.white : const Color(0xFF475569),
+              ),
+            ),
+            const SizedBox(width: 4),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+              decoration: BoxDecoration(
                 color: isSelected
-                    ? Colors.white.withValues(alpha: 0.9)
-                    : const Color(0xFF94A3B8),
+                    ? Colors.white.withValues(alpha: 0.25)
+                    : const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                AppTranslations.formatDigits(count, lang),
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: isSelected ? Colors.white : const Color(0xFF475569),
+                ),
               ),
             ),
           ],
@@ -864,7 +866,7 @@ class _NewspaperClippingsScreenState
   }
 
   // 3) Filters Bar
-  Widget _buildFiltersBar() {
+  Widget _buildFiltersBar(String lang) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -879,7 +881,11 @@ class _NewspaperClippingsScreenState
             controller: _searchCtrl,
             onChanged: (_) => setState(() => _displayedLimit = 20),
             decoration: InputDecoration(
-              hintText: 'Search headline, topic, Sakal, Lokmat...',
+              hintText: lang == 'mr'
+                  ? 'मथळा, विषय, सकाळ, लोकमत शोधा...'
+                  : (lang == 'hi'
+                      ? 'शीर्षक, विषय, सकल, लोकमत खोजें...'
+                      : 'Search headline, topic, Sakal, Lokmat...'),
               hintStyle:
                   const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
               prefixIcon: const Icon(Icons.search_rounded,
@@ -914,11 +920,15 @@ class _NewspaperClippingsScreenState
                           c.newspaper.toLowerCase() == paper.toLowerCase())
                       .length;
 
+              final paperName = paper == 'All'
+                  ? (lang == 'mr' ? 'सर्व' : (lang == 'hi' ? 'सभी' : 'All'))
+                  : paper;
+
               return Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: FilterChip(
                   label: Text(
-                    '$paper ($count)',
+                    '$paperName (${AppTranslations.formatDigits(count, lang)})',
                     style: TextStyle(
                       fontSize: 11.5,
                       fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
@@ -953,7 +963,7 @@ class _NewspaperClippingsScreenState
   }
 
   // 4) Clipping Card
-  Widget _buildClippingCard(NewspaperClippingModel item) {
+  Widget _buildClippingCard(NewspaperClippingModel item, String lang) {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
@@ -1024,7 +1034,11 @@ class _NewspaperClippingsScreenState
                           Border.all(color: item.sentimentColor, width: 0.8),
                     ),
                     child: Text(
-                      item.sentimentLabelMarathi,
+                      lang == 'mr'
+                          ? item.sentimentLabelMarathi
+                          : (lang == 'hi'
+                              ? (item.isPositive ? 'सकारात्मक' : 'नकारात्मक')
+                              : (item.isPositive ? 'Positive' : 'Negative')),
                       style: TextStyle(
                         color: item.sentimentColor,
                         fontSize: 10,
@@ -1045,7 +1059,7 @@ class _NewspaperClippingsScreenState
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      item.date,
+                      AppTranslations.formatDigits(item.date, lang),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 10.5,
@@ -1106,7 +1120,7 @@ class _NewspaperClippingsScreenState
                           const SizedBox(width: 5),
                           Expanded(
                             child: Text(
-                              'Action: ${item.actionTaken!}',
+                              '${lang == 'mr' ? 'कारवाई' : (lang == 'hi' ? 'कार्रवाई' : 'Action')}: ${item.actionTaken!}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
@@ -1137,22 +1151,24 @@ class _NewspaperClippingsScreenState
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    item.pageNumber ?? 'Page 3',
+                    item.pageNumber != null
+                        ? '${lang == 'mr' ? 'पान' : (lang == 'hi' ? 'पृष्ठ' : 'Page')} ${AppTranslations.formatDigits(item.pageNumber!, lang)}'
+                        : '${lang == 'mr' ? 'पान' : (lang == 'hi' ? 'पृष्ठ' : 'Page')} ${AppTranslations.formatDigits('3', lang)}',
                     style: const TextStyle(
                         fontSize: 10.5, color: Color(0xFF64748B)),
                   ),
                   Row(
-                    children: const [
+                    children: [
                       Text(
-                        'View Details',
-                        style: TextStyle(
+                        AppTranslations.getDetails(lang),
+                        style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF0284C7),
                         ),
                       ),
-                      SizedBox(width: 4),
-                      Icon(Icons.chevron_right_rounded,
+                      const SizedBox(width: 4),
+                      const Icon(Icons.chevron_right_rounded,
                           size: 16, color: Color(0xFF0284C7)),
                     ],
                   ),
@@ -1210,7 +1226,7 @@ class _NewspaperClippingsScreenState
   }
 
   // 5) Report Table View
-  Widget _buildTableView(List<NewspaperClippingModel> clippings) {
+  Widget _buildTableView(List<NewspaperClippingModel> clippings, String lang) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1230,18 +1246,18 @@ class _NewspaperClippingsScreenState
               color: Color(0xFF0F172A)),
           dataTextStyle:
               const TextStyle(fontSize: 11, color: Color(0xFF1E293B)),
-          columns: const [
-            DataColumn(label: Text('Date')),
-            DataColumn(label: Text('Newspaper')),
-            DataColumn(label: Text('Headline (Marathi / English)')),
-            DataColumn(label: Text('Type')),
-            DataColumn(label: Text('Action Taken')),
-            DataColumn(label: Text('Action')),
+          columns: [
+            DataColumn(label: Text(lang == 'mr' ? 'दिनांक' : (lang == 'hi' ? 'दिनांक' : 'Date'))),
+            DataColumn(label: Text(lang == 'mr' ? 'वर्तमानपत्र' : (lang == 'hi' ? 'समाचार पत्र' : 'Newspaper'))),
+            DataColumn(label: Text(lang == 'mr' ? 'मथळा' : (lang == 'hi' ? 'शीर्षक' : 'Headline'))),
+            DataColumn(label: Text(lang == 'mr' ? 'प्रकार' : (lang == 'hi' ? 'प्रकार' : 'Type'))),
+            DataColumn(label: Text(lang == 'mr' ? 'कारवाई' : (lang == 'hi' ? 'कार्रवाई' : 'Action Taken'))),
+            DataColumn(label: Text(lang == 'mr' ? 'कृती' : (lang == 'hi' ? 'क्रिया' : 'Action'))),
           ],
           rows: clippings.map((c) {
             return DataRow(
               cells: [
-                DataCell(Text(c.date)),
+                DataCell(Text(AppTranslations.formatDigits(c.date, lang))),
                 DataCell(
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -1283,7 +1299,11 @@ class _NewspaperClippingsScreenState
                           Border.all(color: c.sentimentColor, width: 0.5),
                     ),
                     child: Text(
-                      c.sentimentLabelMarathi,
+                      lang == 'mr'
+                          ? c.sentimentLabelMarathi
+                          : (lang == 'hi'
+                              ? (c.isPositive ? 'सकारात्मक' : 'नकारात्मक')
+                              : (c.isPositive ? 'Positive' : 'Negative')),
                       style: TextStyle(
                         fontSize: 9.5,
                         fontWeight: FontWeight.bold,
@@ -1328,7 +1348,7 @@ class _NewspaperClippingsScreenState
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(String lang) {
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
@@ -1337,20 +1357,28 @@ class _NewspaperClippingsScreenState
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Column(
-        children: const [
-          Icon(Icons.newspaper_outlined, size: 48, color: Color(0xFF94A3B8)),
-          SizedBox(height: 12),
+        children: [
+          const Icon(Icons.newspaper_outlined, size: 48, color: Color(0xFF94A3B8)),
+          const SizedBox(height: 12),
           Text(
-            'No newspaper clippings found',
-            style: TextStyle(
+            lang == 'mr'
+                ? 'कोणतीही वृत्तपत्र कात्रणे सापडली नाहीत'
+                : (lang == 'hi'
+                    ? 'कोई समाचार पत्र कतरन नहीं मिली'
+                    : 'No newspaper clippings found'),
+            style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 14,
                 color: Color(0xFF1E293B)),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Text(
-            'Try switching categories or clearing search filters.',
-            style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+            lang == 'mr'
+                ? 'श्रेणी बदलून पहा किंवा फिल्टर साफ करा.'
+                : (lang == 'hi'
+                    ? 'श्रेणी बदलकर देखें या फ़िल्टर साफ़ करें.'
+                    : 'Try switching categories or clearing search filters.'),
+            style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
           ),
         ],
       ),

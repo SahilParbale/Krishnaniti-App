@@ -12,6 +12,7 @@ import '../../../screens/works/work_detail_screen.dart';
 import '../../../screens/works/work_report_generator.dart';
 import '../../../screens/works/ahwal_report_generator.dart';
 import '../../../widgets/app_dropdown.dart';
+import '../../../widgets/app_load_more_footer.dart';
 
 class DesktopWorkHistoryView extends ConsumerStatefulWidget {
   const DesktopWorkHistoryView({super.key});
@@ -27,14 +28,14 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
   String _areaSearch = '';
   String _dateSearch = '';
   String _viewMode = 'grid'; // 'grid' | 'table'
+  int _displayedLimit = 20;
+
+  List<WorkHistoryModel> get _visibleItems =>
+      _filteredItems.take(_displayedLimit).toList();
 
   // Ahwal Selection mode
   bool _selectionMode = false;
   final Set<String> _selectedWorkIds = <String>{};
-
-  // Dropdown states
-  bool _showAreaDropdown = false;
-  bool _showDateDropdown = false;
 
   @override
   void initState() {
@@ -385,6 +386,7 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
   Widget build(BuildContext context) {
     final lang = ref.watch(appLanguageProvider);
     final filtered = _filteredItems;
+    final visible = _visibleItems;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
@@ -409,9 +411,21 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
           if (_loading)
             _buildLoadingGrid()
           else if (_viewMode == 'table')
-            _buildReportTable(filtered, lang)
+            _buildReportTable(visible, lang)
           else
-            _buildCardGrid(filtered, lang),
+            _buildCardGrid(visible, lang),
+
+          if (!_loading && filtered.isNotEmpty)
+            AppLoadMoreFooter(
+              currentCount: visible.length,
+              totalCount: filtered.length,
+              pageSize: 20,
+              onLoadMore: () {
+                setState(() => _displayedLimit += 20);
+              },
+              label: lang == 'mr' ? 'कामे' : (lang == 'hi' ? 'कार्य' : 'works'),
+              isMarathi: lang == 'mr',
+            ),
         ],
       ),
     );
@@ -675,7 +689,10 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
               border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
             child: TextField(
-              onChanged: (val) => setState(() => _searchTerm = val),
+              onChanged: (val) => setState(() {
+                _searchTerm = val;
+                _displayedLimit = 20;
+              }),
               decoration: InputDecoration(
                 hintText: lang == 'mr'
                     ? 'शीर्षक किंवा पत्त्याने शोधा...'
@@ -718,7 +735,10 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
               );
             }).toList(),
             onChanged: (val) {
-              setState(() => _areaSearch = (val == null || val == 'All') ? '' : val);
+              setState(() {
+                _areaSearch = (val == null || val == 'All') ? '' : val;
+                _displayedLimit = 20;
+              });
             },
           ),
         ),
@@ -750,7 +770,10 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
               );
             }).toList(),
             onChanged: (val) {
-              setState(() => _dateSearch = (val == null || val == 'All') ? '' : val);
+              setState(() {
+                _dateSearch = (val == null || val == 'All') ? '' : val;
+                _displayedLimit = 20;
+              });
             },
           ),
         ),

@@ -16,54 +16,24 @@ class DesktopHeader extends ConsumerWidget {
     required this.onNewComplaint,
   });
 
-  static final Map<String, String> _screenTitles = {
-    'dashboard': 'Dashboard Overview',
-    'complaints': 'Citizen Complaints & Grievances',
-    'letters': 'Letters & Inward/Outward Records',
-    'diary': 'Daily Tasks & Diary Log',
-    'visitors': 'Office Visitor Log',
-    'schemes': 'Government Schemes & Subsidies',
-    'ward_problems': 'Ward Problems & Citizen Requests',
-    'ward_map': 'Ward GIS Map & Geographic Locations',
-    'work_history': 'Ward Development Work History',
-    'improvements': 'Possible Ward Improvements',
-    'provisions': 'Ward Financial Provisions',
-    'gb_register': 'GB Register & General Body Motions',
-    'ward_budget': 'Ward Budget Allocation & Expenses',
-    'gov_office': 'Government Offices & Directory',
-    'social_analytics': 'Social Media Analytics & Reach',
-    'newspaper': 'Newspaper Clippings & Media Coverage',
-    'media_tracking': 'Media Tracking & Sentiment',
-    'ai_content': 'AI Content Studio & Post Creator',
-    'events': 'Events, Programs & Invitations',
-    'gallery': 'Photo Gallery & Visual Archives',
-    'result_analysis': 'Election Results & Booth Analysis',
-    'sadasya': 'Party Members & Cadre Management',
-    'surveys': 'Sample Field Surveys & Feedbacks',
-    'voters': 'Voters Directory & Search',
-    'team': 'My Administrative Team & Staff',
-    'opposition': 'Opposition Activity & Tracker',
-    'ngo_mandals': 'NGO, Mandals & Social Organizations',
-    'housing_societies': 'Housing Societies & Chairpersons',
-    'duplicate_voters': 'Duplicate Voters Cross-Check',
-    'voter_forms': 'Voter Registration Applications',
-    'karyakarta_work': 'Karyakarta Work Assignment & Tracker',
-    'sms': 'Bulk SMS Communication Campaigns',
-    'whatsapp_message': 'WhatsApp Broadcast & Messages',
-    'voice_call': 'Automated Voice Call Campaigns',
-    'ai_voice_call': 'AI Smart Voice Calls & Inquiries',
-    'conference_room': 'Virtual Video Conference Room',
-    'whatsapp_call': 'Direct WhatsApp Calling Service',
-    'analysis_strategy': 'Ward Analytics & Political Strategy',
-    'profile_settings': 'Ward & Profile Configuration',
-  };
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final activeKey = ref.watch(activeScreenProvider);
     final currentLang = ref.watch(appLanguageProvider);
     final activeTitle = AppTranslations.getNavTitle(activeKey, currentLang);
-    final nowFormatted = DateFormat('EEEE, d MMMM yyyy').format(DateTime.now());
+    final now = DateTime.now();
+    final String nowFormatted;
+    if (currentLang == 'mr') {
+      const weekdays = {1: 'सोमवार', 2: 'मंगळवार', 3: 'बुधवार', 4: 'गुरुवार', 5: 'शुक्रवार', 6: 'शनिवार', 7: 'रविवार'};
+      const months = {1: 'जानेवारी', 2: 'फेब्रुवारी', 3: 'मार्च', 4: 'एप्रिल', 5: 'मे', 6: 'जून', 7: 'जुलै', 8: 'ऑगस्ट', 9: 'सप्टेंबर', 10: 'ऑक्टोबर', 11: 'नोव्हेंबर', 12: 'डिसेंबर'};
+      nowFormatted = '${weekdays[now.weekday]}, ${AppTranslations.formatDigits(now.day, currentLang)} ${months[now.month]} ${AppTranslations.formatDigits(now.year, currentLang)}';
+    } else if (currentLang == 'hi') {
+      const weekdays = {1: 'सोमवार', 2: 'मंगलवार', 3: 'बुधवार', 4: 'गुरुवार', 5: 'शुक्रवार', 6: 'शनिवार', 7: 'रविवार'};
+      const months = {1: 'जनवरी', 2: 'फ़रवरी', 3: 'मार्च', 4: 'अप्रैल', 5: 'मई', 6: 'जून', 7: 'जुलाई', 8: 'अगस्त', 9: 'सितंबर', 10: 'अक्टूबर', 11: 'नवंबर', 12: 'दिसंबर'};
+      nowFormatted = '${weekdays[now.weekday]}, ${AppTranslations.formatDigits(now.day, currentLang)} ${months[now.month]} ${AppTranslations.formatDigits(now.year, currentLang)}';
+    } else {
+      nowFormatted = DateFormat('EEEE, d MMMM yyyy').format(now);
+    }
 
     return Container(
       height: 72,
@@ -113,9 +83,11 @@ class DesktopHeader extends ConsumerWidget {
                       ),
                       Row(
                         children: [
-                          const Text(
-                            'Nagarsevak Portal',
-                            style: TextStyle(
+                          Text(
+                            currentLang == 'mr'
+                                ? 'नगरसेवक पोर्टल'
+                                : (currentLang == 'hi' ? 'नगरसेवक पोर्टल' : 'Nagarsevak Portal'),
+                            style: const TextStyle(
                               fontSize: 11.5,
                               fontWeight: FontWeight.w500,
                               color: AppColors.slate400,

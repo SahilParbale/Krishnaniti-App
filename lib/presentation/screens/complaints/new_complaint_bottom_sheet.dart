@@ -7,7 +7,6 @@ import '../../../data/models/voter_model.dart';
 import '../../../data/models/staff_model.dart';
 import '../../../data/repositories/complaints_repository.dart';
 import '../../../data/repositories/voters_repository.dart';
-import '../../providers/auth_provider.dart';
 import '../../providers/language_provider.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../widgets/app_image_picker.dart';
@@ -297,12 +296,23 @@ class _NewComplaintBottomSheetState
       final title = _titleController.text.trim();
       final description = _descriptionController.text.trim();
 
+      final lang = ref.read(appLanguageProvider);
       if (title.isEmpty) {
-        _showToast('Please enter Issue Title (तक्रारीचे शीर्षक आवश्यक आहे)', isError: true);
+        _showToast(
+          lang == 'mr'
+              ? 'तक्रारीचे शीर्षक आवश्यक आहे'
+              : (lang == 'hi' ? 'शिकायत का शीर्षक आवश्यक है' : 'Please enter Issue Title'),
+          isError: true,
+        );
         return;
       }
       if (description.isEmpty) {
-        _showToast('Please enter Description (तपशीलवार वर्णन आवश्यक आहे)', isError: true);
+        _showToast(
+          lang == 'mr'
+              ? 'तपशीलवार वर्णन आवश्यक आहे'
+              : (lang == 'hi' ? 'विस्तृत विवरण आवश्यक है' : 'Please enter Description'),
+          isError: true,
+        );
         return;
       }
 
@@ -337,36 +347,66 @@ class _NewComplaintBottomSheetState
         );
 
         if (mounted) {
-          _showToast('Complaint submitted successfully! (तक्रार दाखल केली गेली)');
+          _showToast(
+            lang == 'mr'
+                ? 'तक्रार यशस्वीरित्या दाखल केली गेली!'
+                : (lang == 'hi' ? 'शिकायत सफलतापूर्वक दर्ज की गई!' : 'Complaint submitted successfully!'),
+          );
           Navigator.pop(context, true);
         }
       } catch (e) {
         if (mounted) {
-          _showToast('Failed to submit complaint: $e', isError: true);
+          _showToast(
+            lang == 'mr'
+                ? 'तक्रार दाखल करणे अयशस्वी झाले: $e'
+                : (lang == 'hi' ? 'शिकायत दर्ज करने में विफल: $e' : 'Failed to submit complaint: $e'),
+            isError: true,
+          );
         }
       } finally {
         if (mounted) setState(() => _isSubmitting = false);
       }
     } else {
       // Personal Help
+      final lang = ref.read(appLanguageProvider);
       final fName = _firstNameController.text.trim();
       final lName = _lastNameController.text.trim();
       final description = _descriptionController.text.trim();
 
       if (fName.isEmpty) {
-        _showToast('Please enter First Name (पहिले नाव आवश्यक आहे)', isError: true);
+        _showToast(
+          lang == 'mr'
+              ? 'पहिले नाव आवश्यक आहे'
+              : (lang == 'hi' ? 'पहला नाम आवश्यक है' : 'Please enter First Name'),
+          isError: true,
+        );
         return;
       }
       if (lName.isEmpty) {
-        _showToast('Please enter Last Name (आडनाव आवश्यक आहे)', isError: true);
+        _showToast(
+          lang == 'mr'
+              ? 'आडनाव आवश्यक आहे'
+              : (lang == 'hi' ? 'अंतिम नाम आवश्यक है' : 'Please enter Last Name'),
+          isError: true,
+        );
         return;
       }
       if (mobile.isEmpty) {
-        _showToast('Please enter Mobile Number (मोबाईल नंबर आवश्यक आहे)', isError: true);
+        _showToast(
+          lang == 'mr'
+              ? 'मोबाईल नंबर आवश्यक आहे'
+              : (lang == 'hi' ? 'मोबाइल नंबर आवश्यक है' : 'Please enter Mobile Number'),
+          isError: true,
+        );
         return;
       }
       if (description.isEmpty) {
-        _showToast('Please enter Description (वर्णन आवश्यक आहे)', isError: true);
+        _showToast(
+          lang == 'mr'
+              ? 'वर्णन आवश्यक आहे'
+              : (lang == 'hi' ? 'विवरण आवश्यक है' : 'Please enter Description'),
+          isError: true,
+        );
         return;
       }
 
@@ -393,12 +433,21 @@ class _NewComplaintBottomSheetState
         );
 
         if (mounted) {
-          _showToast('Personal Help Request submitted successfully! (वैयक्तिक मदत विनंती जतन झाली)');
+          _showToast(
+            lang == 'mr'
+                ? 'वैयक्तिक मदत विनंती यशस्वीरित्या जतन झाली!'
+                : (lang == 'hi' ? 'व्यक्तिगत सहायता अनुरोध सफलतापूर्वक दर्ज किया गया!' : 'Personal Help Request submitted successfully!'),
+          );
           Navigator.pop(context, true);
         }
       } catch (e) {
         if (mounted) {
-          _showToast('Failed to save request: $e', isError: true);
+          _showToast(
+            lang == 'mr'
+                ? 'विनंती जतन करणे अयशस्वी झाले: $e'
+                : (lang == 'hi' ? 'अनुरोध सहेजने में विफल: $e' : 'Failed to save request: $e'),
+            isError: true,
+          );
         }
       } finally {
         if (mounted) setState(() => _isSubmitting = false);
@@ -470,8 +519,6 @@ class _NewComplaintBottomSheetState
   @override
   Widget build(BuildContext context) {
     final lang = ref.watch(appLanguageProvider);
-    final isMr = lang == 'mr';
-    final isHi = lang == 'hi';
     final isDesktop = MediaQuery.of(context).size.width >= 768;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final societies = kSocietiesByWard[_selectedWard] ?? [];
@@ -524,7 +571,7 @@ class _NewComplaintBottomSheetState
 
             // Tab Selector (Area Complaint vs Personal Help - hidden when opened from Ward Problems)
             if (!widget.hidePersonalHelp)
-              _buildTabSelector(isMr),
+              _buildTabSelector(lang),
 
             // Linked voter / Draft autosave status bar
             if (_linkedVoterDisplay != null || _hasAnyDraft)
@@ -540,7 +587,7 @@ class _NewComplaintBottomSheetState
                       const Icon(Icons.link_rounded, size: 16, color: Color(0xFF0284C7)),
                       const SizedBox(width: 6),
                       Text(
-                        '${isMr ? "जोडलेले मतदार:" : "Linked:"} $_linkedVoterDisplay',
+                        '${lang == "mr" ? "जोडलेले मतदार:" : (lang == "hi" ? "जुड़े मतदाता:" : "Linked:")} $_linkedVoterDisplay',
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0369A1)),
                       ),
                       const SizedBox(width: 8),
@@ -558,14 +605,14 @@ class _NewComplaintBottomSheetState
                       ),
                       const SizedBox(width: 5),
                       Text(
-                        isMr ? 'मसुदा सेव्ह केला' : 'Draft autosaved',
+                        lang == 'mr' ? 'मसुदा सेव्ह केला' : (lang == 'hi' ? 'मसौदा सहेजा गया' : 'Draft autosaved'),
                         style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF047857)),
                       ),
                       const SizedBox(width: 8),
                       GestureDetector(
                         onTap: _handleClearAllDrafts,
                         child: Text(
-                          isMr ? 'काढून टाका' : 'Clear draft',
+                          lang == 'mr' ? 'काढून टाका' : (lang == 'hi' ? 'हटाएं' : 'Clear draft'),
                           style: const TextStyle(fontSize: 11, color: Color(0xFFDC2626), decoration: TextDecoration.underline),
                         ),
                       ),
@@ -582,22 +629,22 @@ class _NewComplaintBottomSheetState
                 keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                 children: [
                   // Section 1: Voter Details
-                  _buildVoterDetailsSection(isMr),
+                  _buildVoterDetailsSection(lang),
                   const SizedBox(height: 18),
 
                   // Section 2: Complaint Details OR Personal Request Details
                   if (_activeTab == 'Complaints')
-                    _buildComplaintDetailsSection(isMr, societies)
+                    _buildComplaintDetailsSection(lang, societies)
                   else
-                    _buildPersonalRequestDetailsSection(isMr),
+                    _buildPersonalRequestDetailsSection(lang),
                   const SizedBox(height: 18),
 
                   // Section 3: Attachments
-                  _buildAttachmentsSection(isMr),
+                  _buildAttachmentsSection(lang),
                   const SizedBox(height: 20),
 
                   // Submit Action Button (Scrolls together with form)
-                  _buildSubmitButton(isMr),
+                  _buildSubmitButton(lang),
                   const SizedBox(height: 8),
                 ],
               ),
@@ -611,7 +658,7 @@ class _NewComplaintBottomSheetState
   // ---------------------------------------------------------------------------
   // TAB SELECTOR (Area Complaints vs Personal Help)
   // ---------------------------------------------------------------------------
-  Widget _buildTabSelector(bool isMr) {
+  Widget _buildTabSelector(String lang) {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 10, 16, 4),
       padding: const EdgeInsets.all(4),
@@ -624,7 +671,7 @@ class _NewComplaintBottomSheetState
         children: [
           Expanded(
             child: _TabPill(
-              label: isMr ? 'तक्रारी (सार्वजनिक)' : 'Area Complaints',
+              label: AppTranslations.t('complaints.tabs.area', lang: lang),
               icon: Icons.location_city_rounded,
               isActive: _activeTab == 'Complaints',
               onTap: () {
@@ -636,7 +683,7 @@ class _NewComplaintBottomSheetState
           const SizedBox(width: 4),
           Expanded(
             child: _TabPill(
-              label: isMr ? 'वैयक्तिक मदत' : 'Personal Help',
+              label: AppTranslations.t('complaints.tabs.personal', lang: lang),
               icon: Icons.person_search_rounded,
               isActive: _activeTab == 'Personal Help',
               onTap: () {
@@ -653,14 +700,14 @@ class _NewComplaintBottomSheetState
   // ---------------------------------------------------------------------------
   // SECTION 1: VOTER DETAILS (matching t('complaints.form.voter_details'))
   // ---------------------------------------------------------------------------
-  Widget _buildVoterDetailsSection(bool isMr) {
+  Widget _buildVoterDetailsSection(String lang) {
     return _CardSection(
-      title: isMr ? 'मतदार तपशील' : 'Voter Details',
+      title: lang == 'mr' ? 'मतदार तपशील' : (lang == 'hi' ? 'मतदाता विवरण' : 'Voter Details'),
       icon: Icons.person_outline_rounded,
       action: OutlinedButton.icon(
         onPressed: _openVoterSearchSheet,
         icon: const Icon(Icons.search_rounded, size: 15),
-        label: Text(isMr ? 'मतदार यादीतून शोधा' : 'Search from Voter List'),
+        label: Text(lang == 'mr' ? 'मतदार यादीतून शोधा' : (lang == 'hi' ? 'मतदाता सूची से खोजें' : 'Search from Voter List')),
         style: OutlinedButton.styleFrom(
           foregroundColor: const Color(0xFF0284C7),
           backgroundColor: const Color(0xFFF0F9FF),
@@ -689,7 +736,7 @@ class _NewComplaintBottomSheetState
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '${isMr ? "जोडलेले मतदार:" : "Linked Voter:"} $_linkedVoterDisplay',
+                      '${lang == "mr" ? "जोडलेले मतदार:" : (lang == "hi" ? "जुड़े मतदाता:" : "Linked Voter:")} $_linkedVoterDisplay',
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -714,8 +761,8 @@ class _NewComplaintBottomSheetState
               Expanded(
                 child: _buildTextField(
                   controller: _firstNameController,
-                  label: isMr ? 'पहिले नाव' : 'First Name',
-                  placeholder: isMr ? 'पहिले नाव' : 'First Name',
+                  label: lang == 'mr' ? 'पहिले नाव' : (lang == 'hi' ? 'पहला नाम' : 'First Name'),
+                  placeholder: lang == 'mr' ? 'पहिले नाव' : (lang == 'hi' ? 'पहला नाम' : 'First Name'),
                   required: _activeTab == 'Personal Help',
                 ),
               ),
@@ -723,16 +770,16 @@ class _NewComplaintBottomSheetState
               Expanded(
                 child: _buildTextField(
                   controller: _middleNameController,
-                  label: isMr ? 'मधले नाव' : 'Middle Name',
-                  placeholder: isMr ? 'मधले नाव' : 'Middle Name',
+                  label: lang == 'mr' ? 'मधले नाव' : (lang == 'hi' ? 'मध्यम नाम' : 'Middle Name'),
+                  placeholder: lang == 'mr' ? 'मधले नाव' : (lang == 'hi' ? 'मध्यम नाम' : 'Middle Name'),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: _buildTextField(
                   controller: _lastNameController,
-                  label: isMr ? 'आडनाव' : 'Last Name',
-                  placeholder: isMr ? 'आडनाव' : 'Last Name',
+                  label: lang == 'mr' ? 'आडनाव' : (lang == 'hi' ? 'अंतिम नाम' : 'Last Name'),
+                  placeholder: lang == 'mr' ? 'आडनाव' : (lang == 'hi' ? 'अंतिम नाम' : 'Last Name'),
                   required: _activeTab == 'Personal Help',
                 ),
               ),
@@ -743,7 +790,7 @@ class _NewComplaintBottomSheetState
           // Mobile Number Field
           _buildTextField(
             controller: _mobileController,
-            label: isMr ? 'मोबाईल नंबर' : 'Mobile Number',
+            label: lang == 'mr' ? 'मोबाईल नंबर' : (lang == 'hi' ? 'मोबाइल नंबर' : 'Mobile Number'),
             placeholder: '+91 9999999999',
             prefixIcon: Icons.phone_rounded,
             keyboardType: TextInputType.phone,
@@ -757,9 +804,9 @@ class _NewComplaintBottomSheetState
   // ---------------------------------------------------------------------------
   // SECTION 2A: COMPLAINT DETAILS (matching ComplaintForm.tsx)
   // ---------------------------------------------------------------------------
-  Widget _buildComplaintDetailsSection(bool isMr, List<String> societies) {
+  Widget _buildComplaintDetailsSection(String lang, List<String> societies) {
     return _CardSection(
-      title: isMr ? 'तक्रार तपशील' : 'Complaint Details',
+      title: lang == 'mr' ? 'तक्रार तपशील' : (lang == 'hi' ? 'शिकायत विवरण' : 'Complaint Details'),
       icon: Icons.warning_amber_rounded,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -767,8 +814,8 @@ class _NewComplaintBottomSheetState
           // Issue Title
           _buildTextField(
             controller: _titleController,
-            label: isMr ? 'तक्रारीचे शीर्षक' : 'Issue Title',
-            placeholder: isMr ? 'उदा. कचरा उचलला नाही' : 'e.g. Garbage not collected',
+            label: lang == 'mr' ? 'तक्रारीचे शीर्षक' : (lang == 'hi' ? 'शिकायत का शीर्षक' : 'Issue Title'),
+            placeholder: lang == 'mr' ? 'उदा. कचरा उचलला नाही' : (lang == 'hi' ? 'उदा. कचरा नहीं उठाया गया' : 'e.g. Garbage not collected'),
             required: true,
           ),
 
@@ -784,7 +831,7 @@ class _NewComplaintBottomSheetState
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  isMr ? 'AI समस्येचे वर्गीकरण करत आहे...' : 'AI is analyzing issue details...',
+                  lang == 'mr' ? 'AI समस्येचे वर्गीकरण करत आहे...' : (lang == 'hi' ? 'AI समस्या का विश्लेषण कर रहा है...' : 'AI is analyzing issue details...'),
                   style: const TextStyle(fontSize: 11, color: Color(0xFF0284C7), fontWeight: FontWeight.w500),
                 ),
               ],
@@ -799,7 +846,7 @@ class _NewComplaintBottomSheetState
                 const Icon(Icons.warning_rounded, color: Color(0xFFDC2626), size: 14),
                 const SizedBox(width: 5),
                 Text(
-                  isMr ? 'AI द्वारे उच्च तातडी आढळली' : 'High Urgency Detected by AI',
+                  lang == 'mr' ? 'AI द्वारे उच्च तातडी आढळली' : (lang == 'hi' ? 'AI द्वारा उच्च प्राथमिकता पहचानी गई' : 'High Urgency Detected by AI'),
                   style: const TextStyle(fontSize: 11.5, color: Color(0xFFDC2626), fontWeight: FontWeight.bold),
                 ),
               ],
@@ -812,12 +859,12 @@ class _NewComplaintBottomSheetState
             children: [
               Expanded(
                 child: _buildDropdown(
-                  label: isMr ? 'प्रकार' : 'Type',
+                  label: lang == 'mr' ? 'प्रकार' : (lang == 'hi' ? 'प्रकार' : 'Type'),
                   value: _selectedCategory,
                   items: kComplaintCategories.map((c) {
                     return DropdownMenuItem(
                       value: c.key,
-                      child: Text(isMr ? c.mr : c.en, overflow: TextOverflow.ellipsis),
+                      child: Text(c.getLabel(lang), overflow: TextOverflow.ellipsis),
                     );
                   }).toList(),
                   onChanged: (val) {
@@ -828,7 +875,7 @@ class _NewComplaintBottomSheetState
               const SizedBox(width: 10),
               Expanded(
                 child: _buildDropdown(
-                  label: isMr ? 'वार्ड / प्रभाग' : 'Ward',
+                  label: lang == 'mr' ? 'वार्ड / प्रभाग' : (lang == 'hi' ? 'वार्ड / प्रभाग' : 'Ward'),
                   value: _selectedWard,
                   items: kWardsList.map((w) {
                     return DropdownMenuItem(
@@ -852,7 +899,7 @@ class _NewComplaintBottomSheetState
 
           // Society Name Combobox (matching ComplaintForm.tsx lines 770-820)
           if (societies.isNotEmpty) ...[
-            _buildSocietyPicker(isMr, societies),
+            _buildSocietyPicker(lang, societies),
             const SizedBox(height: 14),
           ],
 
@@ -862,16 +909,16 @@ class _NewComplaintBottomSheetState
               Expanded(
                 child: _buildTextField(
                   controller: _areaController,
-                  label: isMr ? 'परिसर / गल्ली (ऐच्छिक)' : 'Area / Colony (Optional)',
-                  placeholder: isMr ? 'उदा. गणेश नगर, लेन ३' : 'e.g. Ganesh Nagar, Lane 3',
+                  label: lang == 'mr' ? 'परिसर / गल्ली (ऐच्छिक)' : (lang == 'hi' ? 'क्षेत्र / कॉलोनी (वैकल्पिक)' : 'Area / Colony (Optional)'),
+                  placeholder: lang == 'mr' ? 'उदा. गणेश नगर, लेन ३' : (lang == 'hi' ? 'उदा. गणेश नगर, लेन ३' : 'e.g. Ganesh Nagar, Lane 3'),
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: _buildTextField(
                   controller: _peopleAffectedController,
-                  label: isMr ? 'प्रभावित लोकांची संख्या' : 'Number of People Affected',
-                  placeholder: isMr ? 'उदा. १००' : 'e.g. 100',
+                  label: lang == 'mr' ? 'प्रभावित लोकांची संख्या' : (lang == 'hi' ? 'प्रभावित लोगों की संख्या' : 'Number of People Affected'),
+                  placeholder: lang == 'mr' ? 'उदा. १००' : (lang == 'hi' ? 'उदा. १००' : 'e.g. 100'),
                   keyboardType: TextInputType.number,
                 ),
               ),
@@ -882,8 +929,8 @@ class _NewComplaintBottomSheetState
           // Description (4 rows, matching ComplaintForm.tsx)
           _buildTextField(
             controller: _descriptionController,
-            label: isMr ? 'वर्णन' : 'Description',
-            placeholder: isMr ? 'समस्येचे सविस्तर वर्णन करा...' : 'Describe the issue in detail...',
+            label: lang == 'mr' ? 'वर्णन' : (lang == 'hi' ? 'विवरण' : 'Description'),
+            placeholder: lang == 'mr' ? 'समस्येचे सविस्तर वर्णन करा...' : (lang == 'hi' ? 'समस्या का विस्तृत विवरण दर्ज करें...' : 'Describe the issue in detail...'),
             maxLines: 4,
             required: true,
           ),
@@ -891,12 +938,12 @@ class _NewComplaintBottomSheetState
 
           // Added By (Staff) - Always visible matching ComplaintForm.tsx line 857
           _buildDropdown(
-            label: isMr ? 'कर्मचारी (नोंदणीकर्ता) - ऐच्छिक' : 'Added By (Staff)',
+            label: lang == 'mr' ? 'कर्मचारी (नोंदणीकर्ता) - ऐच्छिक' : (lang == 'hi' ? 'कर्मचारी (दर्जकर्ता) - वैकल्पिक' : 'Added By (Staff)'),
             value: _selectedStaffId ?? '',
             items: [
               DropdownMenuItem(
                 value: '',
-                child: Text(isMr ? 'कर्मचारी निवडा (ऐच्छिक)' : 'Select Staff (Optional)'),
+                child: Text(lang == 'mr' ? 'कर्मचारी निवडा (ऐच्छिक)' : (lang == 'hi' ? 'कर्मचारी चुनें (वैकल्पिक)' : 'Select Staff (Optional)')),
               ),
               ..._staffList.map((s) {
                 return DropdownMenuItem(
@@ -917,21 +964,21 @@ class _NewComplaintBottomSheetState
   // ---------------------------------------------------------------------------
   // SECTION 2B: PERSONAL REQUEST DETAILS (matching PersonalRequestForm.tsx)
   // ---------------------------------------------------------------------------
-  Widget _buildPersonalRequestDetailsSection(bool isMr) {
+  Widget _buildPersonalRequestDetailsSection(String lang) {
     return _CardSection(
-      title: isMr ? 'तक्रार तपशील' : 'Complaint Details',
+      title: lang == 'mr' ? 'तक्रार तपशील' : (lang == 'hi' ? 'अनुरोध विवरण' : 'Complaint Details'),
       icon: Icons.help_outline_rounded,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Type (matching PersonalRequestForm.tsx)
           _buildDropdown(
-            label: isMr ? 'प्रकार' : 'Type',
+            label: lang == 'mr' ? 'प्रकार' : (lang == 'hi' ? 'प्रकार' : 'Type'),
             value: _selectedPersonalType,
             items: kPersonalRequestCategories.map((c) {
               return DropdownMenuItem(
                 value: c.key,
-                child: Text(isMr ? c.mr : c.en, overflow: TextOverflow.ellipsis),
+                child: Text(c.getLabel(lang), overflow: TextOverflow.ellipsis),
               );
             }).toList(),
             onChanged: (val) {
@@ -943,8 +990,8 @@ class _NewComplaintBottomSheetState
           // Description (6 rows, matching PersonalRequestForm.tsx)
           _buildTextField(
             controller: _descriptionController,
-            label: isMr ? 'वर्णन' : 'Description',
-            placeholder: isMr ? 'समस्येचे सविस्तर वर्णन करा...' : 'Describe the issue in detail...',
+            label: lang == 'mr' ? 'वर्णन' : (lang == 'hi' ? 'विवरण' : 'Description'),
+            placeholder: lang == 'mr' ? 'समस्येचे सविस्तर वर्णन करा...' : (lang == 'hi' ? 'समस्या का विस्तृत विवरण दर्ज करें...' : 'Describe the issue in detail...'),
             maxLines: 6,
             required: true,
           ),
@@ -952,12 +999,12 @@ class _NewComplaintBottomSheetState
 
           // Added By (Staff)
           _buildDropdown(
-            label: isMr ? 'कर्मचारी (नोंदणीकर्ता) - ऐच्छिक' : 'Added By (Staff)',
+            label: lang == 'mr' ? 'कर्मचारी (नोंदणीकर्ता) - ऐच्छिक' : (lang == 'hi' ? 'कर्मचारी (दर्जकर्ता) - वैकल्पिक' : 'Added By (Staff)'),
             value: _selectedStaffId ?? '',
             items: [
               DropdownMenuItem(
                 value: '',
-                child: Text(isMr ? 'कर्मचारी निवडा (ऐच्छिक)' : 'Select Staff (Optional)'),
+                child: Text(lang == 'mr' ? 'कर्मचारी निवडा (ऐच्छिक)' : (lang == 'hi' ? 'कर्मचारी चुनें (वैकल्पिक)' : 'Select Staff (Optional)')),
               ),
               ..._staffList.map((s) {
                 return DropdownMenuItem(
@@ -978,17 +1025,17 @@ class _NewComplaintBottomSheetState
   // ---------------------------------------------------------------------------
   // SECTION 3: ATTACHMENTS (matching MultiFileUpload)
   // ---------------------------------------------------------------------------
-  Widget _buildAttachmentsSection(bool isMr) {
+  Widget _buildAttachmentsSection(String lang) {
     return _CardSection(
-      title: isMr ? 'संलग्न फाईल्स' : 'Attachments (Photos, Videos, Audio, Documents)',
+      title: lang == 'mr' ? 'संलग्न फाईल्स' : (lang == 'hi' ? 'संलग्न फाइलें' : 'Attachments (Photos, Videos, Audio, Documents)'),
       icon: Icons.attach_file_rounded,
       action: Text(
-        isMr ? 'कमाल १०० MB' : 'Max 100MB',
+        lang == 'mr' ? 'कमाल १०० MB' : (lang == 'hi' ? 'अधिकतम १०० MB' : 'Max 100MB'),
         style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
       ),
       child: AppImagePickerField(
         isRequired: false,
-        isMarathi: isMr,
+        isMarathi: lang == 'mr',
         allowMultiple: true,
         initialFiles: _pickedFiles,
         onFilesChanged: (files) {
@@ -1004,10 +1051,10 @@ class _NewComplaintBottomSheetState
   // ---------------------------------------------------------------------------
   // SUBMIT BUTTON (matching ns-btn-primary)
   // ---------------------------------------------------------------------------
-  Widget _buildSubmitButton(bool isMr) {
+  Widget _buildSubmitButton(String lang) {
     final buttonText = _activeTab == 'Complaints'
-        ? (isMr ? 'तक्रार दाखल करा' : 'Submit Complaint')
-        : (isMr ? 'जतन करा' : 'Save');
+        ? (lang == 'mr' ? 'तक्रार दाखल करा' : (lang == 'hi' ? 'शिकायत दर्ज करें' : 'Submit Complaint'))
+        : (lang == 'mr' ? 'जतन करा' : (lang == 'hi' ? 'सहेजें' : 'Save'));
 
     return ElevatedButton(
       onPressed: _isSubmitting ? null : _handleSubmit,
@@ -1039,11 +1086,11 @@ class _NewComplaintBottomSheetState
   // ---------------------------------------------------------------------------
   // HELPER WIDGETS
   // ---------------------------------------------------------------------------
-  Widget _buildSocietyPicker(bool isMr, List<String> societies) {
+  Widget _buildSocietyPicker(String lang, List<String> societies) {
     return AppDropdownFormField<String>(
-      label: isMr ? 'सोसायटीचे नाव' : 'Society Name',
+      label: lang == 'mr' ? 'सोसायटीचे नाव' : (lang == 'hi' ? 'सोसायटी का नाम' : 'Society Name'),
       isRequired: false,
-      hintText: isMr ? 'सोसायटी निवडा' : 'Select Society',
+      hintText: lang == 'mr' ? 'सोसायटी निवडा' : (lang == 'hi' ? 'सोसायटी चुनें' : 'Select Society'),
       prefixIcon: const Icon(Icons.apartment_rounded, size: 18, color: Color(0xFF64748B)),
       value: _selectedSociety.isNotEmpty ? _selectedSociety : null,
       items: societies.asMap().entries.map((e) {
@@ -1311,7 +1358,7 @@ class _VoterSearchModalSheetState
 
   @override
   Widget build(BuildContext context) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
     final isDesktop = MediaQuery.of(context).size.width >= 768;
 
     return Container(
@@ -1330,8 +1377,12 @@ class _VoterSearchModalSheetState
           // 1. FIXED STANDARDIZED HEADER
           AppModalHeader(
             icon: Icons.person_search_rounded,
-            title: isMr ? 'मतदार यादीतून शोधा' : 'Search from Voter List',
-            subtitle: isMr ? 'नाव, घर क्र. किंवा पत्त्यानुसार शोधा' : 'Filter voters from electoral roll',
+            title: lang == 'mr'
+                ? 'मतदार यादीतून शोधा'
+                : (lang == 'hi' ? 'मतदाता सूची से खोजें' : 'Search from Voter List'),
+            subtitle: lang == 'mr'
+                ? 'नाव, घर क्र. किंवा पत्त्यानुसार शोधा'
+                : (lang == 'hi' ? 'नाम, मकान नं. या पते के अनुसार खोजें' : 'Filter voters from electoral roll'),
             onClose: () => Navigator.pop(context),
           ),
 
@@ -1350,7 +1401,9 @@ class _VoterSearchModalSheetState
                         controller: _nameFilterCtrl,
                         onChanged: (_) => _executeSearch(),
                         decoration: InputDecoration(
-                          hintText: isMr ? 'नावाने शोधा' : 'Search by Name',
+                          hintText: lang == 'mr'
+                              ? 'नावाने शोधा'
+                              : (lang == 'hi' ? 'नाम से खोजें' : 'Search by Name'),
                           hintStyle: const TextStyle(fontSize: 12),
                           prefixIcon: const Icon(Icons.search_rounded, size: 18),
                           filled: true,
@@ -1370,7 +1423,9 @@ class _VoterSearchModalSheetState
                         controller: _houseNoFilterCtrl,
                         onChanged: (_) => _executeSearch(),
                         decoration: InputDecoration(
-                          hintText: isMr ? 'घर क्र. शोधा' : 'Search House No',
+                          hintText: lang == 'mr'
+                              ? 'घर क्र. शोधा'
+                              : (lang == 'hi' ? 'मकान नं. खोजें' : 'Search House No'),
                           hintStyle: const TextStyle(fontSize: 12),
                           filled: true,
                           fillColor: Colors.white,
@@ -1394,7 +1449,9 @@ class _VoterSearchModalSheetState
                         controller: _ageFilterCtrl,
                         onChanged: (_) => _executeSearch(),
                         decoration: InputDecoration(
-                          hintText: isMr ? 'वय / मर्यादा (उदा. १८-२४)' : 'Age / Range (e.g. 18-24)',
+                          hintText: lang == 'mr'
+                              ? 'वय / मर्यादा (उदा. १८-२४)'
+                              : (lang == 'hi' ? 'आयु / सीमा (उदा. १८-२४)' : 'Age / Range (e.g. 18-24)'),
                           hintStyle: const TextStyle(fontSize: 12),
                           filled: true,
                           fillColor: Colors.white,
@@ -1412,10 +1469,34 @@ class _VoterSearchModalSheetState
                         value: _selectedGender,
                         height: 44,
                         items: [
-                          DropdownMenuItem(value: '', child: Text(isMr ? 'सर्व लिंग' : 'All Genders', style: const TextStyle(fontSize: 12))),
-                          const DropdownMenuItem(value: 'M', child: Text('Male', style: TextStyle(fontSize: 12))),
-                          const DropdownMenuItem(value: 'F', child: Text('Female', style: TextStyle(fontSize: 12))),
-                          const DropdownMenuItem(value: 'O', child: Text('Other', style: TextStyle(fontSize: 12))),
+                          DropdownMenuItem(
+                            value: '',
+                            child: Text(
+                              lang == 'mr' ? 'सर्व लिंग' : (lang == 'hi' ? 'सभी लिंग' : 'All Genders'),
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ),
+                          DropdownMenuItem(
+                            value: 'M',
+                            child: Text(
+                              lang == 'mr' ? 'पुरुष' : (lang == 'hi' ? 'पुरुष' : 'Male'),
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ),
+                          DropdownMenuItem(
+                            value: 'F',
+                            child: Text(
+                              lang == 'mr' ? 'स्त्री' : (lang == 'hi' ? 'महिला' : 'Female'),
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ),
+                          DropdownMenuItem(
+                            value: 'O',
+                            child: Text(
+                              lang == 'mr' ? 'इतर' : (lang == 'hi' ? 'अन्य' : 'Other'),
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ),
                         ],
                         onChanged: (val) {
                           setState(() => _selectedGender = val ?? '');
@@ -1432,7 +1513,9 @@ class _VoterSearchModalSheetState
                   controller: _addressFilterCtrl,
                   onChanged: (_) => _executeSearch(),
                   decoration: InputDecoration(
-                    hintText: isMr ? 'पत्त्यानुसार शोधा' : 'Search Address',
+                    hintText: lang == 'mr'
+                        ? 'पत्त्यानुसार शोधा'
+                        : (lang == 'hi' ? 'पते के अनुसार खोजें' : 'Search Address'),
                     hintStyle: const TextStyle(fontSize: 12),
                     prefixIcon: const Icon(Icons.location_on_outlined, size: 18),
                     filled: true,
@@ -1459,7 +1542,12 @@ class _VoterSearchModalSheetState
                           children: [
                             Icon(Icons.search_off_rounded, size: 40, color: Colors.grey.shade400),
                             const SizedBox(height: 8),
-                            Text(isMr ? 'कोणतेही मतदार सापडले नाहीत' : 'No voters found', style: TextStyle(color: Colors.grey.shade600)),
+                            Text(
+                              lang == 'mr'
+                                  ? 'कोणतेही मतदार सापडले नाहीत'
+                                  : (lang == 'hi' ? 'कोई मतदाता नहीं मिला' : 'No voters found'),
+                              style: TextStyle(color: Colors.grey.shade600),
+                            ),
                           ],
                         ),
                       )
@@ -1468,7 +1556,15 @@ class _VoterSearchModalSheetState
                         separatorBuilder: (_, _) => Divider(height: 1, color: Colors.grey.shade100),
                         itemBuilder: (context, idx) {
                           final v = _results[idx];
-                          final displayName = isMr ? v.nameMarathi : v.nameEnglish;
+                          final displayName = (lang == 'mr' || lang == 'hi') && v.nameMarathi.isNotEmpty
+                              ? v.nameMarathi
+                              : v.nameEnglish;
+
+                          final genderLabel = lang == 'mr'
+                              ? (v.gender == 'M' ? 'पुरुष' : (v.gender == 'F' ? 'स्त्री' : 'इतर'))
+                              : (lang == 'hi'
+                                  ? (v.gender == 'M' ? 'पुरुष' : (v.gender == 'F' ? 'महिला' : 'अन्य'))
+                                  : v.gender);
 
                           return ListTile(
                             onTap: () => widget.onSelect(v),
@@ -1489,7 +1585,7 @@ class _VoterSearchModalSheetState
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: Text(
-                                        '${v.age} Y • ${v.gender}',
+                                        '${AppTranslations.formatDigits(v.age.toString(), lang)} ${lang == "mr" ? "वर्षे" : (lang == "hi" ? "वर्ष" : "Y")} • $genderLabel',
                                         style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
                                       ),
                                     ),
@@ -1501,7 +1597,7 @@ class _VoterSearchModalSheetState
                                     if (v.mobile != null && v.mobile!.isNotEmpty) ...[
                                       const SizedBox(width: 6),
                                       Text(
-                                        '| 📱 ${v.mobile}',
+                                        '| 📱 ${AppTranslations.formatDigits(v.mobile!, lang)}',
                                         style: const TextStyle(fontSize: 11, color: Color(0xFF0284C7)),
                                       ),
                                     ],

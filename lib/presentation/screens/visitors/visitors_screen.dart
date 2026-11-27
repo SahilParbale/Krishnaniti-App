@@ -501,7 +501,8 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
   }
 
   void _openVoterLookup(Function(VoterModel voter) onSelected) {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
+    final isMr = lang == 'mr';
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -576,7 +577,9 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                         if (voters.isEmpty) {
                           return Center(
                             child: Text(
-                              isMr ? 'मतदार सापडले नाहीत' : 'No voters found in database',
+                              lang == 'mr'
+                                  ? 'मतदार सापडले नाहीत'
+                                  : (lang == 'hi' ? 'मतदाता नहीं मिले' : 'No voters found in database'),
                               style: const TextStyle(color: Color(0xFF64748B)),
                             ),
                           );
@@ -735,8 +738,11 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                     // All Visitors Tab
                     Expanded(
                       child: _buildPrimaryTab(
-                        label: isMr ? 'सर्व नोंदी' : 'All Visitors',
+                        label: lang == 'mr'
+                            ? 'सर्व नोंदी'
+                            : (lang == 'hi' ? 'सभी आगंतुक' : 'All Visitors'),
                         count: allCount,
+                        lang: lang,
                         isActive: _activeTab == 'all',
                         icon: Icons.people_alt_rounded,
                         onTap: () => setState(() {
@@ -749,8 +755,11 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                     // Complaints & Help Tab
                     Expanded(
                       child: _buildPrimaryTab(
-                        label: isMr ? 'तक्रारी / मदत' : 'Grievances',
+                        label: lang == 'mr'
+                            ? 'तक्रारी / मदत'
+                            : (lang == 'hi' ? 'शिकायतें / सहायता' : 'Grievances'),
                         count: complaintHelpCount,
+                        lang: lang,
                         isActive: _activeTab == 'complaints_help',
                         icon: Icons.volunteer_activism_rounded,
                         onTap: () => setState(() {
@@ -816,8 +825,14 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                         color: _selectedArea == 'All' ? const Color(0xFF64748B) : const Color(0xFF0284C7),
                       ),
                       items: [
-                        DropdownMenuItem(value: 'All', child: Text(isMr ? 'सर्व भाग' : 'All Areas')),
-                        ..._uniqueAreas.map((a) => DropdownMenuItem(value: a, child: Text(a))),
+                        DropdownMenuItem(
+                          value: 'All',
+                          child: Text(lang == 'mr' ? 'सर्व भाग' : (lang == 'hi' ? 'सभी क्षेत्र' : 'All Areas')),
+                        ),
+                        ..._uniqueAreas.map((a) => DropdownMenuItem(
+                              value: a,
+                              child: Text(AppTranslations.getAreaName(a, lang)),
+                            )),
                       ],
                       onChanged: (val) {
                         if (val != null) {
@@ -860,14 +875,18 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                                 const Icon(Icons.people_outline_rounded, size: 52, color: Color(0xFFCBD5E1)),
                                 const SizedBox(height: 12),
                                 Text(
-                                  isMr ? 'कोणत्याही भेटींच्या नोंदी आढळल्या नाहीत' : 'No visitor records found',
+                                  lang == 'mr'
+                                      ? 'कोणत्याही भेटींच्या नोंदी आढळल्या नाहीत'
+                                      : (lang == 'hi' ? 'कोई आगंतुक रिकॉर्ड नहीं मिला' : 'No visitor records found'),
                                   style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
-                                  isMr
+                                  lang == 'mr'
                                       ? 'कार्यालयात येणाऱ्या नागरिकाची नोंद करण्यासाठी खालील "+ नवीन नोंद" वर टॅप करा.'
-                                      : 'Tap "+ Log Visitor" below to register a citizen visit or appointment.',
+                                      : (lang == 'hi'
+                                          ? 'कार्यालय में आने वाले नागरिक को दर्ज करने के लिए नीचे "+ नया आगंतुक" पर टैप करें।'
+                                          : 'Tap "+ Log Visitor" below to register a citizen visit or appointment.'),
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                                 ),
@@ -895,7 +914,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                                 );
                               }
                               final visitor = _visibleVisitors[index];
-                              return _buildVisitorCard(visitor, isMr);
+                              return _buildVisitorCard(visitor, isMr, lang);
                             },
                           ),
                         ),
@@ -909,6 +928,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
   Widget _buildPrimaryTab({
     required String label,
     required int count,
+    String lang = 'en',
     required bool isActive,
     required IconData icon,
     required VoidCallback onTap,
@@ -937,7 +957,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
             const SizedBox(width: 5),
             Flexible(
               child: Text(
-                '$label ($count)',
+                '$label (${AppTranslations.formatDigits(count, lang)})',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -953,7 +973,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
     );
   }
 
-  Widget _buildVisitorCard(VisitorModel visitor, bool isMr) {
+  Widget _buildVisitorCard(VisitorModel visitor, bool isMr, [String lang = 'en']) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -1014,7 +1034,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                         ),
                         if (visitor.mobile.isNotEmpty)
                           Text(
-                            '+91 ${visitor.mobile}',
+                            '+91 ${AppTranslations.formatDigits(visitor.mobile, lang)}',
                             style: const TextStyle(
                               fontSize: 12,
                               color: Color(0xFF64748B),
@@ -1062,28 +1082,28 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                 children: [
                   _buildTag(
                     Icons.access_time_rounded,
-                    '${visitor.formattedDate}, ${visitor.formattedTime}',
+                    AppTranslations.formatDigits('${visitor.formattedDate}, ${visitor.formattedTime}', lang),
                     const Color(0xFF0284C7),
                     const Color(0xFFF0F9FF),
                   ),
                   if (visitor.area != null && visitor.area!.isNotEmpty)
                     _buildTag(
                       Icons.location_on_outlined,
-                      visitor.area!,
+                      AppTranslations.getAreaName(visitor.area!, lang),
                       const Color(0xFF475569),
                       const Color(0xFFF8FAFC),
                     ),
                   if (visitor.amount != null && visitor.amount!.isNotEmpty)
                     _buildTag(
                       Icons.currency_rupee_rounded,
-                      '₹${visitor.amount}',
+                      '₹${AppTranslations.formatDigits(visitor.amount!, lang)}',
                       const Color(0xFF16A34A),
                       const Color(0xFFF0FDF4),
                     ),
                   if (visitor.reference != null && visitor.reference!.isNotEmpty)
                     _buildTag(
                       Icons.person_pin_circle_outlined,
-                      'Ref: ${visitor.reference!}',
+                      '${lang == "mr" ? "संदर्भ:" : (lang == "hi" ? "संदर्भ:" : "Ref:")} ${visitor.reference!}',
                       const Color(0xFF6B21A8),
                       const Color(0xFFFAF5FF),
                     ),

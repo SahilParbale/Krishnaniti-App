@@ -4,9 +4,9 @@ import 'package:intl/intl.dart';
 import 'package:nagarsevak_mobile/data/models/visitor_model.dart';
 import 'package:nagarsevak_mobile/data/repositories/visitors_repository.dart';
 import 'package:nagarsevak_mobile/presentation/desktop/common/desktop_modal_dialog.dart';
-import 'package:nagarsevak_mobile/presentation/desktop/shell/desktop_sidebar.dart';
 import 'package:nagarsevak_mobile/presentation/screens/visitors/visitor_report_generator.dart';
 import 'package:nagarsevak_mobile/presentation/widgets/app_dropdown.dart';
+import 'package:nagarsevak_mobile/presentation/widgets/app_load_more_footer.dart';
 import 'package:nagarsevak_mobile/core/localization/app_translations.dart';
 import 'package:nagarsevak_mobile/core/services/translation_service.dart';
 import 'package:nagarsevak_mobile/presentation/providers/language_provider.dart';
@@ -30,9 +30,13 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
   String _selectedArea = 'All';
   String _selectedDate = 'All';
   String _purposeFilter = 'All';
+  int _displayedLimit = 20;
 
   bool _loading = true;
   List<VisitorModel> _visitors = [];
+
+  List<VisitorModel> get _visibleVisitors =>
+      _filteredVisitors.take(_displayedLimit).toList();
 
   @override
   void initState() {
@@ -354,7 +358,6 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
   @override
   Widget build(BuildContext context) {
     final lang = ref.watch(appLanguageProvider);
-    final isMr = lang == 'mr';
     final items = _filteredVisitors;
 
     return Scaffold(
@@ -422,7 +425,7 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
               label: Text(
-                lang == 'mr' ? 'अहवाल डाउनलोड करा' : (lang == 'hi' ? 'रिपोर्ट डाउनलोड करें' : 'Download Report'),
+                AppTranslations.getDownloadReport(lang),
                 style: const TextStyle(
                   color: Color(0xFF0284C7),
                   fontWeight: FontWeight.w600,
@@ -509,7 +512,7 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
                       border: Border.all(color: const Color(0xFFBAE6FD)),
                     ),
                     child: Text(
-                      '${lang == "mr" ? "सापडले" : (lang == "hi" ? "मिले" : "Found")}: ${items.length}',
+                      AppTranslations.formatFound(items.length, lang),
                       style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0369A1)),
                     ),
                   ),
@@ -551,7 +554,10 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
               Expanded(
                 flex: 6,
                 child: TextField(
-                  onChanged: (v) => setState(() => _searchQuery = v),
+                  onChanged: (v) => setState(() {
+                    _searchQuery = v;
+                    _displayedLimit = 20;
+                  }),
                   decoration: InputDecoration(
                     hintText: lang == 'mr'
                         ? 'नाव, मोबाईल, टिप्पणी द्वारे अभ्यागत शोधा...'
@@ -577,13 +583,18 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
                       child: Text(
                         a == 'All'
                             ? (lang == 'mr' ? 'सर्व भाग' : (lang == 'hi' ? 'सभी क्षेत्र' : 'All Areas'))
-                            : a,
+                            : AppTranslations.getAreaName(a, lang),
                         overflow: TextOverflow.ellipsis,
                       ),
                     );
                   }).toList(),
                   onChanged: (val) {
-                    if (val != null) setState(() => _selectedArea = val);
+                    if (val != null) {
+                      setState(() {
+                        _selectedArea = val;
+                        _displayedLimit = 20;
+                      });
+                    }
                   },
                 ),
               ),
@@ -602,13 +613,18 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
                       child: Text(
                         d == 'All'
                             ? (lang == 'mr' ? 'सर्व तारखा' : (lang == 'hi' ? 'सभी तिथियां' : 'All Dates'))
-                            : d,
+                            : AppTranslations.formatDigits(d, lang),
                         overflow: TextOverflow.ellipsis,
                       ),
                     );
                   }).toList(),
                   onChanged: (val) {
-                    if (val != null) setState(() => _selectedDate = val);
+                    if (val != null) {
+                      setState(() {
+                        _selectedDate = val;
+                        _displayedLimit = 20;
+                      });
+                    }
                   },
                 ),
               ),
@@ -658,7 +674,10 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
                     ),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     onSelected: (_) {
-                      setState(() => _purposeFilter = purpose);
+                      setState(() {
+                        _purposeFilter = purpose;
+                        _displayedLimit = 20;
+                      });
                     },
                   ),
                 );
@@ -674,9 +693,21 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
           else if (items.isEmpty)
             _buildEmptyState(lang == 'mr')
           else if (_viewMode == 'grid')
-            _buildVisitorGrid(items, lang)
+            _buildVisitorGrid(_visibleVisitors, lang)
           else
-            _buildVisitorTable(items, lang),
+            _buildVisitorTable(_visibleVisitors, lang),
+
+          if (!_loading && items.isNotEmpty)
+            AppLoadMoreFooter(
+              currentCount: _visibleVisitors.length,
+              totalCount: items.length,
+              pageSize: 20,
+              onLoadMore: () {
+                setState(() => _displayedLimit += 20);
+              },
+              label: lang == 'mr' ? 'अभ्यागत' : (lang == 'hi' ? 'आगंतुक' : 'visitors'),
+              isMarathi: lang == 'mr',
+            ),
         ],
       ),
     );
@@ -744,7 +775,7 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
               children: [
                 const Icon(Icons.phone_outlined, size: 13, color: Color(0xFF64748B)),
                 const SizedBox(width: 4),
-                Text('+91 ${visitor.mobile}', style: const TextStyle(fontSize: 12, color: Color(0xFF475569))),
+                Text('+91 ${AppTranslations.formatDigits(visitor.mobile, lang)}', style: const TextStyle(fontSize: 12, color: Color(0xFF475569))),
               ],
             ),
             const SizedBox(height: 4),
@@ -755,7 +786,7 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
                 const Icon(Icons.location_on_outlined, size: 13, color: Color(0xFF64748B)),
                 const SizedBox(width: 4),
                 Expanded(
-                  child: Text(visitor.area!, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)), overflow: TextOverflow.ellipsis),
+                  child: Text(AppTranslations.getAreaName(visitor.area!, lang), style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)), overflow: TextOverflow.ellipsis),
                 ),
               ],
             ),
@@ -782,7 +813,7 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '${visitor.formattedDate} • ${visitor.formattedTime}',
+                  AppTranslations.formatDigits('${visitor.formattedDate} • ${visitor.formattedTime}', lang),
                   style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
                 ),
                 Row(
@@ -882,10 +913,10 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
           return DataRow(
             cells: [
               DataCell(Text(v.name, style: const TextStyle(fontWeight: FontWeight.w600))),
-              DataCell(Text('+91 ${v.mobile}')),
+              DataCell(Text('+91 ${AppTranslations.formatDigits(v.mobile, lang)}')),
               DataCell(_buildPurposeBadge(v.purpose, lang)),
-              DataCell(Text(v.area ?? '-')),
-              DataCell(Text('${v.formattedDate} • ${v.formattedTime}')),
+              DataCell(Text(AppTranslations.getAreaName(v.area ?? '-', lang))),
+              DataCell(Text(AppTranslations.formatDigits('${v.formattedDate} • ${v.formattedTime}', lang))),
               DataCell(
                 Row(
                   mainAxisSize: MainAxisSize.min,

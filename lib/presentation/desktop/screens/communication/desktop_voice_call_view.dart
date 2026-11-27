@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/localization/app_translations.dart';
+import '../../../providers/language_provider.dart';
 import '../../../../data/models/voter_model.dart';
 import '../../../../data/models/whatsapp_broadcast_model.dart';
 import '../../../../data/repositories/sms_repository.dart';
 import '../../shell/desktop_sidebar.dart';
 import '../../../screens/voice/communication_history_report_generator.dart';
+import '../../../widgets/app_load_more_footer.dart';
 
 class DesktopVoiceCallView extends ConsumerStatefulWidget {
   const DesktopVoiceCallView({super.key});
@@ -20,6 +23,9 @@ class _DesktopVoiceCallViewState extends ConsumerState<DesktopVoiceCallView> {
   final _searchController = TextEditingController();
   bool _isLoading = false;
   List<VoterModel> _voters = [];
+  int _displayedLimit = 20;
+  List<VoterModel> get _visibleVoters =>
+      _voters.take(_displayedLimit).toList();
 
   @override
   void initState() {
@@ -34,7 +40,10 @@ class _DesktopVoiceCallViewState extends ConsumerState<DesktopVoiceCallView> {
   }
 
   Future<void> _loadVoters() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _displayedLimit = 20;
+      _isLoading = true;
+    });
     try {
       final repo = ref.read(smsRepoProvider);
       final voters = await repo.getVotersWithMobile(
@@ -129,7 +138,10 @@ class _DesktopVoiceCallViewState extends ConsumerState<DesktopVoiceCallView> {
                     );
                   },
                   icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
-                  label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+                  label: Text(
+                    AppTranslations.getDownloadReport(ref.watch(desktopLanguageProvider)),
+                    style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
+                  ),
                   style: OutlinedButton.styleFrom(
                     backgroundColor: const Color(0xFFF0F9FF),
                     side: const BorderSide(color: Color(0xFFBAE6FD)),
@@ -191,7 +203,7 @@ class _DesktopVoiceCallViewState extends ConsumerState<DesktopVoiceCallView> {
                     child: const Text('No voters found', style: TextStyle(color: AppColors.slate400)),
                   ),
                 )
-              else
+              else ...[
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -201,9 +213,9 @@ class _DesktopVoiceCallViewState extends ConsumerState<DesktopVoiceCallView> {
                     mainAxisSpacing: 16,
                     mainAxisExtent: 170,
                   ),
-                  itemCount: _voters.length,
+                  itemCount: _visibleVoters.length,
                   itemBuilder: (ctx, i) {
-                    final v = _voters[i];
+                    final v = _visibleVoters[i];
                     return Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -275,6 +287,17 @@ class _DesktopVoiceCallViewState extends ConsumerState<DesktopVoiceCallView> {
                     );
                   },
                 ),
+                AppLoadMoreFooter(
+                  currentCount: _visibleVoters.length,
+                  totalCount: _voters.length,
+                  pageSize: 20,
+                  onLoadMore: () {
+                    setState(() => _displayedLimit += 20);
+                  },
+                  label: 'मतदार',
+                  isMarathi: isMr,
+                ),
+              ],
             ] else ...[
               // History Tab
               Container(

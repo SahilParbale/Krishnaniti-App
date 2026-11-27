@@ -8,6 +8,7 @@ import 'package:nagarsevak_mobile/presentation/screens/letters/new_letter_bottom
 import 'package:nagarsevak_mobile/presentation/screens/letters/letter_type_manager_sheet.dart';
 import 'package:nagarsevak_mobile/presentation/screens/letters/letter_report_generator.dart';
 import 'package:nagarsevak_mobile/presentation/widgets/app_dropdown.dart';
+import 'package:nagarsevak_mobile/presentation/widgets/app_load_more_footer.dart';
 import 'package:nagarsevak_mobile/core/localization/app_translations.dart';
 import 'package:nagarsevak_mobile/core/services/translation_service.dart';
 import 'package:nagarsevak_mobile/presentation/providers/language_provider.dart';
@@ -36,6 +37,10 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
   List<LetterModel> _outgoingLetters = [];
   List<LetterModel> _incomingLetters = [];
   LetterModel? _selectedLetter;
+  int _displayedLimit = 20;
+
+  List<LetterModel> get _visibleLetters =>
+      _filteredLetters.take(_displayedLimit).toList();
 
   @override
   void initState() {
@@ -152,6 +157,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
     final lang = ref.watch(desktopLanguageProvider);
     final isMr = lang == 'mr';
     final items = _filteredLetters;
+    final visibleItems = _visibleLetters;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), // bg-slate-50
@@ -179,9 +185,22 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
             if (_loading)
               _buildLoadingState()
             else if (_viewMode == 'table')
-              _buildLettersTable(items, lang)
+              _buildLettersTable(visibleItems, lang)
             else
-              _buildMainGrid(items, lang),
+              _buildMainGrid(visibleItems, lang),
+
+            // 5. Pagination Load More Footer
+            if (!_loading && items.isNotEmpty)
+              AppLoadMoreFooter(
+                currentCount: visibleItems.length,
+                totalCount: items.length,
+                pageSize: 20,
+                onLoadMore: () {
+                  setState(() => _displayedLimit += 20);
+                },
+                label: lang == 'mr' ? 'पत्रे' : (lang == 'hi' ? 'पत्र' : 'letters'),
+                isMarathi: isMr,
+              ),
           ],
         ),
       ),
@@ -219,7 +238,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                 border: Border.all(color: const Color(0xFFBAE6FD)),
               ),
               child: Text(
-                '${lang == "mr" ? "सापडले" : (lang == "hi" ? "मिले" : "Found")}: $foundCount',
+                AppTranslations.formatFound(foundCount, lang),
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -251,7 +270,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
               label: Text(
-                lang == 'mr' ? 'अहवाल डाउनलोड करा' : (lang == 'hi' ? 'रिपोर्ट डाउनलोड करें' : 'Download Report'),
+                AppTranslations.getDownloadReport(lang),
                 style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
               ),
               style: OutlinedButton.styleFrom(
@@ -353,6 +372,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                   setState(() {
                     _activeTab = 'outgoing';
                     _selectedLetter = _outgoingLetters.isNotEmpty ? _outgoingLetters.first : null;
+                    _displayedLimit = 20;
                   });
                 },
               ),
@@ -364,6 +384,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                   setState(() {
                     _activeTab = 'incoming';
                     _selectedLetter = _incomingLetters.isNotEmpty ? _incomingLetters.first : null;
+                    _displayedLimit = 20;
                   });
                 },
               ),
@@ -545,7 +566,10 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
         Expanded(
           flex: 6,
           child: TextField(
-            onChanged: (v) => setState(() => _searchQuery = v),
+            onChanged: (v) => setState(() {
+              _searchQuery = v;
+              _displayedLimit = 20;
+            }),
             decoration: InputDecoration(
               hintText: lang == 'mr'
                   ? 'विषय किंवा नागरिकाच्या नावाने पत्र शोधा...'
@@ -582,7 +606,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
             items: _uniqueAreas.map((area) {
               final label = area == 'All'
                   ? (lang == 'mr' ? 'सर्व परिसर' : (lang == 'hi' ? 'सभी क्षेत्र' : 'All Areas'))
-                  : area;
+                  : AppTranslations.getAreaName(area, lang);
               return DropdownMenuItem(
                 value: area,
                 child: Text(
@@ -592,7 +616,12 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
               );
             }).toList(),
             onChanged: (val) {
-              if (val != null) setState(() => _selectedArea = val);
+              if (val != null) {
+                setState(() {
+                  _selectedArea = val;
+                  _displayedLimit = 20;
+                });
+              }
             },
           ),
         ),
@@ -610,7 +639,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
             items: _uniqueDates.map((date) {
               final label = date == 'All'
                   ? (lang == 'mr' ? 'सर्व तारखा' : (lang == 'hi' ? 'सभी तिथियां' : 'All Dates'))
-                  : date;
+                  : AppTranslations.formatDigits(date, lang);
               return DropdownMenuItem(
                 value: date,
                 child: Text(
@@ -620,7 +649,12 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
               );
             }).toList(),
             onChanged: (val) {
-              if (val != null) setState(() => _selectedDate = val);
+              if (val != null) {
+                setState(() {
+                  _selectedDate = val;
+                  _displayedLimit = 20;
+                });
+              }
             },
           ),
         ),
@@ -631,7 +665,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
   // --- Main 3-Column Layout: 1/3 List + 2/3 Live Preview ---
   Widget _buildMainGrid(List<LetterModel> items, String lang) {
     if (items.isEmpty) {
-      return _buildEmptyState(lang == 'mr');
+      return _buildEmptyState(lang);
     }
 
     return Row(
@@ -1044,7 +1078,10 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                         );
                       },
                       icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
-                      label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 13)),
+                      label: Text(
+                        AppTranslations.getDownloadReport(ref.watch(desktopLanguageProvider)),
+                        style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 13),
+                      ),
                       style: OutlinedButton.styleFrom(
                         backgroundColor: const Color(0xFFF0F9FF),
                         side: const BorderSide(color: Color(0xFFBAE6FD)),
@@ -1193,7 +1230,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
     );
   }
 
-  Widget _buildEmptyState(bool isMr) {
+  Widget _buildEmptyState(String lang) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 60),
@@ -1203,12 +1240,16 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
           const Icon(Icons.inbox_outlined, size: 48, color: Color(0xFF94A3B8)),
           const SizedBox(height: 12),
           Text(
-            'No letters found',
+            lang == 'mr'
+                ? 'कोणतेही पत्र आढळले नाही'
+                : (lang == 'hi' ? 'कोई पत्र नहीं मिला' : 'No letters found'),
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
           ),
           const SizedBox(height: 4),
           Text(
-            'Try adjusting your search criteria',
+            lang == 'mr'
+                ? 'आपले शोध निकष तपासून पहा'
+                : (lang == 'hi' ? 'अपने खोज मानदंड जांचें' : 'Try adjusting your search criteria'),
             style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
           ),
         ],

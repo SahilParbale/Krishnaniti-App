@@ -1,4 +1,6 @@
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/localization/app_translations.dart';
+import '../../../providers/language_provider.dart';
 import '../../common/desktop_modal_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +8,7 @@ import '../../../../data/models/housing_society_model.dart';
 import '../../../../data/repositories/housing_society_repository.dart';
 import '../../../screens/housing_societies/housing_society_report_generator.dart';
 import '../../../widgets/app_dropdown.dart';
+import '../../../widgets/app_load_more_footer.dart';
 
 class DesktopHousingSocietiesView extends ConsumerStatefulWidget {
   const DesktopHousingSocietiesView({super.key});
@@ -21,6 +24,10 @@ class _DesktopHousingSocietiesViewState extends ConsumerState<DesktopHousingSoci
   String _selectedArea = 'All';
   String _statusFilter = 'all';
   List<String> _availableAreas = ['All'];
+  int _displayedLimit = 20;
+
+  List<HousingSocietyModel> get _visibleSocieties =>
+      _filteredSocieties.take(_displayedLimit).toList();
 
   @override
   void initState() {
@@ -376,6 +383,7 @@ class _DesktopHousingSocietiesViewState extends ConsumerState<DesktopHousingSoci
   @override
   Widget build(BuildContext context) {
     final filtered = _filteredSocieties;
+    final visible = _visibleSocieties;
     final totalVoters = filtered.fold<int>(0, (sum, s) => sum + s.voterCount);
     final favVoters = filtered.fold<int>(0, (sum, s) => sum + s.favourableVoterCount);
     final avgSupport = totalVoters > 0 ? ((favVoters / totalVoters) * 100).round() : 0;
@@ -401,7 +409,19 @@ class _DesktopHousingSocietiesViewState extends ConsumerState<DesktopHousingSoci
           if (_loading)
             _buildLoadingGrid()
           else
-            _buildCardGrid(filtered),
+            _buildCardGrid(visible),
+
+          if (!_loading && filtered.isNotEmpty)
+            AppLoadMoreFooter(
+              currentCount: visible.length,
+              totalCount: filtered.length,
+              pageSize: 20,
+              onLoadMore: () {
+                setState(() => _displayedLimit += 20);
+              },
+              label: 'सोसायटी',
+              isMarathi: true,
+            ),
         ],
       ),
     );
@@ -452,7 +472,10 @@ class _DesktopHousingSocietiesViewState extends ConsumerState<DesktopHousingSoci
                 );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
-              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+              label: Text(
+                AppTranslations.getDownloadReport(ref.watch(desktopLanguageProvider)),
+                style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
+              ),
               style: OutlinedButton.styleFrom(
                 backgroundColor: const Color(0xFFF0F9FF),
                 side: const BorderSide(color: Color(0xFFBAE6FD)),
@@ -558,7 +581,10 @@ class _DesktopHousingSocietiesViewState extends ConsumerState<DesktopHousingSoci
               border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
             child: TextField(
-              onChanged: (val) => setState(() => _searchTerm = val),
+              onChanged: (val) => setState(() {
+                _searchTerm = val;
+                _displayedLimit = 20;
+              }),
               decoration: const InputDecoration(
                 hintText: 'Search society by name, chairman or secretary...',
                 hintStyle: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
@@ -583,7 +609,12 @@ class _DesktopHousingSocietiesViewState extends ConsumerState<DesktopHousingSoci
             return DropdownMenuItem(value: a, child: Text(a == 'All' ? 'All Areas' : a));
           }).toList(),
           onChanged: (val) {
-            if (val != null) setState(() => _selectedArea = val);
+            if (val != null) {
+              setState(() {
+                _selectedArea = val;
+                _displayedLimit = 20;
+              });
+            }
           },
         ),
         const SizedBox(width: 12),
@@ -602,7 +633,12 @@ class _DesktopHousingSocietiesViewState extends ConsumerState<DesktopHousingSoci
             DropdownMenuItem(value: 'Inactive', child: Text('Inactive')),
           ],
           onChanged: (val) {
-            if (val != null) setState(() => _statusFilter = val);
+            if (val != null) {
+              setState(() {
+                _statusFilter = val;
+                _displayedLimit = 20;
+              });
+            }
           },
         ),
       ],

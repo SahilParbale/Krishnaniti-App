@@ -2,7 +2,6 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:nagarsevak_mobile/core/constants/app_config.dart';
 import 'package:nagarsevak_mobile/core/services/supabase_service.dart';
@@ -304,6 +303,157 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
     });
   }
 
+  void _showComplaintDetailsModal(ComplaintModel c, String lang) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Container(
+          width: 540,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.brand50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.brand200),
+                    ),
+                    child: Text(
+                      '#${AppTranslations.formatDigits(c.id, lang)}',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.brand700),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: c.status.toLowerCase().contains('pending')
+                          ? const Color(0xFFFEE2E2)
+                          : (c.status.toLowerCase().contains('resolved') ? const Color(0xFFDCFCE7) : const Color(0xFFFEF3C7)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      AppTranslations.getStatus(c.status, lang),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: c.status.toLowerCase().contains('pending')
+                            ? const Color(0xFFB91C1C)
+                            : (c.status.toLowerCase().contains('resolved') ? const Color(0xFF15803D) : const Color(0xFFB45309)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              AppTranslatedText(
+                c.title,
+                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.slate900),
+              ),
+              const SizedBox(height: 8),
+              if (c.description.isNotEmpty)
+                AppTranslatedText(
+                  c.description,
+                  style: const TextStyle(fontSize: 13.5, color: AppColors.slate600, height: 1.4),
+                ),
+              const SizedBox(height: 16),
+              const Divider(height: 1, color: AppColors.slate100),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  const Icon(Icons.location_on_outlined, size: 16, color: AppColors.slate400),
+                  const SizedBox(width: 6),
+                  Text(
+                    AppTranslations.getAreaName(c.area ?? c.ward ?? 'Prabhag 12', lang),
+                    style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.slate700),
+                  ),
+                ],
+              ),
+              if (c.citizenName != null && c.citizenName!.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.person_outline_rounded, size: 16, color: AppColors.slate400),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${lang == 'mr' ? 'नागरिक:' : (lang == 'hi' ? 'नागरिक:' : 'Citizen:')} ${c.citizenName}',
+                      style: const TextStyle(fontSize: 12.5, color: AppColors.slate700),
+                    ),
+                    if (c.citizenMobile != null && c.citizenMobile!.isNotEmpty) ...[
+                      const SizedBox(width: 12),
+                      const Icon(Icons.phone_outlined, size: 14, color: AppColors.slate400),
+                      const SizedBox(width: 4),
+                      Text(
+                        AppTranslations.formatDigits(c.citizenMobile!, lang),
+                        style: const TextStyle(fontSize: 12.5, color: AppColors.slate700),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  OutlinedButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.slate700,
+                      side: const BorderSide(color: AppColors.slate200),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: Text(lang == 'mr' ? 'बंद करा' : (lang == 'hi' ? 'बंद करें' : 'Close')),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      ref.read(activeScreenProvider.notifier).setScreen('complaints');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.brand600,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: Text(lang == 'mr' ? 'तक्रारींमध्ये उघडा' : (lang == 'hi' ? 'शिकायतों में खोलें' : 'Open in Complaints')),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatRelativeTime(DateTime dt, String lang) {
+    final diff = DateTime.now().difference(dt);
+    if (diff.inMinutes < 60) {
+      final mins = diff.inMinutes.clamp(1, 59);
+      if (lang == 'mr') return '${AppTranslations.formatDigits(mins, lang)} मिनिटांपूर्वी';
+      if (lang == 'hi') return '${AppTranslations.formatDigits(mins, lang)} मिनट पहले';
+      return '${mins}m ago';
+    } else if (diff.inHours < 24) {
+      final hours = diff.inHours;
+      if (lang == 'mr') return '${AppTranslations.formatDigits(hours, lang)} तासांपूर्वी';
+      if (lang == 'hi') return '${AppTranslations.formatDigits(hours, lang)} घंटे पहले';
+      return '${hours}h ago';
+    } else {
+      final days = diff.inDays;
+      if (lang == 'mr') return '${AppTranslations.formatDigits(days, lang)} दिवसांपूर्वी';
+      if (lang == 'hi') return '${AppTranslations.formatDigits(days, lang)} दिन पहले';
+      return '${days}d ago';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final lang = ref.watch(appLanguageProvider);
@@ -345,28 +495,29 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Sticky Header Section
+              // 1. Sticky Header Section (matching Dashboard.tsx lines 226-249)
               _buildHeaderSection(lang),
 
               const SizedBox(height: 24),
 
-              // 2. Quick Actions Card
+              // 2. Quick Actions Card (matching Dashboard.tsx lines 252-282)
               _buildQuickActionsCard(lang),
 
               const SizedBox(height: 24),
 
-              // 3. AI Insight Banner
+              // 3. AI Insight Banner (matching Dashboard.tsx lines 285-299)
               _buildAiInsightBanner(lang, pending, resolved, voters),
 
               const SizedBox(height: 24),
 
-              // 4. Stats Grid 4 Cards
+              // 4. Stats Grid 4 Cards (matching Dashboard.tsx lines 302-307)
               Row(
                 children: [
                   Expanded(
                     child: _buildStatCard(
-                      title: lang == 'mr' ? 'एकूण मतदार' : (lang == 'hi' ? 'कुल मतदाता' : 'Total Citizens'),
+                      title: lang == 'mr' ? 'एकूण नागरिक' : (lang == 'hi' ? 'कुल नागरिक' : 'Total Citizens'),
                       value: voters,
+                      lang: lang,
                       icon: Icons.people_outline_rounded,
                       accentBorder: const Color(0xFFBAE6FD),
                       accentBg: const Color(0xFFF0F9FF),
@@ -377,8 +528,9 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
                   const SizedBox(width: 20),
                   Expanded(
                     child: _buildStatCard(
-                      title: lang == 'mr' ? 'प्रलंबित समस्या' : (lang == 'hi' ? 'लंबित मुद्दे' : 'Pending Issues'),
+                      title: lang == 'mr' ? 'प्रलंबित तक्रारी' : (lang == 'hi' ? 'लंबित मुद्दे' : 'Pending Issues'),
                       value: pending,
+                      lang: lang,
                       icon: Icons.error_outline_rounded,
                       accentBorder: const Color(0xFFFECACA),
                       accentBg: const Color(0xFFFEF2F2),
@@ -389,8 +541,9 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
                   const SizedBox(width: 20),
                   Expanded(
                     child: _buildStatCard(
-                      title: lang == 'mr' ? 'काम चालू' : (lang == 'hi' ? 'प्रगति पर' : 'In Progress'),
+                      title: lang == 'mr' ? 'काम चालू' : (lang == 'hi' ? 'कार्य प्रगति पर' : 'In Progress'),
                       value: inProgress,
+                      lang: lang,
                       icon: Icons.show_chart_rounded,
                       accentBorder: const Color(0xFFFDE68A),
                       accentBg: const Color(0xFFFFFBEB),
@@ -401,8 +554,9 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
                   const SizedBox(width: 20),
                   Expanded(
                     child: _buildStatCard(
-                      title: lang == 'mr' ? 'पूर्ण झालेली कामे' : (lang == 'hi' ? 'पूर्ण हुए कार्य' : 'Resolved Works'),
+                      title: lang == 'mr' ? 'सोडवलेले' : (lang == 'hi' ? 'हल किया गया' : 'Resolved'),
                       value: resolved,
+                      lang: lang,
                       icon: Icons.check_circle_outline_rounded,
                       accentBorder: const Color(0xFFBBF7D0),
                       accentBg: const Color(0xFFF0FDF4),
@@ -447,7 +601,7 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                AppTranslations.t('dashboard.title', lang: lang),
+                lang == 'mr' ? 'डॅशबोर्ड' : (lang == 'hi' ? 'डैशबोर्ड' : 'Dashboard'),
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w800,
@@ -457,7 +611,9 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
               ),
               const SizedBox(height: 4),
               Text(
-                AppTranslations.t('dashboard.subtitle', lang: lang),
+                lang == 'mr'
+                    ? 'आपले स्वागत आहे, नगरसेवक'
+                    : (lang == 'hi' ? 'वापसी पर स्वागत है, नगरसेवक' : 'Welcome back, Nagar Sevak'),
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
@@ -470,38 +626,34 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
           ),
         ),
         const SizedBox(width: 16),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ElevatedButton(
-              onPressed: _openNewRequestModal,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brand600,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        // New Request Button (Dashboard.tsx line 244)
+        ElevatedButton(
+          onPressed: _openNewRequestModal,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.brand600,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.add, size: 16, color: Colors.white),
+              const SizedBox(width: 8),
+              Text(
+                lang == 'mr'
+                    ? '+ नवीन तक्रार'
+                    : (lang == 'hi' ? '+ नई शिकायत' : '+ New Request'),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                  letterSpacing: -0.1,
+                ),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.add, size: 16, color: Colors.white),
-                  const SizedBox(width: 8),
-                  Text(
-                    lang == 'mr'
-                        ? '+ नवीन तक्रार / विनंती'
-                        : (lang == 'hi' ? '+ नया अनुरोध' : '+ New Request'),
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                      letterSpacing: -0.1,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );
@@ -525,7 +677,7 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
       child: Row(
         children: [
           Text(
-            lang == 'mr' ? 'त्वरित कृती:' : (lang == 'hi' ? 'त्वरित कार्रवाई:' : 'Quick actions:'),
+            lang == 'mr' ? 'त्वरित क्रिया:' : (lang == 'hi' ? 'त्वरित कार्रवाई:' : 'Quick actions:'),
             style: const TextStyle(
               fontSize: 13.5,
               fontWeight: FontWeight.w600,
@@ -538,17 +690,17 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
             children: [
               _buildGhostActionBtn(
                 icon: Icons.search_rounded,
-                label: lang == 'mr' ? 'मतदार शोधा' : (lang == 'hi' ? 'मतदाता खोजें' : 'Search Voters'),
+                label: lang == 'mr' ? 'मतदार शोधा' : (lang == 'hi' ? 'मतदाता खोजें' : 'Search Voter'),
                 onTap: () => ref.read(activeScreenProvider.notifier).setScreen('voters'),
               ),
               _buildGhostActionBtn(
                 icon: Icons.person_add_alt_1_rounded,
-                label: lang == 'mr' ? 'प्रशासकीय टीम' : (lang == 'hi' ? 'मेरी टीम' : 'My Team / Staff'),
+                label: lang == 'mr' ? 'स्टाफ' : (lang == 'hi' ? 'कर्मचारी' : 'Staff'),
                 onTap: () => ref.read(activeScreenProvider.notifier).setScreen('team'),
               ),
               _buildGhostActionBtn(
                 icon: Icons.campaign_outlined,
-                label: lang == 'mr' ? 'नागरिक तक्रारी' : (lang == 'hi' ? 'नागरिक शिकायतें' : 'Citizen Complaints'),
+                label: lang == 'mr' ? 'तक्रारी' : (lang == 'hi' ? 'शिकायतें' : 'Complaints'),
                 onTap: () => ref.read(activeScreenProvider.notifier).setScreen('complaints'),
               ),
             ],
@@ -616,8 +768,8 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
               children: [
                 Text(
                   lang == 'mr'
-                      ? 'एआय विश्लेषण आणि सारांश'
-                      : (lang == 'hi' ? 'एआई विश्लेषण और सारांश' : 'AI Analysis & Briefing'),
+                      ? 'AI दैनिक माहिती'
+                      : (lang == 'hi' ? 'AI दैनिक जानकारी' : 'AI Daily Insight'),
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
@@ -627,10 +779,10 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
                 const SizedBox(height: 4),
                 Text(
                   lang == 'mr'
-                      ? 'सध्या प्रभागात $pending नागरिक तक्रारी प्रलंबित असून लक्ष देण्याची गरज आहे. $resolved कामे यशस्वीरीत्या पूर्ण झाली आहेत. प्रभागातील एकूण नोंदणीकृत मतदार: $voters.'
+                      ? 'सध्या प्रभागात ${AppTranslations.formatDigits(pending, lang)} नागरिक तक्रारी प्रलंबित असून लक्ष देण्याची गरज आहे. ${AppTranslations.formatDigits(resolved, lang)} कामे यशस्वीरीत्या पूर्ण झाली आहेत. प्रभागातील एकूण नोंदणीकृत नागरिक: ${AppTranslations.formatDigits(voters, lang)}.'
                       : (lang == 'hi'
-                          ? 'वर्तमान में वार्ड में $pending नागरिक शिकायतों पर ध्यान देने की आवश्यकता है। $resolved कार्य सफलतापूर्वक पूरे हुए हैं। कुल पंजीकृत मतदाता: $voters।'
-                          : 'Currently $pending citizen grievances in the ward require attention. $resolved works have been resolved successfully. Total registered ward voters: $voters.'),
+                          ? 'वर्तमान में वार्ड में ${AppTranslations.formatDigits(pending, lang)} नागरिक शिकायतों पर ध्यान देने की आवश्यकता है। ${AppTranslations.formatDigits(resolved, lang)} कार्य सफलतापूर्वक पूरे हुए हैं। कुल पंजीकृत नागरिक: ${AppTranslations.formatDigits(voters, lang)}।'
+                          : 'Currently $pending citizen grievances in the ward require attention. $resolved works have been resolved successfully. Total registered ward citizens: $voters.'),
                   style: const TextStyle(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w500,
@@ -648,7 +800,8 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
 
   Widget _buildStatCard({
     required String title,
-    required int value,
+    required dynamic value,
+    required String lang,
     required IconData icon,
     required Color accentBorder,
     required Color accentBg,
@@ -692,7 +845,7 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    value.toString(),
+                    AppTranslations.formatDigits(value, lang),
                     style: const TextStyle(
                       fontSize: 30,
                       fontWeight: FontWeight.w800,
@@ -749,12 +902,12 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with View All
+          // Header with View All (Dashboard.tsx lines 314-319)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                lang == 'mr' ? 'तक्रार निवारण आढावा' : (lang == 'hi' ? 'शिकायत निवारण समीक्षा' : 'Status Overview'),
+                lang == 'mr' ? 'तक्रार स्थिती' : (lang == 'hi' ? 'तक्रार स्थिति' : 'Complaint Status Overview'),
                 style: const TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
@@ -777,11 +930,12 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
 
           const SizedBox(height: 24),
 
-          // Custom Horizontal Progress Bars (matching Dashboard.tsx lines 310-340)
+          // Custom Horizontal Progress Bars (matching Dashboard.tsx lines 322-344)
           _buildBarChartRow(
             label: AppTranslations.getStatus('pending', lang),
             count: pending,
             total: total,
+            lang: lang,
             barColor: const Color(0xFFEF4444),
           ),
           const SizedBox(height: 18),
@@ -789,6 +943,7 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
             label: AppTranslations.getStatus('in_progress', lang),
             count: inProgress,
             total: total,
+            lang: lang,
             barColor: const Color(0xFFF59E0B),
           ),
           const SizedBox(height: 18),
@@ -796,6 +951,7 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
             label: AppTranslations.getStatus('resolved', lang),
             count: resolved,
             total: total,
+            lang: lang,
             barColor: const Color(0xFF16A34A),
           ),
 
@@ -803,19 +959,19 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
           const Divider(color: AppColors.slate100, height: 1),
           const SizedBox(height: 20),
 
-          // Bottom Metric Triplets (matching Dashboard.tsx lines 345-360)
+          // Bottom Metric Triplets (matching Dashboard.tsx lines 347-362)
           Row(
             children: [
               Expanded(
                 child: Column(
                   children: [
                     Text(
-                      lang == 'mr' ? 'निवारण दर' : (lang == 'hi' ? 'समाधान दर' : 'RESOLUTION RATE'),
+                      lang == 'mr' ? 'निकालाचे प्रमाण' : (lang == 'hi' ? 'निपटान दर' : 'CLEARANCE RATE'),
                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.slate400, letterSpacing: 0.5),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '$resolutionRate%',
+                      '${AppTranslations.formatDigits(resolutionRate, lang)}%',
                       style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.slate900),
                     ),
                   ],
@@ -826,7 +982,7 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
                 child: Column(
                   children: [
                     Text(
-                      lang == 'mr' ? 'सरासरी प्रतिसाद' : (lang == 'hi' ? 'औसत प्रतिक्रिया' : 'AVG. RESPONSE'),
+                      lang == 'mr' ? 'सरासरी प्रतिसाद वेळ' : (lang == 'hi' ? 'औसत प्रतिक्रिया समय' : 'AVG RESPONSE'),
                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.slate400, letterSpacing: 0.5),
                     ),
                     const SizedBox(height: 4),
@@ -842,7 +998,7 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
                 child: Column(
                   children: [
                     Text(
-                      lang == 'mr' ? 'नागरिक समाधान' : (lang == 'hi' ? 'नागरिक संतुष्टि' : 'SATISFACTION'),
+                      lang == 'mr' ? 'समाधान' : (lang == 'hi' ? 'संतोष' : 'SATISFACTION'),
                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.slate400, letterSpacing: 0.5),
                     ),
                     const SizedBox(height: 4),
@@ -864,6 +1020,7 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
     required String label,
     required int count,
     required int total,
+    required String lang,
     required Color barColor,
   }) {
     final double fraction = total > 0 ? (count / total).clamp(0.0, 1.0) : 0.0;
@@ -879,7 +1036,7 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
               style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: AppColors.slate700),
             ),
             Text(
-              count.toString(),
+              AppTranslations.formatDigits(count, lang),
               style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: AppColors.slate900),
             ),
           ],
@@ -929,40 +1086,30 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        lang == 'mr' ? 'थेट तक्रार नोंद' : (lang == 'hi' ? 'लाइव शिकायत फ़ीड' : 'Live Activity'),
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.slate900),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (pendingCount > 0) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFEE2E2),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: const Color(0xFFFECACA)),
-                        ),
-                        child: Text(
-                          '$pendingCount ${AppTranslations.getStatus('pending', lang)}',
-                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFFB91C1C)),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
+              Text(
+                lang == 'mr' ? 'अलीकडील घडामोडी' : (lang == 'hi' ? 'हाल की गतिविधियां' : 'Live Activity'),
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.slate900),
               ),
-              const SizedBox(width: 8),
-              // Filter Buttons
+              if (pendingCount > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEE2E2),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFFECACA)),
+                  ),
+                  child: Text(
+                    '${AppTranslations.formatDigits(pendingCount, lang)} ${AppTranslations.getStatus('pending', lang)}',
+                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFFB91C1C)),
+                  ),
+                ),
+              // Filter Buttons (Dashboard.tsx lines 376-401)
               Container(
                 padding: const EdgeInsets.all(2),
                 decoration: BoxDecoration(
@@ -970,9 +1117,10 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     _buildActivityFilterBtn('all', lang == 'mr' ? 'सर्व' : (lang == 'hi' ? 'सभी' : 'All'), _activityFilter == 'all', isPendingTab: false),
-                    _buildActivityFilterBtn('pending', AppTranslations.getStatus('pending', lang), _activityFilter == 'pending', isPendingTab: true),
+                    _buildActivityFilterBtn('pending', '${AppTranslations.getStatus('pending', lang)} (${AppTranslations.formatDigits(pendingCount, lang)})', _activityFilter == 'pending', isPendingTab: true),
                   ],
                 ),
               ),
@@ -981,13 +1129,13 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
 
           const SizedBox(height: 16),
 
-          // Activity Items List
+          // Activity Items List (Dashboard.tsx lines 403-464)
           if (activities.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 40),
               child: Center(
                 child: Text(
-                  lang == 'mr' ? 'कोणतीही ताजी नोंद नाही' : (lang == 'hi' ? 'कोई हालिया गतिविधि नहीं' : 'No recent activity records'),
+                  lang == 'mr' ? 'काहीही नवीन नाही.' : (lang == 'hi' ? 'कोई हालिया गतिविधि नहीं।' : 'No recent activity.'),
                   style: const TextStyle(fontSize: 13, color: AppColors.slate400),
                 ),
               ),
@@ -1001,16 +1149,16 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
               itemBuilder: (context, index) {
                 final item = activities[index];
                 final isPending = item.status.toLowerCase().contains('pending');
-                final dateFormatted = DateFormat('d MMM, h:mm a').format(item.createdAt);
+                final relTime = _formatRelativeTime(item.createdAt, lang);
 
                 return InkWell(
-                  onTap: () => ref.read(activeScreenProvider.notifier).setScreen('complaints'),
-                  borderRadius: BorderRadius.circular(20),
+                  onTap: () => _showComplaintDetailsModal(item, lang),
+                  borderRadius: BorderRadius.circular(16),
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: isPending ? const Color(0xFFFEF2F2) : AppColors.slate50,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: isPending ? const Color(0xFFFECACA) : Colors.transparent,
                       ),
@@ -1024,7 +1172,11 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
                           height: 8,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: isPending ? const Color(0xFFDC2626) : const Color(0xFF16A34A),
+                            color: isPending
+                                ? const Color(0xFFDC2626)
+                                : (item.status.toLowerCase().contains('resolved')
+                                    ? const Color(0xFF16A34A)
+                                    : const Color(0xFFF59E0B)),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -1032,35 +1184,60 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              AppTranslatedText(
-                                item.title.isNotEmpty ? item.title : 'Citizen Grievance',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.slate900,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 2),
                               Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Flexible(
+                                  Expanded(
                                     child: AppTranslatedText(
-                                      item.area ?? item.location ?? 'Ward No. 12',
-                                      style: const TextStyle(fontSize: 11, color: AppColors.slate500),
+                                      item.title.isNotEmpty ? item.title : 'Citizen Grievance',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: isPending ? FontWeight.w800 : FontWeight.w600,
+                                        color: isPending ? const Color(0xFF7F1D1D) : AppColors.slate900,
+                                      ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
-                                  const Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 4),
-                                    child: Text('•', style: TextStyle(color: AppColors.slate300, fontSize: 10)),
-                                  ),
+                                  if (isPending) ...[
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFFEE2E2),
+                                        borderRadius: BorderRadius.circular(4),
+                                        border: Border.all(color: const Color(0xFFFECACA)),
+                                      ),
+                                      child: Text(
+                                        AppTranslations.getStatus('pending', lang),
+                                        style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w800, color: Color(0xFFB91C1C)),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              const SizedBox(height: 3),
+                              Wrap(
+                                spacing: 4,
+                                runSpacing: 2,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                children: [
                                   Text(
-                                    dateFormatted,
+                                    AppTranslations.getAreaName(item.area ?? item.location ?? item.ward ?? 'Prabhag 12', lang),
+                                    style: const TextStyle(fontSize: 11, color: AppColors.slate500),
+                                  ),
+                                  const Text('•', style: TextStyle(color: AppColors.slate300, fontSize: 10)),
+                                  Text(
+                                    relTime,
                                     style: const TextStyle(fontSize: 11, color: AppColors.slate400),
                                   ),
+                                  if (!isPending) ...[
+                                    const Text('•', style: TextStyle(color: AppColors.slate300, fontSize: 10)),
+                                    Text(
+                                      '(${AppTranslations.getStatus(item.status, lang)})',
+                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.slate500),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ],
@@ -1072,6 +1249,29 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
                 );
               },
             ),
+
+          const SizedBox(height: 16),
+
+          // Bottom View Full Log Button (Dashboard.tsx lines 465-467)
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: () => ref.read(activeScreenProvider.notifier).setScreen('complaints'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.slate700,
+                backgroundColor: Colors.white,
+                side: const BorderSide(color: AppColors.slate200),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                textStyle: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
+              ),
+              child: Text(
+                lang == 'mr'
+                    ? 'संपूर्ण यादी पहा'
+                    : (lang == 'hi' ? 'पूरी सूची देखें' : 'View Full Log'),
+              ),
+            ),
+          ),
         ],
       ),
     );

@@ -239,9 +239,14 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
     } catch (_) {}
 
     if (mounted) {
+      final lang = ref.read(appLanguageProvider);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Staff "${staff.name}" assigned successfully'),
+          content: Text(
+            lang == 'mr'
+                ? 'कर्मचारी "${staff.name}" यशस्वीरित्या नियुक्त केले'
+                : (lang == 'hi' ? 'कर्मचारी "${staff.name}" सफलतापूर्वक सौंपा गया' : 'Staff "${staff.name}" assigned successfully'),
+          ),
           backgroundColor: const Color(0xFF0284C7),
           behavior: SnackBarBehavior.floating,
         ),
@@ -252,6 +257,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
   // 2. Add / Update Status Modal (Responsive: Dialog on Desktop matching StatusUpdateModal.tsx, Sheet on Mobile)
   void _openStatusModal({required String mode, bool showStatusSelector = false}) {
     final isDesktop = MediaQuery.of(context).size.width >= 768;
+    final lang = ref.read(appLanguageProvider);
     if (isDesktop) {
       showDialog(
         context: context,
@@ -281,6 +287,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
               showStatusSelector: showStatusSelector,
               complaintTitle: _complaint.title,
               isDesktop: true,
+              lang: lang,
               onSubmit: (note, status, images) async {
                 Navigator.pop(ctx);
                 await _handleSaveProgressLog(note, status, images);
@@ -299,6 +306,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
           showStatusSelector: showStatusSelector,
           complaintTitle: _complaint.title,
           isDesktop: false,
+          lang: lang,
           onSubmit: (note, status, images) async {
             Navigator.pop(ctx);
             await _handleSaveProgressLog(note, status, images);
@@ -342,13 +350,17 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
     } catch (_) {}
 
     if (mounted) {
-      final isMr = ref.read(isMarathiProvider);
+      final lang = ref.read(appLanguageProvider);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             status == 'InProgress'
-                ? (isMr ? 'कामाची प्रगती यशस्वीरित्या नोंदवली!' : 'Work marked in progress with notes & photos!')
-                : (isMr ? 'तक्रार यशस्वीरित्या निवारण म्हणून नोंदवली!' : 'Complaint marked as resolved with completion notes & photos!'),
+                ? (lang == 'mr'
+                    ? 'कामाची प्रगती यशस्वीरित्या नोंदवली!'
+                    : (lang == 'hi' ? 'कार्य प्रगति सफलतापूर्वक दर्ज की गई!' : 'Work marked in progress with notes & photos!'))
+                : (lang == 'mr'
+                    ? 'तक्रार यशस्वीरित्या निवारण म्हणून नोंदवली!'
+                    : (lang == 'hi' ? 'शिकायत सफलतापूर्वक हल के रूप में दर्ज की गई!' : 'Complaint marked as resolved with completion notes & photos!')),
           ),
           backgroundColor: status == 'Resolved' ? const Color(0xFF16A34A) : const Color(0xFF0284C7),
           behavior: SnackBarBehavior.floating,
@@ -360,6 +372,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
   // 3. Edit Existing Progress Log (Responsive: Dialog on Desktop matching EditLogModal.tsx, Sheet on Mobile)
   void _openEditLogModal(int index, ComplaintProgressUpdate update) {
     final isDesktop = MediaQuery.of(context).size.width >= 768;
+    final lang = ref.read(appLanguageProvider);
     if (isDesktop) {
       showDialog(
         context: context,
@@ -390,6 +403,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
               initialNote: update.note,
               initialImages: update.images,
               isDesktop: true,
+              lang: lang,
               onSubmit: (note, status, images) async {
                 Navigator.pop(ctx);
                 final user = ref.read(currentUserProvider);
@@ -435,6 +449,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
           initialNote: update.note,
           initialImages: update.images,
           isDesktop: false,
+          lang: lang,
           onSubmit: (note, status, images) async {
             Navigator.pop(ctx);
             final user = ref.read(currentUserProvider);
@@ -472,8 +487,16 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
 
   // 4. Delete Log Confirmation (Desktop Dialog matching web vs Mobile AlertDialog)
   void _openDeleteLogDialog(int index) {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final isDesktop = MediaQuery.of(context).size.width >= 768;
+    final deleteTitle = lang == 'mr'
+        ? AppStrings.deleteLogConfirmTitleMr
+        : (lang == 'hi' ? 'प्रगति विवरण हटाएं?' : AppStrings.deleteLogConfirmTitle);
+    final deleteDesc = lang == 'mr'
+        ? AppStrings.deleteLogConfirmDescMr
+        : (lang == 'hi' ? 'क्या आप इस प्रगति विवरण को हटाना चाहते हैं? यह क्रिया पूर्ववत नहीं की जा सकती।' : AppStrings.deleteLogConfirmDesc);
+    final cancelText = lang == 'mr' ? AppStrings.cancelMr : (lang == 'hi' ? 'रद्द करें' : AppStrings.cancel);
+    final deleteText = lang == 'mr' ? AppStrings.deleteComplaintMr : (lang == 'hi' ? 'हटाएं' : AppStrings.deleteComplaint);
 
     if (isDesktop) {
       showDialog(
@@ -510,12 +533,12 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  isMr ? AppStrings.deleteLogConfirmTitleMr : AppStrings.deleteLogConfirmTitle,
+                  deleteTitle,
                   style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  isMr ? AppStrings.deleteLogConfirmDescMr : AppStrings.deleteLogConfirmDesc,
+                  deleteDesc,
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B), height: 1.4),
                 ),
@@ -530,7 +553,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           padding: const EdgeInsets.symmetric(vertical: 11),
                         ),
-                        child: Text(isMr ? AppStrings.cancelMr : AppStrings.cancel, style: const TextStyle(color: Color(0xFF475569))),
+                        child: Text(cancelText, style: const TextStyle(color: Color(0xFF475569))),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -559,7 +582,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                                 );
                           } catch (_) {}
                         },
-                        child: Text(isMr ? AppStrings.deleteComplaintMr : AppStrings.deleteComplaint, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        child: Text(deleteText, style: const TextStyle(fontWeight: FontWeight.bold)),
                       ),
                     ),
                   ],
@@ -589,19 +612,19 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
             ),
             const SizedBox(width: 10),
             Text(
-              isMr ? AppStrings.deleteLogConfirmTitleMr : AppStrings.deleteLogConfirmTitle,
+              deleteTitle,
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
             ),
           ],
         ),
         content: Text(
-          isMr ? AppStrings.deleteLogConfirmDescMr : AppStrings.deleteLogConfirmDesc,
+          deleteDesc,
           style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(isMr ? AppStrings.cancelMr : AppStrings.cancel),
+            child: Text(cancelText),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -625,7 +648,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                     );
               } catch (_) {}
             },
-            child: Text(isMr ? AppStrings.deleteComplaintMr : AppStrings.deleteComplaint),
+            child: Text(deleteText),
           ),
         ],
       ),
@@ -634,7 +657,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
 
   // 5. Edit Ticket Modal (Desktop modal dialog matching web vs Mobile AlertDialog)
   void _openEditTicketModal() {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final isDesktop = MediaQuery.of(context).size.width >= 768;
     final descController = TextEditingController(text: _complaint.description.isNotEmpty ? _complaint.description : _complaint.title);
     String selectedCategory = _complaint.category;
@@ -643,6 +666,22 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
     if (!categories.contains(selectedCategory)) {
       categories.insert(0, selectedCategory);
     }
+
+    final modalTitle = lang == 'mr'
+        ? AppStrings.editModalTitleMr
+        : (lang == 'hi' ? 'शिकायत विवरण संपादित करें' : AppStrings.editModalTitle);
+    final descLabel = lang == 'mr'
+        ? AppStrings.editDescriptionLabelMr
+        : (lang == 'hi' ? 'समस्या का विवरण' : AppStrings.editDescriptionLabel);
+    final descHint = lang == 'mr'
+        ? 'तक्रारीचे सविस्तर वर्णन प्रविष्ट करा...'
+        : (lang == 'hi' ? 'शिकायत का विस्तृत विवरण दर्ज करें...' : 'Enter complaint description...');
+    final catLabel = lang == 'mr'
+        ? AppStrings.editCategoryLabelMr
+        : (lang == 'hi' ? 'श्रेणी' : AppStrings.editCategoryLabel);
+    final catTitle = lang == 'mr' ? 'वर्गवारी निवडा' : (lang == 'hi' ? 'श्रेणी चुनें' : 'Select Category');
+    final cancelText = lang == 'mr' ? AppStrings.cancelMr : (lang == 'hi' ? 'रद्द करें' : AppStrings.cancel);
+    final saveText = lang == 'mr' ? AppStrings.saveChangesMr : (lang == 'hi' ? 'परिवर्तन सहेजें' : AppStrings.saveChanges);
 
     if (isDesktop) {
       showDialog(
@@ -693,7 +732,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                             ),
                             const SizedBox(width: 10),
                             Text(
-                              isMr ? AppStrings.editModalTitleMr : AppStrings.editModalTitle,
+                              modalTitle,
                               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
                             ),
                           ],
@@ -711,7 +750,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          isMr ? AppStrings.editDescriptionLabelMr : AppStrings.editDescriptionLabel,
+                          descLabel,
                           style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
                         ),
                         const SizedBox(height: 6),
@@ -720,7 +759,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                           maxLines: 4,
                           style: const TextStyle(fontSize: 13),
                           decoration: InputDecoration(
-                            hintText: 'Enter complaint description...',
+                            hintText: descHint,
                             hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
                             filled: true,
                             fillColor: const Color(0xFFF8FAFC),
@@ -732,15 +771,15 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          isMr ? AppStrings.editCategoryLabelMr : AppStrings.editCategoryLabel,
+                          catLabel,
                           style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
                         ),
                         const SizedBox(height: 6),
                         AppDropdown<String>(
-                          title: isMr ? 'वर्गवारी निवडा' : 'Select Category',
+                          title: catTitle,
                           value: selectedCategory,
                           items: categories
-                              .map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 13))))
+                              .map((c) => DropdownMenuItem(value: c, child: Text(AppTranslations.getComplaintType(c, lang), style: const TextStyle(fontSize: 13))))
                               .toList(),
                           onChanged: (val) {
                             if (val != null) setModalState(() => selectedCategory = val);
@@ -765,7 +804,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
                           ),
-                          child: Text(isMr ? AppStrings.cancelMr : AppStrings.cancel, style: const TextStyle(fontSize: 13, color: Color(0xFF475569))),
+                          child: Text(cancelText, style: const TextStyle(fontSize: 13, color: Color(0xFF475569))),
                         ),
                         const SizedBox(width: 10),
                         ElevatedButton(
@@ -796,7 +835,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                               } catch (_) {}
                             }
                           },
-                          child: Text(isMr ? AppStrings.saveChangesMr : AppStrings.saveChanges, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                          child: Text(saveText, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                         ),
                       ],
                     ),
@@ -817,7 +856,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
         builder: (ctx, setModalState) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Text(
-            isMr ? AppStrings.editModalTitleMr : AppStrings.editModalTitle,
+            modalTitle,
             style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
           ),
           content: SingleChildScrollView(
@@ -826,7 +865,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isMr ? AppStrings.editDescriptionLabelMr : AppStrings.editDescriptionLabel,
+                  descLabel,
                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
                 ),
                 const SizedBox(height: 6),
@@ -835,7 +874,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                   maxLines: 4,
                   style: const TextStyle(fontSize: 13),
                   decoration: InputDecoration(
-                    hintText: 'Enter complaint description...',
+                    hintText: descHint,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                       borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
@@ -845,15 +884,15 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  isMr ? AppStrings.editCategoryLabelMr : AppStrings.editCategoryLabel,
+                  catLabel,
                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
                 ),
                 const SizedBox(height: 6),
                 AppDropdown<String>(
-                  title: isMr ? 'वर्गवारी निवडा' : 'Select Category',
+                  title: catTitle,
                   value: selectedCategory,
                   items: categories
-                      .map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 13))))
+                      .map((c) => DropdownMenuItem(value: c, child: Text(AppTranslations.getComplaintType(c, lang), style: const TextStyle(fontSize: 13))))
                       .toList(),
                   onChanged: (val) {
                     if (val != null) setModalState(() => selectedCategory = val);
@@ -865,7 +904,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: Text(isMr ? AppStrings.cancelMr : AppStrings.cancel),
+              child: Text(cancelText),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -893,7 +932,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                   } catch (_) {}
                 }
               },
-              child: Text(isMr ? AppStrings.saveChangesMr : AppStrings.saveChanges),
+              child: Text(saveText),
             ),
           ],
         ),
@@ -903,8 +942,16 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
 
   // 6. Delete Ticket Confirmation (Desktop Dialog matching web vs Mobile AlertDialog)
   void _openDeleteTicketDialog() {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final isDesktop = MediaQuery.of(context).size.width >= 768;
+    final deleteTitle = lang == 'mr'
+        ? AppStrings.deleteTicketConfirmTitleMr
+        : (lang == 'hi' ? 'शिकायत हटाएं?' : AppStrings.deleteTicketConfirmTitle);
+    final deleteDesc = lang == 'mr'
+        ? AppStrings.deleteTicketConfirmDescMr
+        : (lang == 'hi' ? 'क्या आप निश्चित रूप से इस शिकायत टिकट को हटाना चाहते हैं? यह क्रिया पूर्ववत नहीं की जा सकती।' : AppStrings.deleteTicketConfirmDesc);
+    final cancelText = lang == 'mr' ? AppStrings.cancelMr : (lang == 'hi' ? 'रद्द करें' : AppStrings.cancel);
+    final deleteText = lang == 'mr' ? AppStrings.deleteComplaintMr : (lang == 'hi' ? 'शिकायत हटाएं' : AppStrings.deleteComplaint);
 
     if (isDesktop) {
       showDialog(
@@ -941,12 +988,12 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  isMr ? AppStrings.deleteTicketConfirmTitleMr : AppStrings.deleteTicketConfirmTitle,
+                  deleteTitle,
                   style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  isMr ? AppStrings.deleteTicketConfirmDescMr : AppStrings.deleteTicketConfirmDesc,
+                  deleteDesc,
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B), height: 1.4),
                 ),
@@ -961,7 +1008,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           padding: const EdgeInsets.symmetric(vertical: 11),
                         ),
-                        child: Text(isMr ? AppStrings.cancelMr : AppStrings.cancel, style: const TextStyle(color: Color(0xFF475569))),
+                        child: Text(cancelText, style: const TextStyle(color: Color(0xFF475569))),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -987,7 +1034,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                             }
                           }
                         },
-                        child: Text(isMr ? AppStrings.deleteComplaintMr : AppStrings.deleteComplaint, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        child: Text(deleteText, style: const TextStyle(fontWeight: FontWeight.bold)),
                       ),
                     ),
                   ],
@@ -1018,20 +1065,20 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                isMr ? AppStrings.deleteTicketConfirmTitleMr : AppStrings.deleteTicketConfirmTitle,
+                deleteTitle,
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
               ),
             ),
           ],
         ),
         content: Text(
-          isMr ? AppStrings.deleteTicketConfirmDescMr : AppStrings.deleteTicketConfirmDesc,
+          deleteDesc,
           style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(isMr ? AppStrings.cancelMr : AppStrings.cancel),
+            child: Text(cancelText),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -1052,7 +1099,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                 }
               }
             },
-            child: Text(isMr ? AppStrings.deleteComplaintMr : AppStrings.deleteComplaint),
+            child: Text(deleteText),
           ),
         ],
       ),
@@ -1165,19 +1212,25 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
     return const Color(0xFFE2E8F0);
   }
 
-  String _backButtonText(bool isMr) {
+  String _backButtonText(String lang) {
     if (_complaint.id.startsWith('ap-')) {
-      return isMr ? 'प्रभाग समस्यांकडे परत' : 'Back to Ward Problems';
+      return lang == 'mr'
+          ? 'प्रभाग समस्यांकडे परत'
+          : (lang == 'hi' ? 'वार्ड समस्याओं पर वापस जाएं' : 'Back to Ward Problems');
     } else if (_complaint.id.startsWith('pr-')) {
-      return isMr ? 'वैयक्तिक विनंत्यांकडे परत' : 'Back to Personal Requests';
+      return lang == 'mr'
+          ? 'वैयक्तिक विनंत्यांकडे परत'
+          : (lang == 'hi' ? 'व्यक्तिगत अनुरोधों पर वापस जाएं' : 'Back to Personal Requests');
     } else {
-      return isMr ? AppStrings.backToComplaintsMr : AppStrings.backToComplaints;
+      return lang == 'mr'
+          ? AppStrings.backToComplaintsMr
+          : (lang == 'hi' ? 'शिकायतों पर वापस जाएं' : AppStrings.backToComplaints);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
     final user = ref.watch(currentUserProvider);
     final isAdminOrStaff = user?.role == 'admin' || user?.role == 'staff' || true; // Full access for nagarsevak app
 
@@ -1242,7 +1295,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  _backButtonText(isMr),
+                                  _backButtonText(lang),
                                   style: const TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w700,
@@ -1262,9 +1315,9 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               AppPdfButton.outlined(
-                                label: 'Reports',
-                                tooltip: 'Reports',
-                                onPressed: () => ComplaintReportGenerator.generateAndPrintSingleComplaintDocket(_complaint),
+                                label: AppTranslations.getDownloadReport(lang),
+                                tooltip: AppTranslations.getDownloadReport(lang),
+                                onPressed: () => ComplaintReportGenerator.generateAndPrintSingleComplaintDocket(_complaint, lang: lang),
                               ),
                               const SizedBox(width: 8),
                               if (isWide) ...[
@@ -1272,7 +1325,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                                   onPressed: _openEditTicketModal,
                                   icon: const Icon(Icons.edit_outlined, size: 15, color: Color(0xFF475569)),
                                   label: Text(
-                                    isMr ? AppStrings.editComplaintMr : AppStrings.editComplaint,
+                                    lang == 'mr' ? AppStrings.editComplaintMr : (lang == 'hi' ? 'संपादित करें' : AppStrings.editComplaint),
                                     style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
                                   ),
                                   style: OutlinedButton.styleFrom(
@@ -1288,7 +1341,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                                   onPressed: _openDeleteTicketDialog,
                                   icon: const Icon(Icons.delete_outline_rounded, size: 15, color: Color(0xFFDC2626)),
                                   label: Text(
-                                    isMr ? AppStrings.deleteComplaintMr : AppStrings.deleteComplaint,
+                                    lang == 'mr' ? AppStrings.deleteComplaintMr : (lang == 'hi' ? 'हटाएं' : AppStrings.deleteComplaint),
                                     style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFFDC2626)),
                                   ),
                                   style: OutlinedButton.styleFrom(
@@ -1303,7 +1356,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                                 IconButton(
                                   onPressed: _openEditTicketModal,
                                   icon: const Icon(Icons.edit_outlined, size: 16, color: Color(0xFF475569)),
-                                  tooltip: isMr ? AppStrings.editComplaintMr : AppStrings.editComplaint,
+                                  tooltip: lang == 'mr' ? AppStrings.editComplaintMr : (lang == 'hi' ? 'संपादित करें' : AppStrings.editComplaint),
                                   style: IconButton.styleFrom(
                                     backgroundColor: Colors.white,
                                     side: const BorderSide(color: Color(0xFFCBD5E1)),
@@ -1317,7 +1370,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                                 IconButton(
                                   onPressed: _openDeleteTicketDialog,
                                   icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFDC2626)),
-                                  tooltip: isMr ? AppStrings.deleteComplaintMr : AppStrings.deleteComplaint,
+                                  tooltip: lang == 'mr' ? AppStrings.deleteComplaintMr : (lang == 'hi' ? 'हटाएं' : AppStrings.deleteComplaint),
                                   style: IconButton.styleFrom(
                                     backgroundColor: const Color(0xFFFEF2F2),
                                     side: const BorderSide(color: Color(0xFFFECACA)),
@@ -1361,9 +1414,9 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.stretch,
                                       children: [
-                                        _buildTicketOverviewCard(isMr),
+                                        _buildTicketOverviewCard(lang),
                                         const SizedBox(height: 20),
-                                        _buildProgressHistorySection(isMr, isAdminOrStaff),
+                                        _buildProgressHistorySection(lang, isAdminOrStaff),
                                         const SizedBox(height: 32),
                                       ],
                                     ),
@@ -1376,10 +1429,10 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                                       crossAxisAlignment: CrossAxisAlignment.stretch,
                                       children: [
                                         if (isAdminOrStaff) ...[
-                                          _buildManageTicketCard(isMr),
+                                          _buildManageTicketCard(lang),
                                           const SizedBox(height: 20),
                                         ],
-                                        _buildTicketDetailsCard(isMr),
+                                        _buildTicketDetailsCard(lang),
                                         const SizedBox(height: 32),
                                       ],
                                     ),
@@ -1392,15 +1445,15 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                _buildTicketOverviewCard(isMr),
+                                _buildTicketOverviewCard(lang),
                                 const SizedBox(height: 16),
-                                _buildProgressHistorySection(isMr, isAdminOrStaff),
+                                _buildProgressHistorySection(lang, isAdminOrStaff),
                                 const SizedBox(height: 16),
                                 if (isAdminOrStaff) ...[
-                                  _buildManageTicketCard(isMr),
+                                  _buildManageTicketCard(lang),
                                   const SizedBox(height: 16),
                                 ],
-                                _buildTicketDetailsCard(isMr),
+                                _buildTicketDetailsCard(lang),
                                 const SizedBox(height: 32),
                               ],
                             );
@@ -1419,7 +1472,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
   }
 
   // 1. Top Ticket Overview Card
-  Widget _buildTicketOverviewCard(bool isMr) {
+  Widget _buildTicketOverviewCard(String lang) {
     final categoryText = _complaint.category;
     final isPr = _complaint.id.startsWith('pr-');
     final isAp = _complaint.id.startsWith('ap-');
@@ -1427,11 +1480,13 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
 
     String typeLabel = categoryText;
     if (isPr || isHelp) {
-      typeLabel = isMr ? 'वैयक्तिक मदत' : 'Personal Help';
+      typeLabel = lang == 'mr' ? 'वैयक्तिक मदत' : (lang == 'hi' ? 'व्यक्तिगत सहायता' : 'Personal Help');
     } else if (isAp) {
-      typeLabel = isMr ? 'प्रभाग समस्या' : 'Ward Problem';
+      typeLabel = lang == 'mr' ? 'प्रभाग समस्या' : (lang == 'hi' ? 'वार्ड समस्या' : 'Ward Problem');
     } else if (categoryText.toLowerCase() == 'complaint') {
-      typeLabel = isMr ? 'तक्रार' : 'Complaint';
+      typeLabel = lang == 'mr' ? 'तक्रार' : (lang == 'hi' ? 'शिकायत' : 'Complaint');
+    } else {
+      typeLabel = AppTranslations.getComplaintType(categoryText, lang);
     }
 
     return Container(
@@ -1486,7 +1541,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                   ],
                 ),
               ),
-              _buildStatusBadge(_complaint.status, isMr),
+              _buildStatusBadge(_complaint.status, lang),
             ],
           ),
 
@@ -1538,7 +1593,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
               _complaint.imageUrl != null ||
               _complaint.videoUrl != null) ...[
             const SizedBox(height: 16),
-            _buildAttachmentsSection(isMr),
+            _buildAttachmentsSection(lang),
           ],
 
           const SizedBox(height: 16),
@@ -1561,7 +1616,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                       const SizedBox(width: 5),
                       Expanded(
                         child: Text(
-                          _complaint.location ?? _complaint.area ?? _complaint.ward ?? 'Prabhag Area',
+                          AppTranslations.getAreaName(_complaint.location ?? _complaint.area ?? _complaint.ward ?? 'Prabhag Area', lang),
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -1579,7 +1634,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                     const Icon(Icons.calendar_today_outlined, size: 14, color: Color(0xFF64748B)),
                     const SizedBox(width: 5),
                     Text(
-                      DateFormat('MMM d, yyyy h:mm a').format(_complaint.createdAt),
+                      AppTranslations.formatDigits(DateFormat('MMM d, yyyy h:mm a').format(_complaint.createdAt), lang),
                       style: const TextStyle(
                         fontSize: 11.5,
                         color: Color(0xFF64748B),
@@ -1597,7 +1652,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
   }
 
   // Attachments UI (Horizontal preview strip matching web preview layout)
-  Widget _buildAttachmentsSection(bool isMr) {
+  Widget _buildAttachmentsSection(String lang) {
     final allAttachments = <ComplaintAttachment>[];
     final seenUrls = <String>{};
 
@@ -1652,7 +1707,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
             const Icon(Icons.description_outlined, size: 16, color: Color(0xFF475569)),
             const SizedBox(width: 6),
             Text(
-              '${isMr ? AppStrings.attachmentsMr : AppStrings.attachments} (${allAttachments.length})',
+              '${lang == "mr" ? AppStrings.attachmentsMr : (lang == "hi" ? "संलग्न फाइलें" : AppStrings.attachments)} (${AppTranslations.formatDigits(allAttachments.length.toString(), lang)})',
               style: const TextStyle(
                 fontSize: 13.5,
                 fontWeight: FontWeight.w700,
@@ -1671,7 +1726,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
             itemCount: allAttachments.length,
             separatorBuilder: (context, index) => const SizedBox(width: 10),
             itemBuilder: (ctx, idx) {
-              return _buildAttachmentPreviewTile(allAttachments[idx], isMr, idx + 1);
+              return _buildAttachmentPreviewTile(allAttachments[idx], lang, idx + 1);
             },
           ),
         ),
@@ -1680,7 +1735,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
   }
 
   // Individual Attachment Preview Tile (Video, Image, Audio, Document)
-  Widget _buildAttachmentPreviewTile(ComplaintAttachment att, bool isMr, int index) {
+  Widget _buildAttachmentPreviewTile(ComplaintAttachment att, String lang, int index) {
     // 1. VIDEO ATTACHMENT (Embedded video player with HTML5 controls & thumbnail preview)
     if (att.isVideo) {
       return Container(
@@ -1709,7 +1764,9 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
 
     // 2. IMAGE ATTACHMENT (Aspect ratio thumbnail with tap to open zoomable lightbox)
     if (att.isImage) {
-      final caption = att.name.isNotEmpty ? att.name : 'Photo #$index';
+      final caption = att.name.isNotEmpty
+          ? att.name
+          : '${lang == "mr" ? "फोटो" : (lang == "hi" ? "फोटो" : "Photo")} #${AppTranslations.formatDigits(index.toString(), lang)}';
       return InkWell(
         onTap: () => _openLightbox(att.url, caption),
         borderRadius: BorderRadius.circular(10),
@@ -1772,7 +1829,9 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
             const Icon(Icons.audiotrack_rounded, color: Color(0xFF0284C7), size: 30),
             const SizedBox(height: 6),
             Text(
-              att.name.isNotEmpty ? att.name : 'Audio #$index',
+              att.name.isNotEmpty
+                  ? att.name
+                  : '${lang == "mr" ? "ऑडिओ" : (lang == "hi" ? "ऑडियो" : "Audio")} #${AppTranslations.formatDigits(index.toString(), lang)}',
               style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -1811,7 +1870,9 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
             ),
             const SizedBox(height: 6),
             Text(
-              att.name.isNotEmpty ? att.name : 'Document #$index',
+              att.name.isNotEmpty
+                  ? att.name
+                  : '${lang == "mr" ? "दस्तऐवज" : (lang == "hi" ? "दस्तावेज़" : "Document")} #${AppTranslations.formatDigits(index.toString(), lang)}',
               style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -1824,7 +1885,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
   }
 
   // 2. Progress History Section (Timeline matching ComplaintDetail.tsx)
-  Widget _buildProgressHistorySection(bool isMr, bool isAdminOrStaff) {
+  Widget _buildProgressHistorySection(String lang, bool isAdminOrStaff) {
     final updates = _complaint.progressUpdates;
 
     return Container(
@@ -1858,7 +1919,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                     const Icon(Icons.access_time_rounded, size: 19, color: Color(0xFF0284C7)),
                     const SizedBox(width: 8),
                     Text(
-                      isMr ? AppStrings.progressHistoryMr : AppStrings.progressHistory,
+                      lang == 'mr' ? AppStrings.progressHistoryMr : (lang == 'hi' ? 'प्रगति इतिहास' : AppStrings.progressHistory),
                       style: const TextStyle(
                         fontSize: 16.5,
                         fontWeight: FontWeight.w800,
@@ -1894,7 +1955,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                             const Icon(Icons.add_rounded, size: 15, color: Colors.white),
                             const SizedBox(width: 5),
                             Text(
-                              isMr ? AppStrings.addLogMr : AppStrings.addLog,
+                              lang == 'mr' ? AppStrings.addLogMr : (lang == 'hi' ? 'लॉग जोड़ें' : AppStrings.addLog),
                               style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
@@ -1918,7 +1979,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
               padding: const EdgeInsets.symmetric(vertical: 24),
               child: Center(
                 child: Text(
-                  isMr ? AppStrings.noProgressUpdatesMr : AppStrings.noProgressUpdates,
+                  lang == 'mr' ? AppStrings.noProgressUpdatesMr : (lang == 'hi' ? 'कोई प्रगति विवरण दर्ज नहीं है' : AppStrings.noProgressUpdates),
                   style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8), fontWeight: FontWeight.w500),
                 ),
               ),
@@ -2016,9 +2077,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                                           ),
                                         ),
                                         child: Text(
-                                          isResolved
-                                              ? (isMr ? 'निवारण' : 'Resolved')
-                                              : (isMr ? 'प्रगतीपथावर' : 'In Progress'),
+                                          AppTranslations.getStatus(item.status, lang),
                                           style: TextStyle(
                                             fontSize: 10.5,
                                             fontWeight: FontWeight.w700,
@@ -2028,7 +2087,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                                       ),
                                       const SizedBox(width: 8),
                                       Text(
-                                        DateFormat('MMM d, h:mm a').format(item.timestamp),
+                                        AppTranslations.formatDigits(DateFormat('MMM d, h:mm a').format(item.timestamp), lang),
                                         style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8), fontWeight: FontWeight.w500),
                                       ),
                                     ],
@@ -2105,7 +2164,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                                 Align(
                                   alignment: Alignment.centerRight,
                                   child: Text(
-                                    'Updated by ${item.updatedBy}',
+                                    '${lang == "mr" ? "नोंदणीकर्ता: " : (lang == "hi" ? "द्वारा अद्यतन: " : "Updated by ")}${item.updatedBy}',
                                     style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8), fontStyle: FontStyle.italic),
                                   ),
                                 ),
@@ -2124,7 +2183,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
               totalPages: _totalUpdatePages,
               totalItems: updates.length,
               pageSize: _updatePageSize,
-              label: isMr ? 'नोंदी' : 'updates',
+              label: lang == 'mr' ? 'नोंदी' : (lang == 'hi' ? 'प्रविष्टियां' : 'updates'),
               onPageChanged: (page) => setState(() => _updatePage = page),
             ),
           ],
@@ -2134,7 +2193,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
   }
 
   // 3. Manage Ticket Card (Update Status & Assign Staff)
-  Widget _buildManageTicketCard(bool isMr) {
+  Widget _buildManageTicketCard(String lang) {
     final isPr = _complaint.id.startsWith('pr-');
     final isInProgress = _complaint.status.toLowerCase() == 'inprogress';
     final isResolved = _complaint.status.toLowerCase() == 'resolved';
@@ -2157,14 +2216,14 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            isMr ? AppStrings.manageTicketMr : AppStrings.manageTicket,
+            lang == 'mr' ? AppStrings.manageTicketMr : (lang == 'hi' ? 'टिकट प्रबंधित करें' : AppStrings.manageTicket),
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
           ),
           const SizedBox(height: 14),
 
           // UPDATE STATUS section
           Text(
-            isMr ? AppStrings.updateStatusMr : AppStrings.updateStatus,
+            lang == 'mr' ? AppStrings.updateStatusMr : (lang == 'hi' ? 'स्थिति अद्यतन करें' : AppStrings.updateStatus),
             style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF64748B), letterSpacing: 0.5),
           ),
           const SizedBox(height: 8),
@@ -2196,8 +2255,8 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                     Expanded(
                       child: Text(
                         isInProgress
-                            ? (isMr ? AppStrings.updateWipMr : AppStrings.updateWip)
-                            : (isMr ? AppStrings.markInProgressMr : AppStrings.markInProgress),
+                            ? (lang == 'mr' ? AppStrings.updateWipMr : (lang == 'hi' ? 'प्रगति विवरण अद्यतन करें' : AppStrings.updateWip))
+                            : (lang == 'mr' ? AppStrings.markInProgressMr : (lang == 'hi' ? 'कार्य प्रगति पर चिह्नित करें' : AppStrings.markInProgress)),
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: isInProgress ? FontWeight.w700 : FontWeight.w600,
@@ -2238,8 +2297,8 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                   Expanded(
                     child: Text(
                       isResolved
-                          ? (isMr ? AppStrings.updateResolutionMr : AppStrings.updateResolution)
-                          : (isMr ? AppStrings.markResolvedMr : AppStrings.markResolved),
+                          ? (lang == 'mr' ? AppStrings.updateResolutionMr : (lang == 'hi' ? 'निवारण विवरण अद्यतन करें' : AppStrings.updateResolution))
+                          : (lang == 'mr' ? AppStrings.markResolvedMr : (lang == 'hi' ? 'हल किया गया चिह्नित करें' : AppStrings.markResolved)),
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: isResolved ? FontWeight.w700 : FontWeight.w600,
@@ -2257,12 +2316,11 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
           const SizedBox(height: 14),
 
           // ASSIGN STAFF section
-          // ASSIGN STAFF section
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                isMr ? AppStrings.assignStaffMr : AppStrings.assignStaff,
+                lang == 'mr' ? AppStrings.assignStaffMr : (lang == 'hi' ? 'कर्मचारी नियुक्त करें' : AppStrings.assignStaff),
                 style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF64748B), letterSpacing: 0.5),
               ),
               if (_isLoadingStaff)
@@ -2276,13 +2334,13 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
           const SizedBox(height: 8),
 
           AppDropdown<String>(
-            title: isMr ? AppStrings.selectStaffMr : AppStrings.selectStaff,
+            title: lang == 'mr' ? AppStrings.selectStaffMr : (lang == 'hi' ? 'कर्मचारी चुनें' : AppStrings.selectStaff),
             value: _staffList.any((s) => s.id == _assignedStaffId) ? _assignedStaffId : null,
             hint: _isLoadingStaff
-                ? (isMr ? 'कर्मचारी यादी लोड होत आहे...' : 'Loading staff...')
+                ? (lang == 'mr' ? 'कर्मचारी यादी लोड होत आहे...' : (lang == 'hi' ? 'कर्मचारी सूची लोड हो रही है...' : 'Loading staff...'))
                 : (_staffList.isEmpty
-                    ? (isMr ? 'कोणतेही कर्मचारी उपलब्ध नाहीत' : 'No staff available')
-                    : (isMr ? AppStrings.selectStaffMr : AppStrings.selectStaff)),
+                    ? (lang == 'mr' ? 'कोणतेही कर्मचारी उपलब्ध नाहीत' : (lang == 'hi' ? 'कोई कर्मचारी उपलब्ध नहीं' : 'No staff available'))
+                    : (lang == 'mr' ? AppStrings.selectStaffMr : (lang == 'hi' ? 'कर्मचारी चुनें' : AppStrings.selectStaff))),
             items: _staffList.map((s) {
               return DropdownMenuItem<String>(
                 value: s.id,
@@ -2315,8 +2373,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
   }
 
   // 4. Ticket Details / Citizen Card (Monochrome box matching ComplaintDetail.tsx)
-  Widget _buildTicketDetailsCard(bool isMr) {
-    final citizenName = _complaint.citizenName ?? (isMr ? AppStrings.anonymousMr : AppStrings.anonymous);
+  Widget _buildTicketDetailsCard(String lang) {
     final assignedName = _currentAssignedStaffName;
     final assignedMobile = _currentAssignedStaffMobile;
 
@@ -2338,38 +2395,44 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            isMr ? AppStrings.ticketDetailsMr : AppStrings.ticketDetails,
+            lang == 'mr' ? AppStrings.ticketDetailsMr : (lang == 'hi' ? 'टिकट विवरण' : AppStrings.ticketDetails),
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.black),
           ),
           const SizedBox(height: 12),
 
           // Ticket ID
           _buildDetailRow(
-            label: isMr ? AppStrings.ticketIdMr : AppStrings.ticketId,
+            label: lang == 'mr' ? AppStrings.ticketIdMr : (lang == 'hi' ? 'टिकट सं.' : AppStrings.ticketId),
             valueWidget: Text(
-              '#${_complaint.id}',
+              '#${AppTranslations.formatDigits(_complaint.id, lang)}',
               style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.w800, fontSize: 13, color: Colors.black),
             ),
           ),
 
           // Citizen
           _buildDetailRow(
-            label: isMr ? AppStrings.citizenMr : AppStrings.citizen,
-            valueWidget: Text(
-              citizenName,
-              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Colors.black),
-            ),
+            label: lang == 'mr' ? AppStrings.citizenMr : (lang == 'hi' ? 'नागरिक' : AppStrings.citizen),
+            valueWidget: _complaint.citizenName != null && _complaint.citizenName!.isNotEmpty
+                ? AppTranslatedText(
+                    _complaint.citizenName!,
+                    isName: true,
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Colors.black),
+                  )
+                : Text(
+                    lang == 'mr' ? AppStrings.anonymousMr : (lang == 'hi' ? 'अनाम' : AppStrings.anonymous),
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Colors.black),
+                  ),
           ),
 
           // Mobile & Quick actions
           if (_complaint.citizenMobile != null && _complaint.citizenMobile!.isNotEmpty)
             _buildDetailRow(
-              label: isMr ? AppStrings.mobileMr : AppStrings.mobile,
+              label: lang == 'mr' ? AppStrings.mobileMr : (lang == 'hi' ? 'मोबाइल' : AppStrings.mobile),
               valueWidget: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    _complaint.citizenMobile!,
+                    AppTranslations.formatDigits(_complaint.citizenMobile!, lang),
                     style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.w600, fontSize: 12.5, color: Colors.black),
                   ),
                   const SizedBox(width: 8),
@@ -2392,8 +2455,13 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                   InkWell(
                     onTap: () async {
                       final clean = _complaint.citizenMobile!.replaceAll(RegExp(r'\D'), '');
-                      final text = Uri.encodeComponent(
-                          'Namaskar, regarding your civic request "${_complaint.title}" (#${_complaint.id}), our office has updated the status.');
+                      final ticketNo = AppTranslations.formatDigits(_complaint.id, lang);
+                      final waMessage = lang == 'mr'
+                          ? 'नमस्कार, आपल्या "${_complaint.title}" (नोंदणी क्र. #$ticketNo) तक्रारीबाबत नगरसेवक कार्यालयातून पुढील कार्यवाही अद्यतनित करण्यात आली आहे.'
+                          : (lang == 'hi'
+                              ? 'नमस्कार, आपके "${_complaint.title}" (पंजीकरण सं. #$ticketNo) अनुरोध के संबंध में नगरसेवक कार्यालय से अद्यतन दर्ज किया गया है।'
+                              : 'Namaskar, regarding your civic request "${_complaint.title}" (#$ticketNo), our office has updated the status.');
+                      final text = Uri.encodeComponent(waMessage);
                       final uri = Uri.parse('https://wa.me/91$clean?text=$text');
                       if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
                     },
@@ -2413,13 +2481,14 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
 
           // Assigned To
           _buildDetailRow(
-            label: isMr ? AppStrings.assignedToMr : AppStrings.assignedTo,
+            label: lang == 'mr' ? AppStrings.assignedToMr : (lang == 'hi' ? 'नियुक्त कर्मचारी' : AppStrings.assignedTo),
             valueWidget: assignedName.isNotEmpty
                 ? Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(
+                      AppTranslatedText(
                         assignedName,
+                        isName: true,
                         style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Colors.black),
                       ),
                       if (assignedMobile.isNotEmpty)
@@ -2429,7 +2498,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                             const Icon(Icons.phone, size: 11, color: Color(0xFF64748B)),
                             const SizedBox(width: 3),
                             Text(
-                              assignedMobile,
+                              AppTranslations.formatDigits(assignedMobile, lang),
                               style: const TextStyle(fontSize: 11, fontFamily: 'monospace', color: Color(0xFF475569)),
                             ),
                           ],
@@ -2437,7 +2506,7 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
                     ],
                   )
                 : Text(
-                    isMr ? AppStrings.unassignedMr : AppStrings.unassigned,
+                    lang == 'mr' ? AppStrings.unassignedMr : (lang == 'hi' ? 'अनियुक्त' : AppStrings.unassigned),
                     style: const TextStyle(color: Color(0xFF94A3B8), fontWeight: FontWeight.w500, fontSize: 13),
                   ),
           ),
@@ -2445,10 +2514,25 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
           // Added By
           if (_complaint.addedByStaffName != null && _complaint.addedByStaffName!.isNotEmpty)
             _buildDetailRow(
-              label: isMr ? AppStrings.addedByMr : AppStrings.addedBy,
-              valueWidget: Text(
+              label: lang == 'mr' ? AppStrings.addedByMr : (lang == 'hi' ? 'दर्जकर्ता' : AppStrings.addedBy),
+              valueWidget: AppTranslatedText(
                 _complaint.addedByStaffName!,
+                isName: true,
                 style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Colors.black),
+              ),
+              isLast: _complaint.location == null || _complaint.location!.isEmpty,
+            ),
+
+          // Address / Location
+          if (_complaint.location != null && _complaint.location!.isNotEmpty)
+            _buildDetailRow(
+              label: lang == 'mr' ? 'पत्ता / परिसर' : (lang == 'hi' ? 'स्थान / क्षेत्र' : 'Location'),
+              valueWidget: Flexible(
+                child: AppTranslatedText(
+                  _complaint.location!,
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5, color: Colors.black),
+                  textAlign: TextAlign.end,
+                ),
               ),
               isLast: true,
             ),
@@ -2474,11 +2558,10 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
   }
 
   // Status Badge matching web design colors
-  Widget _buildStatusBadge(String status, bool isMr) {
+  Widget _buildStatusBadge(String status, String lang) {
     Color bg;
     Color border;
     Color text;
-    String label;
 
     switch (status.toLowerCase()) {
       case 'resolved':
@@ -2486,26 +2569,24 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
         bg = const Color(0xFFDCFCE7); // bg-green-100
         border = const Color(0xFFBBF7D0); // border-green-200
         text = const Color(0xFF166534); // text-green-800
-        label = isMr ? 'निवारण' : 'Resolved';
         break;
       case 'inprogress':
         bg = const Color(0xFFDBEAFE); // bg-blue-100
         border = const Color(0xFFBFDBFE); // border-blue-200
         text = const Color(0xFF1E40AF); // text-blue-800
-        label = isMr ? 'प्रगतीपथावर' : 'In Progress';
         break;
       case 'assigned':
         bg = const Color(0xFFF3E8FF); // bg-purple-100
         border = const Color(0xFFE9D5FF); // border-purple-200
         text = const Color(0xFF6B21A8); // text-purple-800
-        label = isMr ? 'नियुक्त' : 'Assigned';
         break;
       default:
         bg = const Color(0xFFFEF2F2); // bg-red-50
         border = const Color(0xFFFECACA); // border-red-100
         text = const Color(0xFFB91C1C); // text-red-700
-        label = isMr ? 'प्रलंबित' : 'Pending';
     }
+
+    final label = AppTranslations.getStatus(status, lang);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -2677,6 +2758,7 @@ class _StatusUpdateBottomSheet extends StatefulWidget {
   final bool showStatusSelector;
   final String complaintTitle;
   final bool isDesktop;
+  final String lang;
   final Function(String note, String status, List<ComplaintAttachment> images) onSubmit;
 
   const _StatusUpdateBottomSheet({
@@ -2684,6 +2766,7 @@ class _StatusUpdateBottomSheet extends StatefulWidget {
     required this.showStatusSelector,
     required this.complaintTitle,
     this.isDesktop = false,
+    this.lang = 'en',
     required this.onSubmit,
   });
 
@@ -2711,9 +2794,39 @@ class _StatusUpdateBottomSheetState extends State<_StatusUpdateBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = widget.lang;
     final isInProgress = _status == 'InProgress';
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final isDesktop = widget.isDesktop;
+
+    final headerTitle = isInProgress
+        ? (lang == 'mr' ? 'कामाची प्रगती नोंदवा' : (lang == 'hi' ? 'कार्य प्रगति दर्ज करें' : 'Add Progress Log'))
+        : (lang == 'mr' ? 'तक्रार निवारण नोंदवा' : (lang == 'hi' ? 'समाधान विवरण दर्ज करें' : 'Add Resolution Log'));
+
+    final mobileHeaderTitle = isInProgress
+        ? (lang == 'mr' ? 'कामाची प्रगती नोंदवा' : (lang == 'hi' ? 'कार्य प्रगति दर्ज करें' : 'Update Work In Progress'))
+        : (lang == 'mr' ? 'तक्रार निवारण नोंदवा' : (lang == 'hi' ? 'समाधान विवरण दर्ज करें' : 'Mark Complaint Resolved'));
+
+    final fieldLabel = isInProgress
+        ? (lang == 'mr' ? 'कामाच्या प्रगतीची नोंद' : (lang == 'hi' ? 'कार्य प्रगति विवरण' : 'Work Progress Note'))
+        : (lang == 'mr' ? 'निवारण शेरा व तपशील' : (lang == 'hi' ? 'समाधान विवरण एवं टिप्पणी' : 'Resolution Details & Remarks'));
+
+    final fieldHint = isInProgress
+        ? (lang == 'mr'
+            ? 'चालू कामाचे स्वरूप, वापरलेले साहित्य व प्रगती लिहा...'
+            : (lang == 'hi' ? 'जारी कार्य, की गई कार्रवाई और सामग्री का विवरण दें...' : 'Describe ongoing work, actions taken, materials used...'))
+        : (lang == 'mr'
+            ? 'समस्या कशी सोडवली, पाहणी व अंतिम शेरा लिहा...'
+            : (lang == 'hi' ? 'समस्या का समाधान कैसे हुआ, निरीक्षण एवं अंतिम टिप्पणी लिखें...' : 'Describe how the issue was completely resolved, inspection done...'));
+
+    final attachLabel = lang == 'mr'
+        ? 'फोटो / व्हिडिओ जोडा (ऐच्छिक)'
+        : (lang == 'hi' ? 'फोटो / वीडियो संलग्न करें (वैकल्पिक)' : 'Attach Photos / Videos (Optional)');
+
+    final cancelText = lang == 'mr' ? 'रद्द करा' : (lang == 'hi' ? 'रद्द करें' : 'Cancel');
+    final submitText = isInProgress
+        ? (lang == 'mr' ? 'प्रगती जतन करा' : (lang == 'hi' ? 'प्रगति सहेजें' : 'Save Progress'))
+        : (lang == 'mr' ? 'निवारण नोंदवा' : (lang == 'hi' ? 'समाधान सहेजें' : (isDesktop ? 'Save Resolution' : 'Mark Resolved')));
 
     return Container(
       constraints: BoxConstraints(
@@ -2768,7 +2881,7 @@ class _StatusUpdateBottomSheetState extends State<_StatusUpdateBottomSheet> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            isInProgress ? 'Add Progress Log' : 'Add Resolution Log',
+                            headerTitle,
                             style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: Color(0xFF0F172A)),
                           ),
                           if (widget.complaintTitle.isNotEmpty) ...[
@@ -2794,7 +2907,7 @@ class _StatusUpdateBottomSheetState extends State<_StatusUpdateBottomSheet> {
           else
             AppModalHeader(
               icon: Icons.published_with_changes_rounded,
-              title: isInProgress ? 'Update Work In Progress' : 'Mark Complaint Resolved',
+              title: mobileHeaderTitle,
               subtitle: widget.complaintTitle,
               onClose: () => Navigator.pop(context),
             ),
@@ -2829,7 +2942,7 @@ class _StatusUpdateBottomSheetState extends State<_StatusUpdateBottomSheet> {
                               ),
                               alignment: Alignment.center,
                               child: Text(
-                                'In Progress',
+                                AppTranslations.getStatus('inprogress', lang),
                                 style: TextStyle(
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w700,
@@ -2854,7 +2967,7 @@ class _StatusUpdateBottomSheetState extends State<_StatusUpdateBottomSheet> {
                               ),
                               alignment: Alignment.center,
                               child: Text(
-                                'Resolved',
+                                AppTranslations.getStatus('resolved', lang),
                                 style: TextStyle(
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w700,
@@ -2871,7 +2984,7 @@ class _StatusUpdateBottomSheetState extends State<_StatusUpdateBottomSheet> {
                 ],
 
                 AppFieldLabel(
-                  label: isInProgress ? 'Work Progress Note' : 'Resolution Details & Remarks',
+                  label: fieldLabel,
                   isRequired: true,
                 ),
                 TextField(
@@ -2879,9 +2992,7 @@ class _StatusUpdateBottomSheetState extends State<_StatusUpdateBottomSheet> {
                   maxLines: 4,
                   style: const TextStyle(fontSize: 13),
                   decoration: InputDecoration(
-                    hintText: isInProgress
-                        ? 'Describe ongoing work, actions taken, materials used...'
-                        : 'Describe how the issue was completely resolved, inspection done...',
+                    hintText: fieldHint,
                     hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
                     filled: true,
                     fillColor: const Color(0xFFF8FAFC),
@@ -2903,7 +3014,7 @@ class _StatusUpdateBottomSheetState extends State<_StatusUpdateBottomSheet> {
                 const SizedBox(height: 14),
 
                 AppImagePickerField(
-                  label: 'Attach Photos / Videos (Optional)',
+                  label: attachLabel,
                   allowMultiple: true,
                   initialFiles: _selectedFiles,
                   onFilesChanged: (files) {
@@ -2923,7 +3034,7 @@ class _StatusUpdateBottomSheetState extends State<_StatusUpdateBottomSheet> {
                             side: const BorderSide(color: Color(0xFFCBD5E1)),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
-                          child: const Text('Cancel', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w700)),
+                          child: Text(cancelText, style: const TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w700)),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -2935,7 +3046,13 @@ class _StatusUpdateBottomSheetState extends State<_StatusUpdateBottomSheet> {
                                   final note = _noteController.text.trim();
                                   if (note.isEmpty) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Please enter progress remarks.')),
+                                      SnackBar(
+                                        content: Text(
+                                          lang == 'mr'
+                                              ? 'कृपया प्रगती शेरा प्रविष्ट करा.'
+                                              : (lang == 'hi' ? 'कृपया प्रगति विवरण दर्ज करें।' : 'Please enter progress remarks.'),
+                                        ),
+                                      ),
                                     );
                                     return;
                                   }
@@ -2953,7 +3070,7 @@ class _StatusUpdateBottomSheetState extends State<_StatusUpdateBottomSheet> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
                           child: Text(
-                            isInProgress ? 'Save Progress' : 'Mark Resolved',
+                            submitText,
                             style: const TextStyle(fontWeight: FontWeight.w800),
                           ),
                         ),
@@ -2983,7 +3100,7 @@ class _StatusUpdateBottomSheetState extends State<_StatusUpdateBottomSheet> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     ),
-                    child: const Text('Cancel', style: TextStyle(fontSize: 13, color: Color(0xFF475569))),
+                    child: Text(cancelText, style: const TextStyle(fontSize: 13, color: Color(0xFF475569))),
                   ),
                   const SizedBox(width: 10),
                   ElevatedButton.icon(
@@ -2993,7 +3110,13 @@ class _StatusUpdateBottomSheetState extends State<_StatusUpdateBottomSheet> {
                             final note = _noteController.text.trim();
                             if (note.isEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Please enter progress remarks.')),
+                                SnackBar(
+                                  content: Text(
+                                    lang == 'mr'
+                                        ? 'कृपया प्रगती शेरा प्रविष्ट करा.'
+                                        : (lang == 'hi' ? 'कृपया प्रगति विवरण दर्ज करें।' : 'Please enter progress remarks.'),
+                                  ),
+                                ),
                               );
                               return;
                             }
@@ -3009,7 +3132,7 @@ class _StatusUpdateBottomSheetState extends State<_StatusUpdateBottomSheet> {
                       size: 16,
                     ),
                     label: Text(
-                      isInProgress ? 'Save Progress' : 'Save Resolution',
+                      submitText,
                       style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                     ),
                     style: ElevatedButton.styleFrom(
@@ -3038,6 +3161,7 @@ class _EditLogBottomSheet extends StatefulWidget {
   final String initialNote;
   final List<ComplaintAttachment> initialImages;
   final bool isDesktop;
+  final String lang;
   final Function(String note, String status, List<ComplaintAttachment> images) onSubmit;
 
   const _EditLogBottomSheet({
@@ -3046,6 +3170,7 @@ class _EditLogBottomSheet extends StatefulWidget {
     required this.initialNote,
     required this.initialImages,
     this.isDesktop = false,
+    this.lang = 'en',
     required this.onSubmit,
   });
 
@@ -3075,9 +3200,20 @@ class _EditLogBottomSheetState extends State<_EditLogBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = widget.lang;
     final isInProgress = _status == 'InProgress';
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final isDesktop = widget.isDesktop;
+
+    final titleText = lang == 'mr' ? 'प्रगती नोंद संपादित करा' : (lang == 'hi' ? 'प्रगति विवरण संपादित करें' : 'Edit Progress Log');
+    final subtitleStatus = isInProgress
+        ? '${lang == "mr" ? "स्थिती: " : (lang == "hi" ? "स्थिति: " : "Status: ")}${AppTranslations.getStatus("inprogress", lang)}'
+        : '${lang == "mr" ? "स्थिती: " : (lang == "hi" ? "स्थिति: " : "Status: ")}${AppTranslations.getStatus("resolved", lang)}';
+    final logNoteLabel = lang == 'mr' ? 'नोंद तपशील' : (lang == 'hi' ? 'विवरण टिप्पणी' : 'Log Note');
+    final logNoteHint = lang == 'mr' ? 'तपशील प्रविष्ट करा...' : (lang == 'hi' ? 'विवरण दर्ज करें...' : 'Enter log description...');
+    final addPhotosLabel = lang == 'mr' ? 'अजून फोटो जोडा' : (lang == 'hi' ? 'अधिक फोटो जोड़ें' : 'Add More Photos');
+    final cancelText = lang == 'mr' ? 'रद्द करा' : (lang == 'hi' ? 'रद्द करें' : 'Cancel');
+    final saveChangesText = lang == 'mr' ? 'बदल जतन करा' : (lang == 'hi' ? 'परिवर्तन सहेजें' : 'Save Changes');
 
     return Container(
       constraints: BoxConstraints(
@@ -3124,13 +3260,13 @@ class _EditLogBottomSheetState extends State<_EditLogBottomSheet> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Edit Progress Log',
-                            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: Color(0xFF0F172A)),
+                          Text(
+                            titleText,
+                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: Color(0xFF0F172A)),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            isInProgress ? 'Status: In Progress' : 'Status: Resolved',
+                            subtitleStatus,
                             style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
                           ),
                         ],
@@ -3147,8 +3283,8 @@ class _EditLogBottomSheetState extends State<_EditLogBottomSheet> {
           else
             AppModalHeader(
               icon: Icons.edit_note_rounded,
-              title: 'Edit Progress Log',
-              subtitle: isInProgress ? 'Status: In Progress' : 'Status: Resolved',
+              title: titleText,
+              subtitle: subtitleStatus,
               onClose: () => Navigator.pop(context),
             ),
 
@@ -3176,7 +3312,7 @@ class _EditLogBottomSheetState extends State<_EditLogBottomSheet> {
                             ),
                             alignment: Alignment.center,
                             child: Text(
-                              'In Progress',
+                              AppTranslations.getStatus('inprogress', lang),
                               style: TextStyle(
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w700,
@@ -3199,7 +3335,7 @@ class _EditLogBottomSheetState extends State<_EditLogBottomSheet> {
                             ),
                             alignment: Alignment.center,
                             child: Text(
-                              'Resolved',
+                              AppTranslations.getStatus('resolved', lang),
                               style: TextStyle(
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w700,
@@ -3214,13 +3350,13 @@ class _EditLogBottomSheetState extends State<_EditLogBottomSheet> {
                 ),
 
                 const SizedBox(height: 14),
-                const AppFieldLabel(label: 'Log Note', isRequired: true),
+                AppFieldLabel(label: logNoteLabel, isRequired: true),
                 TextField(
                   controller: _noteController,
                   maxLines: 4,
                   style: const TextStyle(fontSize: 13),
                   decoration: InputDecoration(
-                    hintText: 'Enter log description...',
+                    hintText: logNoteHint,
                     hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
                     filled: true,
                     fillColor: const Color(0xFFF8FAFC),
@@ -3279,7 +3415,7 @@ class _EditLogBottomSheetState extends State<_EditLogBottomSheet> {
                 const SizedBox(height: 14),
 
                 AppImagePickerField(
-                  label: 'Add More Photos',
+                  label: addPhotosLabel,
                   allowMultiple: true,
                   initialFiles: _newFiles,
                   onFilesChanged: (files) {
@@ -3299,7 +3435,7 @@ class _EditLogBottomSheetState extends State<_EditLogBottomSheet> {
                             side: const BorderSide(color: Color(0xFFCBD5E1)),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
-                          child: const Text('Cancel', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w700)),
+                          child: Text(cancelText, style: const TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w700)),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -3324,7 +3460,7 @@ class _EditLogBottomSheetState extends State<_EditLogBottomSheet> {
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
-                          child: const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.w800)),
+                          child: Text(saveChangesText, style: const TextStyle(fontWeight: FontWeight.w800)),
                         ),
                       ),
                     ],
@@ -3351,7 +3487,7 @@ class _EditLogBottomSheetState extends State<_EditLogBottomSheet> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     ),
-                    child: const Text('Cancel', style: TextStyle(fontSize: 13, color: Color(0xFF475569))),
+                    child: Text(cancelText, style: const TextStyle(fontSize: 13, color: Color(0xFF475569))),
                   ),
                   const SizedBox(width: 10),
                   ElevatedButton.icon(
@@ -3369,7 +3505,7 @@ class _EditLogBottomSheetState extends State<_EditLogBottomSheet> {
                       widget.onSubmit(note, _status, allAttachments);
                     },
                     icon: const Icon(Icons.check_rounded, size: 16),
-                    label: const Text('Save Changes', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                    label: Text(saveChangesText, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF0284C7),
                       foregroundColor: Colors.white,

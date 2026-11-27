@@ -6,6 +6,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../../../data/models/gallery_model.dart';
 import '../../../data/repositories/gallery_repository.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../providers/language_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../navigation/app_drawer.dart';
 import '../../widgets/app_modal_sheet.dart';
@@ -392,7 +394,8 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMarathi = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
+    final isMarathi = lang == 'mr';
     final filtered = _filteredItems;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -421,12 +424,12 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
-            children: const [
+            children: [
               Text(
-                'Gallery & Media',
+                AppTranslations.getNavTitle('gallery', lang),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 16.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
@@ -434,10 +437,14 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                 ),
               ),
               Text(
-                'Official photo archive, development work images and press albums',
+                lang == 'mr'
+                    ? 'अधिकृत फोटो संग्रहण, विकास कामे आणि अल्बम'
+                    : (lang == 'hi'
+                        ? 'आधिकारिक फोटो संग्रह, विकास कार्य और एल्बम'
+                        : 'Official photo archive, development work images and press albums'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w400,
                   color: Color(0xFFE0F2FE),
@@ -459,15 +466,15 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Search & Filter Card
-                      _buildSearchAndFiltersCard(filtered),
+                      _buildSearchAndFiltersCard(filtered, lang),
 
                       const SizedBox(height: 16),
 
                       // Gallery Grid or List Content
                       if (_viewMode == 'grid')
-                        _buildGridView(_visibleItems)
+                        _buildGridView(_visibleItems, lang)
                       else
-                        _buildListView(_visibleItems),
+                        _buildListView(_visibleItems, lang),
                       if (!_isLoading && filtered.isNotEmpty)
                         AppLoadMoreFooter(
                           currentCount: _visibleItems.length,
@@ -488,16 +495,16 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
           backgroundColor: const Color(0xFF0284C7),
           foregroundColor: Colors.white,
           icon: const Icon(Icons.add_photo_alternate_rounded),
-          label: const Text(
-            'Add Photo',
-            style: TextStyle(fontWeight: FontWeight.bold),
+          label: Text(
+            lang == 'mr' ? 'फोटो जोडा' : (lang == 'hi' ? 'फोटो जोड़ें' : 'Add Photo'),
+            style: const TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildSearchAndFiltersCard(List<GalleryItemModel> filtered) {
+  Widget _buildSearchAndFiltersCard(List<GalleryItemModel> filtered, String lang) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -514,7 +521,9 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                 child: TextField(
                   controller: _searchCtrl,
                   decoration: InputDecoration(
-                    hintText: 'Search gallery or photos...',
+                    hintText: lang == 'mr'
+                        ? 'गॅलरी किंवा फोटो शोधा...'
+                        : (lang == 'hi' ? 'गैलरी या फोटो खोजें...' : 'Search gallery or photos...'),
                     hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                     prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Color(0xFF64748B)),
                     suffixIcon: _searchCtrl.text.isNotEmpty
@@ -575,15 +584,34 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _buildCategoryFilterChip('All (${_allGalleryItems.length})', 'all'),
+                _buildCategoryFilterChip(
+                  lang == 'mr'
+                      ? 'सर्व (${AppTranslations.formatDigits(_allGalleryItems.length, lang)})'
+                      : (lang == 'hi'
+                          ? 'सभी (${AppTranslations.formatDigits(_allGalleryItems.length, lang)})'
+                          : 'All (${_allGalleryItems.length})'),
+                  'all',
+                ),
                 const SizedBox(width: 6),
-                _buildCategoryFilterChip('Events & Functions', 'Event'),
+                _buildCategoryFilterChip(
+                  lang == 'mr' ? 'कार्यक्रम व सोहळे' : (lang == 'hi' ? 'कार्यक्रम व समारोह' : 'Events & Functions'),
+                  'Event',
+                ),
                 const SizedBox(width: 6),
-                _buildCategoryFilterChip('Development Works', 'Work'),
+                _buildCategoryFilterChip(
+                  lang == 'mr' ? 'विकास कामे' : (lang == 'hi' ? 'विकास कार्य' : 'Development Works'),
+                  'Work',
+                ),
                 const SizedBox(width: 6),
-                _buildCategoryFilterChip('Awards', 'Award'),
+                _buildCategoryFilterChip(
+                  lang == 'mr' ? 'पुरस्कार' : (lang == 'hi' ? 'पुरस्कार' : 'Awards'),
+                  'Award',
+                ),
                 const SizedBox(width: 6),
-                _buildCategoryFilterChip('Campaigns', 'Campaign'),
+                _buildCategoryFilterChip(
+                  lang == 'mr' ? 'मोहिमा' : (lang == 'hi' ? 'अभियान' : 'Campaigns'),
+                  'Campaign',
+                ),
               ],
             ),
           ),
@@ -617,7 +645,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
   // ==========================================
   // VIEW MODE 1: GRID VIEW (2 COLUMNS)
   // ==========================================
-  Widget _buildGridView(List<GalleryItemModel> items) {
+  Widget _buildGridView(List<GalleryItemModel> items, String lang) {
     if (items.isEmpty) {
       return Container(
         width: double.infinity,
@@ -627,9 +655,11 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
           children: [
             Icon(Icons.photo_library_outlined, size: 48, color: Colors.grey.shade400),
             const SizedBox(height: 10),
-            const Text(
-              'No photos found.',
-              style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+            Text(
+              lang == 'mr'
+                  ? 'कोणतीही छायाचित्रे सापडली नाहीत.'
+                  : (lang == 'hi' ? 'कोई फ़ोटो नहीं मिली.' : 'No photos found.'),
+              style: const TextStyle(fontSize: 14, color: Color(0xFF64748B)),
             ),
           ],
         ),
@@ -648,12 +678,12 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
       ),
       itemBuilder: (ctx, idx) {
         final item = items[idx];
-        return _buildGridCard(item);
+        return _buildGridCard(item, lang);
       },
     );
   }
 
-  Widget _buildGridCard(GalleryItemModel item) {
+  Widget _buildGridCard(GalleryItemModel item, String lang) {
     return InkWell(
       onTap: () async {
         await Navigator.push(
@@ -779,7 +809,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                         const SizedBox(width: 2),
                         Expanded(
                           child: Text(
-                            item.location,
+                            AppTranslations.getAreaName(item.location, lang),
                             style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -792,11 +822,11 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          item.formattedDate,
+                          AppTranslations.formatDigits(item.formattedDate, lang),
                           style: const TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8)),
                         ),
                         Text(
-                          '${item.viewsCount} views',
+                          '${AppTranslations.formatDigits(item.viewsCount, lang)} ${lang == 'mr' ? 'दृश्य' : (lang == 'hi' ? 'व्यूज' : 'views')}',
                           style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                         ),
                       ],
@@ -814,9 +844,15 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
   // ==========================================
   // VIEW MODE 2: LIST VIEW
   // ==========================================
-  Widget _buildListView(List<GalleryItemModel> items) {
+  Widget _buildListView(List<GalleryItemModel> items, String lang) {
     if (items.isEmpty) {
-      return const Center(child: Text('No photos available.'));
+      return Center(
+        child: Text(
+          lang == 'mr'
+              ? 'कोणतीही छायाचित्रे उपलब्ध नाहीत.'
+              : (lang == 'hi' ? 'कोई फ़ोटो उपलब्ध नहीं है.' : 'No photos available.'),
+        ),
+      );
     }
 
     return ListView.separated(
@@ -897,7 +933,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                           ),
                           const Spacer(),
                           Text(
-                            item.formattedDate,
+                            AppTranslations.formatDigits(item.formattedDate, lang),
                             style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
                           ),
                         ],
@@ -927,14 +963,14 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                           const SizedBox(width: 2),
                           Expanded(
                             child: Text(
-                              item.location,
+                              AppTranslations.getAreaName(item.location, lang),
                               style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           Text(
-                            '${item.viewsCount} views',
+                            '${AppTranslations.formatDigits(item.viewsCount, lang)} ${lang == 'mr' ? 'दृश्य' : (lang == 'hi' ? 'व्यूज' : 'views')}',
                             style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                           ),
                         ],

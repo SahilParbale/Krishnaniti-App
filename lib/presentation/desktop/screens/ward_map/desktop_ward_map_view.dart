@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:nagarsevak_mobile/core/localization/app_translations.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:nagarsevak_mobile/data/models/ward_map_point_model.dart';
 import 'package:nagarsevak_mobile/data/repositories/ward_map_repository.dart';
@@ -23,7 +24,6 @@ class _DesktopWardMapViewState extends ConsumerState<DesktopWardMapView> {
   final TransformationController _transformCtrl = TransformationController();
   String _activeCategory = 'All';
   bool _isSatelliteMode = false;
-  bool _loading = true;
   List<WardMapPointModel> _allPoints = [];
   WardMapPointModel? _selectedPoint;
 
@@ -49,22 +49,18 @@ class _DesktopWardMapViewState extends ConsumerState<DesktopWardMapView> {
   }
 
   Future<void> _loadPoints() async {
-    setState(() => _loading = true);
     try {
       final repo = ref.read(wardMapRepoProvider);
       final pts = await repo.getWardPoints();
       if (mounted) {
         setState(() {
           _allPoints = pts;
-          _loading = false;
           if (_allPoints.isNotEmpty) {
             _selectedPoint = _allPoints.first;
           }
         });
       }
-    } catch (_) {
-      if (mounted) setState(() => _loading = false);
-    }
+    } catch (_) {}
   }
 
   List<WardMapPointModel> get _filteredPoints {
@@ -171,7 +167,10 @@ class _DesktopWardMapViewState extends ConsumerState<DesktopWardMapView> {
             );
           },
           icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
-          label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+          label: Text(
+            AppTranslations.getDownloadReport(ref.watch(desktopLanguageProvider)),
+            style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
+          ),
           style: OutlinedButton.styleFrom(
             backgroundColor: const Color(0xFFF0F9FF),
             side: const BorderSide(color: Color(0xFFBAE6FD)),

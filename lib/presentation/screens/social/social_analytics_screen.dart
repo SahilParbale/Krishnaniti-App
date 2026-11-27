@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/social_post_model.dart';
 import '../../../data/repositories/social_analytics_repository.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../providers/language_provider.dart';
 import '../../navigation/app_drawer.dart';
 import '../../widgets/app_pdf_button.dart';
 import '../../widgets/app_dropdown.dart';
@@ -214,6 +216,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(appLanguageProvider);
     final filtered = _filteredPosts;
     final totalLikes = _allPosts.fold<int>(0, (acc, p) => acc + p.likes);
     final totalComments = _allPosts.fold<int>(0, (acc, p) => acc + p.comments);
@@ -246,12 +249,12 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
-            children: const [
+            children: [
               Text(
-                'Social Analytics',
+                AppTranslations.getNavTitle('social_analytics', lang),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 16.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
@@ -259,10 +262,14 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                 ),
               ),
               Text(
-                'Social reach & engagement',
+                lang == 'mr'
+                    ? 'सोशल मीडिया पोहोच आणि परस्परसंवाद'
+                    : (lang == 'hi'
+                        ? 'सोशल मीडिया पहुंच और सहभागिता'
+                        : 'Social reach & engagement'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w400,
                   color: Color(0xFFE0F2FE),
@@ -282,7 +289,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                   children: [
                     // 1) CONNECT SOCIAL CHANNELS BAR
-                    _buildConnectChannelsBar(),
+                    _buildConnectChannelsBar(lang),
                     const SizedBox(height: 14),
 
                     // 2) 4 EXECUTIVE SUMMARY KPI CARDS
@@ -291,19 +298,20 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                       likes: totalLikes,
                       comments: totalComments,
                       shares: totalShares,
+                      lang: lang,
                     ),
                     const SizedBox(height: 14),
 
                     // 3) GROWTH & ENGAGEMENT HIGHLIGHT BANNER
-                    _buildGrowthBanner(),
+                    _buildGrowthBanner(lang),
                     const SizedBox(height: 14),
 
                     // 4) CONSTITUENCY ENGAGEMENT: TODAY'S BIRTHDAYS
-                    _buildBirthdaysSection(),
+                    _buildBirthdaysSection(lang),
                     const SizedBox(height: 16),
 
                     // 5) FILTER & SEARCH STRIP
-                    _buildFilterSection(),
+                    _buildFilterSection(lang),
                     const SizedBox(height: 12),
 
                     // 6) POSTS COUNT & SORT BAR
@@ -311,7 +319,11 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Showing ${filtered.length} of ${_allPosts.length} posts',
+                          lang == 'mr'
+                              ? 'एकूण ${AppTranslations.formatDigits(_allPosts.length, lang)} पैकी ${AppTranslations.formatDigits(filtered.length, lang)} पोस्ट दाखवत आहे'
+                              : (lang == 'hi'
+                                  ? 'कुल ${AppTranslations.formatDigits(_allPosts.length, lang)} में से ${AppTranslations.formatDigits(filtered.length, lang)} पोस्ट दिखाए जा रहे हैं'
+                                  : 'Showing ${filtered.length} of ${_allPosts.length} posts'),
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -320,17 +332,20 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                         ),
                         Row(
                           children: [
-                            const Text('Sort: ', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                            Text(
+                              lang == 'mr' ? 'क्रमवारी: ' : (lang == 'hi' ? 'क्रम: ' : 'Sort: '),
+                              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                            ),
                             AppDropdown<String>(
-                              title: 'Sort By',
+                              title: lang == 'mr' ? 'क्रमवारी' : (lang == 'hi' ? 'क्रम' : 'Sort By'),
                               value: _sortBy,
                               height: 36,
                               isExpanded: false,
-                              items: const [
-                                DropdownMenuItem(value: 'newest', child: Text('Newest First')),
-                                DropdownMenuItem(value: 'likes', child: Text('Most Liked')),
-                                DropdownMenuItem(value: 'reach', child: Text('Highest Reach')),
-                                DropdownMenuItem(value: 'engagement', child: Text('Highest Engagement')),
+                              items: [
+                                DropdownMenuItem(value: 'newest', child: Text(lang == 'mr' ? 'नवीनतम प्रथम' : (lang == 'hi' ? 'नवीनतम पहले' : 'Newest First'))),
+                                DropdownMenuItem(value: 'likes', child: Text(lang == 'mr' ? 'सर्वाधिक पसंती' : (lang == 'hi' ? 'सबसे ज्यादा पसंद' : 'Most Liked'))),
+                                DropdownMenuItem(value: 'reach', child: Text(lang == 'mr' ? 'सर्वाधिक पोहोच' : (lang == 'hi' ? 'उच्चतम पहुंच' : 'Highest Reach'))),
+                                DropdownMenuItem(value: 'engagement', child: Text(lang == 'mr' ? 'सर्वाधिक सहभाग' : (lang == 'hi' ? 'उच्चतम सहभागिता' : 'Highest Engagement'))),
                               ],
                               onChanged: (val) {
                                 if (val != null) setState(() => _sortBy = val);
@@ -367,11 +382,11 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
 
                     // 7) DUAL VIEW CONTENT (FEED CARDS vs REPORT TABLE)
                     if (filtered.isEmpty)
-                      _buildEmptyState()
+                      _buildEmptyState(lang)
                     else if (_viewMode == 'feed')
-                      ...filtered.map((post) => _buildPostFeedCard(post))
+                      ...filtered.map((post) => _buildPostFeedCard(post, lang))
                     else
-                      _buildPostsTableView(filtered),
+                      _buildPostsTableView(filtered, lang),
 
                     const SizedBox(height: 24),
                   ],
@@ -382,7 +397,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
   }
 
   // 1) Connect Channels Bar
-  Widget _buildConnectChannelsBar() {
+  Widget _buildConnectChannelsBar(String lang) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -404,12 +419,12 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
-                children: const [
-                  Icon(Icons.share_rounded, size: 16, color: Color(0xFF0284C7)),
-                  SizedBox(width: 6),
+                children: [
+                  const Icon(Icons.share_rounded, size: 16, color: Color(0xFF0284C7)),
+                  const SizedBox(width: 6),
                   Text(
-                    'Connected Channels',
-                    style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                    lang == 'mr' ? 'जोडलेले चॅनेल्स' : (lang == 'hi' ? 'जुड़े हुए चैनल' : 'Connected Channels'),
+                    style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                   ),
                 ],
               ),
@@ -421,12 +436,12 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
-                  children: const [
-                    CircleAvatar(radius: 3, backgroundColor: Color(0xFF16A34A)),
-                    SizedBox(width: 4),
+                  children: [
+                    const CircleAvatar(radius: 3, backgroundColor: Color(0xFF16A34A)),
+                    const SizedBox(width: 4),
                     Text(
-                      'Live Synced',
-                      style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
+                      lang == 'mr' ? 'थेट समक्रमित' : (lang == 'hi' ? 'लाइव सिंक' : 'Live Synced'),
+                      style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
                     ),
                   ],
                 ),
@@ -447,10 +462,19 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                     elevation: 0,
                   ),
                   icon: const Icon(Icons.facebook, size: 16),
-                  label: const Text('Connect FB', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                  label: Text(
+                    lang == 'mr' ? 'फेसबुक जोडा' : (lang == 'hi' ? 'फेसबुक जोड़ें' : 'Connect FB'),
+                    style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                  ),
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Official Facebook Page: "Nagarsevak Prabhag 12" is active.')),
+                      SnackBar(content: Text(
+                        lang == 'mr'
+                            ? 'अधिकृत फेसबुक पेज: "नगरसेवक प्रभाग १२" सक्रिय आहे.'
+                            : (lang == 'hi'
+                                ? 'आधिकारिक फेसबुक पेज: "नगरसेवक प्रभाग १२" सक्रिय है।'
+                                : 'Official Facebook Page: "Nagarsevak Prabhag 12" is active.'),
+                      )),
                     );
                   },
                 ),
@@ -474,10 +498,19 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                     icon: const Icon(Icons.camera_alt_outlined, size: 16),
-                    label: const Text('Connect IG', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                    label: Text(
+                      lang == 'mr' ? 'इन्स्टाग्राम जोडा' : (lang == 'hi' ? 'इंस्टाग्राम जोड़ें' : 'Connect IG'),
+                      style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                    ),
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Official Instagram Profile: "@nagarsevak_prabhag12" connected.')),
+                        SnackBar(content: Text(
+                          lang == 'mr'
+                              ? 'अधिकृत इंस्टाग्राम प्रोफाइल: "@nagarsevak_prabhag12" जोडले आहे.'
+                              : (lang == 'hi'
+                                  ? 'आधिकारिक इंस्टाग्राम प्रोफ़ाइल: "@nagarsevak_prabhag12" जुड़ी है।'
+                                  : 'Official Instagram Profile: "@nagarsevak_prabhag12" connected.'),
+                        )),
                       );
                     },
                   ),
@@ -496,6 +529,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
     required int likes,
     required int comments,
     required int shares,
+    required String lang,
   }) {
     return Column(
       children: [
@@ -503,25 +537,25 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
           children: [
             Expanded(
               child: _buildMetricCard(
-                title: 'Total Reach',
-                marathi: 'Total Reach',
-                value: reach.toLocaleString(),
+                title: lang == 'mr' ? 'एकूण पोहोच' : (lang == 'hi' ? 'कुल पहुंच' : 'Total Reach'),
+                marathi: lang == 'mr' ? 'नागरिक पोहोच' : (lang == 'hi' ? 'नागरिक पहुंच' : 'Total Reach'),
+                value: AppTranslations.formatDigits(reach.toLocaleString(), lang),
                 icon: Icons.remove_red_eye_outlined,
                 color: const Color(0xFF0284C7),
                 bgColor: const Color(0xFFF0F9FF),
-                subtitle: '+12% vs last month',
+                subtitle: lang == 'mr' ? '+१२% मागील महिन्याच्या तुलनेत' : (lang == 'hi' ? '+१२% पिछले महीने की तुलना में' : '+12% vs last month'),
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: _buildMetricCard(
-                title: 'Total Likes',
-                marathi: 'Likes',
-                value: likes.toLocaleString(),
+                title: lang == 'mr' ? 'एकूण पसंती' : (lang == 'hi' ? 'कुल पसंद' : 'Total Likes'),
+                marathi: lang == 'mr' ? 'पसंती' : (lang == 'hi' ? 'पसंद' : 'Likes'),
+                value: AppTranslations.formatDigits(likes.toLocaleString(), lang),
                 icon: Icons.thumb_up_alt_outlined,
                 color: const Color(0xFFE11D48),
                 bgColor: const Color(0xFFFFF1F2),
-                subtitle: 'Constituent loves',
+                subtitle: lang == 'mr' ? 'नागरिकांचा पाठिंबा' : (lang == 'hi' ? 'नागरिकों का समर्थन' : 'Constituent loves'),
               ),
             ),
           ],
@@ -531,25 +565,25 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
           children: [
             Expanded(
               child: _buildMetricCard(
-                title: 'Comments',
-                marathi: 'Comments',
-                value: comments.toLocaleString(),
+                title: lang == 'mr' ? 'टिप्पण्या' : (lang == 'hi' ? 'टिप्पणियाँ' : 'Comments'),
+                marathi: lang == 'mr' ? 'टिप्पण्या' : (lang == 'hi' ? 'टिप्पणियाँ' : 'Comments'),
+                value: AppTranslations.formatDigits(comments.toLocaleString(), lang),
                 icon: Icons.chat_bubble_outline_rounded,
                 color: const Color(0xFF9333EA),
                 bgColor: const Color(0xFFFAF5FF),
-                subtitle: 'Direct feedback',
+                subtitle: lang == 'mr' ? 'थेट अभिप्राय' : (lang == 'hi' ? 'सीधा फीडबैक' : 'Direct feedback'),
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: _buildMetricCard(
-                title: 'Shares',
-                marathi: 'Shares',
-                value: shares.toLocaleString(),
+                title: lang == 'mr' ? 'शेअर्स' : (lang == 'hi' ? 'शेयर' : 'Shares'),
+                marathi: lang == 'mr' ? 'शेअर्स' : (lang == 'hi' ? 'शेयर' : 'Shares'),
+                value: AppTranslations.formatDigits(shares.toLocaleString(), lang),
                 icon: Icons.share_outlined,
                 color: const Color(0xFF16A34A),
                 bgColor: const Color(0xFFF0FDF4),
-                subtitle: 'Word of mouth',
+                subtitle: lang == 'mr' ? 'माहिती प्रसार' : (lang == 'hi' ? 'सूचना प्रसार' : 'Word of mouth'),
               ),
             ),
           ],
@@ -650,7 +684,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
   }
 
   // 3) Growth Banner
-  Widget _buildGrowthBanner() {
+  Widget _buildGrowthBanner(String lang) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -684,21 +718,25 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  children: const [
+                  children: [
                     Text(
-                      'Monthly Reach Growth',
-                      style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                      lang == 'mr' ? 'मासिक पोहोच वाढ' : (lang == 'hi' ? 'मासिक पहुंच वृद्धि' : 'Monthly Reach Growth'),
+                      style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                     ),
-                    SizedBox(width: 6),
+                    const SizedBox(width: 6),
                     Text(
-                      '+12%',
-                      style: TextStyle(color: Color(0xFF86EFAC), fontSize: 13, fontWeight: FontWeight.bold),
+                      lang == 'mr' ? '+१२%' : (lang == 'hi' ? '+१२%' : '+12%'),
+                      style: const TextStyle(color: Color(0xFF86EFAC), fontSize: 13, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Consistent updates on civic works in Ward 12 have boosted constituent engagement.',
+                  lang == 'mr'
+                      ? 'प्रभाग १२ मधील नागरी कामांच्या नियमित अपडेट्समुळे नागरिकांचा सहभाग वाढला आहे.'
+                      : (lang == 'hi'
+                          ? 'वार्ड १२ में नागरिक कार्यों के नियमित अपडेट्स से नागरिकों की सहभागिता बढ़ी है।'
+                          : 'Consistent updates on civic works in Ward 12 have boosted constituent engagement.'),
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.88),
                     fontSize: 11,
@@ -713,7 +751,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
   }
 
   // 4) Constituency Engagement: Today's Birthdays
-  Widget _buildBirthdaysSection() {
+  Widget _buildBirthdaysSection(String lang) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -745,9 +783,9 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                     child: const Icon(Icons.cake_rounded, size: 16, color: Color(0xFFD97706)),
                   ),
                   const SizedBox(width: 8),
-                  const Text(
-                    "Today's Birthdays",
-                    style: TextStyle(
+                  Text(
+                    lang == 'mr' ? 'आजचे वाढदिवस' : (lang == 'hi' ? 'आज के जन्मदिन' : "Today's Birthdays"),
+                    style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF0F172A),
@@ -762,7 +800,11 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  'Send Wishes (${_birthdays.length})',
+                  lang == 'mr'
+                      ? 'शुभेच्छा पाठवा (${AppTranslations.formatDigits(_birthdays.length, lang)})'
+                      : (lang == 'hi'
+                          ? 'शुभकामनाएं भेजें (${AppTranslations.formatDigits(_birthdays.length, lang)})'
+                          : 'Send Wishes (${_birthdays.length})'),
                   style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                 ),
               ),
@@ -770,9 +812,16 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
           ),
           const SizedBox(height: 10),
           if (_birthdays.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 8),
-              child: Text('No constituent birthdays registered for today.', style: TextStyle(color: Colors.grey, fontSize: 12)),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                lang == 'mr'
+                    ? 'आज कोणाचाही वाढदिवस नोंदवलेला नाही.'
+                    : (lang == 'hi'
+                        ? 'आज किसी का जन्मदिन पंजीकृत नहीं है।'
+                        : 'No constituent birthdays registered for today.'),
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
+              ),
             )
           else
             ..._birthdays.map((voter) {
@@ -812,11 +861,11 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                             ),
                           ),
                           Text(
-                            '${voter.displayName} • Age: ${voter.age}',
+                            '${voter.displayName} • ${lang == 'mr' ? 'वय' : (lang == 'hi' ? 'आयु' : 'Age')}: ${AppTranslations.formatDigits(voter.age, lang)}',
                             style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
                           ),
                           Text(
-                            '${voter.area} • ${voter.boothNumber}',
+                            '${AppTranslations.getAreaName(voter.area, lang)} • ${lang == 'mr' ? 'बूथ क्र.' : (lang == 'hi' ? 'बूथ सं.' : 'Booth')}: ${AppTranslations.formatDigits(voter.boothNumber, lang)}',
                             style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
                           ),
                         ],
@@ -828,7 +877,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                       children: [
                         IconButton(
                           icon: const Icon(Icons.phone_outlined, size: 18, color: Color(0xFF0284C7)),
-                          tooltip: 'Call Voter',
+                          tooltip: lang == 'mr' ? 'मतदाराला कॉल करा' : (lang == 'hi' ? 'मतदाता को कॉल करें' : 'Call Voter'),
                           onPressed: () => _makePhoneCall(voter.mobile),
                         ),
                         InkWell(
@@ -841,12 +890,12 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Row(
-                              children: const [
-                                Icon(Icons.chat_bubble_outline_rounded, size: 13, color: Colors.white),
-                                SizedBox(width: 4),
+                              children: [
+                                const Icon(Icons.chat_bubble_outline_rounded, size: 13, color: Colors.white),
+                                const SizedBox(width: 4),
                                 Text(
-                                  'Wish',
-                                  style: TextStyle(
+                                  lang == 'mr' ? 'शुभेच्छा' : (lang == 'hi' ? 'शुभकामनाएं' : 'Wish'),
+                                  style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
@@ -868,7 +917,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
   }
 
   // 5) Filter & Search Section
-  Widget _buildFilterSection() {
+  Widget _buildFilterSection(String lang) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -883,7 +932,11 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
             controller: _searchCtrl,
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
-              hintText: 'Search posts by topic, Marathi text, #tags...',
+              hintText: lang == 'mr'
+                  ? 'विषय, मराठी मजकूर, #टॅग्ज शोधा...'
+                  : (lang == 'hi'
+                      ? 'विषय, मजमून, #टैग खोजें...'
+                      : 'Search posts by topic, Marathi text, #tags...'),
               hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
               prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Color(0xFF64748B)),
               suffixIcon: _searchCtrl.text.isNotEmpty
@@ -911,12 +964,15 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
               final count = plat == 'All'
                   ? _allPosts.length
                   : _allPosts.where((p) => p.platform.toLowerCase() == plat.toLowerCase()).length;
+              final platLabel = plat == 'All'
+                  ? (lang == 'mr' ? 'सर्व' : (lang == 'hi' ? 'सभी' : 'All'))
+                  : plat;
 
               return Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: FilterChip(
                   label: Text(
-                    '$plat ($count)',
+                    '$platLabel (${AppTranslations.formatDigits(count, lang)})',
                     style: TextStyle(
                       fontSize: 11.5,
                       fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
@@ -946,7 +1002,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
   }
 
   // 6) Feed Card View
-  Widget _buildPostFeedCard(SocialPostModel post) {
+  Widget _buildPostFeedCard(SocialPostModel post, String lang) {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
@@ -1009,7 +1065,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        post.date,
+                        AppTranslations.formatDigits(post.date, lang),
                         style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                       ),
                     ],
@@ -1021,7 +1077,11 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
-                      'Eng: ${post.engagementRate.toStringAsFixed(1)}%',
+                      lang == 'mr'
+                          ? 'सहभाग: ${AppTranslations.formatDigits(post.engagementRate.toStringAsFixed(1), lang)}%'
+                          : (lang == 'hi'
+                              ? 'सहभागिता: ${AppTranslations.formatDigits(post.engagementRate.toStringAsFixed(1), lang)}%'
+                              : 'Eng: ${post.engagementRate.toStringAsFixed(1)}%'),
                       style: const TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
@@ -1103,11 +1163,11 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                 children: [
                   Row(
                     children: [
-                      _buildMetricChip(Icons.thumb_up_alt_outlined, post.likes.toLocaleString(), const Color(0xFFE11D48)),
+                      _buildMetricChip(Icons.thumb_up_alt_outlined, AppTranslations.formatDigits(post.likes.toLocaleString(), lang), const Color(0xFFE11D48)),
                       const SizedBox(width: 14),
-                      _buildMetricChip(Icons.chat_bubble_outline_rounded, post.comments.toString(), const Color(0xFF9333EA)),
+                      _buildMetricChip(Icons.chat_bubble_outline_rounded, AppTranslations.formatDigits(post.comments.toString(), lang), const Color(0xFF9333EA)),
                       const SizedBox(width: 14),
-                      _buildMetricChip(Icons.share_outlined, post.shares.toString(), const Color(0xFF16A34A)),
+                      _buildMetricChip(Icons.share_outlined, AppTranslations.formatDigits(post.shares.toString(), lang), const Color(0xFF16A34A)),
                     ],
                   ),
                   Row(
@@ -1115,7 +1175,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                       const Icon(Icons.remove_red_eye_outlined, size: 14, color: Color(0xFF64748B)),
                       const SizedBox(width: 4),
                       Text(
-                        post.reach.toLocaleString(),
+                        AppTranslations.formatDigits(post.reach.toLocaleString(), lang),
                         style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                       ),
                       const SizedBox(width: 8),
@@ -1150,7 +1210,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
   }
 
   // 7) Report Table View
-  Widget _buildPostsTableView(List<SocialPostModel> posts) {
+  Widget _buildPostsTableView(List<SocialPostModel> posts, String lang) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1166,16 +1226,16 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
           columnSpacing: 16,
           headingTextStyle: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
           dataTextStyle: const TextStyle(fontSize: 11, color: Color(0xFF1E293B)),
-          columns: const [
-            DataColumn(label: Text('Platform')),
-            DataColumn(label: Text('Date')),
-            DataColumn(label: Text('Post Summary')),
-            DataColumn(label: Text('Reach'), numeric: true),
-            DataColumn(label: Text('Likes'), numeric: true),
-            DataColumn(label: Text('Comments'), numeric: true),
-            DataColumn(label: Text('Shares'), numeric: true),
-            DataColumn(label: Text('Eng. %'), numeric: true),
-            DataColumn(label: Text('Action')),
+          columns: [
+            DataColumn(label: Text(lang == 'mr' ? 'प्लॅटफॉर्म' : (lang == 'hi' ? 'प्लेटफ़ॉर्म' : 'Platform'))),
+            DataColumn(label: Text(lang == 'mr' ? 'तारीख' : (lang == 'hi' ? 'दिनांक' : 'Date'))),
+            DataColumn(label: Text(lang == 'mr' ? 'पोस्ट सारांश' : (lang == 'hi' ? 'पोस्ट सारांश' : 'Post Summary'))),
+            DataColumn(label: Text(lang == 'mr' ? 'पोहोच' : (lang == 'hi' ? 'पहुंच' : 'Reach')), numeric: true),
+            DataColumn(label: Text(lang == 'mr' ? 'पसंती' : (lang == 'hi' ? 'पसंद' : 'Likes')), numeric: true),
+            DataColumn(label: Text(lang == 'mr' ? 'टिप्पण्या' : (lang == 'hi' ? 'टिप्पणियाँ' : 'Comments')), numeric: true),
+            DataColumn(label: Text(lang == 'mr' ? 'शेअर्स' : (lang == 'hi' ? 'शेयर' : 'Shares')), numeric: true),
+            DataColumn(label: Text(lang == 'mr' ? 'सहभाग %' : (lang == 'hi' ? 'सहभागिता %' : 'Eng. %')), numeric: true),
+            DataColumn(label: Text(lang == 'mr' ? 'कृती' : (lang == 'hi' ? 'कार्रवाई' : 'Action'))),
           ],
           rows: posts.map((post) {
             return DataRow(
@@ -1198,7 +1258,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                     ),
                   ),
                 ),
-                DataCell(Text(post.date)),
+                DataCell(Text(AppTranslations.formatDigits(post.date, lang))),
                 DataCell(
                   SizedBox(
                     width: 200,
@@ -1209,13 +1269,13 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
                     ),
                   ),
                 ),
-                DataCell(Text(post.reach.toLocaleString())),
-                DataCell(Text(post.likes.toLocaleString())),
-                DataCell(Text(post.comments.toString())),
-                DataCell(Text(post.shares.toString())),
+                DataCell(Text(AppTranslations.formatDigits(post.reach.toLocaleString(), lang))),
+                DataCell(Text(AppTranslations.formatDigits(post.likes.toLocaleString(), lang))),
+                DataCell(Text(AppTranslations.formatDigits(post.comments.toString(), lang))),
+                DataCell(Text(AppTranslations.formatDigits(post.shares.toString(), lang))),
                 DataCell(
                   Text(
-                    '${post.engagementRate.toStringAsFixed(1)}%',
+                    '${AppTranslations.formatDigits(post.engagementRate.toStringAsFixed(1), lang)}%',
                     style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                   ),
                 ),
@@ -1243,7 +1303,7 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(String lang) {
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
@@ -1252,17 +1312,25 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Column(
-        children: const [
-          Icon(Icons.search_off_rounded, size: 48, color: Color(0xFF94A3B8)),
-          SizedBox(height: 12),
+        children: [
+          const Icon(Icons.search_off_rounded, size: 48, color: Color(0xFF94A3B8)),
+          const SizedBox(height: 12),
           Text(
-            'No posts found matching filter',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1E293B)),
+            lang == 'mr'
+                ? 'फिल्टरशी जुळणारी कोणतीही पोस्ट आढळली नाही'
+                : (lang == 'hi'
+                    ? 'फ़िल्टर से मेल खाने वाली कोई पोस्ट नहीं मिली'
+                    : 'No posts found matching filter'),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1E293B)),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Text(
-            'Try clearing your search query or selecting a different platform.',
-            style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+            lang == 'mr'
+                ? 'कृपया शोध क्वेरी हटवा किंवा वेगळा प्लॅटफॉर्म निवडा.'
+                : (lang == 'hi'
+                    ? 'कृपया अपनी खोज क्वेरी साफ़ करें या कोई भिन्न प्लेटफ़ॉर्म चुनें।'
+                    : 'Try clearing your search query or selecting a different platform.'),
+            style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
           ),
         ],
       ),

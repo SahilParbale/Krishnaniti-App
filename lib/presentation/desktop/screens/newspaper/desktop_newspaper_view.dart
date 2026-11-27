@@ -1,11 +1,13 @@
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/localization/app_translations.dart';
+import '../../../providers/language_provider.dart';
 import '../../common/desktop_modal_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import '../../../../data/models/newspaper_clipping_model.dart';
 import '../../../../data/repositories/newspaper_clippings_repository.dart';
 import '../../../screens/newspaper/newspaper_report_generator.dart';
+import '../../../widgets/app_load_more_footer.dart';
 
 class DesktopNewspaperView extends ConsumerStatefulWidget {
   const DesktopNewspaperView({super.key});
@@ -21,6 +23,10 @@ class _DesktopNewspaperViewState extends ConsumerState<DesktopNewspaperView> {
   List<NewspaperClippingModel> _clippings = [];
   String _searchTerm = '';
   String _filterDate = '';
+  int _displayedLimit = 20;
+
+  List<NewspaperClippingModel> get _visibleClippings =>
+      _filteredClippings.take(_displayedLimit).toList();
 
   @override
   void initState() {
@@ -361,6 +367,7 @@ class _DesktopNewspaperViewState extends ConsumerState<DesktopNewspaperView> {
   @override
   Widget build(BuildContext context) {
     final filtered = _filteredClippings;
+    final visible = _visibleClippings;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
@@ -383,9 +390,21 @@ class _DesktopNewspaperViewState extends ConsumerState<DesktopNewspaperView> {
           if (_loading)
             _buildLoadingGrid()
           else if (_viewMode == 'table')
-            _buildReportTable(filtered)
+            _buildReportTable(visible)
           else
-            _buildCardGrid(filtered),
+            _buildCardGrid(visible),
+
+          if (!_loading && filtered.isNotEmpty)
+            AppLoadMoreFooter(
+              currentCount: visible.length,
+              totalCount: filtered.length,
+              pageSize: 20,
+              onLoadMore: () {
+                setState(() => _displayedLimit += 20);
+              },
+              label: 'कात्रणे',
+              isMarathi: true,
+            ),
         ],
       ),
     );
@@ -422,7 +441,10 @@ class _DesktopNewspaperViewState extends ConsumerState<DesktopNewspaperView> {
                 );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
-              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+              label: Text(
+                AppTranslations.getDownloadReport(ref.watch(desktopLanguageProvider)),
+                style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
+              ),
               style: OutlinedButton.styleFrom(
                 backgroundColor: const Color(0xFFF0F9FF),
                 side: const BorderSide(color: Color(0xFFBAE6FD)),
@@ -528,7 +550,10 @@ class _DesktopNewspaperViewState extends ConsumerState<DesktopNewspaperView> {
     final isSelected = _activeSection == key;
 
     return InkWell(
-      onTap: () => setState(() => _activeSection = key),
+      onTap: () => setState(() {
+        _activeSection = key;
+        _displayedLimit = 20;
+      }),
       borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -586,7 +611,10 @@ class _DesktopNewspaperViewState extends ConsumerState<DesktopNewspaperView> {
               border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
             child: TextField(
-              onChanged: (val) => setState(() => _searchTerm = val),
+              onChanged: (val) => setState(() {
+                _searchTerm = val;
+                _displayedLimit = 20;
+              }),
               decoration: const InputDecoration(
                 hintText: 'Search headline, newspaper, description...',
                 hintStyle: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
@@ -609,7 +637,10 @@ class _DesktopNewspaperViewState extends ConsumerState<DesktopNewspaperView> {
               border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
             child: TextField(
-              onChanged: (val) => setState(() => _filterDate = val),
+              onChanged: (val) => setState(() {
+                _filterDate = val;
+                _displayedLimit = 20;
+              }),
               decoration: InputDecoration(
                 hintText: 'Search date (e.g. 2026-01)',
                 hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),

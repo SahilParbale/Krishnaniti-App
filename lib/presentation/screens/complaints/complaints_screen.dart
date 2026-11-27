@@ -7,7 +7,6 @@ import '../../../data/models/complaint_model.dart';
 import '../../../data/repositories/complaints_repository.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../../core/services/translation_service.dart';
-import '../../providers/auth_provider.dart';
 import '../../providers/language_provider.dart';
 import 'new_complaint_bottom_sheet.dart';
 import 'complaint_detail_screen.dart';
@@ -143,7 +142,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
   }
 
   // Open Full Complaint Details Page matching ComplaintDetail.tsx
-  void _openDetailSheet(ComplaintModel complaint, bool isMr) {
+  void _openDetailSheet(ComplaintModel complaint) {
     Navigator.push<bool>(
       context,
       MaterialPageRoute(
@@ -158,8 +157,6 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
   Widget build(BuildContext context) {
     super.build(context);
     final lang = ref.watch(appLanguageProvider);
-    final isMr = lang == 'mr';
-    final isHi = lang == 'hi';
     final filtered = _filteredComplaints;
 
     // Calculate real-time KPI counts for current tab
@@ -189,7 +186,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
           leading: Builder(
             builder: (ctx) => IconButton(
               icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: 'Open Menu Drawer',
+              tooltip: lang == 'mr' ? 'मेनू उघडा' : (lang == 'hi' ? 'मेनू खोलें' : 'Open Menu Drawer'),
               onPressed: () {
                 HapticFeedback.lightImpact();
                 Scaffold.of(ctx).openDrawer();
@@ -242,9 +239,12 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                   children: [
                     Expanded(
                       child: _TabButton(
-                        label: AppTranslations.t('complaints.tabs_area', lang: lang),
+                        label: lang == 'mr'
+                            ? 'परिसरातील तक्रारी'
+                            : (lang == 'hi' ? 'क्षेत्रीय शिकायतें' : 'Area Complaints'),
                         icon: Icons.domain_rounded,
                         badgeCount: _areaComplaints.length,
+                        lang: lang,
                         isSelected: _activeTab == 'Complaints',
                         onTap: () {
                           setState(() {
@@ -258,9 +258,12 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                     const SizedBox(width: 6),
                     Expanded(
                       child: _TabButton(
-                        label: AppTranslations.t('complaints.tabs_personal', lang: lang),
+                        label: lang == 'mr'
+                            ? 'वैयक्तिक मदत'
+                            : (lang == 'hi' ? 'व्यक्तिगत सहायता' : 'Personal Help'),
                         icon: Icons.volunteer_activism_rounded,
                         badgeCount: _personalRequests.length,
+                        lang: lang,
                         isSelected: _activeTab == 'Personal Help',
                         onTap: () {
                           setState(() {
@@ -286,6 +289,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                     child: _KpiStatCard(
                       label: AppTranslations.t('common.all', lang: lang),
                       count: totalCount,
+                      lang: lang,
                       color: const Color(0xFF0284C7),
                       bgColor: const Color(0xFFF0F9FF),
                       isSelected: _selectedStatus == 'All',
@@ -300,6 +304,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                     child: _KpiStatCard(
                       label: AppTranslations.getStatus('pending', lang),
                       count: pendingCount,
+                      lang: lang,
                       color: const Color(0xFFDC2626),
                       bgColor: const Color(0xFFFEF2F2),
                       isSelected: _selectedStatus == 'Pending',
@@ -314,6 +319,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                     child: _KpiStatCard(
                       label: AppTranslations.getStatus('inprogress', lang),
                       count: inProgressCount,
+                      lang: lang,
                       color: const Color(0xFFD97706),
                       bgColor: const Color(0xFFFFFBEB),
                       isSelected: _selectedStatus == 'InProgress',
@@ -328,6 +334,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                     child: _KpiStatCard(
                       label: AppTranslations.getStatus('resolved', lang),
                       count: resolvedCount,
+                      lang: lang,
                       color: const Color(0xFF16A34A),
                       bgColor: const Color(0xFFF0FDF4),
                       isSelected: _selectedStatus == 'Resolved',
@@ -407,7 +414,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                         value: area,
                         child: Text(area == 'All'
                             ? (lang == 'mr' ? 'सर्व भाग' : (lang == 'hi' ? 'सभी क्षेत्र' : 'All Areas'))
-                            : area),
+                            : AppTranslations.getAreaName(area, lang)),
                       );
                     }).toList(),
                     onChanged: (val) {
@@ -455,7 +462,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                 child: Row(
                   children: [
                     _FilterPill(
-                      label: '${AppTranslations.t("common.all", lang: lang)} (${_currentList.length})',
+                      label: '${AppTranslations.t("common.all", lang: lang)} (${AppTranslations.formatDigits(_currentList.length, lang)})',
                       isSelected: _selectedStatus == 'All',
                       onTap: () => setState(() {
                         _selectedStatus = 'All';
@@ -464,7 +471,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                     ),
                     const SizedBox(width: 8),
                     _FilterPill(
-                      label: '${AppTranslations.getStatus("pending", lang)} ($pendingCount)',
+                      label: '${AppTranslations.getStatus("pending", lang)} (${AppTranslations.formatDigits(pendingCount, lang)})',
                       color: const Color(0xFFDC2626),
                       isSelected: _selectedStatus == 'Pending',
                       onTap: () => setState(() {
@@ -486,7 +493,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                     ],
                     const SizedBox(width: 8),
                     _FilterPill(
-                      label: '${AppTranslations.getStatus("inprogress", lang)} ($inProgressCount)',
+                      label: '${AppTranslations.getStatus("inprogress", lang)} (${AppTranslations.formatDigits(inProgressCount, lang)})',
                       color: const Color(0xFFD97706),
                       isSelected: _selectedStatus == 'InProgress',
                       onTap: () => setState(() {
@@ -496,7 +503,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                     ),
                     const SizedBox(width: 8),
                     _FilterPill(
-                      label: '${AppTranslations.getStatus("resolved", lang)} ($resolvedCount)',
+                      label: '${AppTranslations.getStatus("resolved", lang)} (${AppTranslations.formatDigits(resolvedCount, lang)})',
                       color: const Color(0xFF16A34A),
                       isSelected: _selectedStatus == 'Resolved',
                       onTap: () => setState(() {
@@ -595,16 +602,16 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                                     setState(() => _displayedLimit += 20);
                                   },
                                   label: lang == 'mr' ? 'तक्रारी' : (lang == 'hi' ? 'शिकायतें' : 'complaints'),
-                                  isMarathi: isMr,
+                                  isMarathi: lang == 'mr',
                                 );
                               }
                               final item = _visibleComplaints[index];
                               return _ComplaintCard(
                                 complaint: item,
-                                isMr: isMr,
+                                isMr: lang == 'mr',
                                 lang: lang,
-                                onTap: () => _openDetailSheet(item, isMr),
-                                onQuickStatusTap: () => _openDetailSheet(item, isMr),
+                                onTap: () => _openDetailSheet(item),
+                                onQuickStatusTap: () => _openDetailSheet(item),
                               );
                             },
                           ),
@@ -649,6 +656,7 @@ class _TabButton extends StatelessWidget {
   final String label;
   final IconData icon;
   final int badgeCount;
+  final String lang;
   final bool isSelected;
   final VoidCallback onTap;
 
@@ -656,6 +664,7 @@ class _TabButton extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.badgeCount,
+    this.lang = 'en',
     required this.isSelected,
     required this.onTap,
   });
@@ -674,7 +683,7 @@ class _TabButton extends StatelessWidget {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 4,
                     offset: const Offset(0, 1),
                   )
@@ -710,7 +719,7 @@ class _TabButton extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
-                '$badgeCount',
+                AppTranslations.formatDigits(badgeCount, lang),
                 style: TextStyle(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w800,
@@ -729,6 +738,7 @@ class _TabButton extends StatelessWidget {
 class _KpiStatCard extends StatelessWidget {
   final String label;
   final int count;
+  final String lang;
   final Color color;
   final Color bgColor;
   final bool isSelected;
@@ -737,6 +747,7 @@ class _KpiStatCard extends StatelessWidget {
   const _KpiStatCard({
     required this.label,
     required this.count,
+    this.lang = 'en',
     required this.color,
     required this.bgColor,
     required this.isSelected,
@@ -764,7 +775,7 @@ class _KpiStatCard extends StatelessWidget {
             FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
-                '$count',
+                AppTranslations.formatDigits(count, lang),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
@@ -894,7 +905,7 @@ class _ComplaintCard extends StatelessWidget {
         border: Border.all(color: cardBorder, width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withOpacity(0.03),
+            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -952,7 +963,7 @@ class _ComplaintCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      complaint.category.toUpperCase(),
+                      AppTranslations.getComplaintType(complaint.category, lang).toUpperCase(),
                       style: const TextStyle(
                         fontSize: 10.5,
                         fontWeight: FontWeight.w700,
@@ -1007,18 +1018,32 @@ class _ComplaintCard extends StatelessWidget {
                       const Icon(Icons.person_outline_rounded, size: 15, color: Color(0xFF0284C7)),
                       const SizedBox(width: 6),
                       Expanded(
-                        child: Text(
-                          complaint.citizenName! +
-                              (complaint.citizenMobile != null && complaint.citizenMobile!.isNotEmpty
-                                  ? ' • ${complaint.citizenMobile}'
-                                  : ''),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF334155),
-                          ),
+                        child: Row(
+                          children: [
+                            Flexible(
+                              child: AppTranslatedText(
+                                complaint.citizenName!,
+                                isName: true,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF334155),
+                                ),
+                              ),
+                            ),
+                            if (complaint.citizenMobile != null && complaint.citizenMobile!.isNotEmpty) ...[
+                              Text(
+                                ' • ${AppTranslations.formatDigits(complaint.citizenMobile!, lang)}',
+                                style: const TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF334155),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ),
                       if (complaint.citizenMobile != null && complaint.citizenMobile!.isNotEmpty) ...[
@@ -1035,8 +1060,13 @@ class _ComplaintCard extends StatelessWidget {
                         InkWell(
                           onTap: () async {
                             final clean = complaint.citizenMobile!.replaceAll(RegExp(r'\D'), '');
-                            final text = Uri.encodeComponent(
-                                'Namaskar, regarding your request "${complaint.title}" (#${complaint.id}), our office has registered the update.');
+                            final ticketNo = AppTranslations.formatDigits(complaint.id, lang);
+                            final msg = lang == 'mr'
+                                ? 'नमस्कार, आपल्या "${complaint.title}" (नोंदणी क्र. #$ticketNo) तक्रारीबाबत नगरसेवक कार्यालयातून पुढील कार्यवाही सुरू करण्यात आली आहे.'
+                                : (lang == 'hi'
+                                    ? 'नमस्कार, आपके "${complaint.title}" (पंजीकरण सं. #$ticketNo) अनुरोध के संबंध में नगरसेवक कार्यालय से अद्यतन दर्ज किया गया है।'
+                                    : 'Namaskar, regarding your request "${complaint.title}" (#${complaint.id}), our office has registered the update.');
+                            final text = Uri.encodeComponent(msg);
                             final uri = Uri.parse('https://wa.me/91$clean?text=$text');
                             if (await canLaunchUrl(uri)) {
                               await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -1069,11 +1099,22 @@ class _ComplaintCard extends StatelessWidget {
                       const Icon(Icons.person_pin_rounded, size: 13, color: Color(0xFF475569)),
                       const SizedBox(width: 5),
                       Text(
-                        '${lang == "mr" ? "नोंदणीकर्ता:" : (lang == "hi" ? "दर्जकर्ता:" : "Added By:")} ${complaint.addedByStaffName}',
+                        '${lang == "mr" ? "नोंदणीकर्ता:" : (lang == "hi" ? "दर्जकर्ता:" : "Added By:")} ',
                         style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF334155),
+                        ),
+                      ),
+                      Flexible(
+                        child: AppTranslatedText(
+                          complaint.addedByStaffName!,
+                          isName: true,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF334155),
+                          ),
                         ),
                       ),
                     ],
@@ -1097,11 +1138,22 @@ class _ComplaintCard extends StatelessWidget {
                       const Icon(Icons.badge_outlined, size: 13, color: Color(0xFF0284C7)),
                       const SizedBox(width: 5),
                       Text(
-                        'Assigned: ${complaint.assignedStaffName}',
+                        '${lang == "mr" ? "नियुक्त:" : (lang == "hi" ? "नियुक्त:" : "Assigned:")} ',
                         style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF0284C7),
+                        ),
+                      ),
+                      Flexible(
+                        child: AppTranslatedText(
+                          complaint.assignedStaffName!,
+                          isName: true,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF0284C7),
+                          ),
                         ),
                       ),
                     ],
@@ -1123,7 +1175,7 @@ class _ComplaintCard extends StatelessWidget {
                         const Icon(Icons.calendar_today_rounded, size: 12, color: Color(0xFF94A3B8)),
                         const SizedBox(width: 4),
                         Text(
-                          DateFormat('MMM d, h:mm a').format(complaint.createdAt),
+                          AppTranslations.formatDigits(DateFormat('MMM d, h:mm a').format(complaint.createdAt), lang),
                           style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                         ),
                         if (complaint.area != null && complaint.area!.isNotEmpty) ...[
@@ -1132,7 +1184,7 @@ class _ComplaintCard extends StatelessWidget {
                           const SizedBox(width: 2),
                           Flexible(
                             child: Text(
-                              complaint.area!,
+                              AppTranslations.getAreaName(complaint.area!, lang),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
@@ -1154,17 +1206,17 @@ class _ComplaintCard extends StatelessWidget {
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
-                      children: const [
+                      children: [
                         Text(
-                          'Details',
-                          style: TextStyle(
+                          lang == 'mr' ? 'तपशील' : (lang == 'hi' ? 'विवरण' : 'Details'),
+                          style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                             color: Color(0xFF0284C7),
                           ),
                         ),
-                        SizedBox(width: 2),
-                        Icon(Icons.chevron_right_rounded, size: 14, color: Color(0xFF0284C7)),
+                        const SizedBox(width: 2),
+                        const Icon(Icons.chevron_right_rounded, size: 14, color: Color(0xFF0284C7)),
                       ],
                     ),
                   ),

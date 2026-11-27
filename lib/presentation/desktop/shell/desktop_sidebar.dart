@@ -10,20 +10,7 @@ import '../../providers/language_provider.dart';
 import '../../../data/models/user_model.dart';
 import '../../../core/services/supabase_service.dart';
 
-/// Language state notifier for desktop UI
-class DesktopLanguageNotifier extends Notifier<String> {
-  @override
-  String build() {
-    return ref.watch(appLanguageProvider);
-  }
-
-  void setLanguage(String lang) {
-    ref.read(appLanguageProvider.notifier).setLanguage(lang);
-    state = lang;
-  }
-}
-
-final desktopLanguageProvider = NotifierProvider<DesktopLanguageNotifier, String>(DesktopLanguageNotifier.new);
+export '../../providers/language_provider.dart' show desktopLanguageProvider, DesktopLanguageNotifier;
 
 class NavItemData {
   final String key;

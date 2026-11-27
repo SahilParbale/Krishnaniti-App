@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/localization/app_translations.dart';
 import '../../core/theme/app_colors.dart';
+import '../providers/language_provider.dart';
 
 enum AppPdfButtonStyle {
   primary, // Solid brand sky blue background, white text
@@ -9,8 +12,8 @@ enum AppPdfButtonStyle {
 }
 
 /// Standardized civic PDF Report and Document Download Button.
-/// Ensures consistent branding, colors, and loading states across all 39 screens.
-class AppPdfButton extends StatelessWidget {
+/// Automatically localizes "Download Report" across Marathi, Hindi, and English.
+class AppPdfButton extends ConsumerWidget {
   final String label;
   final VoidCallback? onPressed;
   final AppPdfButtonStyle style;
@@ -64,7 +67,15 @@ class AppPdfButton extends StatelessWidget {
         isCompact = true;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLanguageProvider);
+    final String effectiveLabel = (label == 'Download Report' || label.isEmpty)
+        ? AppTranslations.getDownloadReport(lang)
+        : (AppTranslations.tr(label, lang: lang) ?? label);
+    final String effectiveTooltip = (tooltip == 'Download Report' || tooltip == null)
+        ? AppTranslations.getDownloadReport(lang)
+        : (AppTranslations.tr(tooltip!, lang: lang) ?? tooltip!);
+
     if (style == AppPdfButtonStyle.iconOnly) {
       final button = InkWell(
         onTap: isLoading ? null : onPressed,
@@ -91,7 +102,9 @@ class AppPdfButton extends StatelessWidget {
         ),
       );
 
-      return tooltip != null ? Tooltip(message: tooltip!, child: button) : button;
+      return effectiveTooltip.isNotEmpty
+          ? Tooltip(message: effectiveTooltip, child: button)
+          : button;
     }
 
     final height = isCompact ? 38.0 : 46.0;
@@ -110,7 +123,7 @@ class AppPdfButton extends StatelessWidget {
                   )
                 : Icon(icon, size: isCompact ? 16 : 18, color: Colors.white),
             label: Text(
-              label,
+              effectiveLabel,
               style: TextStyle(
                 fontSize: isCompact ? 12 : 13.5,
                 fontWeight: FontWeight.w700,
@@ -141,7 +154,7 @@ class AppPdfButton extends StatelessWidget {
                   )
                 : Icon(icon, size: isCompact ? 16 : 18, color: AppColors.brandPrimary),
             label: Text(
-              label,
+              effectiveLabel,
               style: TextStyle(
                 fontSize: isCompact ? 12 : 13,
                 fontWeight: FontWeight.w700,
@@ -175,7 +188,7 @@ class AppPdfButton extends StatelessWidget {
                   )
                 : Icon(icon, size: isCompact ? 16 : 18, color: AppColors.brandPrimary),
             label: Text(
-              label,
+              effectiveLabel,
               style: TextStyle(
                 fontSize: isCompact ? 12 : 13,
                 fontWeight: FontWeight.w700,

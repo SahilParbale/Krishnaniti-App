@@ -8,9 +8,9 @@ import 'package:nagarsevak_mobile/core/theme/app_colors.dart';
 import 'package:nagarsevak_mobile/data/models/diary_task_model.dart';
 import 'package:nagarsevak_mobile/data/repositories/diary_tasks_repository.dart';
 import 'package:nagarsevak_mobile/presentation/desktop/common/desktop_modal_dialog.dart';
-import 'package:nagarsevak_mobile/presentation/desktop/shell/desktop_sidebar.dart';
 import 'package:nagarsevak_mobile/presentation/screens/diary/diary_report_generator.dart';
 import 'package:nagarsevak_mobile/presentation/widgets/app_dropdown.dart';
+import 'package:nagarsevak_mobile/presentation/widgets/app_load_more_footer.dart';
 
 /// Desktop Tasks View matching Tasks.tsx verbatim:
 /// - Sticky Header: Title + Found Counter + Help + Scan Doc + New Task
@@ -32,9 +32,13 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
   String _searchQuery = '';
   String _selectedArea = 'All';
   String _selectedDateFilter = 'All';
+  int _displayedLimit = 20;
 
   bool _loading = true;
   List<DiaryTaskModel> _tasks = [];
+
+  List<DiaryTaskModel> get _visibleTasks =>
+      _filteredTasks.take(_displayedLimit).toList();
 
   @override
   void initState() {
@@ -221,6 +225,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
   Widget build(BuildContext context) {
     final lang = ref.watch(appLanguageProvider);
     final items = _viewMode == 'timeline' ? _timelineTasks : _filteredTasks;
+    final visibleItems = _viewMode == 'timeline' ? _timelineTasks : _visibleTasks;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -250,11 +255,24 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
             else if (items.isEmpty)
               _buildEmptyState(lang)
             else if (_viewMode == 'grid')
-              _build3x3TaskGrid(items, lang)
+              _build3x3TaskGrid(visibleItems, lang)
             else if (_viewMode == 'timeline')
               _buildTimelineView(items, lang)
             else
-              _buildReportView(items, lang),
+              _buildReportView(visibleItems, lang),
+
+            // 5. Pagination Load More Footer
+            if (!_loading && items.isNotEmpty && _viewMode != 'timeline')
+              AppLoadMoreFooter(
+                currentCount: visibleItems.length,
+                totalCount: items.length,
+                pageSize: 20,
+                onLoadMore: () {
+                  setState(() => _displayedLimit += 20);
+                },
+                label: lang == 'mr' ? 'कामे' : (lang == 'hi' ? 'कार्य' : 'tasks'),
+                isMarathi: lang == 'mr',
+              ),
           ],
         ),
       ),
@@ -265,7 +283,6 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
   Widget _buildHeader(String lang, int foundCount) {
     final title = AppTranslations.t('tasks.title', lang: lang);
     final subtitle = AppTranslations.t('tasks.subtitle', lang: lang);
-    final foundLabel = lang == 'mr' ? 'एकूण' : (lang == 'hi' ? 'कुल' : 'Found');
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -293,7 +310,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
                     border: Border.all(color: const Color(0xFFBAE6FD)),
                   ),
                   child: Text(
-                    '$foundLabel: $foundCount',
+                    AppTranslations.formatFound(foundCount, lang),
                     style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0369A1)),
                   ),
                 ),
@@ -320,7 +337,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
               label: Text(
-                AppTranslations.t('common.download_report', lang: lang),
+                AppTranslations.getDownloadReport(lang),
                 style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
               ),
               style: OutlinedButton.styleFrom(
@@ -393,7 +410,10 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
         Expanded(
           flex: 6,
           child: TextField(
-            onChanged: (v) => setState(() => _searchQuery = v),
+            onChanged: (v) => setState(() {
+              _searchQuery = v;
+              _displayedLimit = 20;
+            }),
             decoration: InputDecoration(
               hintText: searchHint,
               hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
@@ -427,13 +447,18 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
               return DropdownMenuItem(
                 value: area,
                 child: Text(
-                  area == 'All' ? allAreasLabel : area,
+                  area == 'All' ? allAreasLabel : AppTranslations.getAreaName(area, lang),
                   overflow: TextOverflow.ellipsis,
                 ),
               );
             }).toList(),
             onChanged: (val) {
-              if (val != null) setState(() => _selectedArea = val);
+              if (val != null) {
+                setState(() {
+                  _selectedArea = val;
+                  _displayedLimit = 20;
+                });
+              }
             },
           ),
         ),
@@ -452,13 +477,18 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
               return DropdownMenuItem(
                 value: date,
                 child: Text(
-                  date == 'All' ? allDatesLabel : date,
+                  date == 'All' ? allDatesLabel : AppTranslations.formatDigits(date, lang),
                   overflow: TextOverflow.ellipsis,
                 ),
               );
             }).toList(),
             onChanged: (val) {
-              if (val != null) setState(() => _selectedDateFilter = val);
+              if (val != null) {
+                setState(() {
+                  _selectedDateFilter = val;
+                  _displayedLimit = 20;
+                });
+              }
             },
           ),
         ),
@@ -782,7 +812,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(4)),
       child: Text(
-        AppTranslations.getStatus(priority, lang),
+        AppTranslations.getPriority(priority, lang),
         style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: fg),
       ),
     );

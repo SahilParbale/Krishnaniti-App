@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/localization/app_translations.dart';
+import '../../../providers/language_provider.dart';
 import '../../../../data/models/diary_entry_model.dart';
 import '../../../../data/models/gb_register_entry_model.dart';
 import '../../../../data/repositories/diary_repository.dart';
 import '../../common/desktop_modal_dialog.dart';
 import '../../../screens/gb_register/gb_register_report_generator.dart';
 import '../../../widgets/app_dropdown.dart';
+import '../../../widgets/app_load_more_footer.dart';
 
 class DesktopGbRegisterView extends ConsumerStatefulWidget {
   const DesktopGbRegisterView({super.key});
@@ -24,7 +27,10 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
   String _meetingType = 'All'; // 'All' | 'GB' | 'Standing Committee' | 'Ward Committee' | 'Special GB' | 'Other'
   String _statusFilter = 'All'; // 'All' | 'Raised' | 'In Discussion' | 'Resolved' | 'Action Taken'
   String _viewMode = 'grid'; // 'grid' | 'table'
-  String? _expandedId;
+  int _displayedLimit = 20;
+
+  List<DiaryEntryModel> get _visibleEntries =>
+      _filteredEntries.take(_displayedLimit).toList();
 
   @override
   void initState() {
@@ -393,6 +399,7 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
   @override
   Widget build(BuildContext context) {
     final filtered = _filteredEntries;
+    final visible = _visibleEntries;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
@@ -415,15 +422,28 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
           if (_loading)
             _buildLoadingGrid()
           else if (_viewMode == 'table')
-            _buildReportTable(filtered)
+            _buildReportTable(visible)
           else
-            _buildCardGrid(filtered),
+            _buildCardGrid(visible),
+
+          if (!_loading && filtered.isNotEmpty)
+            AppLoadMoreFooter(
+              currentCount: visible.length,
+              totalCount: filtered.length,
+              pageSize: 20,
+              onLoadMore: () {
+                setState(() => _displayedLimit += 20);
+              },
+              label: 'नोंदी',
+              isMarathi: true,
+            ),
         ],
       ),
     );
   }
 
   Widget _buildHeader(int count) {
+    final lang = ref.watch(desktopLanguageProvider);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -432,9 +452,9 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
           children: [
             Row(
               children: [
-                const Text(
-                  'GB Register',
-                  style: TextStyle(
+                Text(
+                  AppTranslations.getNavTitle('gb_register', lang),
+                  style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF0F172A),
@@ -450,16 +470,18 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
                     border: Border.all(color: const Color(0xFFBAE6FD)),
                   ),
                   child: Text(
-                    'Entries: $count',
+                    '${lang == "mr" ? "एकूण नोंदी:" : (lang == "hi" ? "कुल प्रविष्टियां:" : "Entries:")} ${AppTranslations.formatDigits(count, lang)}',
                     style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0369A1)),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 4),
-            const Text(
-              'General Body motions, resolutions and committee decisions',
-              style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+            Text(
+              lang == 'mr'
+                  ? 'सर्वसाधारण सभा ठराव, प्रस्ताव आणि समिती निर्णय'
+                  : (lang == 'hi' ? 'सामान्य सभा प्रस्ताव, संकल्प और समिति निर्णय' : 'General Body motions, resolutions and committee decisions'),
+              style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
             ),
           ],
         ),
@@ -488,7 +510,10 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
                 );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
-              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+              label: Text(
+                AppTranslations.getDownloadReport(lang),
+                style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
+              ),
               style: OutlinedButton.styleFrom(
                 backgroundColor: const Color(0xFFF0F9FF),
                 side: const BorderSide(color: Color(0xFFBAE6FD)),
@@ -508,14 +533,14 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), // rounded-xl
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.add, size: 16, color: Colors.white), // Plus w-4 h-4
-                  SizedBox(width: 8), // gap-2
+                  const Icon(Icons.add, size: 16, color: Colors.white), // Plus w-4 h-4
+                  const SizedBox(width: 8), // gap-2
                   Text(
-                    'Add Entry',
-                    style: TextStyle(
+                    lang == 'mr' ? 'नवीन नोंद' : (lang == 'hi' ? 'नई प्रविष्टि' : 'Add Entry'),
+                    style: const TextStyle(
                       fontSize: 14, // text-sm
                       fontWeight: FontWeight.w600, // font-semibold
                       color: Colors.white,
@@ -572,7 +597,10 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
               border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
             child: TextField(
-              onChanged: (val) => setState(() => _searchTerm = val),
+              onChanged: (val) => setState(() {
+                _searchTerm = val;
+                _displayedLimit = 20;
+              }),
               decoration: const InputDecoration(
                 hintText: 'Search subject, department or decision...',
                 hintStyle: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
@@ -595,7 +623,10 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
               border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
             child: TextField(
-              onChanged: (val) => setState(() => _areaSearch = val),
+              onChanged: (val) => setState(() {
+                _areaSearch = val;
+                _displayedLimit = 20;
+              }),
               decoration: InputDecoration(
                 hintText: 'Search Area...',
                 hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
@@ -629,7 +660,12 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
               DropdownMenuItem(value: 'Other', child: Text('Other')),
             ],
             onChanged: (val) {
-              if (val != null) setState(() => _meetingType = val);
+              if (val != null) {
+                setState(() {
+                  _meetingType = val;
+                  _displayedLimit = 20;
+                });
+              }
             },
           ),
         ),
@@ -658,7 +694,10 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
             final isSelected = _statusFilter == key;
 
             return InkWell(
-              onTap: () => setState(() => _statusFilter = key),
+              onTap: () => setState(() {
+                _statusFilter = key;
+                _displayedLimit = 20;
+              }),
               borderRadius: BorderRadius.circular(100),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
@@ -718,10 +757,15 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
           border: Border.all(color: const Color(0xFFE2E8F0)),
         ),
         child: Column(
-          children: const [
-            Icon(Icons.book_outlined, size: 48, color: Color(0xFFCBD5E1)),
-            SizedBox(height: 12),
-            const Text('No entries found', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500)),
+          children: [
+            const Icon(Icons.book_outlined, size: 48, color: Color(0xFFCBD5E1)),
+            const SizedBox(height: 12),
+            Text(
+              ref.watch(desktopLanguageProvider) == 'mr'
+                  ? 'कोणतीही नोंद आढळली नाही'
+                  : (ref.watch(desktopLanguageProvider) == 'hi' ? 'कोई प्रविष्टि नहीं मिली' : 'No entries found'),
+              style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+            ),
           ],
         ),
       );

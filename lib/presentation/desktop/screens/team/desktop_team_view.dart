@@ -1,4 +1,6 @@
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/localization/app_translations.dart';
+import '../../shell/desktop_sidebar.dart';
 import '../../common/desktop_modal_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +8,7 @@ import '../../../../data/models/team_model.dart';
 import '../../../../data/repositories/team_repository.dart';
 import '../../../screens/team/team_report_generator.dart';
 import '../../../widgets/app_dropdown.dart';
+import '../../../widgets/app_load_more_footer.dart';
 
 class DesktopTeamView extends ConsumerStatefulWidget {
   const DesktopTeamView({super.key});
@@ -21,6 +24,10 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
   String _searchTerm = '';
   String _selectedArea = 'All';
   String _selectedWing = 'All';
+  int _displayedLimit = 20;
+
+  List<TeamMemberModel> get _visibleMembers =>
+      _filteredMembers.take(_displayedLimit).toList();
 
   List<String> get _uniqueAreas {
     final areas = _teamMembers
@@ -320,6 +327,7 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
   @override
   Widget build(BuildContext context) {
     final filtered = _filteredMembers;
+    final visible = _visibleMembers;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
@@ -342,7 +350,20 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
           if (_loading)
             _buildLoadingGrid()
           else
-            _buildCardGrid(filtered),
+            _buildCardGrid(visible),
+
+          // Load More Footer
+          if (!_loading && filtered.isNotEmpty)
+            AppLoadMoreFooter(
+              currentCount: visible.length,
+              totalCount: filtered.length,
+              pageSize: 20,
+              onLoadMore: () {
+                setState(() => _displayedLimit += 20);
+              },
+              label: 'सदस्य',
+              isMarathi: true,
+            ),
         ],
       ),
     );
@@ -394,7 +415,10 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
                 );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
-              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+              label: Text(
+                AppTranslations.getDownloadReport(ref.watch(desktopLanguageProvider)),
+                style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
+              ),
               style: OutlinedButton.styleFrom(
                 backgroundColor: const Color(0xFFF0F9FF),
                 side: const BorderSide(color: Color(0xFFBAE6FD)),
@@ -455,7 +479,10 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
           padding: const EdgeInsets.only(right: 10),
           child: InkWell(
             onTap: () {
-              setState(() => _activeTab = key);
+              setState(() {
+                _activeTab = key;
+                _displayedLimit = 20;
+              });
               _fetchTeam();
             },
             borderRadius: BorderRadius.circular(10),
@@ -493,7 +520,10 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
               border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
             child: TextField(
-              onChanged: (val) => setState(() => _searchTerm = val),
+              onChanged: (val) => setState(() {
+                _searchTerm = val;
+                _displayedLimit = 20;
+              }),
               decoration: const InputDecoration(
                 hintText: 'Search staff by name, role, mobile...',
                 hintStyle: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
@@ -522,7 +552,12 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
               );
             }).toList(),
             onChanged: (val) {
-              if (val != null) setState(() => _selectedArea = val);
+              if (val != null) {
+                setState(() {
+                  _selectedArea = val;
+                  _displayedLimit = 20;
+                });
+              }
             },
           ),
         ),
@@ -544,7 +579,12 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
               }),
             ],
             onChanged: (val) {
-              if (val != null) setState(() => _selectedWing = val);
+              if (val != null) {
+                setState(() {
+                  _selectedWing = val;
+                  _displayedLimit = 20;
+                });
+              }
             },
           ),
         ),

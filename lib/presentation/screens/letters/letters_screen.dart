@@ -332,7 +332,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                               const SizedBox(width: 6),
                               Flexible(
                                 child: Text(
-                                  '${lang == "mr" ? "जावक पत्रे" : (lang == "hi" ? "जावक पत्र" : "Outgoing Letters")} ($outCount)',
+                                  '${lang == "mr" ? "जावक पत्रे" : (lang == "hi" ? "जावक पत्र" : "Outgoing Letters")} (${AppTranslations.formatDigits(outCount, lang)})',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
@@ -379,7 +379,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                               const SizedBox(width: 6),
                               Flexible(
                                 child: Text(
-                                  '${lang == "mr" ? "आवक पत्रे" : (lang == "hi" ? "आवक पत्र" : "Incoming Letters")} ($inCount)',
+                                  '${lang == "mr" ? "आवक पत्रे" : (lang == "hi" ? "आवक पत्र" : "Incoming Letters")} (${AppTranslations.formatDigits(inCount, lang)})',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
@@ -792,6 +792,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
   }
 
   void _openAreaPickerSheet(BuildContext context, bool isMr) {
+    final lang = ref.read(appLanguageProvider);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -802,6 +803,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
         initialArea: _areaSearch,
         areas: _areaSuggestions,
         isMr: isMr,
+        lang: lang,
         onSelect: (selected) {
           Navigator.pop(ctx);
           _areaController.text = selected ?? '';
@@ -814,6 +816,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
   }
 
   void _openDateFilterSheet(BuildContext context, bool isMr) {
+    final lang = ref.read(appLanguageProvider);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -824,6 +827,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
         initialDate: _dateSearch,
         dates: _dateSuggestions,
         isMr: isMr,
+        lang: lang,
         onPickCalendar: () async {
           Navigator.pop(ctx);
           await _pickCustomDate(context, isMr);
@@ -944,7 +948,7 @@ class _LetterCard extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            _buildStatusBadge(letter.status, isMr),
+                            _buildStatusBadge(letter.status, lang),
                           ],
                         ),
 
@@ -996,7 +1000,7 @@ class _LetterCard extends StatelessWidget {
                                     const SizedBox(width: 2),
                                     Flexible(
                                       child: Text(
-                                        letter.area!,
+                                        AppTranslations.getAreaName(letter.area!, lang),
                                         maxLines: 1,
                                         style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                                         overflow: TextOverflow.ellipsis,
@@ -1007,7 +1011,7 @@ class _LetterCard extends StatelessWidget {
                                   const Icon(Icons.calendar_today_outlined, size: 12, color: Color(0xFF94A3B8)),
                                   const SizedBox(width: 3),
                                   Text(
-                                    DateFormat('MMM d').format(letter.receivedDate ?? letter.createdAt),
+                                    AppTranslations.formatDigits(DateFormat('MMM d').format(letter.receivedDate ?? letter.createdAt), lang),
                                     style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                                   ),
                                 ],
@@ -1066,37 +1070,34 @@ class _LetterCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusBadge(String status, bool isMr) {
+  Widget _buildStatusBadge(String status, String lang) {
     Color bg;
     Color border;
     Color text;
-    String label;
 
     switch (status.toLowerCase()) {
       case 'approved':
         bg = const Color(0xFFDCFCE7);
         border = const Color(0xFFBBF7D0);
         text = const Color(0xFF166534);
-        label = isMr ? 'मंजूर' : 'Approved';
         break;
       case 'rejected':
         bg = const Color(0xFFFEF2F2);
         border = const Color(0xFFFECACA);
         text = const Color(0xFFB91C1C);
-        label = isMr ? 'नाकारले' : 'Rejected';
         break;
       case 'received':
         bg = const Color(0xFFDBEAFE);
         border = const Color(0xFFBFDBFE);
         text = const Color(0xFF1E40AF);
-        label = isMr ? 'प्राप्त' : 'Received';
         break;
       default:
         bg = const Color(0xFFFEFCE8);
         border = const Color(0xFFFDE047);
         text = const Color(0xFF854D0E);
-        label = isMr ? 'प्रलंबित' : 'Pending';
     }
+
+    final label = AppTranslations.getStatus(status, lang);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -1118,12 +1119,14 @@ class _LettersAreaPickerSheet extends StatefulWidget {
   final String initialArea;
   final List<MapEntry<String, int>> areas;
   final bool isMr;
+  final String lang;
   final ValueChanged<String?> onSelect;
 
   const _LettersAreaPickerSheet({
     required this.initialArea,
     required this.areas,
     required this.isMr,
+    this.lang = 'en',
     required this.onSelect,
   });
 
@@ -1312,7 +1315,9 @@ class _LettersAreaPickerSheetState extends State<_LettersAreaPickerSheet> {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              isMr ? 'सर्व क्षेत्रे (Clear Filter)' : 'All Areas (Clear Filter)',
+                              widget.lang == 'mr'
+                                  ? 'सर्व क्षेत्रे (फिल्टर काढा)'
+                                  : (widget.lang == 'hi' ? 'सभी क्षेत्र (फ़िल्टर हटाएं)' : 'All Areas (Clear Filter)'),
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: widget.initialArea.isEmpty ? FontWeight.w700 : FontWeight.w500,
@@ -1366,7 +1371,7 @@ class _LettersAreaPickerSheetState extends State<_LettersAreaPickerSheet> {
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
-                                  item.key,
+                                  AppTranslations.getAreaName(item.key, widget.lang),
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
@@ -1381,7 +1386,7 @@ class _LettersAreaPickerSheetState extends State<_LettersAreaPickerSheet> {
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Text(
-                                  '${item.value}',
+                                  AppTranslations.formatDigits(item.value, widget.lang),
                                   style: const TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
@@ -1413,6 +1418,7 @@ class _LettersDateFilterSheet extends StatefulWidget {
   final String initialDate;
   final List<MapEntry<String, int>> dates;
   final bool isMr;
+  final String lang;
   final VoidCallback onPickCalendar;
   final ValueChanged<String?> onSelect;
 
@@ -1420,6 +1426,7 @@ class _LettersDateFilterSheet extends StatefulWidget {
     required this.initialDate,
     required this.dates,
     required this.isMr,
+    this.lang = 'en',
     required this.onPickCalendar,
     required this.onSelect,
   });
@@ -1643,7 +1650,9 @@ class _LettersDateFilterSheetState extends State<_LettersDateFilterSheet> {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              isMr ? 'सर्व तारखा (Clear Date Filter)' : 'All Dates (Clear Date Filter)',
+                              widget.lang == 'mr'
+                                  ? 'सर्व तारखा (फिल्टर काढा)'
+                                  : (widget.lang == 'hi' ? 'सभी तिथियां (फ़िल्टर हटाएं)' : 'All Dates (Clear Date Filter)'),
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: widget.initialDate.isEmpty ? FontWeight.w700 : FontWeight.w500,
@@ -1697,7 +1706,7 @@ class _LettersDateFilterSheetState extends State<_LettersDateFilterSheet> {
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
-                                  item.key,
+                                  AppTranslations.formatDigits(item.key, widget.lang),
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
@@ -1712,7 +1721,7 @@ class _LettersDateFilterSheetState extends State<_LettersDateFilterSheet> {
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Text(
-                                  '${item.value} ${isMr ? 'पत्रे' : 'letters'}',
+                                  '${AppTranslations.formatDigits(item.value, widget.lang)} ${widget.lang == "mr" ? "पत्रे" : (widget.lang == "hi" ? "पत्र" : "letters")}',
                                   style: const TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/localization/app_translations.dart';
+import '../../../providers/language_provider.dart';
 import '../../common/desktop_modal_dialog.dart';
 import '../../../../data/models/voter_model.dart';
 import '../../../../data/models/sms_campaign_model.dart';
@@ -9,6 +11,7 @@ import '../../../../data/repositories/sms_repository.dart';
 import '../../shell/desktop_sidebar.dart';
 import '../../../screens/sms/sms_history_report_generator.dart';
 import '../../../widgets/app_dropdown.dart';
+import '../../../widgets/app_load_more_footer.dart';
 
 class DesktopSmsView extends ConsumerStatefulWidget {
   const DesktopSmsView({super.key});
@@ -35,7 +38,14 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
   bool _isSending = false;
 
   List<VoterModel> _voters = [];
+  int _displayedLimit = 20;
+  List<VoterModel> get _visibleVoters =>
+      _voters.take(_displayedLimit).toList();
+
   List<SmsCampaignModel> _campaignHistory = [];
+  int _historyLimit = 20;
+  List<SmsCampaignModel> get _visibleHistory =>
+      _campaignHistory.take(_historyLimit).toList();
 
   @override
   void initState() {
@@ -56,7 +66,10 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
   }
 
   Future<void> _loadVoters() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _displayedLimit = 20;
+      _isLoading = true;
+    });
     try {
       final repo = ref.read(smsRepoProvider);
       final voters = await repo.getVotersWithMobile(
@@ -78,6 +91,7 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
   }
 
   Future<void> _loadHistory() async {
+    setState(() => _historyLimit = 20);
     try {
       final repo = ref.read(smsRepoProvider);
       final history = await repo.getCampaigns();
@@ -251,7 +265,10 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
                     );
                   },
                   icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
-                  label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+                  label: Text(
+                    AppTranslations.getDownloadReport(ref.watch(desktopLanguageProvider)),
+                    style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
+                  ),
                   style: OutlinedButton.styleFrom(
                     backgroundColor: const Color(0xFFF0F9FF),
                     side: const BorderSide(color: Color(0xFFBAE6FD)),
@@ -438,70 +455,86 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
                                     style: const TextStyle(color: AppColors.slate400),
                                   ),
                                 )
-                              : ListView.separated(
-                                  padding: const EdgeInsets.all(12),
-                                  itemCount: _voters.length,
-                                  separatorBuilder: (_, __) => const SizedBox(height: 8),
-                                  itemBuilder: (ctx, i) {
-                                    final v = _voters[i];
-                                    final isSelected = _selectedVoterIds.contains(v.id);
-                                    return InkWell(
-                                      onTap: () => _toggleSelectVoter(v.id),
-                                      borderRadius: BorderRadius.circular(10),
-                                      child: Container(
+                              : Column(
+                                  children: [
+                                    Expanded(
+                                      child: ListView.separated(
                                         padding: const EdgeInsets.all(12),
-                                        decoration: BoxDecoration(
-                                          color: isSelected ? AppColors.brandPrimary.withValues(alpha: 0.05) : Colors.white,
-                                          borderRadius: BorderRadius.circular(10),
-                                          border: Border.all(
-                                            color: isSelected ? AppColors.brandPrimary : AppColors.slate200,
-                                            width: isSelected ? 1.5 : 1,
-                                          ),
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              isSelected ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded,
-                                              color: isSelected ? AppColors.brandPrimary : AppColors.slate400,
-                                              size: 20,
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                        itemCount: _visibleVoters.length,
+                                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                                        itemBuilder: (ctx, i) {
+                                          final v = _visibleVoters[i];
+                                          final isSelected = _selectedVoterIds.contains(v.id);
+                                          return InkWell(
+                                            onTap: () => _toggleSelectVoter(v.id),
+                                            borderRadius: BorderRadius.circular(10),
+                                            child: Container(
+                                              padding: const EdgeInsets.all(12),
+                                              decoration: BoxDecoration(
+                                                color: isSelected ? AppColors.brandPrimary.withValues(alpha: 0.05) : Colors.white,
+                                                borderRadius: BorderRadius.circular(10),
+                                                border: Border.all(
+                                                  color: isSelected ? AppColors.brandPrimary : AppColors.slate200,
+                                                  width: isSelected ? 1.5 : 1,
+                                                ),
+                                              ),
+                                              child: Row(
                                                 children: [
-                                                  Text(
-                                                    isMr && v.nameMarathi.isNotEmpty
-                                                        ? v.nameMarathi
-                                                        : v.nameEnglish,
-                                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.slate800),
+                                                  Icon(
+                                                    isSelected ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded,
+                                                    color: isSelected ? AppColors.brandPrimary : AppColors.slate400,
+                                                    size: 20,
                                                   ),
-                                                  const SizedBox(height: 2),
-                                                  Text(
-                                                    '${v.mobile ?? '-'}  •  ${v.address}',
-                                                    style: const TextStyle(fontSize: 12, color: AppColors.slate500),
-                                                    maxLines: 1,
-                                                    overflow: TextOverflow.ellipsis,
+                                                  const SizedBox(width: 12),
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                        Text(
+                                                          isMr && v.nameMarathi.isNotEmpty
+                                                              ? v.nameMarathi
+                                                              : v.nameEnglish,
+                                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.slate800),
+                                                        ),
+                                                        const SizedBox(height: 2),
+                                                        Text(
+                                                          '${v.mobile ?? '-'}  •  ${v.address}',
+                                                          style: const TextStyle(fontSize: 12, color: AppColors.slate500),
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow.ellipsis,
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  Container(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                                    decoration: BoxDecoration(
+                                                      color: AppColors.slate100,
+                                                      borderRadius: BorderRadius.circular(6),
+                                                    ),
+                                                    child: Text(
+                                                      '${v.gender} / ${v.age}',
+                                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.slate600),
+                                                    ),
                                                   ),
                                                 ],
                                               ),
                                             ),
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                              decoration: BoxDecoration(
-                                                color: AppColors.slate100,
-                                                borderRadius: BorderRadius.circular(6),
-                                              ),
-                                              child: Text(
-                                                '${v.gender} / ${v.age}',
-                                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.slate600),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                                          );
+                                        },
                                       ),
-                                    );
-                                  },
+                                    ),
+                                    AppLoadMoreFooter(
+                                      currentCount: _visibleVoters.length,
+                                      totalCount: _voters.length,
+                                      pageSize: 20,
+                                      onLoadMore: () {
+                                        setState(() => _displayedLimit += 20);
+                                      },
+                                      label: 'मतदार',
+                                      isMarathi: isMr,
+                                    ),
+                                  ],
                                 ),
                     ),
                   ),
@@ -615,14 +648,14 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
                           ),
                         ),
                       )
-                    else
+                    else ...[
                       ListView.separated(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _campaignHistory.length,
+                        itemCount: _visibleHistory.length,
                         separatorBuilder: (_, __) => const Divider(color: AppColors.slate100),
                         itemBuilder: (ctx, i) {
-                          final item = _campaignHistory[i];
+                          final item = _visibleHistory[i];
                           return Padding(
                             padding: const EdgeInsets.symmetric(vertical: 10),
                             child: Row(
@@ -678,6 +711,17 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
                           );
                         },
                       ),
+                      AppLoadMoreFooter(
+                        currentCount: _visibleHistory.length,
+                        totalCount: _campaignHistory.length,
+                        pageSize: 20,
+                        onLoadMore: () {
+                          setState(() => _historyLimit += 20);
+                        },
+                        label: 'मोहिमा',
+                        isMarathi: isMr,
+                      ),
+                    ],
                   ],
                 ),
               ),
