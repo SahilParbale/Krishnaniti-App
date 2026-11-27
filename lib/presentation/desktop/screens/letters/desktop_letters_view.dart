@@ -219,7 +219,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                 border: Border.all(color: const Color(0xFFBAE6FD)),
               ),
               child: Text(
-                '${lang == "mr" ? "सापडले" : (lang == "hi" ? "मिले" : "Found")}: $foundCount',
+                AppTranslations.formatFound(foundCount, lang),
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -251,7 +251,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
               label: Text(
-                lang == 'mr' ? 'अहवाल डाउनलोड करा' : (lang == 'hi' ? 'रिपोर्ट डाउनलोड करें' : 'Download Report'),
+                AppTranslations.getDownloadReport(lang),
                 style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
               ),
               style: OutlinedButton.styleFrom(
@@ -582,7 +582,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
             items: _uniqueAreas.map((area) {
               final label = area == 'All'
                   ? (lang == 'mr' ? 'सर्व परिसर' : (lang == 'hi' ? 'सभी क्षेत्र' : 'All Areas'))
-                  : area;
+                  : AppTranslations.getAreaName(area, lang);
               return DropdownMenuItem(
                 value: area,
                 child: Text(
@@ -610,7 +610,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
             items: _uniqueDates.map((date) {
               final label = date == 'All'
                   ? (lang == 'mr' ? 'सर्व तारखा' : (lang == 'hi' ? 'सभी तिथियां' : 'All Dates'))
-                  : date;
+                  : AppTranslations.formatDigits(date, lang);
               return DropdownMenuItem(
                 value: date,
                 child: Text(
@@ -631,7 +631,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
   // --- Main 3-Column Layout: 1/3 List + 2/3 Live Preview ---
   Widget _buildMainGrid(List<LetterModel> items, String lang) {
     if (items.isEmpty) {
-      return _buildEmptyState(lang == 'mr');
+      return _buildEmptyState(lang);
     }
 
     return Row(
@@ -1044,7 +1044,10 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                         );
                       },
                       icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
-                      label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 13)),
+                      label: Text(
+                        AppTranslations.getDownloadReport(ref.watch(desktopLanguageProvider)),
+                        style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 13),
+                      ),
                       style: OutlinedButton.styleFrom(
                         backgroundColor: const Color(0xFFF0F9FF),
                         side: const BorderSide(color: Color(0xFFBAE6FD)),
@@ -1193,7 +1196,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
     );
   }
 
-  Widget _buildEmptyState(bool isMr) {
+  Widget _buildEmptyState(String lang) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 60),
@@ -1203,12 +1206,16 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
           const Icon(Icons.inbox_outlined, size: 48, color: Color(0xFF94A3B8)),
           const SizedBox(height: 12),
           Text(
-            'No letters found',
+            lang == 'mr'
+                ? 'कोणतेही पत्र आढळले नाही'
+                : (lang == 'hi' ? 'कोई पत्र नहीं मिला' : 'No letters found'),
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
           ),
           const SizedBox(height: 4),
           Text(
-            'Try adjusting your search criteria',
+            lang == 'mr'
+                ? 'आपले शोध निकष तपासून पहा'
+                : (lang == 'hi' ? 'अपने खोज मानदंड जांचें' : 'Try adjusting your search criteria'),
             style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
           ),
         ],

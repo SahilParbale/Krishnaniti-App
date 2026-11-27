@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../common/desktop_modal_dialog.dart';
+import '../../../../core/localization/app_translations.dart';
+import '../../../providers/language_provider.dart';
 import '../../../../data/models/duplicate_voter_group_model.dart';
 import '../../../../data/repositories/duplicate_voters_repository.dart';
 import '../../../screens/duplicate_voters/duplicate_voters_report_generator.dart';
@@ -185,7 +187,10 @@ class _DesktopDuplicateVotersViewState extends ConsumerState<DesktopDuplicateVot
             );
           },
           icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
-          label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+          label: Text(
+            AppTranslations.getDownloadReport(ref.watch(desktopLanguageProvider)),
+            style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
+          ),
           style: OutlinedButton.styleFrom(
             backgroundColor: const Color(0xFFF0F9FF),
             side: const BorderSide(color: Color(0xFFBAE6FD)),

@@ -1,4 +1,6 @@
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/localization/app_translations.dart';
+import '../../shell/desktop_sidebar.dart';
 import '../../common/desktop_modal_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -316,7 +318,10 @@ class _DesktopSurveysViewState extends ConsumerState<DesktopSurveysView> {
                 );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
-              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+              label: Text(
+                AppTranslations.getDownloadReport(ref.watch(desktopLanguageProvider)),
+                style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
+              ),
               style: OutlinedButton.styleFrom(
                 backgroundColor: const Color(0xFFF0F9FF),
                 side: const BorderSide(color: Color(0xFFBAE6FD)),

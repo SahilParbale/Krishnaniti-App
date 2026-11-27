@@ -261,7 +261,7 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
                     border: Border.all(color: const Color(0xFFBAE6FD)),
                   ),
                   child: Text(
-                    '$totalLabel: $count',
+                    AppTranslations.formatFound(count, lang),
                     style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0369A1)),
                   ),
                 ),
@@ -288,7 +288,7 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
               label: Text(
-                AppTranslations.t('common.download_report', lang: lang),
+                AppTranslations.getDownloadReport(lang),
                 style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
               ),
               style: OutlinedButton.styleFrom(

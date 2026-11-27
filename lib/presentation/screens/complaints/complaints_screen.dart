@@ -245,6 +245,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                         label: AppTranslations.t('complaints.tabs_area', lang: lang),
                         icon: Icons.domain_rounded,
                         badgeCount: _areaComplaints.length,
+                        lang: lang,
                         isSelected: _activeTab == 'Complaints',
                         onTap: () {
                           setState(() {
@@ -261,6 +262,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                         label: AppTranslations.t('complaints.tabs_personal', lang: lang),
                         icon: Icons.volunteer_activism_rounded,
                         badgeCount: _personalRequests.length,
+                        lang: lang,
                         isSelected: _activeTab == 'Personal Help',
                         onTap: () {
                           setState(() {
@@ -286,6 +288,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                     child: _KpiStatCard(
                       label: AppTranslations.t('common.all', lang: lang),
                       count: totalCount,
+                      lang: lang,
                       color: const Color(0xFF0284C7),
                       bgColor: const Color(0xFFF0F9FF),
                       isSelected: _selectedStatus == 'All',
@@ -300,6 +303,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                     child: _KpiStatCard(
                       label: AppTranslations.getStatus('pending', lang),
                       count: pendingCount,
+                      lang: lang,
                       color: const Color(0xFFDC2626),
                       bgColor: const Color(0xFFFEF2F2),
                       isSelected: _selectedStatus == 'Pending',
@@ -314,6 +318,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                     child: _KpiStatCard(
                       label: AppTranslations.getStatus('inprogress', lang),
                       count: inProgressCount,
+                      lang: lang,
                       color: const Color(0xFFD97706),
                       bgColor: const Color(0xFFFFFBEB),
                       isSelected: _selectedStatus == 'InProgress',
@@ -328,6 +333,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                     child: _KpiStatCard(
                       label: AppTranslations.getStatus('resolved', lang),
                       count: resolvedCount,
+                      lang: lang,
                       color: const Color(0xFF16A34A),
                       bgColor: const Color(0xFFF0FDF4),
                       isSelected: _selectedStatus == 'Resolved',
@@ -407,7 +413,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                         value: area,
                         child: Text(area == 'All'
                             ? (lang == 'mr' ? 'सर्व भाग' : (lang == 'hi' ? 'सभी क्षेत्र' : 'All Areas'))
-                            : area),
+                            : AppTranslations.getAreaName(area, lang)),
                       );
                     }).toList(),
                     onChanged: (val) {
@@ -455,7 +461,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                 child: Row(
                   children: [
                     _FilterPill(
-                      label: '${AppTranslations.t("common.all", lang: lang)} (${_currentList.length})',
+                      label: '${AppTranslations.t("common.all", lang: lang)} (${AppTranslations.formatDigits(_currentList.length, lang)})',
                       isSelected: _selectedStatus == 'All',
                       onTap: () => setState(() {
                         _selectedStatus = 'All';
@@ -464,7 +470,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                     ),
                     const SizedBox(width: 8),
                     _FilterPill(
-                      label: '${AppTranslations.getStatus("pending", lang)} ($pendingCount)',
+                      label: '${AppTranslations.getStatus("pending", lang)} (${AppTranslations.formatDigits(pendingCount, lang)})',
                       color: const Color(0xFFDC2626),
                       isSelected: _selectedStatus == 'Pending',
                       onTap: () => setState(() {
@@ -486,7 +492,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                     ],
                     const SizedBox(width: 8),
                     _FilterPill(
-                      label: '${AppTranslations.getStatus("inprogress", lang)} ($inProgressCount)',
+                      label: '${AppTranslations.getStatus("inprogress", lang)} (${AppTranslations.formatDigits(inProgressCount, lang)})',
                       color: const Color(0xFFD97706),
                       isSelected: _selectedStatus == 'InProgress',
                       onTap: () => setState(() {
@@ -496,7 +502,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                     ),
                     const SizedBox(width: 8),
                     _FilterPill(
-                      label: '${AppTranslations.getStatus("resolved", lang)} ($resolvedCount)',
+                      label: '${AppTranslations.getStatus("resolved", lang)} (${AppTranslations.formatDigits(resolvedCount, lang)})',
                       color: const Color(0xFF16A34A),
                       isSelected: _selectedStatus == 'Resolved',
                       onTap: () => setState(() {
@@ -649,6 +655,7 @@ class _TabButton extends StatelessWidget {
   final String label;
   final IconData icon;
   final int badgeCount;
+  final String lang;
   final bool isSelected;
   final VoidCallback onTap;
 
@@ -656,6 +663,7 @@ class _TabButton extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.badgeCount,
+    this.lang = 'en',
     required this.isSelected,
     required this.onTap,
   });
@@ -710,7 +718,7 @@ class _TabButton extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
-                '$badgeCount',
+                AppTranslations.formatDigits(badgeCount, lang),
                 style: TextStyle(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w800,
@@ -729,6 +737,7 @@ class _TabButton extends StatelessWidget {
 class _KpiStatCard extends StatelessWidget {
   final String label;
   final int count;
+  final String lang;
   final Color color;
   final Color bgColor;
   final bool isSelected;
@@ -737,6 +746,7 @@ class _KpiStatCard extends StatelessWidget {
   const _KpiStatCard({
     required this.label,
     required this.count,
+    this.lang = 'en',
     required this.color,
     required this.bgColor,
     required this.isSelected,
@@ -764,7 +774,7 @@ class _KpiStatCard extends StatelessWidget {
             FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
-                '$count',
+                AppTranslations.formatDigits(count, lang),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
@@ -952,7 +962,7 @@ class _ComplaintCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      complaint.category.toUpperCase(),
+                      AppTranslations.getComplaintType(complaint.category, lang).toUpperCase(),
                       style: const TextStyle(
                         fontSize: 10.5,
                         fontWeight: FontWeight.w700,
@@ -1010,7 +1020,7 @@ class _ComplaintCard extends StatelessWidget {
                         child: Text(
                           complaint.citizenName! +
                               (complaint.citizenMobile != null && complaint.citizenMobile!.isNotEmpty
-                                  ? ' • ${complaint.citizenMobile}'
+                                  ? ' • ${AppTranslations.formatDigits(complaint.citizenMobile!, lang)}'
                                   : ''),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -1097,7 +1107,7 @@ class _ComplaintCard extends StatelessWidget {
                       const Icon(Icons.badge_outlined, size: 13, color: Color(0xFF0284C7)),
                       const SizedBox(width: 5),
                       Text(
-                        'Assigned: ${complaint.assignedStaffName}',
+                        '${lang == "mr" ? "नियुक्त:" : (lang == "hi" ? "नियुक्त:" : "Assigned:")} ${complaint.assignedStaffName}',
                         style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -1123,7 +1133,7 @@ class _ComplaintCard extends StatelessWidget {
                         const Icon(Icons.calendar_today_rounded, size: 12, color: Color(0xFF94A3B8)),
                         const SizedBox(width: 4),
                         Text(
-                          DateFormat('MMM d, h:mm a').format(complaint.createdAt),
+                          AppTranslations.formatDigits(DateFormat('MMM d, h:mm a').format(complaint.createdAt), lang),
                           style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                         ),
                         if (complaint.area != null && complaint.area!.isNotEmpty) ...[
@@ -1132,7 +1142,7 @@ class _ComplaintCard extends StatelessWidget {
                           const SizedBox(width: 2),
                           Flexible(
                             child: Text(
-                              complaint.area!,
+                              AppTranslations.getAreaName(complaint.area!, lang),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
@@ -1154,17 +1164,17 @@ class _ComplaintCard extends StatelessWidget {
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
-                      children: const [
+                      children: [
                         Text(
-                          'Details',
-                          style: TextStyle(
+                          lang == 'mr' ? 'तपशील' : (lang == 'hi' ? 'विवरण' : 'Details'),
+                          style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                             color: Color(0xFF0284C7),
                           ),
                         ),
-                        SizedBox(width: 2),
-                        Icon(Icons.chevron_right_rounded, size: 14, color: Color(0xFF0284C7)),
+                        const SizedBox(width: 2),
+                        const Icon(Icons.chevron_right_rounded, size: 14, color: Color(0xFF0284C7)),
                       ],
                     ),
                   ),

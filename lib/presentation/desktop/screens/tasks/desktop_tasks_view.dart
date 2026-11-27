@@ -293,7 +293,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
                     border: Border.all(color: const Color(0xFFBAE6FD)),
                   ),
                   child: Text(
-                    '$foundLabel: $foundCount',
+                    AppTranslations.formatFound(foundCount, lang),
                     style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0369A1)),
                   ),
                 ),
@@ -320,7 +320,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
               label: Text(
-                AppTranslations.t('common.download_report', lang: lang),
+                AppTranslations.getDownloadReport(lang),
                 style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
               ),
               style: OutlinedButton.styleFrom(
@@ -427,7 +427,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
               return DropdownMenuItem(
                 value: area,
                 child: Text(
-                  area == 'All' ? allAreasLabel : area,
+                  area == 'All' ? allAreasLabel : AppTranslations.getAreaName(area, lang),
                   overflow: TextOverflow.ellipsis,
                 ),
               );
@@ -452,7 +452,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
               return DropdownMenuItem(
                 value: date,
                 child: Text(
-                  date == 'All' ? allDatesLabel : date,
+                  date == 'All' ? allDatesLabel : AppTranslations.formatDigits(date, lang),
                   overflow: TextOverflow.ellipsis,
                 ),
               );
@@ -782,7 +782,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(4)),
       child: Text(
-        AppTranslations.getStatus(priority, lang),
+        AppTranslations.getPriority(priority, lang),
         style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: fg),
       ),
     );

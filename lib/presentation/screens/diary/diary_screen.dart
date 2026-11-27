@@ -178,7 +178,8 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
   }
 
   void _openAddTaskModal() {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
+    final isMr = lang == 'mr';
     final titleCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     final addrCtrl = TextEditingController();
@@ -327,12 +328,14 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
 
                         // Priority Dropdown
                         AppDropdownFormField<String>(
-                          label: isMr ? 'प्राधान्यता स्तर' : 'Priority Level',
+                          label: lang == 'mr'
+                              ? 'प्राधान्यता स्तर'
+                              : (lang == 'hi' ? 'प्राथमिकता स्तर' : 'Priority Level'),
                           value: selectedPriority,
-                          items: const [
-                            DropdownMenuItem(value: 'Low', child: Text('Low (कमी प्राधान्यता)')),
-                            DropdownMenuItem(value: 'Medium', child: Text('Medium (मध्यम प्राधान्यता)')),
-                            DropdownMenuItem(value: 'High', child: Text('High (उच्च प्राधान्यता)')),
+                          items: [
+                            DropdownMenuItem(value: 'Low', child: Text(AppTranslations.getPriority('Low', lang))),
+                            DropdownMenuItem(value: 'Medium', child: Text(AppTranslations.getPriority('Medium', lang))),
+                            DropdownMenuItem(value: 'High', child: Text(AppTranslations.getPriority('High', lang))),
                           ],
                           onChanged: (val) {
                             if (val != null) setModalState(() => selectedPriority = val);
@@ -1073,7 +1076,7 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                       border: Border.all(color: priorityColor.withOpacity(0.3)),
                     ),
                     child: Text(
-                      AppTranslations.getStatus(task.priority, lang),
+                      AppTranslations.getPriority(task.priority, lang),
                       style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: priorityColor),
                     ),
                   ),

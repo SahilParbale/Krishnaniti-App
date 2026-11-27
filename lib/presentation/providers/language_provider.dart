@@ -46,6 +46,22 @@ final appLanguageProvider =
 
 final isHindiProvider = Provider<bool>((ref) => ref.watch(appLanguageProvider) == 'hi');
 
+/// Language state notifier for desktop UI
+class DesktopLanguageNotifier extends Notifier<String> {
+  @override
+  String build() {
+    return ref.watch(appLanguageProvider);
+  }
+
+  void setLanguage(String lang) {
+    ref.read(appLanguageProvider.notifier).setLanguage(lang);
+    state = lang;
+  }
+}
+
+final desktopLanguageProvider =
+    NotifierProvider<DesktopLanguageNotifier, String>(DesktopLanguageNotifier.new);
+
 /// Helpful language extensions
 extension LanguageProviderX on WidgetRef {
   String get lang => watch(appLanguageProvider);

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:nagarsevak_mobile/core/localization/app_translations.dart';
+import 'package:nagarsevak_mobile/presentation/desktop/shell/desktop_sidebar.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../data/models/social_post_model.dart';
 import '../../../../data/repositories/social_analytics_repository.dart';
@@ -155,7 +157,10 @@ class _DesktopSocialAnalyticsViewState extends ConsumerState<DesktopSocialAnalyt
                 );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
-              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+              label: Text(
+                AppTranslations.getDownloadReport(ref.watch(desktopLanguageProvider)),
+                style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
+              ),
               style: OutlinedButton.styleFrom(
                 backgroundColor: const Color(0xFFF0F9FF),
                 side: const BorderSide(color: Color(0xFFBAE6FD)),

@@ -70,13 +70,17 @@ class _LetterDetailScreenState extends ConsumerState<LetterDetailScreen> {
     }
 
     if (mounted) {
-      final isMr = ref.read(isMarathiProvider);
+      final lang = ref.read(appLanguageProvider);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             newStatus == 'Approved'
-                ? (isMr ? 'पत्र यशस्वीरित्या मंजूर केले!' : 'Letter approved successfully!')
-                : (isMr ? 'पत्र नाकारले!' : 'Letter request rejected!'),
+                ? (lang == 'mr'
+                    ? 'पत्र यशस्वीरित्या मंजूर केले!'
+                    : (lang == 'hi' ? 'पत्र सफलतापूर्वक स्वीकृत किया गया!' : 'Letter approved successfully!'))
+                : (lang == 'mr'
+                    ? 'पत्र नाकारले!'
+                    : (lang == 'hi' ? 'पत्र अस्वीकृत कर दिया गया!' : 'Letter request rejected!')),
           ),
           backgroundColor: newStatus == 'Approved' ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
           behavior: SnackBarBehavior.floating,
@@ -602,6 +606,7 @@ class _LetterDetailScreenState extends ConsumerState<LetterDetailScreen> {
 
   // 1. Top Letter Overview Card
   Widget _buildLetterOverviewCard(bool isMr) {
+    final lang = ref.watch(appLanguageProvider);
     return Container(
       decoration: BoxDecoration(
         color: _cardBgColor,
@@ -645,7 +650,7 @@ class _LetterDetailScreenState extends ConsumerState<LetterDetailScreen> {
                   ],
                 ),
               ),
-              _buildStatusBadge(_letter.status, isMr),
+              _buildStatusBadge(_letter.status, lang),
             ],
           ),
 
@@ -1020,6 +1025,7 @@ class _LetterDetailScreenState extends ConsumerState<LetterDetailScreen> {
 
   // 4. Approval Action Bar for Outgoing Letters
   Widget _buildApprovalActionBar(bool isMr) {
+    final lang = ref.watch(appLanguageProvider);
     if (_letter.status.toLowerCase() == 'pending') {
       return Container(
         padding: const EdgeInsets.all(16),
@@ -1086,8 +1092,12 @@ class _LetterDetailScreenState extends ConsumerState<LetterDetailScreen> {
             const SizedBox(width: 8),
             Text(
               isApproved
-                  ? (isMr ? 'पत्र मंजूर केले गेले आहे' : 'Letter Request is Approved')
-                  : (isMr ? 'पत्र नाकारले गेले आहे' : 'Letter Request is Rejected'),
+                  ? (lang == 'mr'
+                      ? 'पत्र मंजूर केले गेले आहे'
+                      : (lang == 'hi' ? 'पत्र स्वीकृत किया गया है' : 'Letter Request is Approved'))
+                  : (lang == 'mr'
+                      ? 'पत्र नाकारले गेले आहे'
+                      : (lang == 'hi' ? 'पत्र अस्वीकृत किया गया है' : 'Letter Request is Rejected')),
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
@@ -1295,37 +1305,34 @@ class _LetterDetailScreenState extends ConsumerState<LetterDetailScreen> {
   }
 
   // Status Badge matching web design colors
-  Widget _buildStatusBadge(String status, bool isMr) {
+  Widget _buildStatusBadge(String status, [String lang = 'en']) {
     Color bg;
     Color border;
     Color text;
-    String label;
 
     switch (status.toLowerCase()) {
       case 'approved':
         bg = const Color(0xFFDCFCE7);
         border = const Color(0xFFBBF7D0);
         text = const Color(0xFF166534);
-        label = isMr ? 'मंजूर' : 'Approved';
         break;
       case 'rejected':
         bg = const Color(0xFFFEF2F2);
         border = const Color(0xFFFECACA);
         text = const Color(0xFFB91C1C);
-        label = isMr ? 'नाकारले' : 'Rejected';
         break;
       case 'received':
         bg = const Color(0xFFDBEAFE);
         border = const Color(0xFFBFDBFE);
         text = const Color(0xFF1E40AF);
-        label = isMr ? 'प्राप्त' : 'Received';
         break;
       default:
         bg = const Color(0xFFFEFCE8);
         border = const Color(0xFFFDE047);
         text = const Color(0xFF854D0E);
-        label = isMr ? 'प्रलंबित' : 'Pending';
     }
+
+    final label = AppTranslations.getStatus(status, lang);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../providers/language_provider.dart';
 import '../../../data/models/karyakarta_work_model.dart';
 import '../../../data/repositories/karyakarta_work_repository.dart';
 import 'karyakarta_work_report_generator.dart';
@@ -259,7 +261,12 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Close', style: TextStyle(color: Color(0xFF64748B))),
+            child: Text(
+              ref.watch(appLanguageProvider) == 'mr'
+                  ? 'बंद करा'
+                  : (ref.watch(appLanguageProvider) == 'hi' ? 'बंद करें' : 'Close'),
+              style: const TextStyle(color: Color(0xFF64748B)),
+            ),
           ),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
@@ -272,7 +279,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
               _generatePdfReport();
             },
             icon: const Icon(Icons.print_outlined, size: 18),
-            label: const Text('Download Report'),
+            label: Text(AppTranslations.getDownloadReport(ref.watch(appLanguageProvider))),
           ),
         ],
       ),

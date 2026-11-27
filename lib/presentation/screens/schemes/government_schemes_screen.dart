@@ -1265,7 +1265,11 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                             _schemesLimit = 20; _appsLimit = 20;
                           });
                         },
-                        child: const Text('Reset All Filters'),
+                        child: Text(
+                          lang == 'mr'
+                              ? 'सर्व फिल्टर्स रीसेट करा'
+                              : (lang == 'hi' ? 'सभी फ़िल्टर रीसेट करें' : 'Reset All Filters'),
+                        ),
                       ),
                     ],
                   ),
@@ -1579,7 +1583,9 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                       const Icon(Icons.assignment_outlined, size: 54, color: Color(0xFF94A3B8)),
                       const SizedBox(height: 12),
                       Text(
-                        isMr ? 'कोणतेही अर्ज आढळले नाहीत' : 'No applications found',
+                        lang == 'mr'
+                            ? 'कोणतेही अर्ज आढळले नाहीत'
+                            : (lang == 'hi' ? 'कोई आवेदन नहीं मिला' : 'No applications found'),
                         style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
                       ),
                     ],

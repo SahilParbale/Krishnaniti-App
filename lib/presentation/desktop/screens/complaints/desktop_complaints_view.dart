@@ -201,7 +201,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
             if (_loading)
               _buildLoadingGrid()
             else if (items.isEmpty)
-              _buildEmptyState(isMr)
+              _buildEmptyState(lang)
             else if (_viewMode == 'table')
               _buildComplaintTable(items, lang)
             else
@@ -246,7 +246,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
                       border: Border.all(color: const Color(0xFFBAE6FD)),
                     ),
                     child: Text(
-                      '${lang == "mr" ? "सापडले" : (lang == "hi" ? "मिले" : "Found")}: $foundCount',
+                      AppTranslations.formatFound(foundCount, lang),
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -282,7 +282,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
               label: Text(
-                lang == 'mr' ? 'अहवाल डाउनलोड करा' : (lang == 'hi' ? 'रिपोर्ट डाउनलोड करें' : 'Download Report'),
+                AppTranslations.getDownloadReport(lang),
                 style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
               ),
               style: OutlinedButton.styleFrom(
@@ -443,10 +443,10 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
                   ),
                 ),
                 DataCell(Text(c.citizenName ?? '-')),
-                DataCell(_buildCategoryBadge(c.category)),
-                DataCell(Text(c.area ?? '-')),
+                DataCell(_buildCategoryBadge(c.category, lang)),
+                DataCell(Text(AppTranslations.getAreaName(c.area ?? '-', lang))),
                 DataCell(_buildStatusBadge(c.status, lang)),
-                DataCell(Text(dateStr, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)))),
+                DataCell(Text(AppTranslations.formatDigits(dateStr, lang), style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)))),
                 DataCell(
                   IconButton(
                     icon: const Icon(Icons.arrow_forward_rounded, size: 16, color: Color(0xFF0284C7)),
@@ -556,7 +556,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
                       child: Text(
                         area == 'All'
                             ? (lang == 'mr' ? 'सर्व भाग' : (lang == 'hi' ? 'सभी क्षेत्र' : 'All Areas'))
-                            : area,
+                            : AppTranslations.getAreaName(area, lang),
                         overflow: TextOverflow.ellipsis,
                       ),
                     );
@@ -583,7 +583,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
                       child: Text(
                         date == 'All'
                             ? (lang == 'mr' ? 'सर्व तारखा' : (lang == 'hi' ? 'सभी तिथियां' : 'All Dates'))
-                            : date,
+                            : AppTranslations.formatDigits(date, lang),
                         overflow: TextOverflow.ellipsis,
                       ),
                     );
@@ -711,7 +711,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _buildStatusBadge(complaint.status, lang),
-                _buildCategoryBadge(complaint.category),
+                _buildCategoryBadge(complaint.category, lang),
               ],
             ),
 
@@ -813,7 +813,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
                       const Icon(Icons.calendar_today_rounded, size: 12, color: Color(0xFF94A3B8)),
                       const SizedBox(width: 4),
                       Text(
-                        dateStr,
+                        AppTranslations.formatDigits(dateStr, lang),
                         style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                       ),
                     ],
@@ -826,7 +826,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
                         ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 120),
                           child: Text(
-                            complaint.area ?? complaint.location ?? '',
+                            AppTranslations.getAreaName(complaint.area ?? complaint.location ?? '', lang),
                             style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -882,7 +882,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
     );
   }
 
-  Widget _buildCategoryBadge(String category) {
+  Widget _buildCategoryBadge(String category, [String lang = 'en']) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
@@ -891,7 +891,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Text(
-        category,
+        AppTranslations.getComplaintType(category, lang),
         style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
       ),
     );
@@ -933,7 +933,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
   }
 
   // --- Empty State ---
-  Widget _buildEmptyState(bool isMr) {
+  Widget _buildEmptyState(String lang) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 60),
@@ -943,12 +943,16 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
           const Icon(Icons.inbox_outlined, size: 48, color: Color(0xFF94A3B8)),
           const SizedBox(height: 12),
           Text(
-            'No complaints found',
+            lang == 'mr'
+                ? 'कोणतीही तक्रार आढळली नाही'
+                : (lang == 'hi' ? 'कोई शिकायत नहीं मिली' : 'No complaints found'),
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
           ),
           const SizedBox(height: 4),
           Text(
-            'Try adjusting your search or filter options',
+            lang == 'mr'
+                ? 'आपले शोध किंवा फिल्टर पर्याय बदलून पहा'
+                : (lang == 'hi' ? 'अपने खोज या फ़िल्टर विकल्प समायोजित करने का प्रयास करें' : 'Try adjusting your search or filter options'),
             style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
           ),
         ],

@@ -635,4 +635,318 @@ class AppTranslations {
 
     return tr(trimmed, lang: lang) ?? status;
   }
+
+  /// Converts ASCII digits (0-9) to Devanagari digits (०-९) for Marathi and Hindi
+  static String formatDigits(dynamic value, String lang) {
+    if (value == null) return '';
+    final str = value.toString();
+    if (lang != 'mr' && lang != 'hi') return str;
+
+    const western = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+    const devanagari = ['०', '१', '२', '३', '४', '५', '६', '७', '८', '९'];
+    var result = str;
+    for (int i = 0; i < 10; i++) {
+      result = result.replaceAll(western[i], devanagari[i]);
+    }
+    return result;
+  }
+
+  /// Standardized "Found: X" badge text in Devanagari or English
+  static String formatFound(int count, String lang) {
+    final devCount = formatDigits(count, lang);
+    if (lang == 'mr') return 'सापडले: $devCount';
+    if (lang == 'hi') return 'मिले: $devCount';
+    return 'Found: $count';
+  }
+
+  /// Standardized "Download Report" button text
+  static String getDownloadReport(String lang) {
+    if (lang == 'mr') return 'अहवाल डाउनलोड करा';
+    if (lang == 'hi') return 'रिपोर्ट डाउनलोड करें';
+    return 'Download Report';
+  }
+
+  /// Standardized Area name translation with Devanagari numerals
+  static String getAreaName(String area, String lang) {
+    final trimmed = area.trim();
+    if (trimmed.isEmpty || trimmed == 'All' || trimmed == 'All Areas') {
+      if (lang == 'mr') return 'सर्व परिसर';
+      if (lang == 'hi') return 'सभी क्षेत्र';
+      return 'All Areas';
+    }
+
+    // Check custom overrides first
+    final override = customOverrides[lang]?[trimmed];
+    if (override != null) return formatDigits(override, lang);
+
+    // Common areas map
+    final lower = trimmed.toLowerCase();
+    const areaMapMr = {
+      'dhankawadi': 'धनकवडी',
+      'dhankwadi': 'धनकवडी',
+      'katraj': 'कात्रज',
+      'bibwewadi': 'बिबवेवाडी',
+      'sahakar nagar': 'सहकार नगर',
+      'padmavati': 'पद्मावती',
+      'balaji nagar': 'बालाजी नगर',
+      'parvati': 'पार्वती',
+      'pune': 'पुणे',
+      'maharashtra': 'महाराष्ट्र',
+      'lokmanya nagar': 'लोकमान्य नगर',
+      'shivaji nagar': 'शिवाजी नगर',
+      'kothrud': 'कोथरूड',
+      'hadapsar': 'हडपसर',
+      'viman nagar': 'विमान नगर',
+      'kalyani nagar': 'कल्याणी नगर',
+      'baner': 'बाणेर',
+      'aundh': 'औंध',
+      'wakad': 'वाकड',
+      'pimpri': 'पिंपरी',
+      'chinchwad': 'चिंचवड',
+      'bhosari': 'भोसरी',
+      'nigdi': 'निगडी',
+      'airoli': 'ऐरोली',
+      'ganesh nagar': 'गणेश नगर',
+      'ambegaon': 'आंबेगाव',
+      'vadgaon': 'वडगाव',
+      'warje': 'वारजे',
+      'karve nagar': 'कर्वे नगर',
+      'kondhwa': 'कोंढवा',
+      'swargate': 'स्वारगेट',
+      'camp': 'कॅम्प',
+      'model colony': 'मॉडेल कॉलनी',
+      'deccan': 'डेक्कन',
+      'sadashiv peth': 'सदाशिव पेठ',
+      'narayan peth': 'नारायण पेठ',
+      'shaniwar peth': 'शनिवार पेठ',
+      'somwar peth': 'सोमवार पेठ',
+      'manglwar peth': 'मंगळवार पेठ',
+      'kasba peth': 'कसबा पेठ',
+      'bhavani peth': 'भवानी पेठ',
+      'nana peth': 'नाना पेठ',
+      'rasta peth': 'रास्ता पेठ',
+      'ganj peth': 'गंज पेठ',
+    };
+
+    const areaMapHi = {
+      'dhankawadi': 'धनकवडी',
+      'dhankwadi': 'धनकवडी',
+      'katraj': 'कात्रज',
+      'bibwewadi': 'बिबवेवाडी',
+      'sahakar nagar': 'सहकार नगर',
+      'padmavati': 'पद्मावती',
+      'balaji nagar': 'बालाजी नगर',
+      'parvati': 'पार्वती',
+      'pune': 'पुणे',
+      'maharashtra': 'महाराष्ट्र',
+      'lokmanya nagar': 'लोकमान्य नगर',
+      'shivaji nagar': 'शिवाजी नगर',
+      'kothrud': 'कोथरूड',
+      'hadapsar': 'हडपसर',
+      'viman nagar': 'विमान नगर',
+      'kalyani nagar': 'कल्याणी नगर',
+      'baner': 'बानेर',
+      'aundh': 'औंध',
+      'wakad': 'वाकड',
+      'pimpri': 'पिंपरी',
+      'chinchwad': 'चिंचवाड़',
+      'bhosari': 'भोसरी',
+      'nigdi': 'निगडी',
+      'airoli': 'ऐरोली',
+      'ganesh nagar': 'गणेश नगर',
+      'ambegaon': 'आंबेगांव',
+      'vadgaon': 'वडगांव',
+      'warje': 'वारजे',
+      'karve nagar': 'कर्वे नगर',
+      'kondhwa': 'कोंढवा',
+      'swargate': 'स्वारगेट',
+      'camp': 'कैंप',
+      'model colony': 'मॉडल कॉलोनी',
+      'deccan': 'डेक्कन',
+    };
+
+    if (lang == 'mr' && areaMapMr.containsKey(lower)) {
+      return formatDigits(areaMapMr[lower]!, lang);
+    }
+    if (lang == 'hi' && areaMapHi.containsKey(lower)) {
+      return formatDigits(areaMapHi[lower]!, lang);
+    }
+
+    // Pattern: Ward X -> प्रभाग X / वार्ड X
+    final wardMatch = RegExp(r'^(?:Ward|Prabhag)\s*(\d+)$', caseSensitive: false).firstMatch(trimmed);
+    if (wardMatch != null) {
+      final numStr = wardMatch.group(1)!;
+      final devNum = formatDigits(numStr, lang);
+      if (lang == 'mr') return 'प्रभाग $devNum';
+      if (lang == 'hi') return 'वार्ड $devNum';
+      return 'Ward $numStr';
+    }
+
+    // Pattern: Lane X -> गल्ली क्र. X / गली नं. X
+    final laneMatch = RegExp(r'^Lane\s*(\d+)$', caseSensitive: false).firstMatch(trimmed);
+    if (laneMatch != null) {
+      final numStr = laneMatch.group(1)!;
+      final devNum = formatDigits(numStr, lang);
+      if (lang == 'mr') return 'गल्ली क्र. $devNum';
+      if (lang == 'hi') return 'गली नं. $devNum';
+      return 'Lane $numStr';
+    }
+
+    // Pattern: Sector X -> सेक्टर X
+    final sectorMatch = RegExp(r'^Sector\s*(\d+)$', caseSensitive: false).firstMatch(trimmed);
+    if (sectorMatch != null) {
+      final numStr = sectorMatch.group(1)!;
+      final devNum = formatDigits(numStr, lang);
+      if (lang == 'mr' || lang == 'hi') return 'सेक्टर $devNum';
+      return 'Sector $numStr';
+    }
+
+    // Fallback: translateDirect and format digits
+    final direct = tr(trimmed, lang: lang);
+    return direct != null ? formatDigits(direct, lang) : formatDigits(trimmed, lang);
+  }
+
+  /// Standardized complaint type translation
+  static String getComplaintType(String type, String lang) {
+    final lower = type.trim().toLowerCase().replaceAll('_', ' ');
+
+    if (lower.contains('clean') || lower.contains('garbage') || lower.contains('कचरा')) {
+      if (lang == 'mr') return 'कचरा / स्वच्छता';
+      if (lang == 'hi') return 'सफाई / कचरा';
+      return 'Cleaning / Garbage';
+    }
+    if (lower.contains('water') || lower.contains('पाणी') || lower.contains('जल')) {
+      if (lang == 'mr') return 'पाणी पुरवठा';
+      if (lang == 'hi') return 'जल आपूर्ति';
+      return 'Water Supply';
+    }
+    if (lower.contains('road') || lower.contains('pothole') || lower.contains('रस्ते') || lower.contains('सड़क')) {
+      if (lang == 'mr') return 'रस्ते / खड्डे';
+      if (lang == 'hi') return 'सड़क / गड्ढे';
+      return 'Road / Potholes';
+    }
+    if (lower.contains('drain') || lower.contains('ड्रेनेज') || lower.contains('नाली')) {
+      if (lang == 'mr') return 'ड्रेनेज / सांडपाणी';
+      if (lang == 'hi') return 'ड्रेनेज / नाली';
+      return 'Drainage';
+    }
+    if (lower.contains('light') || lower.contains('street') || lower.contains('पथदिवे')) {
+      if (lang == 'mr') return 'पथदिवे';
+      if (lang == 'hi') return 'स्ट्रीट लाइट';
+      return 'Street Light';
+    }
+    if (lower.contains('ward problem') || lower.contains('self') || lower.contains('समस्या')) {
+      if (lang == 'mr') return 'प्रभाग समस्या';
+      if (lang == 'hi') return 'वार्ड समस्या';
+      return 'Ward Problem';
+    }
+    if (lower.contains('medic') || lower.contains('health') || lower.contains('आरोग्य')) {
+      if (lang == 'mr') return 'वैद्यकीय मदत';
+      if (lang == 'hi') return 'चिकित्सा सहायता';
+      return 'Medical Help';
+    }
+    if (lower.contains('finan') || lower.contains('आर्थिक') || lower.contains('वित्तीय')) {
+      if (lang == 'mr') return 'आर्थिक मदत';
+      if (lang == 'hi') return 'वित्तीय सहायता';
+      return 'Financial Help';
+    }
+    if (lower.contains('admiss') || lower.contains('educat') || lower.contains('शिक्षण') || lower.contains('प्रवेश')) {
+      if (lang == 'mr') return 'शिक्षण / प्रवेश';
+      if (lang == 'hi') return 'शिक्षा / प्रवेश';
+      return 'Education / Admission';
+    }
+    if (lower.contains('help') || lower.contains('personal') || lower.contains('मदत')) {
+      if (lang == 'mr') return 'वैद्यकीय / वैयक्तिक मदत';
+      if (lang == 'hi') return 'व्यक्तिगत सहायता';
+      return 'Personal Help';
+    }
+    if (lower.contains('suggest') || lower.contains('सूचना') || lower.contains('सुझाव')) {
+      if (lang == 'mr') return 'सूचना';
+      if (lang == 'hi') return 'सुझाव';
+      return 'Suggestion';
+    }
+    if (lower.contains('complaint') || lower.contains('तक्रार') || lower.contains('शिकायत')) {
+      if (lang == 'mr') return 'तक्रार';
+      if (lang == 'hi') return 'शिकायत';
+      return 'Complaint';
+    }
+
+    return translateDirect(type, lang: lang);
+  }
+
+  /// Standardized Priority translation
+  static String getPriority(String priority, String lang) {
+    final lower = priority.trim().toLowerCase();
+    if (lower == 'urgent' || lower == 'emergency' || lower == 'critical') {
+      if (lang == 'mr') return 'तातडीचे';
+      if (lang == 'hi') return 'अति आवश्यक';
+      return 'Urgent';
+    }
+    if (lower == 'high') {
+      if (lang == 'mr') return 'उच्च';
+      if (lang == 'hi') return 'उच्च';
+      return 'High';
+    }
+    if (lower == 'medium') {
+      if (lang == 'mr') return 'मध्यम';
+      if (lang == 'hi') return 'मध्यम';
+      return 'Medium';
+    }
+    if (lower == 'low') {
+      if (lang == 'mr') return 'कमी';
+      if (lang == 'hi') return 'कम';
+      return 'Low';
+    }
+    return translateDirect(priority, lang: lang);
+  }
+
+  /// Standardized Gender translation
+  static String getGender(String gender, String lang) {
+    final lower = gender.trim().toLowerCase();
+    if (lower == 'male' || lower == 'm') {
+      if (lang == 'mr') return 'पुरुष';
+      if (lang == 'hi') return 'पुरुष';
+      return 'Male';
+    }
+    if (lower == 'female' || lower == 'f') {
+      if (lang == 'mr') return 'महिला';
+      if (lang == 'hi') return 'महिला';
+      return 'Female';
+    }
+    if (lower == 'other' || lower == 'o') {
+      if (lang == 'mr') return 'इतर';
+      if (lang == 'hi') return 'अन्य';
+      return 'Other';
+    }
+    return translateDirect(gender, lang: lang);
+  }
+
+  /// Standardized currency formatting with Devanagari numerals
+  static String formatCurrency(dynamic amount, String lang) {
+    if (amount == null) return '₹ ०';
+    final str = amount.toString();
+    final devDigits = formatDigits(str, lang);
+    return '₹ $devDigits';
+  }
+
+  /// All Areas label
+  static String getAllAreas(String lang) {
+    if (lang == 'mr') return 'सर्व भाग / परिसर';
+    if (lang == 'hi') return 'सभी क्षेत्र / परिसर';
+    return 'All Areas';
+  }
+
+  /// All label
+  static String getAll(String lang) {
+    if (lang == 'mr') return 'सर्व';
+    if (lang == 'hi') return 'सभी';
+    return 'All';
+  }
+
+  /// Details label
+  static String getDetails(String lang) {
+    if (lang == 'mr') return 'तपशील';
+    if (lang == 'hi') return 'विवरण';
+    return 'Details';
+  }
 }

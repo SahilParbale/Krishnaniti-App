@@ -422,7 +422,7 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
               label: Text(
-                lang == 'mr' ? 'अहवाल डाउनलोड करा' : (lang == 'hi' ? 'रिपोर्ट डाउनलोड करें' : 'Download Report'),
+                AppTranslations.getDownloadReport(lang),
                 style: const TextStyle(
                   color: Color(0xFF0284C7),
                   fontWeight: FontWeight.w600,
@@ -509,7 +509,7 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
                       border: Border.all(color: const Color(0xFFBAE6FD)),
                     ),
                     child: Text(
-                      '${lang == "mr" ? "सापडले" : (lang == "hi" ? "मिले" : "Found")}: ${items.length}',
+                      AppTranslations.formatFound(items.length, lang),
                       style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0369A1)),
                     ),
                   ),
@@ -577,7 +577,7 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
                       child: Text(
                         a == 'All'
                             ? (lang == 'mr' ? 'सर्व भाग' : (lang == 'hi' ? 'सभी क्षेत्र' : 'All Areas'))
-                            : a,
+                            : AppTranslations.getAreaName(a, lang),
                         overflow: TextOverflow.ellipsis,
                       ),
                     );
@@ -602,7 +602,7 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
                       child: Text(
                         d == 'All'
                             ? (lang == 'mr' ? 'सर्व तारखा' : (lang == 'hi' ? 'सभी तिथियां' : 'All Dates'))
-                            : d,
+                            : AppTranslations.formatDigits(d, lang),
                         overflow: TextOverflow.ellipsis,
                       ),
                     );
@@ -744,7 +744,7 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
               children: [
                 const Icon(Icons.phone_outlined, size: 13, color: Color(0xFF64748B)),
                 const SizedBox(width: 4),
-                Text('+91 ${visitor.mobile}', style: const TextStyle(fontSize: 12, color: Color(0xFF475569))),
+                Text('+91 ${AppTranslations.formatDigits(visitor.mobile, lang)}', style: const TextStyle(fontSize: 12, color: Color(0xFF475569))),
               ],
             ),
             const SizedBox(height: 4),
@@ -755,7 +755,7 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
                 const Icon(Icons.location_on_outlined, size: 13, color: Color(0xFF64748B)),
                 const SizedBox(width: 4),
                 Expanded(
-                  child: Text(visitor.area!, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)), overflow: TextOverflow.ellipsis),
+                  child: Text(AppTranslations.getAreaName(visitor.area!, lang), style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)), overflow: TextOverflow.ellipsis),
                 ),
               ],
             ),
@@ -782,7 +782,7 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '${visitor.formattedDate} • ${visitor.formattedTime}',
+                  AppTranslations.formatDigits('${visitor.formattedDate} • ${visitor.formattedTime}', lang),
                   style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
                 ),
                 Row(
@@ -882,10 +882,10 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
           return DataRow(
             cells: [
               DataCell(Text(v.name, style: const TextStyle(fontWeight: FontWeight.w600))),
-              DataCell(Text('+91 ${v.mobile}')),
+              DataCell(Text('+91 ${AppTranslations.formatDigits(v.mobile, lang)}')),
               DataCell(_buildPurposeBadge(v.purpose, lang)),
-              DataCell(Text(v.area ?? '-')),
-              DataCell(Text('${v.formattedDate} • ${v.formattedTime}')),
+              DataCell(Text(AppTranslations.getAreaName(v.area ?? '-', lang))),
+              DataCell(Text(AppTranslations.formatDigits('${v.formattedDate} • ${v.formattedTime}', lang))),
               DataCell(
                 Row(
                   mainAxisSize: MainAxisSize.min,

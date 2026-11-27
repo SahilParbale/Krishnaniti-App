@@ -144,6 +144,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   }
 
   void _showDashboardHelp() {
+    final lang = ref.read(appLanguageProvider);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -168,8 +169,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
             // 1. FIXED HEADER
             AppModalHeader(
               icon: Icons.help_outline_rounded,
-              title: 'Dashboard Overview & Help',
-              subtitle: 'Central command guide and navigation hints',
+              title: lang == 'mr'
+                  ? 'डॅशबोर्ड माहिती आणि मदत'
+                  : (lang == 'hi' ? 'डैशबोर्ड जानकारी और सहायता' : 'Dashboard Overview & Help'),
+              subtitle: lang == 'mr'
+                  ? 'मार्गदर्शन आणि नेव्हिगेशन'
+                  : (lang == 'hi' ? 'मार्गदर्शन और नेविगेशन' : 'Central command guide and navigation hints'),
               onClose: () => Navigator.pop(ctx),
             ),
 
@@ -181,28 +186,48 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                 children: [
                   _buildHelpStep(
                     icon: Icons.dashboard_rounded,
-                    title: 'Central Command Hub',
-                    desc: 'Gives a quick summary of citizen requests, municipal letters, and ward voter count.',
+                    title: lang == 'mr' ? 'केंद्रीय नियंत्रण केंद्र' : (lang == 'hi' ? 'केंद्रीय नियंत्रण केंद्र' : 'Central Command Hub'),
+                    desc: lang == 'mr'
+                        ? 'नागरिक विनंत्या, पत्रव्यवहार आणि प्रभागातील मतदारांचा संक्षिप्त आढावा मिळतो.'
+                        : (lang == 'hi'
+                            ? 'नागरिक अनुरोधों, पत्राचार और वार्ड मतदाताओं का संक्षिप्त अवलोकन मिलता है।'
+                            : 'Gives a quick summary of citizen requests, municipal letters, and ward voter count.'),
                   ),
                   _buildHelpStep(
                     icon: Icons.add_circle_outline_rounded,
-                    title: 'Create a New Request',
-                    desc: 'Tap "+ New Request" to log a citizen civic grievance or departmental petition.',
+                    title: lang == 'mr' ? 'नवीन तक्रार नोंदवा' : (lang == 'hi' ? 'नई शिकायत दर्ज करें' : 'Create a New Request'),
+                    desc: lang == 'mr'
+                        ? 'नागरिकांची नागरी समस्या किंवा विभागीय अर्ज नोंदवण्यासाठी "+ नवीन तक्रार" दाबा.'
+                        : (lang == 'hi'
+                            ? 'नागरिकों की समस्या या विभागीय आवेदन दर्ज करने के लिए "+ नया अनुरोध" दबाएं।'
+                            : 'Tap "+ New Request" to log a citizen civic grievance or departmental petition.'),
                   ),
                   _buildHelpStep(
                     icon: Icons.auto_awesome_rounded,
-                    title: 'AI Daily Briefing',
-                    desc: 'AI synthesized ward pulse identifying urgent bottlenecks and pending issues.',
+                    title: lang == 'mr' ? 'एआय दैनिक माहिती' : (lang == 'hi' ? 'एआई दैनिक जानकारी' : 'AI Daily Briefing'),
+                    desc: lang == 'mr'
+                        ? 'प्रभागातील महत्त्वाच्या समस्या व प्रलंबित कामे यांचे एआय विश्लेषण.'
+                        : (lang == 'hi'
+                            ? 'वार्ड की महत्वपूर्ण समस्याओं और लंबित कार्यों का एआई विश्लेषण।'
+                            : 'AI synthesized ward pulse identifying urgent bottlenecks and pending issues.'),
                   ),
                   _buildHelpStep(
                     icon: Icons.bar_chart_rounded,
-                    title: 'Status Overview & Clearance',
-                    desc: 'Visual breakdown of pending, in-progress, and resolved issues with clearance rate.',
+                    title: lang == 'mr' ? 'स्थिती आढावा आणि निकाल' : (lang == 'hi' ? 'स्थिति समीक्षा और परिणाम' : 'Status Overview & Clearance'),
+                    desc: lang == 'mr'
+                        ? 'प्रलंबित, चालू आणि पूर्ण कामांचा आलेख व निवारण दर.'
+                        : (lang == 'hi'
+                            ? 'लंबित, प्रगति पर और पूर्ण कार्यों का ग्राफ व निवारण दर।'
+                            : 'Visual breakdown of pending, in-progress, and resolved issues with clearance rate.'),
                   ),
                   _buildHelpStep(
                     icon: Icons.notifications_active_outlined,
-                    title: 'Live Activity Feed',
-                    desc: 'Real-time updates of citizen complaints with instant filtering by Pending status.',
+                    title: lang == 'mr' ? 'थेट तक्रार नोंद' : (lang == 'hi' ? 'लाइव शिकायत फ़ीड' : 'Live Activity Feed'),
+                    desc: lang == 'mr'
+                        ? 'नागरिकांच्या तक्रारींचे थेट अपडेट्स आणि प्रलंबित स्थितीनुसार फिल्टर.'
+                        : (lang == 'hi'
+                            ? 'नागरिकों की शिकायतों के लाइव अपडेट और लंबित स्थिति अनुसार फ़िल्टर।'
+                            : 'Real-time updates of citizen complaints with instant filtering by Pending status.'),
                   ),
                   const SizedBox(height: 20),
                   SizedBox(
@@ -215,7 +240,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         padding: const EdgeInsets.symmetric(vertical: 13),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                      child: const Text('Got it!', style: TextStyle(fontWeight: FontWeight.w700)),
+                      child: Text(
+                        lang == 'mr' ? 'समजले!' : (lang == 'hi' ? 'समझ गए!' : 'Got it!'),
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
                     ),
                   ),
                 ],
@@ -281,6 +309,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   }
 
   void _showComplaintDetailsModal(ComplaintModel complaint) {
+    final lang = ref.read(appLanguageProvider);
     final isPending = complaint.status.toLowerCase() == 'pending';
     final isResolved = complaint.status.toLowerCase() == 'resolved';
     final statusColor = isPending
@@ -314,8 +343,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
             // 1. FIXED HEADER
             AppModalHeader(
               icon: Icons.assignment_outlined,
-              title: complaint.id,
-              subtitle: 'Status: ${complaint.status}',
+              title: AppTranslations.formatDigits(complaint.id, lang),
+              subtitle: '${AppTranslations.getCommon("status", lang)}: ${AppTranslations.getStatus(complaint.status, lang)}',
               onClose: () => Navigator.pop(ctx),
             ),
 
@@ -329,7 +358,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Category & Priority',
+                        lang == 'mr'
+                            ? 'वर्ग आणि प्राधान्य'
+                            : (lang == 'hi' ? 'श्रेणी और प्राथमिकता' : 'Category & Priority'),
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -341,10 +372,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         decoration: BoxDecoration(
                           color: statusBg,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: statusColor.withOpacity(0.3)),
+                          border: Border.all(color: statusColor.withValues(alpha: 0.3)),
                         ),
                         child: Text(
-                          complaint.status,
+                          AppTranslations.getStatus(complaint.status, lang),
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
@@ -355,7 +386,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                     ],
                   ),
                   const SizedBox(height: 12),
-                  Text(
+                  AppTranslatedText(
                     complaint.title,
                     style: const TextStyle(
                       fontSize: 16,
@@ -366,7 +397,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   ),
                   if (complaint.description.isNotEmpty) ...[
                     const SizedBox(height: 8),
-                    Text(
+                    AppTranslatedText(
                       complaint.description,
                       style: const TextStyle(
                         fontSize: 13,
@@ -389,7 +420,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            complaint.area ?? complaint.location ?? 'Ward No. 12, Prabhag 12',
+                            AppTranslations.getAreaName(complaint.area ?? complaint.location ?? (lang == 'mr' ? 'प्रभाग १२' : (lang == 'hi' ? 'वार्ड १२' : 'Ward No. 12, Prabhag 12')), lang),
                             style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
                           ),
                         ),
@@ -415,7 +446,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             padding: const EdgeInsets.symmetric(vertical: 13),
                           ),
-                          child: const Text('Close', style: TextStyle(fontWeight: FontWeight.w600)),
+                          child: Text(
+                            lang == 'mr' ? 'बंद करा' : (lang == 'hi' ? 'बंद करें' : 'Close'),
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -432,7 +466,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             padding: const EdgeInsets.symmetric(vertical: 13),
                           ),
-                          child: const Text('Open in Requests', style: TextStyle(fontWeight: FontWeight.w700)),
+                          child: Text(
+                            lang == 'mr' ? 'तक्रारींमध्ये उघडा' : (lang == 'hi' ? 'शिकायतों में खोलें' : 'Open in Requests'),
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
                         ),
                       ),
                     ],
@@ -458,11 +495,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     final localizedBriefing = lang == 'mr'
         ? (totalVal == 0
             ? 'नगरसेवक व्यवस्थापन डॅशबोर्डवर आपले स्वागत आहे. सर्व तक्रारी आणि मतदार नोंदी महापालिका प्रणालीशी जोडलेल्या आहेत.'
-            : 'प्रभाग सारांश: $pendingVal प्रलंबित नागरिक तक्रारींवर प्राधान्याने लक्ष देणे आवश्यक आहे. $resolvedVal कामे यशस्वीरीत्या पूर्ण झाली आहेत.')
+            : 'प्रभाग सारांश: ${AppTranslations.formatDigits(pendingVal, lang)} प्रलंबित नागरिक तक्रारींवर प्राधान्याने लक्ष देणे आवश्यक आहे. ${AppTranslations.formatDigits(resolvedVal, lang)} कामे यशस्वीरीत्या पूर्ण झाली आहेत.')
         : (lang == 'hi'
             ? (totalVal == 0
                 ? 'नगरसेवक प्रबंधन डैशबोर्ड में आपका स्वागत है। सभी शिकायतें और मतदाता रिकॉर्ड जुड़े हुए हैं।'
-                : 'वार्ड सारांश: $pendingVal लंबित नागरिक शिकायतों पर प्राथमिकता से ध्यान देने की आवश्यकता है। $resolvedVal कार्य सफलतापूर्वक पूर्ण हुए हैं।')
+                : 'वार्ड सारांश: ${AppTranslations.formatDigits(pendingVal, lang)} लंबित नागरिक शिकायतों पर प्राथमिकता से ध्यान देने की आवश्यकता है। ${AppTranslations.formatDigits(resolvedVal, lang)} कार्य सफलतापूर्वक पूर्ण हुए हैं।')
             : _dailyBriefing);
 
     final displayedActivities = _activityFilter == 'pending'
@@ -504,7 +541,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(Icons.account_balance_rounded, color: Colors.white, size: 18),
@@ -527,7 +564,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                       ),
                     ),
                     Text(
-                      AppTranslations.t('dashboard.subtitle', lang: lang),
+                      lang == 'mr'
+                          ? 'नागरी तक्रारी आणि मतदार व्यवस्थापन'
+                          : (lang == 'hi' ? 'नागरिक शिकायतें और वार्ड प्रबंधन' : 'Civic Grievances & Ward Management'),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -541,7 +580,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
               ),
             ],
           ),
-          actions: const [],
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.help_outline_rounded, color: Colors.white, size: 22),
+              tooltip: lang == 'mr' ? 'डॅशबोर्ड माहिती' : (lang == 'hi' ? 'डैशबोर्ड सहायता' : 'Dashboard Guide'),
+              onPressed: _showDashboardHelp,
+            ),
+            IconButton(
+              icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 22),
+              tooltip: lang == 'mr' ? 'रिफ्रेश' : (lang == 'hi' ? 'रिफ्रेश' : 'Refresh'),
+              onPressed: _loadDashboardData,
+            ),
+            const SizedBox(width: 4),
+          ],
         ),
         body: _isLoading
             ? const Center(
@@ -594,8 +645,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                               const SizedBox(height: 1),
                               Text(
                                 lang == 'mr'
-                                    ? 'स्वागत आहे, सन्माननीय नगरसेवक'
-                                    : (lang == 'hi' ? 'स्वागत है, माननीय नगरसेवक' : 'Welcome back, Hon. Nagarsevak'),
+                                    ? 'आपले स्वागत आहे, नगरसेवक'
+                                    : (lang == 'hi' ? 'वापसी पर स्वागत है, नगरसेवक' : 'Welcome back, Nagar Sevak'),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
@@ -669,8 +720,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                               children: [
                                 Text(
                                   lang == 'mr'
-                                      ? 'एआय दैनिक सारांश आणि प्रभाग आढावा'
-                                      : (lang == 'hi' ? 'एआई दैनिक सारांश और वार्ड समीक्षा' : 'AI Daily Briefing & Ward Pulse'),
+                                      ? 'AI दैनिक माहिती'
+                                      : (lang == 'hi' ? 'AI दैनिक जानकारी' : 'AI Daily Insight'),
                                   style: const TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w700,
@@ -702,8 +753,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                       children: [
                         Expanded(
                           child: _StatCardItem(
-                            title: lang == 'mr' ? 'एकूण मतदार' : (lang == 'hi' ? 'कुल मतदाता' : 'Total Citizens'),
-                            value: NumberFormat.decimalPattern().format(_voterCount),
+                            title: lang == 'mr' ? 'एकूण नागरिक' : (lang == 'hi' ? 'कुल नागरिक' : 'Total Citizens'),
+                            value: AppTranslations.formatDigits(NumberFormat.decimalPattern().format(_voterCount), lang),
                             icon: Icons.people_alt_rounded,
                             iconColor: const Color(0xFF0284C7),
                             badgeColor: const Color(0xFFE0F2FE),
@@ -717,8 +768,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         const SizedBox(width: 10),
                         Expanded(
                           child: _StatCardItem(
-                            title: lang == 'mr' ? 'प्रलंबित समस्या' : (lang == 'hi' ? 'लंबित मुद्दे' : 'Pending Issues'),
-                            value: NumberFormat.decimalPattern().format(pendingVal),
+                            title: lang == 'mr' ? 'प्रलंबित तक्रारी' : (lang == 'hi' ? 'लंबित मुद्दे' : 'Pending Issues'),
+                            value: AppTranslations.formatDigits(NumberFormat.decimalPattern().format(pendingVal), lang),
                             icon: Icons.error_outline_rounded,
                             iconColor: const Color(0xFFDC2626),
                             badgeColor: const Color(0xFFFEF2F2),
@@ -736,8 +787,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                       children: [
                         Expanded(
                           child: _StatCardItem(
-                            title: lang == 'mr' ? 'काम चालू' : (lang == 'hi' ? 'प्रगति पर' : 'In Progress'),
-                            value: NumberFormat.decimalPattern().format(inProgressVal),
+                            title: lang == 'mr' ? 'काम चालू' : (lang == 'hi' ? 'कार्य प्रगति पर' : 'In Progress'),
+                            value: AppTranslations.formatDigits(NumberFormat.decimalPattern().format(inProgressVal), lang),
                             icon: Icons.timelapse_rounded,
                             iconColor: const Color(0xFFD97706),
                             badgeColor: const Color(0xFFFFFBEB),
@@ -748,8 +799,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         const SizedBox(width: 10),
                         Expanded(
                           child: _StatCardItem(
-                            title: lang == 'mr' ? 'पूर्ण कामे' : (lang == 'hi' ? 'पूर्ण कार्य' : 'Resolved'),
-                            value: NumberFormat.decimalPattern().format(resolvedVal),
+                            title: lang == 'mr' ? 'सोडवलेले' : (lang == 'hi' ? 'हल किया गया' : 'Resolved'),
+                            value: AppTranslations.formatDigits(NumberFormat.decimalPattern().format(resolvedVal), lang),
                             icon: Icons.check_circle_outline_rounded,
                             iconColor: const Color(0xFF16A34A),
                             badgeColor: const Color(0xFFF0FDF4),
@@ -775,9 +826,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Quick actions:',
-                            style: TextStyle(
+                          Text(
+                            lang == 'mr' ? 'त्वरित क्रिया:' : (lang == 'hi' ? 'त्वरित कार्रवाई:' : 'Quick actions:'),
+                            style: const TextStyle(
                               fontSize: 11.5,
                               fontWeight: FontWeight.w600,
                               color: Color(0xFF64748B),
@@ -790,7 +841,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                               children: [
                                 _QuickActionPill(
                                   icon: Icons.search_rounded,
-                                  label: 'Search Voter',
+                                  label: lang == 'mr' ? 'मतदार शोधा' : (lang == 'hi' ? 'मतदाता खोजें' : 'Search Voter'),
                                   onTap: () {
                                     HapticFeedback.selectionClick();
                                     ref.read(activeScreenProvider.notifier).setScreen('voters');
@@ -799,7 +850,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.groups_rounded,
-                                  label: 'Staff / Team',
+                                  label: lang == 'mr' ? 'स्टाफ व्यवस्थापन' : (lang == 'hi' ? 'कर्मचारी प्रबंधन' : 'Staff / Team'),
                                   onTap: () => _openModuleDetail(
                                     'My Team',
                                     'Staff & coordinator team members',
@@ -811,19 +862,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.campaign_outlined,
-                                  label: 'Complaints',
+                                  label: lang == 'mr' ? 'तक्रारी पहा' : (lang == 'hi' ? 'शिकायतें देखें' : 'Complaints'),
                                   onTap: () => widget.onTabChange(1),
                                 ),
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.mark_email_unread_outlined,
-                                  label: 'Letters ($_lettersCount)',
+                                  label: lang == 'mr'
+                                      ? 'पत्र व्यवहार (${AppTranslations.formatDigits(_lettersCount, lang)})'
+                                      : (lang == 'hi'
+                                          ? 'पत्र व्यवहार (${AppTranslations.formatDigits(_lettersCount, lang)})'
+                                          : 'Letters ($_lettersCount)'),
                                   onTap: () => widget.onTabChange(2),
                                 ),
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.event_note_outlined,
-                                  label: 'Diary',
+                                  label: lang == 'mr' ? 'दैनंदिनी (डायरी)' : (lang == 'hi' ? 'दैनिक डायरी' : 'Diary'),
                                   onTap: () => _openModuleDetail(
                                     'Diary',
                                     'Task management, daily visits and itinerary',
@@ -835,7 +890,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.badge_outlined,
-                                  label: 'Visitor Log',
+                                  label: lang == 'mr' ? 'भेट देणारे नागरिक' : (lang == 'hi' ? 'आगंतुक रजिस्टर' : 'Visitor Log'),
                                   onTap: () => _openModuleDetail(
                                     'Visitor Log',
                                     'Track daily citizen visits & appointments',
@@ -847,7 +902,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.map_outlined,
-                                  label: 'Ward Map',
+                                  label: lang == 'mr' ? 'प्रभाग नकाशा' : (lang == 'hi' ? 'वार्ड नक्शा' : 'Ward Map'),
                                   onTap: () => _openModuleDetail(
                                     'Ward Map',
                                     'Geographic boundaries, booths & civil works',
@@ -859,7 +914,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.history_rounded,
-                                  label: 'Work History',
+                                  label: lang == 'mr' ? 'विकास कामे इतिहास' : (lang == 'hi' ? 'कार्य इतिहास' : 'Work History'),
                                   onTap: () => _openModuleDetail(
                                     'Work History',
                                     'Development works, grievances & welfare',
@@ -871,7 +926,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.lightbulb_outline_rounded,
-                                  label: 'Possible Improvements',
+                                  label: lang == 'mr' ? 'संभाव्य सुधारणा' : (lang == 'hi' ? 'संभावित सुधार' : 'Possible Improvements'),
                                   onTap: () => _openModuleDetail(
                                     'Possible Improvements',
                                     'Propose and track future development works',
@@ -883,7 +938,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.currency_rupee_rounded,
-                                  label: 'Ward Wise Provision',
+                                  label: lang == 'mr' ? 'प्रभाग तरतूद' : (lang == 'hi' ? 'वार्ड प्रावधान' : 'Ward Wise Provision'),
                                   onTap: () => _openModuleDetail(
                                     'Ward Wise Provision',
                                     'Budget provisions and funding proposals',
@@ -895,7 +950,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.menu_book_outlined,
-                                  label: 'GB Register',
+                                  label: lang == 'mr' ? 'जीबी रजिस्टर' : (lang == 'hi' ? 'जीबी रजिस्टर' : 'GB Register'),
                                   onTap: () => _openModuleDetail(
                                     'GB Register',
                                     'General Body motions and civic resolutions',
@@ -907,7 +962,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.account_balance_wallet_outlined,
-                                  label: 'Ward Budget',
+                                  label: lang == 'mr' ? 'प्रभाग अंदाजपत्रक' : (lang == 'hi' ? 'वार्ड बजट' : 'Ward Budget'),
                                   onTap: () => _openModuleDetail(
                                     'Ward Budget',
                                     'Track development funds & expenditure',
@@ -919,7 +974,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.location_city_outlined,
-                                  label: 'Government office',
+                                  label: lang == 'mr' ? 'शासकीय कार्यालये' : (lang == 'hi' ? 'सरकारी कार्यालय' : 'Government office'),
                                   onTap: () => _openModuleDetail(
                                     'Government office',
                                     'Ward municipal offices & emergency directory',
@@ -931,7 +986,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.trending_up_rounded,
-                                  label: 'Social Analytics',
+                                  label: lang == 'mr' ? 'सोशल मीडिया विश्लेषण' : (lang == 'hi' ? 'सोशल मीडिया विश्लेषण' : 'Social Analytics'),
                                   onTap: () => _openModuleDetail(
                                     'Social Analytics',
                                     'Social media engagement and public interaction',
@@ -943,7 +998,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.newspaper_outlined,
-                                  label: 'Newspaper Clipping',
+                                  label: lang == 'mr' ? 'वृत्तपत्र कात्रणे' : (lang == 'hi' ? 'अखबार की कतरनें' : 'Newspaper Clipping'),
                                   onTap: () => _openModuleDetail(
                                     'Newspaper Clipping',
                                     'Print news coverage and press clippings',
@@ -955,7 +1010,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.language_rounded,
-                                  label: 'Media Tracking',
+                                  label: lang == 'mr' ? 'मीडिया ट्रॅकिंग' : (lang == 'hi' ? 'मीडिया ट्रैकिंग' : 'Media Tracking'),
                                   onTap: () => _openModuleDetail(
                                     'Media Tracking',
                                     'Broadcast news channels and press monitors',
@@ -967,7 +1022,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.auto_awesome_rounded,
-                                  label: 'AI Content Studio',
+                                  label: lang == 'mr' ? 'एआय कंटेंट स्टुडिओ' : (lang == 'hi' ? 'एआई कंटेंट स्टूडियो' : 'AI Content Studio'),
                                   onTap: () => _openModuleDetail(
                                     'AI Content Studio',
                                     'Social media post generation & PR copy',
@@ -979,7 +1034,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.event_available_rounded,
-                                  label: 'Events & Invites',
+                                  label: lang == 'mr' ? 'कार्यक्रम व निमंत्रणे' : (lang == 'hi' ? 'कार्यक्रम और निमंत्रण' : 'Events & Invites'),
                                   onTap: () => _openModuleDetail(
                                     'Events & Invites',
                                     'Public programs, rallies & inauguration events',
@@ -991,7 +1046,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.photo_library_outlined,
-                                  label: 'Gallery & Media',
+                                  label: lang == 'mr' ? 'गॅलरी आणि मीडिया' : (lang == 'hi' ? 'गैलरी और मीडिया' : 'Gallery & Media'),
                                   onTap: () => _openModuleDetail(
                                     'Gallery & Media',
                                     'Event photos, project images & public press',
@@ -1003,7 +1058,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.bar_chart_rounded,
-                                  label: 'Result Analysis',
+                                  label: lang == 'mr' ? 'निवडणूक निकाल विश्लेषण' : (lang == 'hi' ? 'चुनाव परिणाम विश्लेषण' : 'Result Analysis'),
                                   onTap: () => _openModuleDetail(
                                     'Result Analysis',
                                     'Past election results, booth margins & turnout',
@@ -1015,7 +1070,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.group_add_outlined,
-                                  label: 'Sadasya (Members)',
+                                  label: lang == 'mr' ? 'सदस्य व्यवस्थापन' : (lang == 'hi' ? 'सदस्य प्रबंधन' : 'Sadasya (Members)'),
                                   onTap: () => _openModuleDetail(
                                     'Sadasya (Members)',
                                     'Active party cadre & booth coordinators',
@@ -1027,7 +1082,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.fact_check_outlined,
-                                  label: 'Sample Surveys',
+                                  label: lang == 'mr' ? 'मतदार सर्वेक्षण' : (lang == 'hi' ? 'मतदाता सर्वेक्षण' : 'Sample Surveys'),
                                   onTap: () => _openModuleDetail(
                                     'Sample Surveys',
                                     'Opinion polls, field surveys and voter sentiment data',
@@ -1039,7 +1094,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.groups_2_outlined,
-                                  label: 'Opposition Information',
+                                  label: lang == 'mr' ? 'विरोधी पक्ष माहिती' : (lang == 'hi' ? 'विपक्षी जानकारी' : 'Opposition Information'),
                                   onTap: () => _openModuleDetail(
                                     'Opposition Information',
                                     'Opposition candidate profiles & past records',
@@ -1051,7 +1106,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.apartment_outlined,
-                                  label: 'NGO & Mandals Info',
+                                  label: lang == 'mr' ? 'मंडळे आणि संस्था' : (lang == 'hi' ? 'मंडल और गैर-सरकारी संगठन' : 'NGO & Mandals Info'),
                                   onTap: () => _openModuleDetail(
                                     'NGO & Mandals Info',
                                     'Youth mandals, festival committees & NGOs',
@@ -1063,7 +1118,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.home_work_outlined,
-                                  label: 'Societies',
+                                  label: lang == 'mr' ? 'गृहनिर्माण सोसायट्या' : (lang == 'hi' ? 'हाउसिंग सोसायटियां' : 'Societies'),
                                   onTap: () => _openModuleDetail(
                                     'Housing Societies',
                                     'Apartments & resident welfare associations',
@@ -1075,7 +1130,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.warning_amber_rounded,
-                                  label: 'Duplicates',
+                                  label: lang == 'mr' ? 'दुबार मतदार' : (lang == 'hi' ? 'डुप्लीकेट मतदाता' : 'Duplicates'),
                                   onTap: () => _openModuleDetail(
                                     'Duplicate Voters',
                                     'Identify and filter duplicate entries',
@@ -1087,7 +1142,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.description_outlined,
-                                  label: 'Voter Forms',
+                                  label: lang == 'mr' ? 'मतदार अर्ज (६, ७, ८)' : (lang == 'hi' ? 'मतदाता फॉर्म (६, ७, ८)' : 'Voter Forms'),
                                   onTap: () => _openModuleDetail(
                                     'Voter Forms',
                                     'Form 6, 7 & 8 electoral applications',
@@ -1099,7 +1154,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.assignment_ind_outlined,
-                                  label: 'Karyakarta Work',
+                                  label: lang == 'mr' ? 'कार्यकर्ता कार्य' : (lang == 'hi' ? 'कार्यकर्ता कार्य' : 'Karyakarta Work'),
                                   onTap: () => _openModuleDetail(
                                     'Karyakarta Work Management',
                                     'Assign field tasks & track metrics',
@@ -1111,7 +1166,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.sms_outlined,
-                                  label: 'Send SMS',
+                                  label: lang == 'mr' ? 'एसएमएस पाठवा' : (lang == 'hi' ? 'एसएमएस भेजें' : 'Send SMS'),
                                   onTap: () => _openModuleDetail(
                                     'Send SMS',
                                     'Send notifications & updates to voters',
@@ -1123,7 +1178,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 const SizedBox(width: 8),
                                 _QuickActionPill(
                                   icon: Icons.chat_rounded,
-                                  label: 'WhatsApp',
+                                  label: lang == 'mr' ? 'व्हॉट्सअ‍ॅप संदेश' : (lang == 'hi' ? 'व्हाट्सएप संदेश' : 'WhatsApp'),
                                   onTap: () => _openModuleDetail(
                                     'WhatsApp Message',
                                     'Direct messaging & voter broadcast',
@@ -1158,7 +1213,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                lang == 'mr' ? 'स्थिती आढावा आणि निवारण' : (lang == 'hi' ? 'स्थिति समीक्षा और निवारण' : 'Status Overview'),
+                                lang == 'mr' ? 'तक्रार स्थिती' : (lang == 'hi' ? 'तक्रार स्थिति' : 'Complaint Status Overview'),
                                 style: const TextStyle(
                                   fontSize: 14.5,
                                   fontWeight: FontWeight.w800,
@@ -1215,7 +1270,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                     FittedBox(
                                       fit: BoxFit.scaleDown,
                                       child: Text(
-                                        lang == 'mr' ? 'निवारण दर' : (lang == 'hi' ? 'समाधान दर' : 'CLEARANCE RATE'),
+                                        lang == 'mr' ? 'निकालाचे प्रमाण' : (lang == 'hi' ? 'निपटान दर' : 'CLEARANCE RATE'),
                                         style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: Color(0xFF64748B)),
                                       ),
                                     ),
@@ -1223,7 +1278,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                     FittedBox(
                                       fit: BoxFit.scaleDown,
                                       child: Text(
-                                        '${totalVal > 0 ? ((resolvedVal / totalVal) * 100).round() : 0}%',
+                                        '${AppTranslations.formatDigits(totalVal > 0 ? ((resolvedVal / totalVal) * 100).round() : 0, lang)}%',
                                         style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                                       ),
                                     ),
@@ -1237,7 +1292,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                     FittedBox(
                                       fit: BoxFit.scaleDown,
                                       child: Text(
-                                        lang == 'mr' ? 'सरासरी प्रतिसाद' : (lang == 'hi' ? 'औसत प्रतिक्रिया' : 'AVG. RESPONSE'),
+                                        lang == 'mr' ? 'सरासरी प्रतिसाद वेळ' : (lang == 'hi' ? 'औसत प्रतिक्रिया समय' : 'AVG. RESPONSE'),
                                         style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: Color(0xFF64748B)),
                                       ),
                                     ),
@@ -1259,7 +1314,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                     FittedBox(
                                       fit: BoxFit.scaleDown,
                                       child: Text(
-                                        lang == 'mr' ? 'नागरिक समाधान' : (lang == 'hi' ? 'नागरिक संतुष्टि' : 'SATISFACTION'),
+                                        lang == 'mr' ? 'समाधान' : (lang == 'hi' ? 'संतोष' : 'SATISFACTION'),
                                         style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: Color(0xFF64748B)),
                                       ),
                                     ),
@@ -1298,7 +1353,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                           Row(
                             children: [
                               Text(
-                                lang == 'mr' ? 'थेट तक्रार नोंद' : (lang == 'hi' ? 'लाइव शिकायत फ़ीड' : 'Live Activity'),
+                                lang == 'mr' ? 'अलीकडील घडामोडी' : (lang == 'hi' ? 'हाल की गतिविधियां' : 'Live Activity'),
                                 style: const TextStyle(
                                   fontSize: 14.5,
                                   fontWeight: FontWeight.w800,
@@ -1314,7 +1369,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                   border: Border.all(color: const Color(0xFFFECACA)),
                                 ),
                                 child: Text(
-                                  '$pendingVal ${AppTranslations.getStatus('pending', lang)}',
+                                  '${AppTranslations.formatDigits(pendingVal, lang)} ${lang == 'mr' ? 'प्रलंबित' : (lang == 'hi' ? 'लंबित' : 'Pending')}',
                                   style: const TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w700,
@@ -1338,7 +1393,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                       onTap: () => setState(() => _activityFilter = 'all'),
                                     ),
                                     _buildFilterTab(
-                                      label: AppTranslations.getStatus('pending', lang),
+                                      label: '${lang == 'mr' ? 'प्रलंबित' : (lang == 'hi' ? 'लंबित' : 'Pending')} (${AppTranslations.formatDigits(pendingVal, lang)})',
                                       isSelected: _activityFilter == 'pending',
                                       isAlert: true,
                                       onTap: () => setState(() => _activityFilter = 'pending'),
@@ -1357,7 +1412,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                               padding: const EdgeInsets.symmetric(vertical: 24),
                               child: Center(
                                 child: Text(
-                                  lang == 'mr' ? 'कोणतीही ताजी नोंद नाही' : (lang == 'hi' ? 'कोई हालिया गतिविधि नहीं' : 'No recent activity matching filter'),
+                                  lang == 'mr' ? 'काहीही नवीन नाही.' : (lang == 'hi' ? 'कोई हालिया गतिविधि नहीं।' : 'No recent activity matching filter'),
                                   style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
                                 ),
                               ),
@@ -1418,8 +1473,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                                 const Icon(Icons.schedule_rounded, size: 11, color: Color(0xFF94A3B8)),
                                                 const SizedBox(width: 3),
                                                 Expanded(
-                                                  child: AppTranslatedText(
-                                                    activity.area != null ? '${activity.area} • Today' : 'Ward No. 12',
+                                                  child: Text(
+                                                    activity.area != null
+                                                        ? '${AppTranslations.getAreaName(activity.area!, lang)} • ${lang == 'mr' ? 'आज' : (lang == 'hi' ? 'आज' : 'Today')}'
+                                                        : (lang == 'mr' ? 'प्रभाग १२' : (lang == 'hi' ? 'वार्ड १२' : 'Ward No. 12')),
                                                     maxLines: 1,
                                                     overflow: TextOverflow.ellipsis,
                                                     style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
@@ -1468,7 +1525,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 padding: const EdgeInsets.symmetric(vertical: 9),
                               ),
                               child: Text(
-                                lang == 'mr' ? 'सर्व तक्रारी पहा' : (lang == 'hi' ? 'पूरी सूची देखें' : 'View Full Log'),
+                                lang == 'mr' ? 'संपूर्ण यादी पहा' : (lang == 'hi' ? 'पूरी सूची देखें' : 'View Full Log'),
                                 style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
                               ),
                             ),
@@ -1498,7 +1555,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-            Text('$count', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF64748B))),
+            Text(
+              AppTranslations.formatDigits(count, ref.read(appLanguageProvider)),
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF64748B)),
+            ),
           ],
         ),
         const SizedBox(height: 4),
@@ -1532,7 +1592,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
               : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
           boxShadow: isSelected
-              ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 2, offset: const Offset(0, 1))]
+              ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 2, offset: const Offset(0, 1))]
               : null,
         ),
         child: Text(

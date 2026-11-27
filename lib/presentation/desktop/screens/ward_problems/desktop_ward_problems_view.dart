@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:nagarsevak_mobile/core/localization/app_translations.dart';
+import 'package:nagarsevak_mobile/core/services/translation_service.dart';
 import 'package:nagarsevak_mobile/data/models/complaint_model.dart';
 import 'package:nagarsevak_mobile/data/repositories/complaints_repository.dart';
 import 'package:nagarsevak_mobile/presentation/desktop/shell/desktop_sidebar.dart';
@@ -162,12 +164,12 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 1. Header Row (matching WardWiseProblem.tsx lines 305-356)
-            _buildHeader(isMr, items.length),
+            _buildHeader(lang, items.length),
 
             const SizedBox(height: 16),
 
             // 2. Filter Toolbar (matching lines 358-472)
-            _buildFilterCard(isMr),
+            _buildFilterCard(lang),
 
             const SizedBox(height: 24),
 
@@ -175,11 +177,11 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
             if (_loading)
               _buildLoadingGrid()
             else if (items.isEmpty)
-              _buildEmptyState(isMr)
+              _buildEmptyState(lang)
             else if (_viewMode == 'grid')
-              _build3x3Grid(items, isMr)
+              _build3x3Grid(items, lang)
             else
-              _buildReportTable(items, isMr),
+              _buildReportTable(items, lang),
           ],
         ),
       ),
@@ -187,7 +189,7 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
   }
 
   // --- Header Row ---
-  Widget _buildHeader(bool isMr, int count) {
+  Widget _buildHeader(String lang, int count) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -199,7 +201,7 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
                 const Icon(Icons.warning_amber_rounded, size: 26, color: Color(0xFFD97706)),
                 const SizedBox(width: 10),
                 Text(
-                  'Ward Problems',
+                  AppTranslations.getNavTitle('ward_problems', lang),
                   style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: Color(0xFF0F172A), letterSpacing: -0.5),
                 ),
                 const SizedBox(width: 10),
@@ -211,7 +213,7 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
                     border: Border.all(color: const Color(0xFFBAE6FD)),
                   ),
                   child: Text(
-                    'Found: $count',
+                    AppTranslations.formatFound(count, lang),
                     style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0369A1)),
                   ),
                 ),
@@ -219,9 +221,9 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
             ),
             const SizedBox(height: 4),
             Text(
-              isMr
-                  ? 'Manage ward road, water and local civic problems'
-                  : 'Track self-identified and ward-level civic problems',
+              lang == 'mr'
+                  ? 'प्रभागातील रस्ते, पाणी व स्थानिक नागरी समस्यांचे व्यवस्थापन'
+                  : (lang == 'hi' ? 'वार्ड की सड़क, पानी और स्थानीय नागरिक समस्याओं का प्रबंधन' : 'Track self-identified and ward-level civic problems'),
               style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
             ),
           ],
@@ -238,7 +240,10 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
                 );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
-              label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+              label: Text(
+                AppTranslations.getDownloadReport(lang),
+                style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
+              ),
               style: OutlinedButton.styleFrom(
                 backgroundColor: const Color(0xFFF0F9FF),
                 side: const BorderSide(color: Color(0xFFBAE6FD)),
@@ -257,14 +262,14 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), // rounded-xl
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.add, size: 16, color: Colors.white), // Plus w-4 h-4
-                  SizedBox(width: 8), // gap-2
+                  const Icon(Icons.add, size: 16, color: Colors.white), // Plus w-4 h-4
+                  const SizedBox(width: 8), // gap-2
                   Text(
-                    'New Request',
-                    style: TextStyle(
+                    lang == 'mr' ? 'नवीन समस्या' : (lang == 'hi' ? 'नई समस्या' : 'New Problem'),
+                    style: const TextStyle(
                       fontSize: 14, // text-sm
                       fontWeight: FontWeight.w600, // font-semibold
                       color: Colors.white,
@@ -281,7 +286,7 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
   }
 
   // --- Filter Card (Search + Area + Status Pills) ---
-  Widget _buildFilterCard(bool isMr) {
+  Widget _buildFilterCard(String lang) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -307,7 +312,9 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
                 child: TextField(
                   onChanged: (v) => setState(() => _searchQuery = v),
                   decoration: InputDecoration(
-                    hintText: 'Search problems by title, description...',
+                    hintText: lang == 'mr'
+                        ? 'समस्या, वर्णन शोधा...'
+                        : (lang == 'hi' ? 'समस्या, विवरण खोजें...' : 'Search problems by title, description...'),
                     prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFF94A3B8)),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -326,7 +333,12 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
                   items: _uniqueAreas.map((area) {
                     return DropdownMenuItem(
                       value: area,
-                      child: Text(area == 'All' ? 'All Areas' : area, overflow: TextOverflow.ellipsis),
+                      child: Text(
+                        area == 'All'
+                            ? (lang == 'mr' ? 'सर्व भाग' : (lang == 'hi' ? 'सभी क्षेत्र' : 'All Areas'))
+                            : AppTranslations.getAreaName(area, lang),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     );
                   }).toList(),
                   onChanged: (val) {
@@ -346,7 +358,12 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
                   items: _uniqueDates.map((date) {
                     return DropdownMenuItem(
                       value: date,
-                      child: Text(date == 'All' ? 'All Dates' : date, overflow: TextOverflow.ellipsis),
+                      child: Text(
+                        date == 'All'
+                            ? (lang == 'mr' ? 'सर्व तारखा' : (lang == 'hi' ? 'सभी तिथियां' : 'All Dates'))
+                            : AppTranslations.formatDigits(date, lang),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     );
                   }).toList(),
                   onChanged: (val) {
@@ -367,11 +384,11 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    _buildStatusPill('All', 'All'),
-                    _buildStatusPill('Pending', 'Pending'),
-                    _buildStatusPill('Assigned', 'Assigned'),
-                    _buildStatusPill('InProgress', 'In Progress'),
-                    _buildStatusPill('Resolved', 'Resolved'),
+                    _buildStatusPill('All', AppTranslations.t('common.all', lang: lang)),
+                    _buildStatusPill('Pending', AppTranslations.getStatus('pending', lang)),
+                    _buildStatusPill('Assigned', AppTranslations.getStatus('assigned', lang)),
+                    _buildStatusPill('InProgress', AppTranslations.getStatus('inprogress', lang)),
+                    _buildStatusPill('Resolved', AppTranslations.getStatus('resolved', lang)),
                   ],
                 ),
               ),
@@ -385,14 +402,14 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
                   children: [
                     _buildViewToggleButton(
                       icon: Icons.grid_view_rounded,
-                      label: 'Grid',
+                      label: lang == 'mr' ? 'ग्रिड' : (lang == 'hi' ? 'ग्रिड' : 'Grid'),
                       isActive: _viewMode == 'grid',
                       onTap: () => setState(() => _viewMode = 'grid'),
                     ),
                     const SizedBox(width: 4),
                     _buildViewToggleButton(
                       icon: Icons.table_rows_rounded,
-                      label: 'Table',
+                      label: lang == 'mr' ? 'तक्ता' : (lang == 'hi' ? 'तालिका' : 'Table'),
                       isActive: _viewMode == 'table',
                       onTap: () => setState(() => _viewMode = 'table'),
                     ),
@@ -462,7 +479,7 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
   }
 
   // --- 3x3 Card Grid (matching WardWiseProblem.tsx line 559) ---
-  Widget _build3x3Grid(List<ComplaintModel> items, bool isMr) {
+  Widget _build3x3Grid(List<ComplaintModel> items, String lang) {
     return LayoutBuilder(
       builder: (context, constraints) {
         // Standard 3-by-3 format across desktop screens
@@ -480,14 +497,14 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
           itemCount: items.length,
           itemBuilder: (context, index) {
             final problem = items[index];
-            return _buildProblemCard(problem, isMr);
+            return _buildProblemCard(problem, lang);
           },
         );
       },
     );
   }
 
-  Widget _buildProblemCard(ComplaintModel problem, bool isMr) {
+  Widget _buildProblemCard(ComplaintModel problem, String lang) {
     final dateStr = DateFormat('MMM d, yyyy').format(problem.createdAt);
 
     return InkWell(
@@ -513,7 +530,7 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildStatusBadge(problem.status, isMr),
+                _buildStatusBadge(problem.status, lang),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                   decoration: BoxDecoration(
@@ -522,7 +539,7 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
                     border: Border.all(color: const Color(0xFFFED7AA)), // orange-200
                   ),
                   child: Text(
-                    problem.category,
+                    AppTranslations.getComplaintType(problem.category, lang),
                     style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFFC2410C)),
                   ),
                 ),
@@ -543,7 +560,7 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
                     const Icon(Icons.person_outline_rounded, size: 12, color: Color(0xFF0284C7)),
                     const SizedBox(width: 4),
                     Text(
-                      'Assigned: ${problem.assignedStaffName}',
+                      '${lang == "mr" ? "नियुक्त:" : (lang == "hi" ? "नियुक्त:" : "Assigned:")} ${problem.assignedStaffName}',
                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF0369A1)),
                     ),
                   ],
@@ -552,7 +569,7 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
               const SizedBox(height: 6),
             ],
 
-            Text(
+            AppTranslatedText(
               problem.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -560,7 +577,7 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
             ),
             const SizedBox(height: 4),
             Expanded(
-              child: Text(
+              child: AppTranslatedText(
                 problem.description,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -580,7 +597,7 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
                     children: [
                       const Icon(Icons.calendar_today_rounded, size: 12, color: Color(0xFF94A3B8)),
                       const SizedBox(width: 4),
-                      Text(dateStr, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                      Text(AppTranslations.formatDigits(dateStr, lang), style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
                     ],
                   ),
                   if (problem.area != null || problem.location != null)
@@ -591,7 +608,7 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
                         ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 120),
                           child: Text(
-                            problem.area ?? problem.location ?? '',
+                            AppTranslations.getAreaName(problem.area ?? problem.location ?? '', lang),
                             style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -607,7 +624,7 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
     );
   }
 
-  Widget _buildStatusBadge(String status, bool isMr) {
+  Widget _buildStatusBadge(String status, [String lang = 'en']) {
     Color bg = const Color(0xFFF1F5F9);
     Color fg = const Color(0xFF475569);
     final lower = status.toLowerCase();
@@ -627,11 +644,11 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6)),
-      child: Text(status, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: fg)),
+      child: Text(AppTranslations.getStatus(status, lang), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: fg)),
     );
   }
 
-  Widget _buildReportTable(List<ComplaintModel> items, bool isMr) {
+  Widget _buildReportTable(List<ComplaintModel> items, String lang) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -641,21 +658,21 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: DataTable(
-          columns: const [
-            DataColumn(label: Text('Area', style: TextStyle(fontWeight: FontWeight.w700))),
-            DataColumn(label: Text('Title', style: TextStyle(fontWeight: FontWeight.w700))),
-            DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.w700))),
-            DataColumn(label: Text('Assigned Staff', style: TextStyle(fontWeight: FontWeight.w700))),
-            DataColumn(label: Text('Date', style: TextStyle(fontWeight: FontWeight.w700))),
+          columns: [
+            DataColumn(label: Text(AppTranslations.getReportColumn('area', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text(AppTranslations.getReportColumn('title', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text(AppTranslations.getReportColumn('status', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text(lang == 'mr' ? 'नियुक्त कर्मचारी' : (lang == 'hi' ? 'नियुक्त कर्मचारी' : 'Assigned Staff'), style: const TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text(AppTranslations.getReportColumn('date', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
           ],
           rows: items.map((p) {
             return DataRow(
               cells: [
-                DataCell(Text(p.area ?? p.location ?? '-')),
-                DataCell(Text(p.title, style: const TextStyle(fontWeight: FontWeight.w600))),
-                DataCell(_buildStatusBadge(p.status, isMr)),
+                DataCell(Text(AppTranslations.getAreaName(p.area ?? p.location ?? '-', lang))),
+                DataCell(AppTranslatedText(p.title, style: const TextStyle(fontWeight: FontWeight.w600))),
+                DataCell(_buildStatusBadge(p.status, lang)),
                 DataCell(Text(p.assignedStaffName ?? '-')),
-                DataCell(Text(DateFormat('MMM d, yyyy').format(p.createdAt))),
+                DataCell(Text(AppTranslations.formatDigits(DateFormat('MMM d, yyyy').format(p.createdAt), lang))),
               ],
             );
           }).toList(),
@@ -664,13 +681,11 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
     );
   }
 
-
-
   Widget _buildLoadingGrid() {
     return const Center(child: Padding(padding: EdgeInsets.symmetric(vertical: 40), child: CircularProgressIndicator(strokeWidth: 2)));
   }
 
-  Widget _buildEmptyState(bool isMr) {
+  Widget _buildEmptyState(String lang) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 40),
@@ -679,7 +694,12 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
         children: [
           const Icon(Icons.inbox_outlined, size: 40, color: Color(0xFF94A3B8)),
           const SizedBox(height: 10),
-          const Text('No ward problems recorded yet', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+          Text(
+            lang == 'mr'
+                ? 'कोणतीही प्रभागातील समस्या नोंदवलेली नाही'
+                : (lang == 'hi' ? 'कोई वार्ड समस्या अभी तक दर्ज नहीं की गई' : 'No ward problems recorded yet'),
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+          ),
         ],
       ),
     );
