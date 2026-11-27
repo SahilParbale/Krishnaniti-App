@@ -300,7 +300,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                     const Icon(Icons.add, size: 16, color: Colors.white),
                     const SizedBox(width: 8),
                     Text(
-                      AppTranslations.t('letters.create_letter', lang: lang),
+                      AppTranslations.t('letters.new_request', lang: lang),
                       style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white, letterSpacing: -0.1),
                     ),
                   ],

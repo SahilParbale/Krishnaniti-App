@@ -8,6 +8,8 @@ import '../../../data/models/staff_model.dart';
 import '../../../data/repositories/complaints_repository.dart';
 import '../../../data/repositories/voters_repository.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/language_provider.dart';
+import '../../../core/localization/app_translations.dart';
 import '../../widgets/app_image_picker.dart';
 import '../../widgets/app_modal_sheet.dart';
 import 'complaint_form_constants.dart';
@@ -467,22 +469,24 @@ class _NewComplaintBottomSheetState
 
   @override
   Widget build(BuildContext context) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
+    final isMr = lang == 'mr';
+    final isHi = lang == 'hi';
     final isDesktop = MediaQuery.of(context).size.width >= 768;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final societies = kSocietiesByWard[_selectedWard] ?? [];
 
     final titleText = widget.hidePersonalHelp
-        ? (isMr ? 'नवीन प्रभागातील समस्या' : 'Report Ward Problem')
+        ? (lang == 'mr' ? 'नवीन प्रभागातील समस्या' : (lang == 'hi' ? 'नई वार्ड समस्या' : 'Report Ward Problem'))
         : (_activeTab == 'Complaints'
-            ? (isMr ? 'नवीन तक्रार / विनंती' : 'New Request / Complaint')
-            : (isMr ? 'वैयक्तिक मदत विनंती' : 'Personal Help Request'));
+            ? (lang == 'mr' ? 'नवीन तक्रार / विनंती' : (lang == 'hi' ? 'नई शिकायत / अनुरोध' : 'New Request / Complaint'))
+            : (lang == 'mr' ? 'वैयक्तिक मदत विनंती' : (lang == 'hi' ? 'व्यक्तिगत सहायता अनुरोध' : 'Personal Help Request')));
 
     final subtitleText = widget.hidePersonalHelp
-        ? (isMr ? 'प्रभागातील नागरी समस्यांची नोंद घ्या' : 'Record civic and ward-level issues')
-        : (isMr
+        ? (lang == 'mr' ? 'प्रभागातील नागरी समस्यांची नोंद घ्या' : (lang == 'hi' ? 'वार्ड स्तर की नागरिक समस्याओं को दर्ज करें' : 'Record civic and ward-level issues'))
+        : (lang == 'mr'
             ? 'अधिकृत तक्रारी आणि वैयक्तिक मदत विनंत्या व्यवस्थापित करा'
-            : 'Track and manage citizen grievances and petitions');
+            : (lang == 'hi' ? 'नागरिक शिकायतों और व्यक्तिगत सहायता अनुरोधों का प्रबंधन करें' : 'Track and manage citizen grievances and petitions'));
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),

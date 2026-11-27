@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/supabase_service.dart';
 import '../../data/models/user_model.dart';
 import '../../data/repositories/auth_repository.dart';
+import 'language_provider.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository();
@@ -109,10 +110,19 @@ final currentUserProvider = Provider<UserModel?>((ref) => ref.watch(authStatePro
 
 class MarathiNotifier extends Notifier<bool> {
   @override
-  bool build() => false; // Default language: English
+  bool build() {
+    final lang = ref.watch(appLanguageProvider);
+    return lang == 'mr';
+  }
 
-  void toggle() => state = !state;
-  void setMarathi(bool value) => state = value;
+  void toggle() {
+    final current = ref.read(appLanguageProvider);
+    ref.read(appLanguageProvider.notifier).setLanguage(current == 'mr' ? 'en' : 'mr');
+  }
+
+  void setMarathi(bool value) {
+    ref.read(appLanguageProvider.notifier).setLanguage(value ? 'mr' : 'en');
+  }
 }
 
 final isMarathiProvider = NotifierProvider<MarathiNotifier, bool>(MarathiNotifier.new);

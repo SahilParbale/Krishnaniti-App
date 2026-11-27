@@ -665,12 +665,12 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
-            children: const [
+            children: [
               Text(
-                'Visitor Log',
+                lang == 'mr' ? 'कार्यालय अभ्यागत नोंद' : (lang == 'hi' ? 'कार्यालय आगंतुक लॉग' : 'Visitor Log'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 16.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
@@ -678,10 +678,14 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                 ),
               ),
               Text(
-                'Daily constituent office meeting register and time log',
+                lang == 'mr'
+                    ? 'दैनिक नागरिक भेट व वेळ नोंदवही'
+                    : (lang == 'hi'
+                        ? 'दैनिक नागरिक बैठक रजिस्टर और समय लॉग'
+                        : 'Daily constituent office meeting register and time log'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w400,
                   color: Color(0xFFE0F2FE),
@@ -696,7 +700,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
           backgroundColor: const Color(0xFF0284C7),
           icon: const Icon(Icons.person_add_rounded, color: Colors.white),
           label: Text(
-            isMr ? 'नवीन नोंद' : 'Log Visitor',
+            lang == 'mr' ? 'नवीन अभ्यागत' : (lang == 'hi' ? 'नया आगंतुक' : 'Log Visitor'),
             style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
           ),
         ),
@@ -999,8 +1003,9 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        AppTranslatedText(
                           visitor.name,
+                          isName: true,
                           style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
@@ -1026,7 +1031,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: visitor.purposeColor.withOpacity(0.3)),
                     ),
-                    child: Text(
+                    child: AppTranslatedText(
                       visitor.purpose,
                       style: TextStyle(
                         fontSize: 11,

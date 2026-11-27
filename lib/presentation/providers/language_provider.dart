@@ -44,6 +44,8 @@ class AppLanguageNotifier extends Notifier<String> {
 final appLanguageProvider =
     NotifierProvider<AppLanguageNotifier, String>(AppLanguageNotifier.new);
 
+final isHindiProvider = Provider<bool>((ref) => ref.watch(appLanguageProvider) == 'hi');
+
 /// Helpful language extensions
 extension LanguageProviderX on WidgetRef {
   String get lang => watch(appLanguageProvider);

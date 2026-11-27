@@ -13,7 +13,9 @@ import 'package:nagarsevak_mobile/data/repositories/voters_repository.dart';
 import 'package:nagarsevak_mobile/data/repositories/letters_repository.dart';
 import 'package:nagarsevak_mobile/data/repositories/visitors_repository.dart';
 import 'package:nagarsevak_mobile/presentation/providers/navigation_provider.dart';
-import 'package:nagarsevak_mobile/presentation/desktop/shell/desktop_sidebar.dart';
+import 'package:nagarsevak_mobile/presentation/providers/language_provider.dart';
+import 'package:nagarsevak_mobile/core/localization/app_translations.dart';
+import 'package:nagarsevak_mobile/core/services/translation_service.dart';
 import 'package:nagarsevak_mobile/presentation/screens/complaints/new_complaint_screen.dart';
 
 /// Desktop Dashboard matching Nagarsevak-Managment/src/pages/dashboard/Dashboard.tsx exactly 1:1
@@ -304,19 +306,20 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
 
   @override
   Widget build(BuildContext context) {
-    final lang = ref.watch(desktopLanguageProvider);
-    final isMr = lang == 'mr';
+    final lang = ref.watch(appLanguageProvider);
 
     if (_loading) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircularProgressIndicator(strokeWidth: 2.5, color: AppColors.brand600),
-            SizedBox(height: 16),
+            const CircularProgressIndicator(strokeWidth: 2.5, color: AppColors.brand600),
+            const SizedBox(height: 16),
             Text(
-              'Loading Dashboard Overview...',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.slate500),
+              lang == 'mr'
+                  ? 'डॅशबोर्ड माहिती लोड होत आहे...'
+                  : (lang == 'hi' ? 'डैशबोर्ड लोड हो रहा है...' : 'Loading Dashboard Overview...'),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.slate500),
             ),
           ],
         ),
@@ -342,68 +345,68 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Sticky Header Section (matching Dashboard.tsx lines 200-230)
-              _buildHeaderSection(isMr),
+              // 1. Sticky Header Section
+              _buildHeaderSection(lang),
 
               const SizedBox(height: 24),
 
-              // 2. Quick Actions Card (matching Dashboard.tsx lines 232-260)
-              _buildQuickActionsCard(isMr),
+              // 2. Quick Actions Card
+              _buildQuickActionsCard(lang),
 
               const SizedBox(height: 24),
 
-              // 3. AI Insight Banner (matching Dashboard.tsx lines 262-280)
-              _buildAiInsightBanner(isMr, pending, resolved, voters),
+              // 3. AI Insight Banner
+              _buildAiInsightBanner(lang, pending, resolved, voters),
 
               const SizedBox(height: 24),
 
-              // 4. Stats Grid 4 Cards (matching Dashboard.tsx lines 282-300)
+              // 4. Stats Grid 4 Cards
               Row(
                 children: [
                   Expanded(
                     child: _buildStatCard(
-                      title: 'Total Citizens',
+                      title: lang == 'mr' ? 'एकूण मतदार' : (lang == 'hi' ? 'कुल मतदाता' : 'Total Citizens'),
                       value: voters,
                       icon: Icons.people_outline_rounded,
-                      accentBorder: const Color(0xFFBAE6FD), // sky-200
-                      accentBg: const Color(0xFFF0F9FF), // sky-50
-                      iconColor: const Color(0xFF0369A1), // sky-700
+                      accentBorder: const Color(0xFFBAE6FD),
+                      accentBg: const Color(0xFFF0F9FF),
+                      iconColor: const Color(0xFF0369A1),
                       onTap: () => ref.read(activeScreenProvider.notifier).setScreen('voters'),
                     ),
                   ),
                   const SizedBox(width: 20),
                   Expanded(
                     child: _buildStatCard(
-                      title: 'Pending Issues',
+                      title: lang == 'mr' ? 'प्रलंबित समस्या' : (lang == 'hi' ? 'लंबित मुद्दे' : 'Pending Issues'),
                       value: pending,
                       icon: Icons.error_outline_rounded,
-                      accentBorder: const Color(0xFFFECACA), // red-200
-                      accentBg: const Color(0xFFFEF2F2), // red-50
-                      iconColor: const Color(0xFFB91C1C), // red-700
+                      accentBorder: const Color(0xFFFECACA),
+                      accentBg: const Color(0xFFFEF2F2),
+                      iconColor: const Color(0xFFB91C1C),
                       onTap: () => ref.read(activeScreenProvider.notifier).setScreen('complaints'),
                     ),
                   ),
                   const SizedBox(width: 20),
                   Expanded(
                     child: _buildStatCard(
-                      title: 'In Progress',
+                      title: lang == 'mr' ? 'काम चालू' : (lang == 'hi' ? 'प्रगति पर' : 'In Progress'),
                       value: inProgress,
                       icon: Icons.show_chart_rounded,
-                      accentBorder: const Color(0xFFFDE68A), // amber-200
-                      accentBg: const Color(0xFFFFFBEB), // amber-50
-                      iconColor: const Color(0xFFB45309), // amber-700
+                      accentBorder: const Color(0xFFFDE68A),
+                      accentBg: const Color(0xFFFFFBEB),
+                      iconColor: const Color(0xFFB45309),
                       onTap: () => ref.read(activeScreenProvider.notifier).setScreen('complaints'),
                     ),
                   ),
                   const SizedBox(width: 20),
                   Expanded(
                     child: _buildStatCard(
-                      title: 'Resolved Works',
+                      title: lang == 'mr' ? 'पूर्ण झालेली कामे' : (lang == 'hi' ? 'पूर्ण हुए कार्य' : 'Resolved Works'),
                       value: resolved,
                       icon: Icons.check_circle_outline_rounded,
-                      accentBorder: const Color(0xFFBBF7D0), // green-200
-                      accentBg: const Color(0xFFF0FDF4), // green-50
-                      iconColor: const Color(0xFF15803D), // green-700
+                      accentBorder: const Color(0xFFBBF7D0),
+                      accentBg: const Color(0xFFF0FDF4),
+                      iconColor: const Color(0xFF15803D),
                       onTap: () => ref.read(activeScreenProvider.notifier).setScreen('complaints'),
                     ),
                   ),
@@ -416,18 +419,14 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Left (2 Columns - 66%): Status Overview Visual Chart
                   Expanded(
                     flex: 2,
-                    child: _buildStatusOverviewCard(isMr, total, pending, inProgress, resolved, resolutionRate),
+                    child: _buildStatusOverviewCard(lang, total, pending, inProgress, resolved, resolutionRate),
                   ),
-
                   const SizedBox(width: 24),
-
-                  // Right (1 Column - 33%): Live Activity Feed
                   Expanded(
                     flex: 1,
-                    child: _buildLiveActivityFeedCard(isMr, pending, displayedActivity),
+                    child: _buildLiveActivityFeedCard(lang, pending, displayedActivity),
                   ),
                 ],
               ),
@@ -438,7 +437,7 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
     );
   }
 
-  Widget _buildHeaderSection(bool isMr) {
+  Widget _buildHeaderSection(String lang) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -448,7 +447,7 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Dashboard',
+                AppTranslations.t('dashboard.title', lang: lang),
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w800,
@@ -457,9 +456,9 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
                 ),
               ),
               const SizedBox(height: 4),
-              const Text(
-                'Welcome back to your administration portal',
-                style: TextStyle(
+              Text(
+                AppTranslations.t('dashboard.subtitle', lang: lang),
+                style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                   color: AppColors.slate500,
@@ -474,28 +473,27 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-
-
-            // New Request Button (ns-btn-primary matching Dashboard.tsx)
             ElevatedButton(
               onPressed: _openNewRequestModal,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brand600, // bg-brand-600
+                backgroundColor: AppColors.brand600,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), // rounded-xl
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.add, size: 16, color: Colors.white), // Plus w-4 h-4
-                  SizedBox(width: 8), // gap-2
+                  const Icon(Icons.add, size: 16, color: Colors.white),
+                  const SizedBox(width: 8),
                   Text(
-                    'New Request',
-                    style: TextStyle(
-                      fontSize: 14, // text-sm
-                      fontWeight: FontWeight.w600, // font-semibold
+                    lang == 'mr'
+                        ? '+ नवीन तक्रार / विनंती'
+                        : (lang == 'hi' ? '+ नया अनुरोध' : '+ New Request'),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
                       color: Colors.white,
                       letterSpacing: -0.1,
                     ),
@@ -509,7 +507,7 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
     );
   }
 
-  Widget _buildQuickActionsCard(bool isMr) {
+  Widget _buildQuickActionsCard(String lang) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
       decoration: BoxDecoration(
@@ -527,7 +525,7 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
       child: Row(
         children: [
           Text(
-            'Quick actions:',
+            lang == 'mr' ? 'त्वरित कृती:' : (lang == 'hi' ? 'त्वरित कार्रवाई:' : 'Quick actions:'),
             style: const TextStyle(
               fontSize: 13.5,
               fontWeight: FontWeight.w600,
@@ -540,17 +538,17 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
             children: [
               _buildGhostActionBtn(
                 icon: Icons.search_rounded,
-                label: 'Search Voters',
+                label: lang == 'mr' ? 'मतदार शोधा' : (lang == 'hi' ? 'मतदाता खोजें' : 'Search Voters'),
                 onTap: () => ref.read(activeScreenProvider.notifier).setScreen('voters'),
               ),
               _buildGhostActionBtn(
                 icon: Icons.person_add_alt_1_rounded,
-                label: 'My Team / Staff',
+                label: lang == 'mr' ? 'प्रशासकीय टीम' : (lang == 'hi' ? 'मेरी टीम' : 'My Team / Staff'),
                 onTap: () => ref.read(activeScreenProvider.notifier).setScreen('team'),
               ),
               _buildGhostActionBtn(
                 icon: Icons.campaign_outlined,
-                label: 'Citizen Complaints',
+                label: lang == 'mr' ? 'नागरिक तक्रारी' : (lang == 'hi' ? 'नागरिक शिकायतें' : 'Citizen Complaints'),
                 onTap: () => ref.read(activeScreenProvider.notifier).setScreen('complaints'),
               ),
             ],
@@ -580,7 +578,7 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
     );
   }
 
-  Widget _buildAiInsightBanner(bool isMr, int pending, int resolved, int voters) {
+  Widget _buildAiInsightBanner(String lang, int pending, int resolved, int voters) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -617,7 +615,9 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'AI Analysis & Briefing',
+                  lang == 'mr'
+                      ? 'एआय विश्लेषण आणि सारांश'
+                      : (lang == 'hi' ? 'एआई विश्लेषण और सारांश' : 'AI Analysis & Briefing'),
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
@@ -626,7 +626,11 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Currently $pending citizen grievances in the ward require attention. $resolved works have been resolved successfully. Total registered ward voters: $voters.',
+                  lang == 'mr'
+                      ? 'सध्या प्रभागात $pending नागरिक तक्रारी प्रलंबित असून लक्ष देण्याची गरज आहे. $resolved कामे यशस्वीरीत्या पूर्ण झाली आहेत. प्रभागातील एकूण नोंदणीकृत मतदार: $voters.'
+                      : (lang == 'hi'
+                          ? 'वर्तमान में वार्ड में $pending नागरिक शिकायतों पर ध्यान देने की आवश्यकता है। $resolved कार्य सफलतापूर्वक पूरे हुए हैं। कुल पंजीकृत मतदाता: $voters।'
+                          : 'Currently $pending citizen grievances in the ward require attention. $resolved works have been resolved successfully. Total registered ward voters: $voters.'),
                   style: const TextStyle(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w500,
@@ -721,7 +725,7 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
   }
 
   Widget _buildStatusOverviewCard(
-    bool isMr,
+    String lang,
     int total,
     int pending,
     int inProgress,
@@ -750,7 +754,7 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Status Overview',
+                lang == 'mr' ? 'तक्रार निवारण आढावा' : (lang == 'hi' ? 'शिकायत निवारण समीक्षा' : 'Status Overview'),
                 style: const TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
@@ -760,7 +764,7 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
               InkWell(
                 onTap: () => ref.read(activeScreenProvider.notifier).setScreen('complaints'),
                 child: Text(
-                  'View All',
+                  lang == 'mr' ? 'सर्व पहा' : (lang == 'hi' ? 'सभी देखें' : 'View All'),
                   style: const TextStyle(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w700,
@@ -775,24 +779,24 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
 
           // Custom Horizontal Progress Bars (matching Dashboard.tsx lines 310-340)
           _buildBarChartRow(
-            label: 'Pending',
+            label: AppTranslations.getStatus('pending', lang),
             count: pending,
             total: total,
-            barColor: const Color(0xFFEF4444), // red-500
+            barColor: const Color(0xFFEF4444),
           ),
           const SizedBox(height: 18),
           _buildBarChartRow(
-            label: 'In Progress',
+            label: AppTranslations.getStatus('in_progress', lang),
             count: inProgress,
             total: total,
-            barColor: const Color(0xFFF59E0B), // amber-500
+            barColor: const Color(0xFFF59E0B),
           ),
           const SizedBox(height: 18),
           _buildBarChartRow(
-            label: 'Resolved',
+            label: AppTranslations.getStatus('resolved', lang),
             count: resolved,
             total: total,
-            barColor: const Color(0xFF16A34A), // green-600
+            barColor: const Color(0xFF16A34A),
           ),
 
           const SizedBox(height: 32),
@@ -806,7 +810,7 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
                 child: Column(
                   children: [
                     Text(
-                      'RESOLUTION RATE',
+                      lang == 'mr' ? 'निवारण दर' : (lang == 'hi' ? 'समाधान दर' : 'RESOLUTION RATE'),
                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.slate400, letterSpacing: 0.5),
                     ),
                     const SizedBox(height: 4),
@@ -822,7 +826,7 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
                 child: Column(
                   children: [
                     Text(
-                      'AVG. RESPONSE',
+                      lang == 'mr' ? 'सरासरी प्रतिसाद' : (lang == 'hi' ? 'औसत प्रतिक्रिया' : 'AVG. RESPONSE'),
                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.slate400, letterSpacing: 0.5),
                     ),
                     const SizedBox(height: 4),
@@ -838,7 +842,7 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
                 child: Column(
                   children: [
                     Text(
-                      'SATISFACTION',
+                      lang == 'mr' ? 'नागरिक समाधान' : (lang == 'hi' ? 'नागरिक संतुष्टि' : 'SATISFACTION'),
                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.slate400, letterSpacing: 0.5),
                     ),
                     const SizedBox(height: 4),
@@ -904,7 +908,7 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
   }
 
   Widget _buildLiveActivityFeedCard(
-    bool isMr,
+    String lang,
     int pendingCount,
     List<ComplaintModel> activities,
   ) {
@@ -925,7 +929,6 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with Pending Badge & Filter Pills (matching Dashboard.tsx lines 365-400)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -934,7 +937,7 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
                   children: [
                     Flexible(
                       child: Text(
-                        'Live Activity',
+                        lang == 'mr' ? 'थेट तक्रार नोंद' : (lang == 'hi' ? 'लाइव शिकायत फ़ीड' : 'Live Activity'),
                         style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.slate900),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -945,12 +948,12 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFEE2E2), // red-100
+                          color: const Color(0xFFFEE2E2),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: const Color(0xFFFECACA)), // red-200
+                          border: Border.all(color: const Color(0xFFFECACA)),
                         ),
                         child: Text(
-                          '$pendingCount Pending',
+                          '$pendingCount ${AppTranslations.getStatus('pending', lang)}',
                           style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFFB91C1C)),
                         ),
                       ),
@@ -968,8 +971,8 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
                 ),
                 child: Row(
                   children: [
-                    _buildActivityFilterBtn('all', 'All', _activityFilter == 'all', isPendingTab: false),
-                    _buildActivityFilterBtn('pending', 'Pending', _activityFilter == 'pending', isPendingTab: true),
+                    _buildActivityFilterBtn('all', lang == 'mr' ? 'सर्व' : (lang == 'hi' ? 'सभी' : 'All'), _activityFilter == 'all', isPendingTab: false),
+                    _buildActivityFilterBtn('pending', AppTranslations.getStatus('pending', lang), _activityFilter == 'pending', isPendingTab: true),
                   ],
                 ),
               ),
@@ -984,7 +987,7 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
               padding: const EdgeInsets.symmetric(vertical: 40),
               child: Center(
                 child: Text(
-                  'No recent activity records',
+                  lang == 'mr' ? 'कोणतीही ताजी नोंद नाही' : (lang == 'hi' ? 'कोई हालिया गतिविधि नहीं' : 'No recent activity records'),
                   style: const TextStyle(fontSize: 13, color: AppColors.slate400),
                 ),
               ),
@@ -1029,7 +1032,7 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
+                              AppTranslatedText(
                                 item.title.isNotEmpty ? item.title : 'Citizen Grievance',
                                 style: const TextStyle(
                                   fontSize: 13,
@@ -1043,7 +1046,7 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
                               Row(
                                 children: [
                                   Flexible(
-                                    child: Text(
+                                    child: AppTranslatedText(
                                       item.area ?? item.location ?? 'Ward No. 12',
                                       style: const TextStyle(fontSize: 11, color: AppColors.slate500),
                                       maxLines: 1,

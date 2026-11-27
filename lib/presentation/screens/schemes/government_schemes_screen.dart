@@ -896,7 +896,9 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
 
   @override
   Widget build(BuildContext context) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
+    final isMr = lang == 'mr';
+    final isHi = lang == 'hi';
     final displayedSchemes = _filteredSchemes;
     final displayedApps = _filteredApplications;
 
@@ -918,7 +920,7 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
           leading: Builder(
             builder: (ctx) => IconButton(
               icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: 'Open Menu Drawer',
+              tooltip: lang == 'mr' ? 'मेनू उघडा' : (lang == 'hi' ? 'मेनू खोलें' : 'Open Menu Drawer'),
               onPressed: () {
                 HapticFeedback.lightImpact();
                 Scaffold.of(ctx).openDrawer();
@@ -929,12 +931,12 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
-            children: const [
+            children: [
               Text(
-                'Govt Schemes',
+                AppTranslations.t('schemes.title', lang: lang),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 16.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
@@ -942,10 +944,10 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                 ),
               ),
               Text(
-                'Central and state welfare schemes database',
+                AppTranslations.t('schemes.subtitle', lang: lang),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w400,
                   color: Color(0xFFE0F2FE),
@@ -1074,6 +1076,7 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
   // SCHEMES TAB VIEW
   // -------------------------------------------------------------
   Widget _buildSchemesView(bool isMr, List<SchemeModel> displayedSchemes) {
+    final lang = ref.watch(appLanguageProvider);
     return Column(
       children: [
         // Search & Smart Filter bar
@@ -1140,7 +1143,7 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                   ),
                   const SizedBox(width: 6),
                   AppPdfButton.icon(
-                    tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Report',
+                    tooltip: lang == 'mr' ? 'अहवाल डाउनलोड करा' : (lang == 'hi' ? 'रिपोर्ट डाउनलोड करें' : 'Download Report'),
                     onPressed: () {
                       SchemeReportGenerator.generateAndPrintListReport(
                         schemes: displayedSchemes,
@@ -1296,6 +1299,7 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
   }
 
   Widget _buildSchemeCard(bool isMr, SchemeModel scheme) {
+    final lang = ref.watch(appLanguageProvider);
     return InkWell(
       onTap: () {
         Navigator.push(
@@ -1442,7 +1446,7 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                     );
                   },
                   icon: const Icon(Icons.download_rounded, size: 15),
-                  label: Text(isMr ? 'पत्रक' : 'Flyer', style: const TextStyle(fontSize: 12)),
+                  label: Text(lang == 'mr' ? 'पत्रक' : (lang == 'hi' ? 'विवरणिका' : 'Flyer'), style: const TextStyle(fontSize: 12)),
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton.icon(
@@ -1467,7 +1471,7 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                     );
                   },
                   icon: const Icon(Icons.assignment_ind_rounded, size: 15),
-                  label: Text(isMr ? 'अर्ज करा' : 'Apply', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  label: Text(lang == 'mr' ? 'अर्ज करा' : (lang == 'hi' ? 'आवेदन करें' : 'Apply'), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -1481,6 +1485,7 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
   // APPLICATIONS / BENEFICIARIES TAB VIEW
   // -------------------------------------------------------------
   Widget _buildApplicationsView(bool isMr, List<SchemeApplicationModel> displayedApps) {
+    final lang = ref.watch(appLanguageProvider);
     return Column(
       children: [
         // Applications Search & Status Filter
@@ -1510,7 +1515,7 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                               onChanged: (_) => setState(() => _appsLimit = 20),
                               style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
                               decoration: InputDecoration(
-                                hintText: isMr ? 'नागरिक किंवा मोबाईल शोधा...' : 'Search applicant name, mobile, address...',
+                                hintText: lang == 'mr' ? 'नागरिक किंवा मोबाईल शोधा...' : (lang == 'hi' ? 'आवेदक या मोबाइल खोजें...' : 'Search applicant name, mobile, address...'),
                                 hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                                 border: InputBorder.none,
                                 isDense: true,
@@ -1532,7 +1537,7 @@ class _GovernmentSchemesScreenState extends ConsumerState<GovernmentSchemesScree
                   ),
                   const SizedBox(width: 8),
                   AppPdfButton.icon(
-                    tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Report',
+                    tooltip: lang == 'mr' ? 'अहवाल डाउनलोड करा' : (lang == 'hi' ? 'रिपोर्ट डाउनलोड करें' : 'Download Report'),
                     onPressed: () {
                       SchemeReportGenerator.generateAndPrintBeneficiaryReport(
                         applications: displayedApps,

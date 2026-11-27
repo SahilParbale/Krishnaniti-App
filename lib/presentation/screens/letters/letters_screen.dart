@@ -452,7 +452,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                       if (_isOutgoing) ...[
                         const SizedBox(width: 8),
                         AppDropdown<String>(
-                          title: isMr ? 'स्थिती निवडा' : 'Filter by Status',
+                          title: lang == 'mr' ? 'स्थिती निवडा' : (lang == 'hi' ? 'स्थिति चुनें' : 'Filter by Status'),
                           value: _selectedStatus,
                           height: 40,
                           isExpanded: false,
@@ -478,7 +478,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
 
                       // Download Letters Register PDF Button
                       AppPdfButton.icon(
-                        tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Report',
+                        tooltip: lang == 'mr' ? 'अहवाल डाउनलोड करा' : (lang == 'hi' ? 'रिपोर्ट डाउनलोड करें' : 'Download Report'),
                         onPressed: () {
                           LetterReportGenerator.generateAndPrintLetterReport(
                             letters: _filteredLetters,
@@ -524,7 +524,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                                   child: Text(
                                     _areaSearch.isNotEmpty
                                         ? _areaSearch
-                                        : (isMr ? AppStrings.searchAreaPlaceholderMr : AppStrings.searchAreaPlaceholder),
+                                        : (lang == 'mr' ? 'भाग शोधा...' : (lang == 'hi' ? 'क्षेत्र खोजें...' : 'Search area...')),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
@@ -579,7 +579,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                                   child: Text(
                                     _dateSearch.isNotEmpty
                                         ? _dateSearch
-                                        : (isMr ? AppStrings.filterDatePlaceholderMr : AppStrings.filterDatePlaceholder),
+                                        : (lang == 'mr' ? 'तारीख निवडा...' : (lang == 'hi' ? 'तिथि चुनें...' : 'Filter by date...')),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
@@ -618,7 +618,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                         children: [
                           if (_areaSearch.isNotEmpty)
                             _buildActiveFilterChip(
-                              label: '${isMr ? 'क्षेत्र: ' : 'Area: '}$_areaSearch',
+                              label: '${lang == "mr" ? "भाग: " : (lang == "hi" ? "क्षेत्र: " : "Area: ")}$_areaSearch',
                               onDelete: () {
                                 _areaController.clear();
                                 setState(() => _areaSearch = '');
@@ -627,7 +627,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                           if (_dateSearch.isNotEmpty) ...[
                             const SizedBox(width: 6),
                             _buildActiveFilterChip(
-                              label: '${isMr ? 'तारीख: ' : 'Date: '}$_dateSearch',
+                              label: '${lang == "mr" ? "तारीख: " : (lang == "hi" ? "तिथि: " : "Date: ")}$_dateSearch',
                               onDelete: () {
                                 _dateController.clear();
                                 setState(() => _dateSearch = '');
@@ -637,7 +637,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                           if (_isOutgoing && _selectedStatus != 'All') ...[
                             const SizedBox(width: 6),
                             _buildActiveFilterChip(
-                              label: '${isMr ? 'स्थिती: ' : 'Status: '}$_selectedStatus',
+                              label: '${lang == "mr" ? "स्थिती: " : (lang == "hi" ? "स्थिति: " : "Status: ")}${AppTranslations.getStatus(_selectedStatus, lang)}',
                               onDelete: () => setState(() => _selectedStatus = 'All'),
                             ),
                           ],
@@ -714,16 +714,16 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                                 (filtered.isNotEmpty ? 1 : 0),
                             itemBuilder: (ctx, idx) {
                               if (idx == _visibleLetters.length) {
-                                return AppLoadMoreFooter(
-                                  currentCount: _visibleLetters.length,
-                                  totalCount: filtered.length,
-                                  pageSize: 20,
-                                  onLoadMore: () {
-                                    setState(() => _displayedLimit += 20);
-                                  },
-                                  label: isMr ? 'पत्रे' : 'letters',
-                                  isMarathi: isMr,
-                                );
+                                  return AppLoadMoreFooter(
+                                    currentCount: _visibleLetters.length,
+                                    totalCount: filtered.length,
+                                    pageSize: 20,
+                                    onLoadMore: () {
+                                      setState(() => _displayedLimit += 20);
+                                    },
+                                    label: lang == 'mr' ? 'पत्रे' : (lang == 'hi' ? 'पत्र' : 'letters'),
+                                    isMarathi: isMr,
+                                  );
                               }
                               final item = _visibleLetters[idx];
                               return Padding(
@@ -752,8 +752,8 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
           icon: Icon(_isOutgoing ? Icons.add_rounded : Icons.document_scanner_outlined, size: 20),
           label: Text(
             _isOutgoing
-                ? (isMr ? AppStrings.newLetterMr : AppStrings.newLetter)
-                : (isMr ? AppStrings.scanLetterMr : AppStrings.scanLetter),
+                ? (lang == 'mr' ? 'नवीन जावक पत्र' : (lang == 'hi' ? 'नया जावक पत्र' : 'New Letter'))
+                : (lang == 'mr' ? 'आवक पत्र स्कॅन करा' : (lang == 'hi' ? 'आवक पत्र स्कैन करें' : 'Scan Incoming Letter')),
             style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
           ),
         ),

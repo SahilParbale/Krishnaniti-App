@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../data/models/ai_content_model.dart';
+import '../../../../core/localization/app_translations.dart';
+import '../../../../core/services/translation_service.dart';
+import '../../../providers/language_provider.dart';
 import '../../../screens/content_studio/ai_content_report_generator.dart';
 import '../../../widgets/app_dropdown.dart';
 
@@ -120,13 +123,15 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(appLanguageProvider);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
-          _buildHeader(),
+          _buildHeader(lang),
           const SizedBox(height: 24),
 
           // Main Dual-Pane Layout
@@ -138,10 +143,10 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
                 flex: 65,
                 child: Column(
                   children: [
-                    _buildInputCard(),
+                    _buildInputCard(lang),
                     if (_generatedContent.isNotEmpty) ...[
                       const SizedBox(height: 20),
-                      _buildOutputCard(),
+                      _buildOutputCard(lang),
                     ],
                   ],
                 ),
@@ -151,7 +156,7 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
               // Right History Section (35%)
               Expanded(
                 flex: 35,
-                child: _buildHistoryCard(),
+                child: _buildHistoryCard(lang),
               ),
             ],
           ),
@@ -160,7 +165,7 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(String lang) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -178,15 +183,19 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
             const SizedBox(width: 14),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
-                  'AI Content Studio',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0F172A), letterSpacing: -0.5),
+                  AppTranslations.getNavTitle('ai_content', lang),
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0F172A), letterSpacing: -0.5),
                 ),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Text(
-                  'Draft speeches, social media posts, press releases and public notices with AI',
-                  style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                  lang == 'mr'
+                      ? 'AI च्या मदतीने भाषणे, सोशल मीडिया पोस्ट आणि पत्रे तयार करा'
+                      : (lang == 'hi'
+                          ? 'एआई की मदद से भाषण, सोशल मीडिया पोस्ट और पत्र तैयार करें'
+                          : 'Draft speeches, social media posts, press releases and public notices with AI'),
+                  style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
                 ),
               ],
             ),
@@ -212,7 +221,10 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
             );
           },
           icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
-          label: const Text('Download Report', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14)),
+          label: Text(
+            lang == 'mr' ? 'अहवाल डाउनलोड करा' : (lang == 'hi' ? 'रिपोर्ट डाउनलोड करें' : 'Download Report'),
+            style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
+          ),
           style: OutlinedButton.styleFrom(
             backgroundColor: const Color(0xFFF0F9FF),
             side: const BorderSide(color: Color(0xFFBAE6FD)),
@@ -224,7 +236,7 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
     );
   }
 
-  Widget _buildInputCard() {
+  Widget _buildInputCard(String lang) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -237,25 +249,32 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            children: const [
-              Icon(Icons.edit_note, size: 20, color: Color(0xFF0284C7)),
-              SizedBox(width: 8),
+            children: [
+              const Icon(Icons.edit_note, size: 20, color: Color(0xFF0284C7)),
+              const SizedBox(width: 8),
               Text(
-                'Generate Content',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                lang == 'mr' ? 'कंटेंट तयार करा' : (lang == 'hi' ? 'कंटेंट बनाएं' : 'Generate Content'),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
               ),
             ],
           ),
           const SizedBox(height: 18),
 
           // Topic Textarea
-          const Text('Topic / Event Prompt *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+          Text(
+            lang == 'mr' ? 'विषय / इव्हेंट प्रॉम्ट *' : (lang == 'hi' ? 'विषय / इवेंट प्रॉम्प्ट *' : 'Topic / Event Prompt *'),
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+          ),
           const SizedBox(height: 6),
           TextField(
             controller: _topicController,
             maxLines: 4,
             decoration: InputDecoration(
-              hintText: 'e.g. Inauguration of Community Center & Library in Ward 12, Main Road concretization...',
+              hintText: lang == 'mr'
+                  ? 'उदा. प्रभाग १२ मध्ये समाज मंदिर आणि ग्रंथालय उद्घाटन...'
+                  : (lang == 'hi'
+                      ? 'उदा. वार्ड १२ में सामुदायिक केंद्र एवं पुस्तकालय उद्घाटन...'
+                      : 'e.g. Inauguration of Community Center & Library in Ward 12, Main Road concretization...'),
               hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
               contentPadding: const EdgeInsets.all(14),
@@ -270,18 +289,21 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Content Type', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                    Text(
+                      lang == 'mr' ? 'कंटेंट प्रकार' : (lang == 'hi' ? 'कंटेंट प्रकार' : 'Content Type'),
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                    ),
                     const SizedBox(height: 6),
                     AppDropdown<String>(
                       value: _contentType,
                       height: 44,
                       backgroundColor: Colors.white,
                       borderColor: const Color(0xFFE2E8F0),
-                      items: const [
-                        DropdownMenuItem(value: 'Speech', child: Text('Speech')),
-                        DropdownMenuItem(value: 'Social Media Caption', child: Text('Social Media Caption')),
-                        DropdownMenuItem(value: 'Press Release', child: Text('Press Release')),
-                        DropdownMenuItem(value: 'Letter/Notice', child: Text('Letter / Public Notice')),
+                      items: [
+                        DropdownMenuItem(value: 'Speech', child: Text(lang == 'mr' ? 'भाषण' : (lang == 'hi' ? 'भाषण' : 'Speech'))),
+                        DropdownMenuItem(value: 'Social Media Caption', child: Text(lang == 'mr' ? 'सोशल मीडिया पोस्ट' : (lang == 'hi' ? 'सोशल मीडिया पोस्ट' : 'Social Media Caption'))),
+                        DropdownMenuItem(value: 'Press Release', child: Text(lang == 'mr' ? 'प्रेस नोट' : (lang == 'hi' ? 'प्रेस विज्ञप्ति' : 'Press Release'))),
+                        DropdownMenuItem(value: 'Letter/Notice', child: Text(lang == 'mr' ? 'पत्र / जाहीर सूचना' : (lang == 'hi' ? 'पत्र / सार्वजनिक सूचना' : 'Letter / Public Notice'))),
                       ],
                       onChanged: (val) {
                         if (val != null) setState(() => _contentType = val);
@@ -295,18 +317,21 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Tone / Voice', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                    Text(
+                      lang == 'mr' ? 'टोन / शैली' : (lang == 'hi' ? 'टोन / शैली' : 'Tone / Voice'),
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                    ),
                     const SizedBox(height: 6),
                     AppDropdown<String>(
                       value: _tone,
                       height: 44,
                       backgroundColor: Colors.white,
                       borderColor: const Color(0xFFE2E8F0),
-                      items: const [
-                        DropdownMenuItem(value: 'Enthusiastic', child: Text('Enthusiastic')),
-                        DropdownMenuItem(value: 'Formal', child: Text('Formal')),
-                        DropdownMenuItem(value: 'Professional', child: Text('Professional')),
-                        DropdownMenuItem(value: 'Empathetic', child: Text('Empathetic')),
+                      items: [
+                        DropdownMenuItem(value: 'Enthusiastic', child: Text(lang == 'mr' ? 'उत्साही' : (lang == 'hi' ? 'उत्साही' : 'Enthusiastic'))),
+                        DropdownMenuItem(value: 'Formal', child: Text(lang == 'mr' ? 'औपचारिक' : (lang == 'hi' ? 'औपचारिक' : 'Formal'))),
+                        DropdownMenuItem(value: 'Professional', child: Text(lang == 'mr' ? 'व्यावसायिक' : (lang == 'hi' ? 'व्यावसायिक' : 'Professional'))),
+                        DropdownMenuItem(value: 'Empathetic', child: Text(lang == 'mr' ? 'सहानुभूतीपूर्वक' : (lang == 'hi' ? 'सहानुभूतिपूर्ण' : 'Empathetic'))),
                       ],
                       onChanged: (val) {
                         if (val != null) setState(() => _tone = val);
@@ -320,7 +345,10 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Language', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                    Text(
+                      lang == 'mr' ? 'भाषा' : (lang == 'hi' ? 'भाषा' : 'Language'),
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                    ),
                     const SizedBox(height: 6),
                     AppDropdown<String>(
                       value: _language,
@@ -328,9 +356,9 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
                       backgroundColor: Colors.white,
                       borderColor: const Color(0xFFE2E8F0),
                       items: const [
-                        DropdownMenuItem(value: 'Marathi', child: Text('Marathi')),
+                        DropdownMenuItem(value: 'Marathi', child: Text('मराठी (Marathi)')),
                         DropdownMenuItem(value: 'English', child: Text('English')),
-                        DropdownMenuItem(value: 'Hindi', child: Text('Hindi')),
+                        DropdownMenuItem(value: 'Hindi', child: Text('हिंदी (Hindi)')),
                       ],
                       onChanged: (val) {
                         if (val != null) setState(() => _language = val);
@@ -353,7 +381,9 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
                   ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.auto_awesome, size: 18, color: Colors.white),
               label: Text(
-                _isGenerating ? 'Generating...' : 'Generate with AI',
+                _isGenerating
+                    ? (lang == 'mr' ? 'तयार करत आहे...' : (lang == 'hi' ? 'बना रहा है...' : 'Generating...'))
+                    : (lang == 'mr' ? 'AI सह तयार करा' : (lang == 'hi' ? 'AI से बनाएं' : 'Generate with AI')),
                 style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
               ),
               style: ElevatedButton.styleFrom(
@@ -368,7 +398,7 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
     );
   }
 
-  Widget _buildOutputCard() {
+  Widget _buildOutputCard(String lang) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -387,14 +417,19 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
                 children: [
                   const Icon(Icons.check_circle_outline, size: 18, color: Color(0xFF16A34A)),
                   const SizedBox(width: 8),
-                  const Text('Generated Content', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                  Text(
+                    lang == 'mr' ? 'तयार केलेला मजकूर' : (lang == 'hi' ? 'तैयार किया गया कंटेंट' : 'Generated Content'),
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  ),
                 ],
               ),
               ElevatedButton.icon(
                 onPressed: _copyToClipboard,
                 icon: Icon(_copied ? Icons.check : Icons.copy, size: 14, color: _copied ? Colors.white : const Color(0xFF0284C7)),
                 label: Text(
-                  _copied ? 'Copied!' : 'Copy to Clipboard',
+                  _copied
+                      ? (lang == 'mr' ? 'कॉपी केले!' : (lang == 'hi' ? 'कॉपी किया गया!' : 'Copied!'))
+                      : (lang == 'mr' ? 'क्लिपबोर्डवर कॉपी करा' : (lang == 'hi' ? 'क्लिपबोर्ड पर कॉपी करें' : 'Copy to Clipboard')),
                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _copied ? Colors.white : const Color(0xFF0284C7)),
                 ),
                 style: ElevatedButton.styleFrom(
@@ -428,7 +463,7 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
     );
   }
 
-  Widget _buildHistoryCard() {
+  Widget _buildHistoryCard(String lang) {
     final search = _historySearchController.text.trim().toLowerCase();
     final items = _history.where((h) => search.isEmpty || h['title'].toString().toLowerCase().contains(search)).toList();
 
@@ -447,10 +482,13 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
-                children: const [
-                  Icon(Icons.history, size: 18, color: Color(0xFF64748B)),
-                  SizedBox(width: 8),
-                  const Text('Recent Generations', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                children: [
+                  const Icon(Icons.history, size: 18, color: Color(0xFF64748B)),
+                  const SizedBox(width: 8),
+                  Text(
+                    lang == 'mr' ? 'मागील इतिहास' : (lang == 'hi' ? 'पिछला इतिहास' : 'Recent Generations'),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  ),
                 ],
               ),
               Container(
@@ -468,12 +506,12 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
             child: TextField(
               controller: _historySearchController,
               onChanged: (_) => setState(() {}),
-              decoration: const InputDecoration(
-                hintText: 'Search history...',
-                hintStyle: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
-                prefixIcon: Icon(Icons.search, size: 16, color: Color(0xFF94A3B8)),
+              decoration: InputDecoration(
+                hintText: lang == 'mr' ? 'इतिहास शोधा...' : (lang == 'hi' ? 'इतिहास खोजें...' : 'Search history...'),
+                hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                prefixIcon: const Icon(Icons.search, size: 16, color: Color(0xFF94A3B8)),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
               ),
             ),
           ),

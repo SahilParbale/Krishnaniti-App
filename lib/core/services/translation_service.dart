@@ -2,107 +2,38 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+import 'package:translator/translator.dart';
+import '../localization/app_translations.dart';
 import '../../presentation/providers/language_provider.dart';
 
-/// Dynamic Translation Service matching Nagarsevak-Managment (translationService.ts)
-/// Automatically translates user-added data (complaints, letters, titles, descriptions, notes)
-/// into Marathi ('mr') or Hindi ('hi') on the fly using Google Translate GTX API + in-memory caching.
+/// Dynamic Translation Service matching Nagarsevak-Managment
+/// Powered by GoogleTranslator Flutter package + AppTranslations static dictionary + caching.
+/// Seamlessly translates user-added data, titles, descriptions, names and notes.
 class DynamicTranslationService {
   DynamicTranslationService._();
 
+  static final GoogleTranslator _translator = GoogleTranslator();
   static final Map<String, String> _cache = {};
-  static const int _maxCacheSize = 1000;
+  static const int _maxCacheSize = 2000;
 
-  static const String _apiUrl = 'https://translate.googleapis.com/translate_a/single';
-
-  /// Pre-seeded dictionary matching Nagarsevak-Managment CUSTOM_TRANSLATIONS
-  static const Map<String, Map<String, String>> _customOverrides = {
-    'mr': {
-      'Dhankawadi': 'धनकवडी',
-      'Bibwewadi': 'बिबवेवाडी',
-      'Katraj': 'कात्रज',
-      'Sahakar Nagar': 'सहकार नगर',
-      'Padmavati': 'पद्मावती',
-      'Balaji Nagar': 'बालाजी नगर',
-      'Parvati': 'पार्वती',
-      'Pune': 'पुणे',
-      'Maharashtra': 'महाराष्ट्र',
-      'Lokmanya Nagar': 'लोकमान्य नगर',
-      'Waste Management': 'कचरा व्यवस्थापन',
-      'Street Lighting': 'पथदिवे',
-      'Water Distribution': 'पाणी पुरवठा',
-      'Public Health': 'सार्वजनिक आरोग्य',
-      'Road Construction': 'रस्ते बांधकाम',
-      'Administration': 'प्रशासन',
-      'water issue': 'पाणी समस्या',
-      'Cleanliness Drive': 'स्वच्छता मोहीम',
-      'Pothole on Road': 'रस्त्यावरील खड्डा',
-      'Street light not working': 'पथदिवे बंद आहेत',
-      'Garbage pile up': 'कचऱ्याचे ढीग',
-      'Drainage Leakage': 'ड्रेनेज गळती',
-      'Hospital Admission': 'रुग्णालय प्रवेश',
-      'School Admission': 'शाळा प्रवेश',
-      'Residence Certificate': 'रहिवासी दाखला',
-      'Income Certificate': 'उत्पन्न दाखला',
-      'Character Certificate': 'चारित्र्य दाखला',
-      'Pending': 'लंबित',
-      'In Progress': 'प्रगतीपथावर',
-      'Resolved': 'निवारण झाले',
-      'Closed': 'बंद',
-    },
-    'hi': {
-      'Dhankawadi': 'धनकवडी',
-      'Bibwewadi': 'बिबवेवाडी',
-      'Katraj': 'कात्रज',
-      'Sahakar Nagar': 'सहकार नगर',
-      'Padmavati': 'पद्मावती',
-      'Balaji Nagar': 'बालाजी नगर',
-      'Parvati': 'पार्वती',
-      'Pune': 'पुणे',
-      'Maharashtra': 'महाराष्ट्र',
-      'Lokmanya Nagar': 'लोकमान्य नगर',
-      'Waste Management': 'कचरा प्रबंधन',
-      'Street Lighting': 'स्ट्रीट लाइट',
-      'Water Distribution': 'जल वितरण',
-      'Public Health': 'सार्वजनिक स्वास्थ्य',
-      'Road Construction': 'सड़क निर्माण',
-      'Administration': 'प्रशासन',
-      'water issue': 'पानी की समस्या',
-      'Cleanliness Drive': 'स्वच्छता अभियान',
-      'Pothole on Road': 'सड़क पर गड्ढा',
-      'Street light not working': 'स्ट्रीट लाइट बंद है',
-      'Garbage pile up': 'कचरे का ढेर',
-      'Drainage Leakage': 'ड्रेनेज लीकेज',
-      'Hospital Admission': 'अस्पताल प्रवेश',
-      'School Admission': 'स्कूल प्रवेश',
-      'Residence Certificate': 'निवास प्रमाण पत्र',
-      'Income Certificate': 'आय प्रमाण पत्र',
-      'Character Certificate': 'चरित्र प्रमाण पत्र',
-      'Pending': 'लंबित',
-      'In Progress': 'प्रगति पर',
-      'Resolved': 'समाधान हुआ',
-      'Closed': 'बंद',
-    },
-  };
-
-  /// Synchronous fast-lookup if already cached or in dictionary
+  /// Fast synchronous lookup in static dictionary, custom overrides, or in-memory cache
   static String? getCachedTranslation(String text, String targetLang) {
     if (targetLang == 'en' || text.trim().isEmpty) return text;
 
-    final key = '${text.trim()}_$targetLang';
-    if (_cache.containsKey(key)) return _cache[key];
+    final trimmed = text.trim();
 
-    // Check custom overrides
-    final overrides = _customOverrides[targetLang];
-    if (overrides != null && overrides.containsKey(text.trim())) {
-      return overrides[text.trim()];
-    }
+    // 1. Static dictionary lookup (Instant zero-latency)
+    final staticHit = AppTranslations.tr(trimmed, lang: targetLang);
+    if (staticHit != null) return staticHit;
+
+    // 2. In-memory cache lookup
+    final key = '${trimmed}_$targetLang';
+    if (_cache.containsKey(key)) return _cache[key];
 
     return null;
   }
 
-  /// Translates text on the fly.
-  /// If targetLang is 'en' or already translated, returns immediately.
+  /// Translates dynamic text asynchronously using GoogleTranslator package
   static Future<String> translateText(
     String text,
     String targetLang, {
@@ -120,37 +51,58 @@ class DynamicTranslationService {
     final cacheKey = '${trimmed}_$targetLang';
 
     try {
-      final uri = Uri.parse(_apiUrl).replace(queryParameters: {
-        'client': 'gtx',
-        'sl': sourceLang,
-        'tl': targetLang,
-        'dt': 't',
-        'q': trimmed,
-      });
+      // Use the GoogleTranslator package
+      final translation = await _translator.translate(
+        trimmed,
+        from: sourceLang == 'auto' ? 'auto' : sourceLang,
+        to: targetLang,
+      );
 
-      final response = await http.get(uri).timeout(const Duration(seconds: 4));
-
-      if (response.statusCode == 200) {
-        final dynamic parsed = jsonDecode(response.body);
-        if (parsed is List && parsed.isNotEmpty && parsed[0] is List) {
-          final buffer = StringBuffer();
-          for (final segment in parsed[0]) {
-            if (segment is List && segment.isNotEmpty) {
-              buffer.write(segment[0]?.toString() ?? '');
-            }
-          }
-          final translated = buffer.toString().trim();
-          if (translated.isNotEmpty) {
-            _saveToCache(cacheKey, translated);
-            return translated;
-          }
-        }
+      final result = translation.text.trim();
+      if (result.isNotEmpty) {
+        _saveToCache(cacheKey, result);
+        return result;
       }
     } catch (_) {
-      // Return original on network timeout / failure
+      // Fallback: return original text safely
     }
 
     return text;
+  }
+
+  /// Phonetic transliteration for citizen/voter names matching Nagarsevak-Managment
+  static Future<String> transliterateName(String name, String targetLang) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty || (targetLang != 'mr' && targetLang != 'hi')) {
+      return name;
+    }
+
+    final cacheKey = 'translit_${trimmed}_$targetLang';
+    if (_cache.containsKey(cacheKey)) return _cache[cacheKey]!;
+
+    try {
+      final uri = Uri.parse(
+        'https://inputtools.google.com/request?text=${Uri.encodeComponent(trimmed)}&itc=$targetLang-t-i0-und&num=1',
+      );
+      final response = await http.post(uri).timeout(const Duration(seconds: 3));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data is List && data.isNotEmpty && data[0] == 'SUCCESS' && data.length > 1) {
+          final list = data[1];
+          if (list is List && list.isNotEmpty && list[0] is List) {
+            final cand = list[0][1];
+            if (cand is List && cand.isNotEmpty) {
+              final result = cand[0].toString();
+              _saveToCache(cacheKey, result);
+              return result;
+            }
+          }
+        }
+      }
+    } catch (_) {}
+
+    // Fallback to regular translate if phonetic transliteration fails
+    return translateText(trimmed, targetLang);
   }
 
   static void _saveToCache(String key, String value) {
@@ -162,7 +114,7 @@ class DynamicTranslationService {
 }
 
 /// Reactive Widget that displays text translated into the active app language.
-/// Seamlessly reflects user language switches (English, Marathi, Hindi).
+/// Instant display from static dictionary or cache, with background dynamic translation.
 class AppTranslatedText extends ConsumerStatefulWidget {
   final String text;
   final String? targetLanguage;
@@ -170,6 +122,7 @@ class AppTranslatedText extends ConsumerStatefulWidget {
   final TextAlign? textAlign;
   final int? maxLines;
   final TextOverflow? overflow;
+  final bool isName;
 
   const AppTranslatedText(
     this.text, {
@@ -179,6 +132,7 @@ class AppTranslatedText extends ConsumerStatefulWidget {
     this.textAlign,
     this.maxLines,
     this.overflow,
+    this.isName = false,
   });
 
   @override
@@ -198,7 +152,9 @@ class _AppTranslatedTextState extends ConsumerState<AppTranslatedText> {
   @override
   void didUpdateWidget(covariant AppTranslatedText oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.text != widget.text || oldWidget.targetLanguage != widget.targetLanguage) {
+    if (oldWidget.text != widget.text ||
+        oldWidget.targetLanguage != widget.targetLanguage ||
+        oldWidget.isName != widget.isName) {
       _displayedText = widget.text;
       _resolveTranslation();
     }
@@ -206,7 +162,7 @@ class _AppTranslatedTextState extends ConsumerState<AppTranslatedText> {
 
   void _resolveTranslation() {
     final String currentLang = widget.targetLanguage ?? ref.read(appLanguageProvider);
-    if (currentLang == 'en') {
+    if (currentLang == 'en' || widget.text.trim().isEmpty) {
       _displayedText = widget.text;
       return;
     }
@@ -217,9 +173,13 @@ class _AppTranslatedTextState extends ConsumerState<AppTranslatedText> {
       return;
     }
 
-    // Asynchronously fetch translation
-    DynamicTranslationService.translateText(widget.text, currentLang).then((translated) {
-      if (mounted) {
+    // Asynchronously translate or transliterate
+    final future = widget.isName
+        ? DynamicTranslationService.transliterateName(widget.text, currentLang)
+        : DynamicTranslationService.translateText(widget.text, currentLang);
+
+    future.then((translated) {
+      if (mounted && translated != _displayedText) {
         setState(() {
           _displayedText = translated;
         });
@@ -229,7 +189,7 @@ class _AppTranslatedTextState extends ConsumerState<AppTranslatedText> {
 
   @override
   Widget build(BuildContext context) {
-    // Listen for language changes if targetLanguage is not hardcoded
+    // Listen for language changes if targetLanguage is dynamic
     if (widget.targetLanguage == null) {
       ref.listen<String>(appLanguageProvider, (prev, next) {
         if (prev != next) {
@@ -238,12 +198,24 @@ class _AppTranslatedTextState extends ConsumerState<AppTranslatedText> {
       });
     }
 
+    // Direct synchronous fallback if already in dictionary for instant rendering
+    final currentLang = widget.targetLanguage ?? ref.watch(appLanguageProvider);
+    final instantHit = currentLang == 'en'
+        ? widget.text
+        : (AppTranslations.tr(widget.text, lang: currentLang) ?? _displayedText);
+
     return Text(
-      _displayedText,
+      instantHit,
       style: widget.style,
       textAlign: widget.textAlign,
       maxLines: widget.maxLines,
       overflow: widget.overflow,
     );
   }
+}
+
+/// Helpful String extension for synchronous or quick translations
+extension AppTranslateStringX on String {
+  String tr(WidgetRef ref) => AppTranslations.translateDirect(this, lang: ref.watch(appLanguageProvider));
+  String trLang(String lang) => AppTranslations.translateDirect(this, lang: lang);
 }

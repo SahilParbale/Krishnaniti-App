@@ -856,7 +856,7 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
 }
 
 /// Collapsible Group Header matching SidebarNavGroup in AppLayout.tsx
-class _DrawerGroupHeader extends StatelessWidget {
+class _DrawerGroupHeader extends ConsumerWidget {
   final String title;
   final IconData icon;
   final bool isOpen;
@@ -870,7 +870,10 @@ class _DrawerGroupHeader extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLanguageProvider);
+    final displayTitle = AppTranslations.getNavTitle(title, lang);
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -888,7 +891,7 @@ class _DrawerGroupHeader extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  title,
+                  displayTitle,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: isOpen ? FontWeight.w700 : FontWeight.w600,
@@ -932,6 +935,11 @@ class _DrawerSubItem extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
+    final lang = ref.watch(appLanguageProvider);
+    final displayTitle = key != null
+        ? AppTranslations.getNavTitle(key, lang)
+        : AppTranslations.translateDirect(title, lang: lang);
+
     final active = ref.watch(activeScreenProvider) == key;
     return Container(
       margin: const EdgeInsets.only(left: 18, right: 8, top: 1, bottom: 1),
@@ -965,7 +973,7 @@ class _DrawerSubItem extends ConsumerWidget {
                 const SizedBox(width: 9),
                 Expanded(
                   child: Text(
-                    title,
+                    displayTitle,
                     style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: active ? FontWeight.w700 : FontWeight.w500,
@@ -1013,6 +1021,11 @@ class _DrawerSingleItem extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
+    final lang = ref.watch(appLanguageProvider);
+    final displayTitle = key != null
+        ? AppTranslations.getNavTitle(key, lang)
+        : AppTranslations.translateDirect(title, lang: lang);
+
     final active = ref.watch(activeScreenProvider) == key;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
@@ -1040,7 +1053,7 @@ class _DrawerSingleItem extends ConsumerWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    title,
+                    displayTitle,
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: active ? FontWeight.w700 : FontWeight.w600,

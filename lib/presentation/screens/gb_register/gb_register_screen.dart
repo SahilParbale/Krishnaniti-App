@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../data/models/gb_register_entry_model.dart';
 import '../../../data/repositories/gb_register_repository.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
+import '../../providers/language_provider.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
@@ -578,7 +581,8 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
+    final isMr = lang == 'mr';
     final displayed = _filteredEntries;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -610,12 +614,12 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
-            children: const [
+            children: [
               Text(
-                'GB Register',
+                AppTranslations.getNavTitle('gb_register', lang),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 16.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
@@ -623,10 +627,14 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                 ),
               ),
               Text(
-                'GB motions, questions & resolutions',
+                lang == 'mr'
+                    ? 'जीबी प्रस्ताव, प्रश्न आणि ठराव'
+                    : (lang == 'hi'
+                        ? 'जीबी प्रस्ताव, प्रश्न और संकल्प'
+                        : 'GB motions, questions & resolutions'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w400,
                   color: Color(0xFFE0F2FE),
@@ -642,7 +650,7 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
           elevation: 4,
           icon: const Icon(Icons.add_rounded),
           label: Text(
-            isMr ? 'नवीन ठराव / प्रश्न' : 'Record Motion',
+            lang == 'mr' ? 'नवीन ठराव / प्रश्न' : (lang == 'hi' ? 'नया प्रस्ताव / प्रश्न' : 'Record Motion'),
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           onPressed: _showAddModal,
@@ -867,7 +875,7 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                         )
                       else ...[
                         if (_viewMode == 'grid')
-                          _buildGridCardView(_visibleEntries, isMr)
+                          _buildGridCardView(_visibleEntries, isMr, lang)
                         else
                           _buildTableView(_visibleEntries, isMr),
                         AppLoadMoreFooter(
@@ -887,7 +895,7 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
     );
   }
 
-  Widget _buildGridCardView(List<GbRegisterEntryModel> entries, bool isMr) {
+  Widget _buildGridCardView(List<GbRegisterEntryModel> entries, bool isMr, String lang) {
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -969,8 +977,9 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                 const SizedBox(height: 10),
 
                 // Subject Title
-                Text(
+                AppTranslatedText(
                   item.subject,
+                  targetLanguage: lang,
                   style: const TextStyle(
                     fontSize: 15.5,
                     fontWeight: FontWeight.bold,
@@ -981,8 +990,9 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                 const SizedBox(height: 6),
 
                 // Description
-                Text(
+                AppTranslatedText(
                   item.description,
+                  targetLanguage: lang,
                   style: const TextStyle(
                     fontSize: 13,
                     color: Color(0xFF475569),
@@ -999,8 +1009,9 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                     const Icon(Icons.business_rounded, size: 14, color: Color(0xFF64748B)),
                     const SizedBox(width: 4),
                     Expanded(
-                      child: Text(
+                      child: AppTranslatedText(
                         item.department,
+                        targetLanguage: lang,
                         style: const TextStyle(fontSize: 12, color: Color(0xFF475569), fontWeight: FontWeight.w500),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -1008,8 +1019,9 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                     const SizedBox(width: 12),
                     const Icon(Icons.location_on_outlined, size: 14, color: Color(0xFF64748B)),
                     const SizedBox(width: 4),
-                    Text(
+                    AppTranslatedText(
                       item.area,
+                      targetLanguage: lang,
                       style: const TextStyle(fontSize: 12, color: Color(0xFF475569), fontWeight: FontWeight.w500),
                     ),
                   ],
@@ -1096,7 +1108,7 @@ class _GbRegisterScreenState extends ConsumerState<GbRegisterScreen> {
                       child: Row(
                         children: [
                           Text(
-                            isMr ? 'सविस्तर पहा' : 'View Details',
+                            lang == 'mr' ? 'सविस्तर पहा' : (lang == 'hi' ? 'विवरण देखें' : 'View Details'),
                             style: const TextStyle(
                               fontSize: 12.5,
                               fontWeight: FontWeight.bold,

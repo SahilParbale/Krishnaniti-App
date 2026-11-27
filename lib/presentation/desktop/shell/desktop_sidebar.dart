@@ -502,36 +502,17 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
   }
 
   String _getItemLabel(NavItemData item, String lang) {
-    if (lang == 'mr') return item.labelMr;
-    if (lang == 'hi') {
-      return item.labelHi ?? AppTranslations.getNavTitle(item.key, 'hi');
-    }
-    return item.label;
+    if (lang == 'en') return item.label;
+    final nav = AppTranslations.getNavTitle(item.key, lang);
+    if (nav != item.key && nav != 'nav.${item.key}') return nav;
+    return AppTranslations.translateDirect(item.label, lang: lang);
   }
 
   String _getGroupLabel(NavGroupData group, String lang) {
-    if (lang == 'mr') return group.labelMr;
-    if (lang == 'hi') {
-      switch (group.id) {
-        case 'daily_work':
-          return 'दैनिक कार्य';
-        case 'ward_info':
-          return 'वार्ड जानकारी';
-        case 'municipal':
-          return 'नगरपालिका कार्य';
-        case 'media':
-          return 'डिजिटल और मीडिया';
-        case 'programs':
-          return 'कार्यक्रम और गतिविधियां';
-        case 'political':
-          return 'राजनीतिक और चुनावी';
-        case 'public_comm':
-          return 'जनसंचार';
-        default:
-          return group.label;
-      }
-    }
-    return group.label;
+    if (lang == 'en') return group.label;
+    final nav = AppTranslations.getNavTitle(group.id, lang);
+    if (nav != group.id && nav != 'nav.${group.id}') return nav;
+    return AppTranslations.translateDirect(group.label, lang: lang);
   }
 
   Widget _buildNavGroup(NavGroupData group, String activeKey, String lang, UserModel? user, TenantState tenantState) {

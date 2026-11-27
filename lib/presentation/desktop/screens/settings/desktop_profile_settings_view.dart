@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/localization/app_translations.dart';
+import '../../../../core/services/translation_service.dart';
+import '../../../providers/language_provider.dart';
 import '../../../providers/navigation_provider.dart';
 import 'desktop_bot_dashboard_view.dart';
 
@@ -123,6 +126,8 @@ class _DesktopProfileSettingsViewState extends ConsumerState<DesktopProfileSetti
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(appLanguageProvider);
+
     ref.listen<String>(desktopSettingsTabProvider, (prev, next) {
       if (next != _activeTab && mounted) {
         setState(() => _activeTab = next);
@@ -151,17 +156,21 @@ class _DesktopProfileSettingsViewState extends ConsumerState<DesktopProfileSetti
                       child: const Icon(Icons.settings_rounded, color: AppColors.brandPrimary, size: 28),
                     ),
                     const SizedBox(width: 14),
-                    const Column(
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Settings & Profile Management',
-                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.slate900),
+                          AppTranslations.getNavTitle('profile_settings', lang),
+                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.slate900),
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Text(
-                          'Manage corporator profile info, SMS connection gateway, security sessions, and support',
-                          style: TextStyle(fontSize: 13, color: AppColors.slate500),
+                          lang == 'mr'
+                              ? 'नगरसेवक प्रोफाईल माहिती, एसएमएस गेटवे, सुरक्षा सत्रे आणि सपोर्ट व्यवस्थापन'
+                              : (lang == 'hi'
+                                  ? 'नगरसेवक प्रोफाइल जानकारी, एसएमएस गेटवे, सुरक्षा सत्र और सहायता प्रबंधन'
+                                  : 'Manage corporator profile info, SMS connection gateway, security sessions, and support'),
+                          style: const TextStyle(fontSize: 13, color: AppColors.slate500),
                         ),
                       ],
                     ),
@@ -182,11 +191,11 @@ class _DesktopProfileSettingsViewState extends ConsumerState<DesktopProfileSetti
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildTabButton('profile', 'Profile Details', Icons.person_outline_rounded),
-                  _buildTabButton('bot', 'WhatsApp Bot', Icons.smart_toy_outlined),
-                  _buildTabButton('sms', 'SMS Gateway', Icons.phone_android_rounded),
-                  _buildTabButton('security', 'Security Logs', Icons.shield_outlined),
-                  _buildTabButton('support', 'Support Tickets', Icons.support_agent_rounded),
+                  _buildTabButton('profile', lang == 'mr' ? 'प्रोफाईल तपशील' : (lang == 'hi' ? 'प्रोफाइल विवरण' : 'Profile Details'), Icons.person_outline_rounded),
+                  _buildTabButton('bot', lang == 'mr' ? 'व्हॉट्सॲप बॉट' : (lang == 'hi' ? 'व्हाट्सएप बॉट' : 'WhatsApp Bot'), Icons.smart_toy_outlined),
+                  _buildTabButton('sms', lang == 'mr' ? 'एसएमएस गेटवे' : (lang == 'hi' ? 'एसएमएस गेटवे' : 'SMS Gateway'), Icons.phone_android_rounded),
+                  _buildTabButton('security', lang == 'mr' ? 'सुरक्षा लॉग' : (lang == 'hi' ? 'सुरक्षा लॉग' : 'Security Logs'), Icons.shield_outlined),
+                  _buildTabButton('support', lang == 'mr' ? 'सपोर्ट तिकिटे' : (lang == 'hi' ? 'सहायता टिकट' : 'Support Tickets'), Icons.support_agent_rounded),
                 ],
               ),
             ),
@@ -204,19 +213,19 @@ class _DesktopProfileSettingsViewState extends ConsumerState<DesktopProfileSetti
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Representative Information',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.slate800),
+                    Text(
+                      lang == 'mr' ? 'प्रतिनिधी माहिती' : (lang == 'hi' ? 'प्रतिनिधि जानकारी' : 'Representative Information'),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.slate800),
                     ),
                     const SizedBox(height: 20),
                     Row(
                       children: [
                         Expanded(
-                          child: _buildFormField('Name (English):', _nameEnCtrl),
+                          child: _buildFormField(lang == 'mr' ? 'नाव (इंग्रजी):' : (lang == 'hi' ? 'नाम (अंग्रेजी):' : 'Name (English):'), _nameEnCtrl),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
-                          child: _buildFormField('Name (Regional):', _nameMrCtrl),
+                          child: _buildFormField(lang == 'mr' ? 'नाव (मराठी/हिंदी):' : (lang == 'hi' ? 'नाम (क्षेत्रीय):' : 'Name (Regional):'), _nameMrCtrl),
                         ),
                       ],
                     ),
@@ -224,32 +233,32 @@ class _DesktopProfileSettingsViewState extends ConsumerState<DesktopProfileSetti
                     Row(
                       children: [
                         Expanded(
-                          child: _buildFormField('Ward Name:', _wardNameCtrl),
+                          child: _buildFormField(lang == 'mr' ? 'प्रभाग नाव:' : (lang == 'hi' ? 'वार्ड नाम:' : 'Ward Name:'), _wardNameCtrl),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
-                          child: _buildFormField('Ward Number:', _wardNoCtrl),
+                          child: _buildFormField(lang == 'mr' ? 'प्रभाग क्रमांक:' : (lang == 'hi' ? 'वार्ड नंबर:' : 'Ward Number:'), _wardNoCtrl),
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
-                    _buildFormField('Political Party:', _partyCtrl),
+                    _buildFormField(lang == 'mr' ? 'पक्ष:' : (lang == 'hi' ? 'दल / पार्टी:' : 'Political Party:'), _partyCtrl),
                     const SizedBox(height: 16),
-                    _buildFormField('Official Office Address:', _addressCtrl),
+                    _buildFormField(lang == 'mr' ? 'कार्यालय पत्ता:' : (lang == 'hi' ? 'कार्यालय का पता:' : 'Official Office Address:'), _addressCtrl),
                     const SizedBox(height: 16),
                     Row(
                       children: [
                         Expanded(
-                          child: _buildFormField('Contact Phone:', _phoneCtrl),
+                          child: _buildFormField(lang == 'mr' ? 'मोबाईल नंबर:' : (lang == 'hi' ? 'मोबाइल नंबर:' : 'Contact Phone:'), _phoneCtrl),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
-                          child: _buildFormField('Official Email:', _emailCtrl),
+                          child: _buildFormField(lang == 'mr' ? 'ईमेल आयडी:' : (lang == 'hi' ? 'ईमेल आईडी:' : 'Official Email:'), _emailCtrl),
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
-                    _buildFormField('Office Visiting Hours:', _hoursCtrl),
+                    _buildFormField(lang == 'mr' ? 'कार्यालयीन वेळ:' : (lang == 'hi' ? 'कार्यालय का समय:' : 'Office Visiting Hours:'), _hoursCtrl),
                     const SizedBox(height: 24),
                     SizedBox(
                       width: 220,
@@ -264,7 +273,7 @@ class _DesktopProfileSettingsViewState extends ConsumerState<DesktopProfileSetti
                         icon: _isSavingProfile
                             ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                             : const Icon(Icons.save_rounded, size: 18),
-                        label: const Text('Save Profile Details'),
+                        label: Text(lang == 'mr' ? 'बदल जतन करा' : (lang == 'hi' ? 'परिवर्तन सहेजें' : 'Save Profile Details')),
                       ),
                     ),
                   ],

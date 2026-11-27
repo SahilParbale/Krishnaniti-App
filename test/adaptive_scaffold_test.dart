@@ -97,7 +97,7 @@ void main() {
     await tester.pump();
 
     expect(find.byType(DesktopComplaintsView), findsOneWidget);
-    expect(find.text('Complaints & Requests'), findsOneWidget);
+    expect(find.text('Requests & Complaints'), findsOneWidget);
     expect(find.text('Area Complaints'), findsOneWidget);
     expect(find.text('Personal Requests'), findsOneWidget);
     expect(find.text('New Complaint'), findsOneWidget);

@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/ai_content_model.dart';
 import '../../../data/repositories/ai_content_repository.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
+import '../../providers/language_provider.dart';
 import '../../navigation/app_drawer.dart';
 import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_pdf_button.dart';
@@ -270,6 +273,8 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(appLanguageProvider);
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
         statusBarColor: Color(0xFF0284C7),
@@ -296,12 +301,12 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
-            children: const [
+            children: [
               Text(
-                'AI Content Studio',
+                AppTranslations.getNavTitle('ai_content', lang),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 16.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
@@ -309,10 +314,14 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                 ),
               ),
               Text(
-                'AI releases, greetings & speeches',
+                lang == 'mr'
+                    ? 'भाषणे, प्रसिद्धी पत्रके आणि शुभेच्छा'
+                    : (lang == 'hi'
+                        ? 'भाषण, प्रेस विज्ञप्ति और शुभकामनाएं'
+                        : 'AI releases, greetings & speeches'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w400,
                   color: Color(0xFFE0F2FE),
@@ -351,15 +360,15 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                               labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                               dividerColor: Colors.transparent,
                               tabs: [
-                                const Tab(
+                                Tab(
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Icon(Icons.edit_note_rounded, size: 16),
-                                      SizedBox(width: 6),
+                                      const Icon(Icons.edit_note_rounded, size: 16),
+                                      const SizedBox(width: 6),
                                       Flexible(
                                         child: Text(
-                                          'Create Content',
+                                          lang == 'mr' ? 'कंटेंट तयार करा' : (lang == 'hi' ? 'कंटेंट बनाएं' : 'Create Content'),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -375,7 +384,11 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                                       const SizedBox(width: 6),
                                       Flexible(
                                         child: Text(
-                                          'History (${_allHistory.length})',
+                                          lang == 'mr'
+                                              ? 'इतिहास (${_allHistory.length})'
+                                              : (lang == 'hi'
+                                                  ? 'इतिहास (${_allHistory.length})'
+                                                  : 'History (${_allHistory.length})'),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),

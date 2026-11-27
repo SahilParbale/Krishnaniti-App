@@ -701,6 +701,13 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
     }
   }
 
+  String _l(String mr, String hi, String en) {
+    final lang = ref.watch(appLanguageProvider);
+    if (lang == 'mr') return mr;
+    if (lang == 'hi') return hi;
+    return en;
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -739,7 +746,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
           leading: Builder(
             builder: (ctx) => IconButton(
               icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: isMr ? 'मेनू उघडा' : 'Toggle Menu',
+              tooltip: _l('मेनू उघडा', 'मेनू खोलें', 'Toggle Menu'),
               onPressed: () {
                 HapticFeedback.lightImpact();
                 Scaffold.of(ctx).openDrawer();
@@ -751,9 +758,11 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                isMr
-                    ? (isStaff ? 'कर्मचारी सेटिंग्ज' : 'प्रोफाईल व ब्रँडिंग सेटिंग्ज')
-                    : (isStaff ? 'Staff Settings' : 'Profile & Branding'),
+                _l(
+                  isStaff ? 'कर्मचारी सेटिंग्ज' : 'प्रोफाईल व ब्रँडिंग सेटिंग्ज',
+                  isStaff ? 'कर्मचारी सेटिंग्स' : 'प्रोफाइल व ब्रांडिंग सेटिंग्स',
+                  isStaff ? 'Staff Settings' : 'Profile & Branding',
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -764,9 +773,11 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                 ),
               ),
               Text(
-                isMr
-                    ? (isStaff ? 'नेव्हिगेशन आणि कर्मचारी तपशील' : 'अधिकृत लेटरहेड, संपर्क आणि प्रणाली')
-                    : (isStaff ? 'Bar customization & staff profile' : 'Official letterhead, contacts & portal'),
+                _l(
+                  isStaff ? 'नेव्हिगेशन आणि कर्मचारी तपशील' : 'अधिकृत लेटरहेड, संपर्क आणि प्रणाली',
+                  isStaff ? 'नेविगेशन और कर्मचारी विवरण' : 'आधिकारिक लेटरहेड, संपर्क और पोर्टल',
+                  isStaff ? 'Bar customization & staff profile' : 'Official letterhead, contacts & portal',
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -844,7 +855,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                                               children: [
                                                 const Icon(Icons.tune_rounded, size: 15),
                                                 const SizedBox(width: 6),
-                                                Text(isMr ? 'नेव्हिगेशन बार' : 'Bar Customization'),
+                                                Text(_l('नेव्हिगेशन बार', 'नेविगेशन बार', 'Bar Customization')),
                                               ],
                                             ),
                                           ),
@@ -854,7 +865,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                                               children: [
                                                 const Icon(Icons.badge_outlined, size: 15),
                                                 const SizedBox(width: 6),
-                                                Text(isMr ? 'माझे प्रोफाईल' : 'My Profile'),
+                                                Text(_l('माझे प्रोफाईल', 'मेरी प्रोफाइल', 'My Profile')),
                                               ],
                                             ),
                                           ),
@@ -864,7 +875,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                                               children: [
                                                 const Icon(Icons.support_agent_rounded, size: 15),
                                                 const SizedBox(width: 6),
-                                                Text(isMr ? 'अडचण नोंदवा' : 'Report Issue'),
+                                                Text(_l('अडचण नोंदवा', 'समस्या दर्ज करें', 'Report Issue')),
                                               ],
                                             ),
                                           ),
@@ -876,7 +887,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                                               children: [
                                                 const Icon(Icons.person_rounded, size: 15),
                                                 const SizedBox(width: 6),
-                                                Text(isMr ? 'प्रोफाईल तपशील' : 'Profile Details'),
+                                                Text(_l('प्रोफाईल तपशील', 'प्रोफाइल विवरण', 'Profile Details')),
                                               ],
                                             ),
                                           ),
@@ -886,7 +897,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                                               children: [
                                                 const Icon(Icons.tune_rounded, size: 15),
                                                 const SizedBox(width: 6),
-                                                Text(isMr ? 'नेव्हिगेशन बार' : 'Bar Customization'),
+                                                Text(_l('नेव्हिगेशन बार', 'नेविगेशन बार', 'Bar Customization')),
                                               ],
                                             ),
                                           ),
@@ -896,7 +907,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                                               children: [
                                                 const Icon(Icons.shield_outlined, size: 15),
                                                 const SizedBox(width: 6),
-                                                Text(isMr ? 'सुरक्षा लॉग' : 'Security Logs'),
+                                                Text(_l('सुरक्षा लॉग', 'सुरक्षा लॉग', 'Security Logs')),
                                               ],
                                             ),
                                           ),
@@ -906,7 +917,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                                               children: [
                                                 const Icon(Icons.support_agent_rounded, size: 15),
                                                 const SizedBox(width: 6),
-                                                Text(isMr ? 'अडचण नोंदवा' : 'Report Issue'),
+                                                Text(_l('अडचण नोंदवा', 'समस्या दर्ज करें', 'Report Issue')),
                                               ],
                                             ),
                                           ),

@@ -477,9 +477,9 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                             await repo.addTask(newTask);
                             if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Diary task added successfully!'),
-                                  backgroundColor: Color(0xFF0F766E),
+                                SnackBar(
+                                  content: Text(isMr ? 'दैनिक नोंद यशस्वीरीत्या जतन झाली!' : 'Diary task added successfully!'),
+                                  backgroundColor: const Color(0xFF0F766E),
                                 ),
                               );
                             }
@@ -491,7 +491,10 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
-                        child: const Text('Save & Schedule', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                        child: Text(
+                          isMr ? 'जतन करा आणि वेळापत्रक ठरवा' : 'Save & Schedule',
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ),
                         const SizedBox(height: 10),

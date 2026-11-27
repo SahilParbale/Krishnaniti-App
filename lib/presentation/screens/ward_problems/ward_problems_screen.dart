@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../data/models/complaint_model.dart';
 import '../../../data/repositories/complaints_repository.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
+import '../../providers/language_provider.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../complaints/complaint_detail_screen.dart';
@@ -230,7 +233,8 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
+    final isMr = lang == 'mr';
     final filtered = _filteredComplaints;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -264,7 +268,7 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                isMr ? 'प्रभागातील समस्या' : 'Ward Problems',
+                AppTranslations.getNavTitle('ward_problems', lang),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -275,7 +279,11 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                 ),
               ),
               Text(
-                isMr ? 'तक्रारी व नागरिकांच्या अडचणी' : 'Grievances & civic issues',
+                lang == 'mr'
+                    ? 'तक्रारी व नागरिकांच्या अडचणी'
+                    : (lang == 'hi'
+                        ? 'शिकायतें और नागरिक समस्याएं'
+                        : 'Grievances & civic issues'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -541,11 +549,11 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                             scrollDirection: Axis.horizontal,
                             child: Row(
                               children: [
-                                _buildStatusPill('All', isMr ? 'सर्व' : 'All'),
-                                _buildStatusPill('Pending', isMr ? 'प्रलंबित' : 'Pending'),
-                                _buildStatusPill('Assigned', isMr ? 'नेमलेले' : 'Assigned'),
-                                _buildStatusPill('InProgress', isMr ? 'सुरू' : 'In Progress'),
-                                _buildStatusPill('Resolved', isMr ? 'निकाली' : 'Resolved'),
+                                _buildStatusPill('All', lang == 'mr' ? 'सर्व' : (lang == 'hi' ? 'सभी' : 'All')),
+                                _buildStatusPill('Pending', lang == 'mr' ? 'प्रलंबित' : (lang == 'hi' ? 'लंबित' : 'Pending')),
+                                _buildStatusPill('Assigned', lang == 'mr' ? 'नेमलेले' : (lang == 'hi' ? 'सौंपा गया' : 'Assigned')),
+                                _buildStatusPill('InProgress', lang == 'mr' ? 'सुरू' : (lang == 'hi' ? 'प्रगति पर' : 'In Progress')),
+                                _buildStatusPill('Resolved', lang == 'mr' ? 'निकाली' : (lang == 'hi' ? 'समाधान हुआ' : 'Resolved')),
                               ],
                             ),
                           ),
@@ -568,7 +576,7 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                                 border: Border.all(color: const Color(0xFFBAE6FD)),
                               ),
                               child: Text(
-                                '${isMr ? "एकूण समस्या" : "Total Issues"}: ${filtered.length}',
+                                '${lang == "mr" ? "एकूण समस्या" : (lang == "hi" ? "कुल समस्याएं" : "Total Issues")}: ${filtered.length}',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
@@ -650,7 +658,7 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                     if (_viewMode == 'report') ...[
                       _buildReportTableView(isMr, _visibleComplaints),
                     ] else ...[
-                      _buildCardsGridView(isMr, _visibleComplaints),
+                      _buildCardsGridView(isMr, _visibleComplaints, lang),
                     ],
                     AppLoadMoreFooter(
                       currentCount: _visibleComplaints.length,
@@ -713,7 +721,7 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
   }
 
   // Cards Grid View matching WardWiseProblem.tsx lines 559-634
-  Widget _buildCardsGridView(bool isMr, List<ComplaintModel> items) {
+  Widget _buildCardsGridView(bool isMr, List<ComplaintModel> items, String lang) {
     if (items.isEmpty) {
       return Container(
         margin: const EdgeInsets.all(16),
@@ -887,8 +895,9 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                   ],
 
                   // Title matching line 599
-                  Text(
+                  AppTranslatedText(
                     c.title,
+                    targetLanguage: lang,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -899,8 +908,9 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                   ),
                   if (c.description.isNotEmpty && c.description != c.title) ...[
                     const SizedBox(height: 4),
-                    Text(
+                    AppTranslatedText(
                       c.description,
+                      targetLanguage: lang,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(

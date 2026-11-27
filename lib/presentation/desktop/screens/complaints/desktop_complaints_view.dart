@@ -339,13 +339,13 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
           Row(
             children: [
               _buildTabButton(
-                title: AppTranslations.t('complaints.tabs_area', lang: lang),
+                title: AppTranslations.t('complaints.tabs.area', lang: lang),
                 isActive: _activeTab == 'Complaints',
                 onTap: () => setState(() => _activeTab = 'Complaints'),
               ),
               const SizedBox(width: 24),
               _buildTabButton(
-                title: AppTranslations.t('complaints.tabs_personal', lang: lang),
+                title: AppTranslations.t('complaints.tabs.personal', lang: lang),
                 isActive: _activeTab == 'Personal Help',
                 onTap: () => setState(() => _activeTab = 'Personal Help'),
               ),

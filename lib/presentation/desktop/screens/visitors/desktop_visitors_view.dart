@@ -353,7 +353,7 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
 
   @override
   Widget build(BuildContext context) {
-    final lang = ref.watch(desktopLanguageProvider);
+    final lang = ref.watch(appLanguageProvider);
     final isMr = lang == 'mr';
     final items = _filteredVisitors;
 

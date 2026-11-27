@@ -13,6 +13,9 @@ import '../complaints/new_complaint_screen.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/navigation_provider.dart';
+import '../../providers/language_provider.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 
 final lettersRepoProvider = Provider((ref) => LettersRepository());
 
@@ -446,10 +449,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final lang = ref.watch(appLanguageProvider);
     final totalVal = _complaintStats['total'] ?? 0;
     final pendingVal = _complaintStats['pending'] ?? 0;
     final inProgressVal = _complaintStats['inProgress'] ?? 0;
     final resolvedVal = _complaintStats['resolved'] ?? 0;
+
+    final localizedBriefing = lang == 'mr'
+        ? (totalVal == 0
+            ? 'नगरसेवक व्यवस्थापन डॅशबोर्डवर आपले स्वागत आहे. सर्व तक्रारी आणि मतदार नोंदी महापालिका प्रणालीशी जोडलेल्या आहेत.'
+            : 'प्रभाग सारांश: $pendingVal प्रलंबित नागरिक तक्रारींवर प्राधान्याने लक्ष देणे आवश्यक आहे. $resolvedVal कामे यशस्वीरीत्या पूर्ण झाली आहेत.')
+        : (lang == 'hi'
+            ? (totalVal == 0
+                ? 'नगरसेवक प्रबंधन डैशबोर्ड में आपका स्वागत है। सभी शिकायतें और मतदाता रिकॉर्ड जुड़े हुए हैं।'
+                : 'वार्ड सारांश: $pendingVal लंबित नागरिक शिकायतों पर प्राथमिकता से ध्यान देने की आवश्यकता है। $resolvedVal कार्य सफलतापूर्वक पूर्ण हुए हैं।')
+            : _dailyBriefing);
 
     final displayedActivities = _activityFilter == 'pending'
         ? _recentActivity.where((a) => a.status.toLowerCase() == 'pending').toList()
@@ -476,7 +490,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
           leading: Builder(
             builder: (ctx) => IconButton(
               icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: 'Open Menu Drawer',
+              tooltip: lang == 'mr' ? 'मेनू उघडा' : (lang == 'hi' ? 'मेनू खोलें' : 'Open Menu Drawer'),
               onPressed: () {
                 HapticFeedback.lightImpact();
                 Scaffold.of(ctx).openDrawer();
@@ -496,16 +510,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                 child: const Icon(Icons.account_balance_rounded, color: Colors.white, size: 18),
               ),
               const SizedBox(width: 10),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Dashboard',
+                      AppTranslations.t('dashboard.title', lang: lang),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 16.5,
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
@@ -513,10 +527,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                       ),
                     ),
                     Text(
-                      'Overview, analytics & ward summary',
+                      AppTranslations.t('dashboard.subtitle', lang: lang),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 10.5,
                         fontWeight: FontWeight.w500,
                         color: Color(0xFFE0F2FE),
@@ -540,7 +554,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
                   children: [
                     // ==========================================
-                    // 1) HEADER SECTION (t('dashboard.title'))
+                    // 1) HEADER SECTION
                     // ==========================================
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -561,28 +575,30 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                             ),
                           ),
                         ),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                'Dashboard',
+                                AppTranslations.t('dashboard.title', lang: lang),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w800,
                                   color: Color(0xFF0F172A),
                                   letterSpacing: -0.3,
                                 ),
                               ),
-                              SizedBox(height: 1),
+                              const SizedBox(height: 1),
                               Text(
-                                'Welcome back, Hon. Nagarsevak',
+                                lang == 'mr'
+                                    ? 'स्वागत आहे, सन्माननीय नगरसेवक'
+                                    : (lang == 'hi' ? 'स्वागत है, माननीय नगरसेवक' : 'Welcome back, Hon. Nagarsevak'),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w500,
                                   color: Color(0xFF64748B),
@@ -603,9 +619,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                               );
                             },
                             icon: const Icon(Icons.add_rounded, size: 15),
-                            label: const Text(
-                              'New Request',
-                              style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700),
+                            label: Text(
+                              lang == 'mr' ? '+ नवीन तक्रार' : (lang == 'hi' ? '+ नया अनुरोध' : '+ New Request'),
+                              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700),
                             ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF0284C7),
@@ -622,7 +638,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                     const SizedBox(height: 14),
 
                     // ==========================================
-                    // 2) AI INSIGHT BANNER (tutorial-ai-insight)
+                    // 2) AI INSIGHT BANNER
                     // ==========================================
                     Container(
                       padding: const EdgeInsets.all(14),
@@ -651,9 +667,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  'AI Daily Briefing & Ward Pulse',
-                                  style: TextStyle(
+                                Text(
+                                  lang == 'mr'
+                                      ? 'एआय दैनिक सारांश आणि प्रभाग आढावा'
+                                      : (lang == 'hi' ? 'एआई दैनिक सारांश और वार्ड समीक्षा' : 'AI Daily Briefing & Ward Pulse'),
+                                  style: const TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w700,
                                     color: Color(0xFF0F172A),
@@ -661,7 +679,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 ),
                                 const SizedBox(height: 3),
                                 Text(
-                                  _dailyBriefing,
+                                  localizedBriefing,
                                   style: const TextStyle(
                                     fontSize: 11.5,
                                     height: 1.4,
@@ -678,13 +696,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                     const SizedBox(height: 16),
 
                     // ==========================================
-                    // 3) 4 STAT CARDS (LIVE CITIZEN & GRIEVANCE STATS) (tutorial-stats)
+                    // 3) 4 STAT CARDS
                     // ==========================================
                     Row(
                       children: [
                         Expanded(
                           child: _StatCardItem(
-                            title: 'Total Citizens',
+                            title: lang == 'mr' ? 'एकूण मतदार' : (lang == 'hi' ? 'कुल मतदाता' : 'Total Citizens'),
                             value: NumberFormat.decimalPattern().format(_voterCount),
                             icon: Icons.people_alt_rounded,
                             iconColor: const Color(0xFF0284C7),
@@ -699,7 +717,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         const SizedBox(width: 10),
                         Expanded(
                           child: _StatCardItem(
-                            title: 'Pending Issues',
+                            title: lang == 'mr' ? 'प्रलंबित समस्या' : (lang == 'hi' ? 'लंबित मुद्दे' : 'Pending Issues'),
                             value: NumberFormat.decimalPattern().format(pendingVal),
                             icon: Icons.error_outline_rounded,
                             iconColor: const Color(0xFFDC2626),
@@ -718,7 +736,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                       children: [
                         Expanded(
                           child: _StatCardItem(
-                            title: 'In Progress',
+                            title: lang == 'mr' ? 'काम चालू' : (lang == 'hi' ? 'प्रगति पर' : 'In Progress'),
                             value: NumberFormat.decimalPattern().format(inProgressVal),
                             icon: Icons.timelapse_rounded,
                             iconColor: const Color(0xFFD97706),
@@ -730,7 +748,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         const SizedBox(width: 10),
                         Expanded(
                           child: _StatCardItem(
-                            title: 'Resolved',
+                            title: lang == 'mr' ? 'पूर्ण कामे' : (lang == 'hi' ? 'पूर्ण कार्य' : 'Resolved'),
                             value: NumberFormat.decimalPattern().format(resolvedVal),
                             icon: Icons.check_circle_outline_rounded,
                             iconColor: const Color(0xFF16A34A),
@@ -1139,9 +1157,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
-                                'Status Overview',
-                                style: TextStyle(
+                              Text(
+                                lang == 'mr' ? 'स्थिती आढावा आणि निवारण' : (lang == 'hi' ? 'स्थिति समीक्षा और निवारण' : 'Status Overview'),
+                                style: const TextStyle(
                                   fontSize: 14.5,
                                   fontWeight: FontWeight.w800,
                                   color: Color(0xFF0F172A),
@@ -1149,9 +1167,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                               ),
                               InkWell(
                                 onTap: () => widget.onTabChange(1),
-                                child: const Text(
-                                  'View All',
-                                  style: TextStyle(
+                                child: Text(
+                                  lang == 'mr' ? 'सर्व पहा' : (lang == 'hi' ? 'सभी देखें' : 'View All'),
+                                  style: const TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w700,
                                     color: Color(0xFF0284C7),
@@ -1164,21 +1182,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
 
                           // Visual Bars
                           _buildStatusBar(
-                            label: 'Pending',
+                            label: AppTranslations.getStatus('pending', lang),
                             count: pendingVal,
                             total: totalVal,
                             color: const Color(0xFFEF4444),
                           ),
                           const SizedBox(height: 10),
                           _buildStatusBar(
-                            label: 'In Progress',
+                            label: AppTranslations.getStatus('in_progress', lang),
                             count: inProgressVal,
                             total: totalVal,
                             color: const Color(0xFFF59E0B),
                           ),
                           const SizedBox(height: 10),
                           _buildStatusBar(
-                            label: 'Resolved',
+                            label: AppTranslations.getStatus('resolved', lang),
                             count: resolvedVal,
                             total: totalVal,
                             color: const Color(0xFF10B981),
@@ -1194,11 +1212,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                               Expanded(
                                 child: Column(
                                   children: [
-                                    const FittedBox(
+                                    FittedBox(
                                       fit: BoxFit.scaleDown,
                                       child: Text(
-                                        'CLEARANCE RATE',
-                                        style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: Color(0xFF64748B)),
+                                        lang == 'mr' ? 'निवारण दर' : (lang == 'hi' ? 'समाधान दर' : 'CLEARANCE RATE'),
+                                        style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: Color(0xFF64748B)),
                                       ),
                                     ),
                                     const SizedBox(height: 4),
@@ -1213,18 +1231,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 ),
                               ),
                               Container(height: 28, width: 1, color: const Color(0xFFE2E8F0)),
-                              const Expanded(
+                              Expanded(
                                 child: Column(
                                   children: [
                                     FittedBox(
                                       fit: BoxFit.scaleDown,
                                       child: Text(
-                                        'AVG. RESPONSE',
-                                        style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: Color(0xFF64748B)),
+                                        lang == 'mr' ? 'सरासरी प्रतिसाद' : (lang == 'hi' ? 'औसत प्रतिक्रिया' : 'AVG. RESPONSE'),
+                                        style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: Color(0xFF64748B)),
                                       ),
                                     ),
-                                    SizedBox(height: 4),
-                                    FittedBox(
+                                    const SizedBox(height: 4),
+                                    const FittedBox(
                                       fit: BoxFit.scaleDown,
                                       child: Text(
                                         '—',
@@ -1235,18 +1253,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 ),
                               ),
                               Container(height: 28, width: 1, color: const Color(0xFFE2E8F0)),
-                              const Expanded(
+                              Expanded(
                                 child: Column(
                                   children: [
                                     FittedBox(
                                       fit: BoxFit.scaleDown,
                                       child: Text(
-                                        'SATISFACTION',
-                                        style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: Color(0xFF64748B)),
+                                        lang == 'mr' ? 'नागरिक समाधान' : (lang == 'hi' ? 'नागरिक संतुष्टि' : 'SATISFACTION'),
+                                        style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: Color(0xFF64748B)),
                                       ),
                                     ),
-                                    SizedBox(height: 4),
-                                    FittedBox(
+                                    const SizedBox(height: 4),
+                                    const FittedBox(
                                       fit: BoxFit.scaleDown,
                                       child: Text(
                                         '—',
@@ -1279,9 +1297,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         children: [
                           Row(
                             children: [
-                              const Text(
-                                'Live Activity',
-                                style: TextStyle(
+                              Text(
+                                lang == 'mr' ? 'थेट तक्रार नोंद' : (lang == 'hi' ? 'लाइव शिकायत फ़ीड' : 'Live Activity'),
+                                style: const TextStyle(
                                   fontSize: 14.5,
                                   fontWeight: FontWeight.w800,
                                   color: Color(0xFF0F172A),
@@ -1296,7 +1314,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                   border: Border.all(color: const Color(0xFFFECACA)),
                                 ),
                                 child: Text(
-                                  '$pendingVal Pending',
+                                  '$pendingVal ${AppTranslations.getStatus('pending', lang)}',
                                   style: const TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w700,
@@ -1315,12 +1333,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 child: Row(
                                   children: [
                                     _buildFilterTab(
-                                      label: 'All',
+                                      label: lang == 'mr' ? 'सर्व' : (lang == 'hi' ? 'सभी' : 'All'),
                                       isSelected: _activityFilter == 'all',
                                       onTap: () => setState(() => _activityFilter = 'all'),
                                     ),
                                     _buildFilterTab(
-                                      label: 'Pending',
+                                      label: AppTranslations.getStatus('pending', lang),
                                       isSelected: _activityFilter == 'pending',
                                       isAlert: true,
                                       onTap: () => setState(() => _activityFilter = 'pending'),
@@ -1335,12 +1353,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
 
                           // Activity List
                           if (displayedActivities.isEmpty)
-                            const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 24),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 24),
                               child: Center(
                                 child: Text(
-                                  'No recent activity matching filter',
-                                  style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                                  lang == 'mr' ? 'कोणतीही ताजी नोंद नाही' : (lang == 'hi' ? 'कोई हालिया गतिविधि नहीं' : 'No recent activity matching filter'),
+                                  style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
                                 ),
                               ),
                             )
@@ -1384,7 +1402,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            Text(
+                                            AppTranslatedText(
                                               activity.title,
                                               style: TextStyle(
                                                 fontSize: 12.5,
@@ -1400,7 +1418,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                                 const Icon(Icons.schedule_rounded, size: 11, color: Color(0xFF94A3B8)),
                                                 const SizedBox(width: 3),
                                                 Expanded(
-                                                  child: Text(
+                                                  child: AppTranslatedText(
                                                     activity.area != null ? '${activity.area} • Today' : 'Ward No. 12',
                                                     maxLines: 1,
                                                     overflow: TextOverflow.ellipsis,
@@ -1422,7 +1440,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                           borderRadius: BorderRadius.circular(6),
                                         ),
                                         child: Text(
-                                          isPending ? 'Pending' : (isResolved ? 'Resolved' : 'In Progress'),
+                                          AppTranslations.getStatus(activity.status, lang),
                                           style: TextStyle(
                                             fontSize: 9.5,
                                             fontWeight: FontWeight.w700,
@@ -1449,7 +1467,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 padding: const EdgeInsets.symmetric(vertical: 9),
                               ),
-                              child: const Text('View Full Log', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                              child: Text(
+                                lang == 'mr' ? 'सर्व तक्रारी पहा' : (lang == 'hi' ? 'पूरी सूची देखें' : 'View Full Log'),
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                              ),
                             ),
                           ),
                         ],
@@ -1569,7 +1590,7 @@ class _StatCardItem extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
+                  AppTranslatedText(
                     title,
                     style: const TextStyle(
                       fontSize: 11,
@@ -1641,7 +1662,7 @@ class _QuickActionPill extends StatelessWidget {
           children: [
             Icon(icon, size: 14, color: const Color(0xFF475569)),
             const SizedBox(width: 5),
-            Text(
+            AppTranslatedText(
               label,
               style: const TextStyle(
                 fontSize: 11.5,
